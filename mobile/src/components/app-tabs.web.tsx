@@ -1,93 +1,57 @@
-import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
+import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { WebTabBarHeight } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-const TAB_LABELS: Record<string, string> = {
-  index: 'Dashboard',
-  clienti: 'Clienti',
-  esercizi: 'Esercizi',
-  schede: 'Schede',
-  appuntamenti: 'Agenda',
-  impostazioni: 'Impostazioni',
-};
-
-// Stesso stile del lato cliente (client-tabs.web.tsx): glifo Unicode, non una
-// libreria icone, per restare coerenti con la scelta già fatta lì.
-const TAB_ICONS: Record<string, string> = {
-  index: '📊',
-  clienti: '👥',
-  esercizi: '🏋️',
-  schede: '📋',
-  appuntamenti: '📅',
-  impostazioni: '⚙️',
-};
+const TABS = [
+  { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/clienti', label: 'Clienti', icon: '👥' },
+  { path: '/esercizi', label: 'Esercizi', icon: '🏋️' },
+  { path: '/schede', label: 'Schede', icon: '📋' },
+  { path: '/appuntamenti', label: 'Agenda', icon: '📅' },
+  { path: '/chat', label: 'Chat', icon: '💬' },
+  { path: '/impostazioni', label: 'Impostazioni', icon: '⚙️' },
+] as const satisfies readonly { path: Href; label: string; icon: string }[];
 
 export default function AppTabs() {
-  return (
-    <Tabs>
-      <TabSlot style={styles.slot} />
-      <TabList asChild>
-        <TabBar>
-          <TabTrigger name="index" href="/" asChild>
-            <TabButton name="index" />
-          </TabTrigger>
-          <TabTrigger name="clienti" href="/clienti" asChild>
-            <TabButton name="clienti" />
-          </TabTrigger>
-          <TabTrigger name="esercizi" href="/esercizi" asChild>
-            <TabButton name="esercizi" />
-          </TabTrigger>
-          <TabTrigger name="schede" href="/schede" asChild>
-            <TabButton name="schede" />
-          </TabTrigger>
-          <TabTrigger name="appuntamenti" href="/appuntamenti/index" asChild>
-            <TabButton name="appuntamenti" />
-          </TabTrigger>
-          <TabTrigger name="impostazioni" href="/impostazioni" asChild>
-            <TabButton name="impostazioni" />
-          </TabTrigger>
-        </TabBar>
-      </TabList>
-    </Tabs>
-  );
-}
-
-// name non arriva sempre nello slot props di expo-router/ui: lo passiamo esplicitamente
-// per poter mostrare l'etichetta corretta e distinguere lo stato attivo.
-function TabButton({ name, isFocused, ...props }: TabTriggerSlotProps & { name: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const theme = useTheme();
 
   return (
-    <Pressable {...props} style={styles.tabItem}>
-      <View style={[styles.activeIndicator, isFocused && { backgroundColor: theme.primary }]} />
-      <Text style={[styles.tabIcon, { opacity: isFocused ? 1 : 0.6 }]}>{TAB_ICONS[name] ?? '•'}</Text>
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.tabLabel,
-          { color: isFocused ? theme.primary : theme.textSecondary },
-          isFocused && styles.tabLabelActive,
-        ]}>
-        {TAB_LABELS[name] ?? name}
-      </Text>
-    </Pressable>
-  );
-}
-
-function TabBar(props: TabListProps) {
-  const theme = useTheme();
-
-  return (
-    <View
-      {...props}
-      style={[styles.tabBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}
-    />
+    <View style={styles.container}>
+      <View style={styles.slot}>
+        <Slot screenOptions={{ headerShown: false }} />
+      </View>
+      <View style={[styles.tabBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}>
+        {TABS.map((tab) => {
+          const isActive = pathname === tab.path || (tab.path !== '/' && pathname.startsWith(`${tab.path}/`));
+          return (
+            <Pressable key={tab.path.toString()} onPress={() => router.push(tab.path)} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, isActive && { backgroundColor: theme.primary }]} />
+              <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tabLabel,
+                  { color: isActive ? theme.primary : theme.textSecondary },
+                  isActive && styles.tabLabelActive,
+                ]}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   slot: {
     flex: 1,
   },

@@ -75,7 +75,7 @@ export default function DashboardScreen() {
         Prossimo appuntamento
       </ThemedText>
       {prossimoAppuntamento ? (
-        <Pressable onPress={() => router.push('/appuntamenti/index')}>
+        <Pressable onPress={() => router.push('/appuntamenti')}>
           <Card style={styles.appointmentRow}>
             <View>
               <ThemedText type="default">

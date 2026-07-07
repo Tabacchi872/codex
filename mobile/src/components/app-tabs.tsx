@@ -37,6 +37,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="calendar" md="event" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="chat">
+        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="chat" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="impostazioni">
         <NativeTabs.Trigger.Label>Impostazioni</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="gearshape" md="settings" />

@@ -89,11 +89,11 @@ export default function ModelloDettaglioScreen() {
             <Pill label={`${template.daysPerWeek} gg/settimana`} />
             <Pill label={`${template.durationWeeks} settimane`} />
           </View>
-          {template.coachNotes && (
+          {template.coachNotes ? (
             <ThemedText type="small" themeColor="textSecondary" style={styles.coachNotes}>
               Nota: {template.coachNotes}
             </ThemedText>
-          )}
+          ) : null}
         </Card>
 
         {mode === 'view' ? (
@@ -150,7 +150,7 @@ export default function ModelloDettaglioScreen() {
               })}
             </View>
 
-            {clientId && (
+            {clientId ? (
               <>
                 <ThemedText type="smallBold">Abbonamento (opzionale)</ThemedText>
                 {clientSubscriptions.length === 0 ? (
@@ -178,7 +178,7 @@ export default function ModelloDettaglioScreen() {
                   </View>
                 )}
               </>
-            )}
+            ) : null}
 
             <ThemedText type="small" themeColor="textSecondary">
               Verranno create {template.sessions.length} schede per il cliente (data odierna, scadenza a {template.durationWeeks}{' '}
