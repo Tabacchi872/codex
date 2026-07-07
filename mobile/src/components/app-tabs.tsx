@@ -2,14 +2,19 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { Colors } from '@/constants/theme';
 import { useEffectiveColorScheme } from '@/hooks/use-effective-color-scheme';
+import { useChatStore } from '@/store/chat-store';
 
 export default function AppTabs() {
   const scheme = useEffectiveColorScheme();
   const colors = Colors[scheme];
+  const unreadMessagesCount = useChatStore(
+    (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
+  );
 
   return (
     <NativeTabs
       backgroundColor={colors.background}
+      badgeBackgroundColor={colors.primary}
       indicatorColor={colors.backgroundElement}
       labelStyle={{ selected: { color: colors.text } }}>
       <NativeTabs.Trigger name="index">
@@ -38,8 +43,11 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="chat">
-        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Messaggi</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="chat" />
+        <NativeTabs.Trigger.Badge hidden={unreadMessagesCount === 0}>
+          {unreadMessagesCount > 99 ? '99+' : String(unreadMessagesCount)}
+        </NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="impostazioni">

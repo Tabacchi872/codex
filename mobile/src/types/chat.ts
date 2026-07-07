@@ -9,4 +9,6 @@ export type ChatMessage = {
   sender: 'client' | 'coach';
   text: string;
   createdAt: string;
+  readByCoachAt?: string;
+  readByClientAt?: string;
 };

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { WebTabBarHeight } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useChatStore } from '@/store/chat-store';
 
 const TABS = [
   { path: '/', label: 'Dashboard', icon: '📊' },
@@ -10,7 +11,7 @@ const TABS = [
   { path: '/esercizi', label: 'Esercizi', icon: '🏋️' },
   { path: '/schede', label: 'Schede', icon: '📋' },
   { path: '/appuntamenti', label: 'Agenda', icon: '📅' },
-  { path: '/chat', label: 'Chat', icon: '💬' },
+  { path: '/chat', label: 'Messaggi', icon: '💬' },
   { path: '/impostazioni', label: 'Impostazioni', icon: '⚙️' },
 ] as const satisfies readonly { path: Href; label: string; icon: string }[];
 
@@ -18,6 +19,9 @@ export default function AppTabs() {
   const pathname = usePathname();
   const router = useRouter();
   const theme = useTheme();
+  const unreadMessagesCount = useChatStore(
+    (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
+  );
 
   return (
     <View style={styles.container}>
@@ -30,7 +34,14 @@ export default function AppTabs() {
           return (
             <Pressable key={tab.path.toString()} onPress={() => router.push(tab.path)} style={styles.tabItem}>
               <View style={[styles.activeIndicator, isActive && { backgroundColor: theme.primary }]} />
-              <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
+              <View>
+                <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
+                {tab.path === '/chat' && unreadMessagesCount > 0 && (
+                  <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                    <Text style={styles.badgeText}>{unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}</Text>
+                  </View>
+                )}
+              </View>
               <Text
                 numberOfLines={1}
                 style={[
@@ -78,6 +89,22 @@ const styles = StyleSheet.create({
   tabIcon: {
     fontSize: 17,
     lineHeight: 20,
+  },
+  badge: {
+    alignItems: 'center',
+    borderRadius: 999,
+    minWidth: 17,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    position: 'absolute',
+    right: -10,
+    top: -6,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 13,
   },
   tabLabel: {
     fontSize: 12,
