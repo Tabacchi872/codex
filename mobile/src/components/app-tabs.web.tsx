@@ -42,7 +42,7 @@ export default function AppTabs() {
           <TabTrigger name="schede" href="/schede" asChild>
             <TabButton name="schede" />
           </TabTrigger>
-          <TabTrigger name="appuntamenti" href="/appuntamenti" asChild>
+          <TabTrigger name="appuntamenti" href="/appuntamenti/index" asChild>
             <TabButton name="appuntamenti" />
           </TabTrigger>
           <TabTrigger name="impostazioni" href="/impostazioni" asChild>

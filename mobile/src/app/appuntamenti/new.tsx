@@ -87,7 +87,7 @@ export default function NuovoAppuntamentoScreen() {
       createdAt: new Date().toISOString(),
     };
     addAppointment(appointment);
-    router.replace('/appuntamenti');
+    router.replace('/appuntamenti/index');
   }
 
   return (
