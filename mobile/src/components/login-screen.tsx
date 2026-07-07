@@ -1,0 +1,151 @@
+import { useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Card } from './card';
+import { ScreenBackground } from './screen-background';
+import { ThemedText } from './themed-text';
+import { ThemedTextInput } from './themed-text-input';
+
+import { APP_NAME } from '@/constants/app-info';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/store/auth-store';
+import { useClientStore } from '@/store/client-store';
+
+// Login locale: confronta le credenziali con gli account salvati in
+// client-store (creati dal coach). Nessun server dietro — vedi
+// docs/DECISIONS.md per i limiti reali di questa autenticazione e il percorso
+// previsto verso un backend/auth vero. Il testo in UI resta volutamente
+// discorsivo: i dettagli tecnici restano in docs/report, non in questa schermata.
+export function LoginScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const accounts = useClientStore((s) => s.accounts);
+  const loginAsClient = useAuthStore((s) => s.loginAsClient);
+  const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  function handleLogin() {
+    const normalized = identifier.trim().toLowerCase();
+    if (!normalized || !password) {
+      setError('Inserisci username/email e password.');
+      return;
+    }
+    const account = accounts.find(
+      (a) =>
+        (a.username.toLowerCase() === normalized || a.email.toLowerCase() === normalized) &&
+        a.temporaryPassword === password
+    );
+    if (!account) {
+      setError('Credenziali non valide. Controlla username/email e password.');
+      return;
+    }
+    setError(null);
+    loginAsClient(account.clientId);
+  }
+
+  return (
+    <ScreenBackground>
+    <ScrollView
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five, paddingBottom: Spacing.six },
+      ]}>
+      <View style={styles.titleBlock}>
+        <ThemedText type="title" style={styles.title}>
+          {APP_NAME}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Accedi come cliente o come coach
+        </ThemedText>
+      </View>
+
+      <Card style={styles.form}>
+        <ThemedText type="smallBold">Accesso cliente</ThemedText>
+        <ThemedTextInput
+          placeholder="Username o email"
+          autoCapitalize="none"
+          value={identifier}
+          onChangeText={setIdentifier}
+        />
+        <ThemedTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+        {error && (
+          <ThemedText type="small" themeColor="statusExpired">
+            {error}
+          </ThemedText>
+        )}
+        <Pressable onPress={handleLogin}>
+          <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+            <ThemedText type="smallBold" themeColor="onPrimary">
+              Accedi
+            </ThemedText>
+          </View>
+        </Pressable>
+        <ThemedText type="small" themeColor="textSecondary">
+          Puoi provare l'accesso con: marco.bianchi / Forza4821!
+        </ThemedText>
+      </Card>
+
+      <View style={styles.divider}>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+        <ThemedText type="small" themeColor="textSecondary">
+          oppure
+        </ThemedText>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+      </View>
+
+      <Pressable onPress={loginAsCoach}>
+        <View style={[styles.coachButton, { borderColor: theme.primary }]}>
+          <ThemedText type="smallBold" style={{ color: theme.primary }}>
+            Entra come Coach
+          </ThemedText>
+        </View>
+      </Pressable>
+    </ScrollView>
+    </ScreenBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
+    flexGrow: 1,
+  },
+  titleBlock: {
+    gap: 4,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '800',
+  },
+  form: {
+    gap: Spacing.two,
+  },
+  primaryButton: {
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    marginTop: Spacing.one,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  coachButton: {
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+  },
+});

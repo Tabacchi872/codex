@@ -1,0 +1,24 @@
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+
+# impeccable-hook-ignore-start src
+src/.impeccable/hook.cache.json
+src/.impeccable/hook.pending.json
+src/.impeccable/config.local.json
+# impeccable-hook-ignore-end src
+
+# impeccable-hook-ignore-start .
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/config.local.json
+# impeccable-hook-ignore-end .
+
+# impeccable-hook-ignore-start src/app
+src/app/.impeccable/hook.cache.json
+src/app/.impeccable/hook.pending.json
+src/app/.impeccable/config.local.json
+# impeccable-hook-ignore-end src/app
