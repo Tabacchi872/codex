@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { SubscriptionPackage } from '@/types/subscription';
+import { normalizeSubscriptionStoredStatus, type SubscriptionPackage } from '@/types/subscription';
 
 // PERSISTENZA LOCALE (stesso limite degli altri store, vedi client-store.ts):
 // gli abbonamenti vivono solo su questo dispositivo/browser, AsyncStorage,
@@ -29,20 +29,28 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
 
-      addSubscription: (subscription) => set((s) => ({ subscriptions: [...s.subscriptions, subscription] })),
+      addSubscription: (subscription) =>
+        set((s) => ({ subscriptions: [...s.subscriptions, normalizeSubscriptionStoredStatus(subscription)] })),
 
       updateSubscription: (subscription) =>
         set((s) => ({
-          subscriptions: s.subscriptions.map((sub) => (sub.id === subscription.id ? subscription : sub)),
+          subscriptions: s.subscriptions.map((sub) =>
+            sub.id === subscription.id ? normalizeSubscriptionStoredStatus(subscription) : sub
+          ),
         })),
 
       incrementCompletedWorkouts: (subscriptionId) =>
         set((s) => ({
-          subscriptions: s.subscriptions.map((sub) =>
-            sub.id === subscriptionId
-              ? { ...sub, completedWorkouts: sub.completedWorkouts + 1, updatedAt: new Date().toISOString() }
-              : sub
-          ),
+          subscriptions: s.subscriptions.map((sub) => {
+            if (sub.id !== subscriptionId) return sub;
+
+            const completedWorkouts = sub.completedWorkouts + 1;
+            return normalizeSubscriptionStoredStatus({
+              ...sub,
+              completedWorkouts,
+              updatedAt: new Date().toISOString(),
+            });
+          }),
         })),
     }),
     {

@@ -11,18 +11,18 @@ import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
-import { getClientActivePlan, getClientStatus } from '@/lib/client-status';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
-import { useTrainingStore } from '@/store/training-store';
+import { useSubscriptionStore } from '@/store/subscription-store';
+import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
 export default function ClientiListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const isCoach = useAuthStore((s) => s.currentRole !== 'client');
 
   if (!isCoach) {
@@ -79,8 +79,8 @@ export default function ClientiListScreen() {
       }
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       renderItem={({ item }) => {
-        const plan = getClientActivePlan(workoutPlans, item.id);
-        const status = getClientStatus(workoutPlans, item.id);
+        const subscription = getCurrentSubscription(subscriptions, item.id);
+        const status = computeSubscriptionStatus(subscription);
         return (
           <Pressable onPress={() => router.push(`/clienti/${item.id}`)}>
             <Card style={styles.row}>
@@ -89,7 +89,7 @@ export default function ClientiListScreen() {
                   {clientFullName(item)}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {plan ? plan.name : 'Nessuna scheda assegnata'}
+                  {subscription ? subscription.packageName : 'Nessun abbonamento'}
                 </ThemedText>
               </View>
               <StatusDot status={status} />

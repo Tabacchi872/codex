@@ -23,7 +23,11 @@ import { useTrainingStore } from '@/store/training-store';
 import { APPOINTMENT_TYPE_LABEL } from '@/types/appointment';
 import { CLIENT_STATUS_LABEL, type Client, type ClientAccount, type ClientStatus } from '@/types/client';
 import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
-import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
+import {
+  COMPUTED_SUBSCRIPTION_STATUS_LABEL,
+  computeSubscriptionStatus,
+  getCurrentSubscription,
+} from '@/types/subscription';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
 
@@ -61,15 +65,10 @@ export default function ClienteDettaglioScreen() {
   }
 
   const sessions = getClientPlans(workoutPlans, cliente.id);
-  const activeSubscription = subscriptions.find((s) => s.clientId === cliente.id && s.status === 'active');
-  const clientSubscriptions = subscriptions
-    .filter((s) => s.clientId === cliente.id)
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  // Sempre il più rilevante: quello attivo se esiste, altrimenti il più recente
-  // per data di inizio. Prima si mostrava SOLO se `status === 'active'`: cambiare
-  // stato (es. a "In pausa"/"Completato") faceva sparire ogni informazione,
-  // dando l'impressione che il salvataggio non fosse avvenuto — vedi docs/BUGS.md.
-  const displaySubscription = activeSubscription ?? clientSubscriptions[0];
+  const displaySubscription = getCurrentSubscription(subscriptions, cliente.id);
+  const displaySubscriptionStatus = computeSubscriptionStatus(displaySubscription);
+  // Sempre lo stesso abbonamento scelto dalla logica condivisa: corrente se valido,
+  // altrimenti il più recente, così lista e dettaglio non divergono.
   const clientAppointments = appointments
     .filter((a) => a.clientId === cliente.id && a.status !== 'cancelled')
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
@@ -159,8 +158,14 @@ export default function ClienteDettaglioScreen() {
             <View style={styles.sectionHeaderRow}>
               <ThemedText
                 type="smallBold"
-                themeColor={displaySubscription.status === 'active' ? 'statusActive' : 'textSecondary'}>
-                {SUBSCRIPTION_STATUS_LABEL[displaySubscription.status]}
+                themeColor={
+                  displaySubscriptionStatus === 'active'
+                    ? 'statusActive'
+                    : displaySubscriptionStatus === 'expiring'
+                      ? 'statusWarning'
+                      : 'statusExpired'
+                }>
+                {COMPUTED_SUBSCRIPTION_STATUS_LABEL[displaySubscriptionStatus]}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 Inizio {formatDayMonth(displaySubscription.startDate)}
