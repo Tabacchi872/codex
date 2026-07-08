@@ -21,7 +21,7 @@ Il SQL eseguibile e in `docs/SUPABASE_SCHEMA.sql`. Questa sezione e il file SQL 
 - `plans`: `id uuid primary key`, `code`, `name`, `price_monthly`, `price_yearly`, `max_clients`, `features jsonb`, `is_active`, `created_at`, `updated_at`.
 - `coach_billing`: `id uuid primary key`, `coach_id references profiles(id)`, `plan_id references plans(id)`, `status check in ('trial','active','past_due','canceled','blocked')`, `current_period_start`, `current_period_end`, `cancel_at_period_end`, `provider`, `provider_customer_id`, `provider_subscription_id`, `created_at`, `updated_at`.
 - `payment_events`: `id uuid primary key`, `coach_id references profiles(id)`, `provider`, `event_type`, `provider_event_id`, `payload jsonb`, `processed_at`, `created_at`.
-- `invoices`: `id uuid primary key`, `coach_id references profiles(id)`, `billing_profile_id references billing_profiles(id)`, `invoice_number`, `status`, importi in centesimi, aliquota indicativa, periodo, riferimenti pagamento, stato SdI, `created_at`, `updated_at`.
+- `invoices`: `id uuid primary key`, `coach_id references profiles(id)`, `billing_profile_id references billing_profiles(id)`, `invoice_number`, `status`, importi in centesimi, aliquota indicativa, periodo, riferimenti pagamento, stato SdI, `pdf_url`, `xml_url`, `created_at`, `updated_at`.
 - `invoice_items`: `id uuid primary key`, `invoice_id references invoices(id)`, `description`, `quantity`, `unit_amount_cents`, `tax_rate_basis_points`, `total_cents`, `sort_order`, `created_at`, `updated_at`.
 - `subscriptions`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `name`, `start_date`, `end_date`, `total_sessions`, `used_sessions`, `status`, `created_at`, `updated_at`.
 - `appointments`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `title`, `description`, `start_at`, `end_at`, `status`, `created_at`, `updated_at`.
@@ -53,6 +53,15 @@ Le policy in `docs/SUPABASE_SCHEMA.sql` sono una base da validare prima della pr
 - Pagamenti mobile Apple/Google da gestire e riconciliare separatamente.
 - Pagamenti web Stripe da collegare dopo, con webhook e riconciliazione prima dell'emissione.
 - Calcoli fiscali, numerazione ufficiale, invio SdI, conservazione sostitutiva e storno devono essere implementati con provider e validazione fiscale prima della produzione.
+
+## Email future (Supabase Auth)
+
+Nessuna email viene inviata ora: login/registrazione restano locali (AsyncStorage), senza SMTP/provider collegato. Quando Supabase Auth sara' attivato, questi flussi email sono gia' previsti e andranno configurati (template + provider SMTP in dashboard Supabase, o provider esterno tipo Resend/Postmark dietro Auth):
+
+- **Conferma registrazione**: email di verifica indirizzo all'iscrizione di coach e cliente (oggi l'account e' attivo subito, senza verifica).
+- **Reset password**: link "Password dimenticata" in login (oggi presente ma disabilitato in UI) verra' collegato al flusso `resetPasswordForEmail` di Supabase Auth.
+- **Invito cliente**: email al cliente quando il coach lo registra/collega (percorso alternativo alla condivisione manuale del codice coach), utile quando il coach crea l'account per conto del cliente invece che il cliente si registri da solo.
+- **Conferma cambio email**: verifica del nuovo indirizzo quando un coach o cliente cambia l'email di accesso.
 
 ## Cosa manca per collegare Supabase reale
 
@@ -134,7 +143,7 @@ Campi principali: `coach_id uuid primary key references profiles(id)`, `plan_id 
 
 Testate fattura preparate per automazione futura. Non implica emissione reale.
 
-Campi principali: `id uuid primary key`, `coach_id uuid references profiles(id)`, `billing_profile_id uuid references billing_profiles(id)`, `invoice_number text unique`, `status text check in ('draft','ready','issued','void','paid')`, `currency text`, `subtotal_cents integer`, `tax_rate_basis_points integer`, `tax_cents integer`, `total_cents integer`, `issued_at timestamptz`, `due_at timestamptz`, `period_start date`, `period_end date`, `payment_provider text`, `payment_reference text`, `sdi_status text`, `pdf_url text`, `notes text`, `created_at timestamptz`, `updated_at timestamptz`.
+Campi principali: `id uuid primary key`, `coach_id uuid references profiles(id)`, `billing_profile_id uuid references billing_profiles(id)`, `invoice_number text unique`, `status text check in ('draft','ready','issued','void','paid')`, `currency text`, `subtotal_cents integer`, `tax_rate_basis_points integer`, `tax_cents integer`, `total_cents integer`, `issued_at timestamptz`, `due_at timestamptz`, `period_start date`, `period_end date`, `payment_provider text`, `payment_reference text`, `sdi_status text`, `pdf_url text`, `xml_url text`, `notes text`, `created_at timestamptz`, `updated_at timestamptz`.
 
 ### invoice_items
 

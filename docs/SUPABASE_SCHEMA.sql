@@ -158,6 +158,7 @@ create table if not exists public.invoices (
   payment_reference text,
   sdi_status text,
   pdf_url text,
+  xml_url text,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

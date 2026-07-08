@@ -36,6 +36,7 @@ export function CoachRegistrationScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [subjectType, setSubjectType] = useState<CoachBillingSubjectType>('freelancer');
@@ -58,6 +59,10 @@ export function CoachRegistrationScreen() {
     const normalizedEmail = email.trim().toLowerCase();
     if (!fullName.trim() || !normalizedEmail || password.length < 6) {
       setError('Inserisci nome, email e una password di almeno 6 caratteri.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Le password non coincidono.');
       return;
     }
     if (!legalName.trim() || !billingEmail.trim() || !country.trim()) {
@@ -137,7 +142,7 @@ export function CoachRegistrationScreen() {
         <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five }]}>
           <Card style={styles.form}>
             <ThemedText type="title" style={styles.title}>
-              Codice coach
+              Il tuo codice coach
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               Condividi questo codice con i tuoi clienti per consentire la registrazione.
@@ -181,6 +186,9 @@ export function CoachRegistrationScreen() {
           </Field>
           <Field label="Password">
             <ThemedTextInput value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
+          </Field>
+          <Field label="Conferma password">
+            <ThemedTextInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Ripeti password" secureTextEntry />
           </Field>
           <Field label="Telefono opzionale">
             <ThemedTextInput value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
