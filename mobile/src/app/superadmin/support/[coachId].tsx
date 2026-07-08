@@ -46,7 +46,7 @@ export default function SuperadminCoachSupportDetail() {
       <SuperadminShell title="Chat coach" description="Conversazione non trovata." contentStyle={styles.shellContent}>
         <Card style={styles.card}>
           <ThemedText type="smallBold">Coach non trovato</ThemedText>
-          <Pressable onPress={() => router.push('/superadmin/support' as Href)}>
+          <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8}>
             <ThemedText type="smallBold" style={{ color: theme.primary }}>
               Torna al supporto
             </ThemedText>
@@ -61,7 +61,7 @@ export default function SuperadminCoachSupportDetail() {
   return (
     <SuperadminShell title={coach.name} description={coach.email} contentStyle={styles.shellContent}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
-        <Pressable onPress={() => router.push('/superadmin/support' as Href)} style={styles.backButton}>
+        <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8} style={styles.backButton}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Indietro
           </ThemedText>
@@ -85,7 +85,7 @@ export default function SuperadminCoachSupportDetail() {
             onChangeText={setDraft}
             multiline
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled}>
+          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
             <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.disabled]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
                 Invia
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: 40,
     paddingVertical: Spacing.one,
   },
   messagesCard: {
@@ -194,6 +195,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     borderRadius: Radius.md,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },

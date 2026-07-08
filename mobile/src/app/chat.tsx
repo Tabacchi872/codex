@@ -143,6 +143,7 @@ export default function ChatScreen() {
       <CoachClientSelector
         clients={clientsWithoutConversation}
         insetsTop={insets.top}
+        insetsBottom={insets.bottom}
         onCancel={() => setIsSelectingClient(false)}
         onSelect={handleOpenConversation}
       />
@@ -154,6 +155,7 @@ export default function ChatScreen() {
       <CoachConversationList
         conversations={conversations}
         insetsTop={insets.top}
+        insetsBottom={insets.bottom}
         onNewConversation={() => setIsSelectingClient(true)}
         onSelect={handleOpenConversation}
       />
@@ -175,7 +177,7 @@ export default function ChatScreen() {
           ListHeaderComponent={
             <View style={styles.header}>
               {isCoach && (
-                <Pressable onPress={() => setSelectedCoachClientId(null)} style={styles.backButton}>
+                <Pressable onPress={() => setSelectedCoachClientId(null)} hitSlop={8} style={styles.backButton}>
                   <ThemedText type="smallBold" themeColor="textSecondary">
                     Indietro
                   </ThemedText>
@@ -210,7 +212,7 @@ export default function ChatScreen() {
             onChangeText={setDraft}
             multiline
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled}>
+          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
             <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.sendButtonDisabled]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
                 Invia
@@ -226,11 +228,13 @@ export default function ChatScreen() {
 function CoachConversationList({
   conversations,
   insetsTop,
+  insetsBottom,
   onNewConversation,
   onSelect,
 }: {
   conversations: CoachConversation[];
   insetsTop: number;
+  insetsBottom: number;
   onNewConversation: () => void;
   onSelect: (clientId: string) => void;
 }) {
@@ -243,14 +247,17 @@ function CoachConversationList({
         keyExtractor={(item) => item.client.id}
         contentContainerStyle={[
           styles.list,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three },
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
+            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+          },
         ]}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             <ThemedText type="title" style={styles.title}>
               Messaggi
             </ThemedText>
-            <Pressable onPress={onNewConversation} accessibilityLabel="Nuova conversazione">
+            <Pressable onPress={onNewConversation} hitSlop={8} accessibilityLabel="Nuova conversazione">
               <View style={[styles.addButton, { backgroundColor: theme.primary }]}>
                 <ThemedText type="title" themeColor="onPrimary" style={styles.addButtonText}>
                   +
@@ -268,7 +275,7 @@ function CoachConversationList({
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => onSelect(item.client.id)}>
+          <Pressable onPress={() => onSelect(item.client.id)} hitSlop={4}>
             <View style={[styles.conversationRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <View style={styles.conversationMain}>
                 <View style={styles.conversationTitleRow}>
@@ -295,11 +302,13 @@ function CoachConversationList({
 function CoachClientSelector({
   clients,
   insetsTop,
+  insetsBottom,
   onCancel,
   onSelect,
 }: {
   clients: Client[];
   insetsTop: number;
+  insetsBottom: number;
   onCancel: () => void;
   onSelect: (clientId: string) => void;
 }) {
@@ -312,11 +321,14 @@ function CoachClientSelector({
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.list,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three },
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
+            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+          },
         ]}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Pressable onPress={onCancel} style={styles.backButton}>
+            <Pressable onPress={onCancel} hitSlop={8} style={styles.backButton}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Annulla
               </ThemedText>
@@ -335,7 +347,7 @@ function CoachClientSelector({
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => onSelect(item.id)}>
+          <Pressable onPress={() => onSelect(item.id)} hitSlop={4}>
             <View style={[styles.clientRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <ThemedText type="smallBold">{clientFullName(item)}</ThemedText>
             </View>
@@ -404,6 +416,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: 40,
     paddingVertical: Spacing.one,
   },
   addButton: {
@@ -441,6 +454,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
     justifyContent: 'space-between',
+    minWidth: 0,
   },
   conversationName: {
     flex: 1,
@@ -448,6 +462,7 @@ const styles = StyleSheet.create({
   clientRow: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
     padding: Spacing.three,
   },
   unreadBadge: {
@@ -496,8 +511,10 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     borderRadius: Radius.md,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    justifyContent: 'center',
   },
   sendButtonDisabled: {
     opacity: 0.5,

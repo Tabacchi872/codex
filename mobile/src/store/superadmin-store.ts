@@ -1,5 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { generateCoachCode, normalizeCoachCode } from '@/lib/coach-code';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import type {
   AppPlanCode,
@@ -82,6 +85,23 @@ const demoCoaches: DemoCoachAccount[] = [
     name: 'Giulia Ferri',
     email: 'giulia.ferri@fitcoach.it',
     phone: '+39 333 100 2000',
+    businessName: 'GF Coaching',
+    billingProfile: {
+      subjectType: 'freelancer',
+      legalName: 'Giulia Ferri',
+      vatNumber: '12345678901',
+      fiscalCode: 'FRRGLI90A41H501X',
+      address: 'Via Roma 10',
+      postalCode: '00100',
+      city: 'Roma',
+      province: 'RM',
+      country: 'Italia',
+      pec: 'giulia.ferri@pec.it',
+      sdiCode: '0000000',
+      billingEmail: 'fatture@fitcoach.it',
+    },
+    coachCode: 'FC-8KQ4-MR2P',
+    coachCodeActive: true,
     planCode: 'pro',
     billingStatus: 'active',
     clientsUsed: 22,
@@ -94,6 +114,22 @@ const demoCoaches: DemoCoachAccount[] = [
     name: 'Marco Rinaldi',
     email: 'marco.rinaldi@fitcoach.it',
     phone: '+39 333 100 2001',
+    businessName: 'Rinaldi Performance',
+    billingProfile: {
+      subjectType: 'sole_proprietorship',
+      legalName: 'Rinaldi Performance di Marco Rinaldi',
+      vatNumber: '10987654321',
+      fiscalCode: 'RNLMRC88B12F205K',
+      address: 'Corso Milano 21',
+      postalCode: '20100',
+      city: 'Milano',
+      province: 'MI',
+      country: 'Italia',
+      sdiCode: '0000000',
+      billingEmail: 'amministrazione@rinaldiperformance.it',
+    },
+    coachCode: 'FC-5VHD-9NTA',
+    coachCodeActive: true,
     planCode: 'starter',
     billingStatus: 'trial',
     clientsUsed: 6,
@@ -106,6 +142,22 @@ const demoCoaches: DemoCoachAccount[] = [
     name: 'Sara Conti',
     email: 'sara.conti@fitcoach.it',
     phone: '+39 333 100 2002',
+    businessName: 'Sara Conti Studio',
+    billingProfile: {
+      subjectType: 'company',
+      legalName: 'Sara Conti Studio SRL',
+      vatNumber: '13579246801',
+      fiscalCode: '13579246801',
+      address: 'Via Torino 5',
+      postalCode: '10100',
+      city: 'Torino',
+      province: 'TO',
+      country: 'Italia',
+      pec: 'saracontistudio@pec.it',
+      billingEmail: 'billing@saracontistudio.it',
+    },
+    coachCode: 'FC-P7LM-42QK',
+    coachCodeActive: true,
     planCode: 'studio',
     billingStatus: 'past_due',
     clientsUsed: 64,
@@ -117,6 +169,8 @@ const demoCoaches: DemoCoachAccount[] = [
     id: 'coach_demo_4',
     name: 'Luca Moretti',
     email: 'luca.moretti@fitcoach.it',
+    coachCode: 'FC-Z6RC-83HX',
+    coachCodeActive: false,
     planCode: 'free',
     billingStatus: 'blocked',
     clientsUsed: 3,
@@ -127,10 +181,10 @@ const demoCoaches: DemoCoachAccount[] = [
 ];
 
 const demoCoachClients: DemoCoachClient[] = [
-  { id: 'client_demo_1', coachId: 'coach_demo_1', name: 'Anna Rossi', contact: 'anna.rossi@email.it', status: 'active', createdAt: '2026-06-01' },
-  { id: 'client_demo_2', coachId: 'coach_demo_1', name: 'Davide Neri', contact: '+39 320 111 2200', status: 'active', createdAt: '2026-06-10' },
-  { id: 'client_demo_3', coachId: 'coach_demo_2', name: 'Elena Bianchi', contact: 'elena.bianchi@email.it', status: 'trial', createdAt: '2026-07-05' },
-  { id: 'client_demo_4', coachId: 'coach_demo_3', name: 'Matteo Gallo', contact: '+39 320 111 2201', status: 'past_due', createdAt: '2026-05-28' },
+  { id: 'client_demo_1', coachId: 'coach_demo_1', name: 'Anna Rossi', contact: 'anna.rossi@email.it', status: 'active', createdAt: '2026-06-01', linkedByCode: 'FC-8KQ4-MR2P' },
+  { id: 'client_demo_2', coachId: 'coach_demo_1', name: 'Davide Neri', contact: '+39 320 111 2200', status: 'active', createdAt: '2026-06-10', linkedByCode: 'FC-8KQ4-MR2P' },
+  { id: 'client_demo_3', coachId: 'coach_demo_2', name: 'Elena Bianchi', contact: 'elena.bianchi@email.it', status: 'trial', createdAt: '2026-07-05', linkedByCode: 'FC-5VHD-9NTA' },
+  { id: 'client_demo_4', coachId: 'coach_demo_3', name: 'Matteo Gallo', contact: '+39 320 111 2201', status: 'past_due', createdAt: '2026-05-28', linkedByCode: 'FC-P7LM-42QK' },
 ];
 
 const demoPaymentEvents: DemoPaymentEvent[] = [
@@ -205,8 +259,18 @@ type SuperadminState = {
   paymentEvents: DemoPaymentEvent[];
   coachSupportMessages: CoachSupportMessage[];
   notifications: SuperadminNotification[];
-  createCoach: (coach: Omit<DemoCoachAccount, 'id' | 'clientsUsed' | 'blocked'> & { clientsUsed?: number }) => DemoCoachAccount;
+  createCoach: (
+    coach: Omit<DemoCoachAccount, 'id' | 'clientsUsed' | 'blocked' | 'coachCode' | 'coachCodeActive'> & {
+      clientsUsed?: number;
+      coachCode?: string;
+      coachCodeActive?: boolean;
+    },
+  ) => DemoCoachAccount;
   updateCoach: (coachId: string, patch: Partial<Omit<DemoCoachAccount, 'id'>>) => void;
+  addCoachClient: (client: DemoCoachClient) => void;
+  findCoachByCode: (code: string) => DemoCoachAccount | undefined;
+  regenerateCoachCode: (coachId: string) => string | null;
+  setCoachCodeActive: (coachId: string, active: boolean) => void;
   toggleCoachBlocked: (coachId: string) => void;
   changeCoachPlan: (coachId: string, planCode: AppPlanCode) => void;
   updatePlan: (planCode: AppPlanCode, patch: Partial<DemoAppPlan>) => void;
@@ -220,7 +284,13 @@ type SuperadminState = {
 
 function normalizeCoach(coach: DemoCoachAccount): DemoCoachAccount {
   const blocked = coach.billingStatus === 'blocked';
-  return { ...coach, blocked, billingStatus: blocked ? 'blocked' : coach.billingStatus };
+  return {
+    ...coach,
+    coachCode: normalizeCoachCode(coach.coachCode),
+    coachCodeActive: coach.coachCodeActive ?? true,
+    blocked,
+    billingStatus: blocked ? 'blocked' : coach.billingStatus,
+  };
 }
 
 function createNotification(input: Omit<SuperadminNotification, 'id' | 'createdAt' | 'read'>): SuperadminNotification {
@@ -348,7 +418,9 @@ function buildCoachNotifications(
   return notifications;
 }
 
-export const useSuperadminStore = create<SuperadminState>()((set) => ({
+export const useSuperadminStore = create<SuperadminState>()(
+  persist(
+    (set, get) => ({
   coaches: demoCoaches,
   plans: demoPlans,
   coachClients: demoCoachClients,
@@ -360,6 +432,8 @@ export const useSuperadminStore = create<SuperadminState>()((set) => ({
       id: `coach_demo_${Date.now()}`,
       clientsUsed: coachInput.clientsUsed ?? 0,
       blocked: coachInput.billingStatus === 'blocked',
+      coachCode: coachInput.coachCode || generateCoachCode(get().coaches.map((item) => item.coachCode)),
+      coachCodeActive: coachInput.coachCodeActive ?? true,
       ...coachInput,
     });
     set((state) => ({
@@ -378,6 +452,33 @@ export const useSuperadminStore = create<SuperadminState>()((set) => ({
         notifications: [...buildCoachNotifications(previous, next, state.plans), ...state.notifications],
       };
     }),
+  addCoachClient: (client) =>
+    set((state) => ({
+      coachClients: [...state.coachClients, client],
+      coaches: state.coaches.map((coach) =>
+        coach.id === client.coachId ? { ...coach, clientsUsed: coach.clientsUsed + 1 } : coach,
+      ),
+    })),
+  findCoachByCode: (code) => {
+    const normalizedCode = normalizeCoachCode(code);
+    return get().coaches.find((coach) => normalizeCoachCode(coach.coachCode) === normalizedCode);
+  },
+  regenerateCoachCode: (coachId) => {
+    const nextCode = generateCoachCode(get().coaches.filter((coach) => coach.id !== coachId).map((coach) => coach.coachCode));
+    let changed = false;
+    set((state) => ({
+      coaches: state.coaches.map((coach) => {
+        if (coach.id !== coachId) return coach;
+        changed = true;
+        return { ...coach, coachCode: nextCode, coachCodeActive: true };
+      }),
+    }));
+    return changed ? nextCode : null;
+  },
+  setCoachCodeActive: (coachId, active) =>
+    set((state) => ({
+      coaches: state.coaches.map((coach) => (coach.id === coachId ? { ...coach, coachCodeActive: active } : coach)),
+    })),
   toggleCoachBlocked: (coachId) =>
     set((state) => {
       const previous = state.coaches.find((coach) => coach.id === coachId);
@@ -499,4 +600,18 @@ export const useSuperadminStore = create<SuperadminState>()((set) => ({
       );
       return changed ? { coachSupportMessages, notifications } : { notifications };
     }),
-}));
+    }),
+    {
+      name: 'coachdesk-superadmin-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        coaches: state.coaches,
+        plans: state.plans,
+        coachClients: state.coachClients,
+        paymentEvents: state.paymentEvents,
+        coachSupportMessages: state.coachSupportMessages,
+        notifications: state.notifications,
+      }),
+    },
+  ),
+);

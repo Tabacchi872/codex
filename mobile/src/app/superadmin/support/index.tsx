@@ -34,6 +34,7 @@ export default function SuperadminSupport() {
         conversations.map((conversation) => (
           <Pressable
             key={conversation.coach.id}
+            hitSlop={4}
             style={styles.conversationLink}
             onPress={() =>
               router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } })

@@ -54,7 +54,7 @@ export default function SuperadminPlanDetail() {
           <ThemedText type="small" themeColor="textSecondary">
             Il piano richiesto non e' disponibile.
           </ThemedText>
-          <Pressable onPress={() => router.replace('/superadmin/plans' as Href)} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={() => router.replace('/superadmin/plans' as Href)} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
               Torna ai piani
             </ThemedText>
@@ -125,6 +125,7 @@ export default function SuperadminPlanDetail() {
                 <Pressable
                   key={feature}
                   onPress={() => toggleFeature(feature)}
+                  hitSlop={4}
                   style={[
                     styles.option,
                     {
@@ -143,6 +144,7 @@ export default function SuperadminPlanDetail() {
 
         <Pressable
           onPress={() => setActive((current) => !current)}
+          hitSlop={6}
           style={[styles.toggleButton, { borderColor: active ? theme.statusActive : theme.disabled }]}>
           <ThemedText type="smallBold" style={{ color: active ? theme.statusActive : theme.disabled }}>
             {active ? 'Piano attivo' : 'Piano non attivo'}
@@ -151,7 +153,7 @@ export default function SuperadminPlanDetail() {
 
         {error ? <ThemedText type="small" style={{ color: theme.statusExpired }}>{error}</ThemedText> : null}
 
-        <Pressable onPress={handleSave} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+        <Pressable onPress={handleSave} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
           <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
             Salva piano
           </ThemedText>
@@ -206,6 +208,7 @@ const styles = StyleSheet.create({
   option: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
@@ -213,12 +216,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },
   saveButton: {
     alignItems: 'center',
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },

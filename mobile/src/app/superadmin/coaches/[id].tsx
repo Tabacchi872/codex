@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -10,7 +11,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getBillingStatusLabel, isAppBillingStatus } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
-import type { AppBillingStatus, AppPlanCode, DemoCoachClient } from '@/types/superadmin';
+import type { AppBillingStatus, AppPlanCode, CoachBillingProfile, CoachBillingSubjectType, DemoCoachClient } from '@/types/superadmin';
 
 const STATUSES: AppBillingStatus[] = ['trial', 'active', 'past_due', 'canceled', 'blocked'];
 
@@ -22,6 +23,8 @@ export default function SuperadminCoachDetail() {
   const plans = useSuperadminStore((s) => s.plans);
   const clients = useSuperadminStore((s) => s.coachClients);
   const updateCoach = useSuperadminStore((s) => s.updateCoach);
+  const regenerateCoachCode = useSuperadminStore((s) => s.regenerateCoachCode);
+  const setCoachCodeActive = useSuperadminStore((s) => s.setCoachCodeActive);
   const coach = coaches.find((item) => item.id === coachIdParam);
   const plan = plans.find((item) => item.code === coach?.planCode);
   const coachClients = clients.filter((client) => client.coachId === coachIdParam);
@@ -34,6 +37,7 @@ export default function SuperadminCoachDetail() {
   const [periodStartsAt, setPeriodStartsAt] = useState('');
   const [periodEndsAt, setPeriodEndsAt] = useState('');
   const [error, setError] = useState('');
+  const [codeFeedback, setCodeFeedback] = useState('');
 
   useEffect(() => {
     if (!coach) return;
@@ -54,7 +58,7 @@ export default function SuperadminCoachDetail() {
           <ThemedText type="small" themeColor="textSecondary">
             Il coach richiesto non e' disponibile.
           </ThemedText>
-          <Pressable onPress={() => router.replace('/superadmin/coaches' as Href)} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={() => router.replace('/superadmin/coaches' as Href)} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
               Torna alla lista coach
             </ThemedText>
@@ -97,6 +101,23 @@ export default function SuperadminCoachDetail() {
     updateCoach(coachId, { billingStatus: nextStatus });
   }
 
+  async function copyCoachCode() {
+    if (!coach) return;
+    await Clipboard.setStringAsync(coach.coachCode);
+    setCodeFeedback('Codice copiato.');
+  }
+
+  function handleRegenerateCode() {
+    const nextCode = regenerateCoachCode(coachId);
+    setCodeFeedback(nextCode ? `Nuovo codice: ${nextCode}` : 'Codice non aggiornato.');
+  }
+
+  function toggleCoachCodeActive() {
+    if (!coach) return;
+    setCoachCodeActive(coachId, !coach.coachCodeActive);
+    setCodeFeedback(!coach.coachCodeActive ? 'Codice attivato.' : 'Codice disattivato.');
+  }
+
   return (
     <SuperadminShell title={coach.name} description="Dettaglio coach con modifica manuale e clienti associati.">
       <Card style={styles.card}>
@@ -111,12 +132,44 @@ export default function SuperadminCoachDetail() {
         </View>
         <View style={styles.dataGrid}>
           <Info label="Piano attivo" value={plan?.name ?? coach.planCode} />
-          <Info label="Status pagamento" value={getBillingStatusLabel(coach.billingStatus)} />
+          <Info label="Stato pagamento" value={getBillingStatusLabel(coach.billingStatus)} />
           <Info label="Clienti usati" value={String(coach.clientsUsed)} />
           <Info label="Limite clienti piano" value={effectiveClientLimit === null ? 'Illimitato' : String(effectiveClientLimit)} />
           <Info label="Scadenza app" value={coach.periodEndsAt} />
         </View>
       </Card>
+
+      <Card style={styles.card}>
+        <ThemedText type="subtitle">Codice coach</ThemedText>
+        <View style={[styles.codeBox, { borderColor: coach.coachCodeActive ? theme.primary : theme.border, backgroundColor: coach.coachCodeActive ? theme.softRed : theme.backgroundElement }]}>
+          <ThemedText type="subtitle" style={[styles.codeText, { color: coach.coachCodeActive ? theme.primary : theme.textSecondary }]}>
+            {coach.coachCode}
+          </ThemedText>
+          <ThemedText type="smallBold" themeColor={coach.coachCodeActive ? 'statusActive' : 'disabled'}>
+            {coach.coachCodeActive ? 'Codice attivo' : 'Codice disattivato'}
+          </ThemedText>
+        </View>
+        <View style={styles.codeActions}>
+          <Pressable onPress={copyCoachCode} hitSlop={6} style={[styles.outlineButton, { borderColor: theme.primary }]}>
+            <ThemedText type="smallBold" style={{ color: theme.primary }}>
+              Copia codice
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={handleRegenerateCode} hitSlop={6} style={[styles.outlineButton, { borderColor: theme.primary }]}>
+            <ThemedText type="smallBold" style={{ color: theme.primary }}>
+              Rigenera codice
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={toggleCoachCodeActive} hitSlop={6} style={[styles.outlineButton, { borderColor: coach.coachCodeActive ? theme.statusExpired : theme.statusActive }]}>
+            <ThemedText type="smallBold" style={{ color: coach.coachCodeActive ? theme.statusExpired : theme.statusActive }}>
+              {coach.coachCodeActive ? 'Disattiva codice' : 'Attiva codice'}
+            </ThemedText>
+          </Pressable>
+        </View>
+        {codeFeedback ? <ThemedText type="small" themeColor="textSecondary">{codeFeedback}</ThemedText> : null}
+      </Card>
+
+      <BillingProfileCard profile={coach.billingProfile} />
 
       <Card style={styles.card}>
         <ThemedText type="subtitle">Modifica coach</ThemedText>
@@ -128,7 +181,7 @@ export default function SuperadminCoachDetail() {
         </Field>
         <OptionGroup label="Piano" options={plans.map((item) => ({ value: item.code, label: item.name }))} value={planCode} onChange={setPlanCode} />
         <OptionGroup
-          label="Status pagamento"
+          label="Stato pagamento"
           options={STATUSES.map((status) => ({ value: status, label: getBillingStatusLabel(status) }))}
           value={billingStatus}
           onChange={setBillingStatus}
@@ -149,12 +202,12 @@ export default function SuperadminCoachDetail() {
         </View>
         {error ? <ThemedText type="small" style={{ color: theme.statusExpired }}>{error}</ThemedText> : null}
         <View style={styles.actions}>
-          <Pressable onPress={toggleBlocked} style={[styles.outlineButton, { borderColor: billingStatus === 'blocked' ? theme.statusActive : theme.statusExpired }]}>
+          <Pressable onPress={toggleBlocked} hitSlop={6} style={[styles.outlineButton, { borderColor: billingStatus === 'blocked' ? theme.statusActive : theme.statusExpired }]}>
             <ThemedText type="smallBold" style={{ color: billingStatus === 'blocked' ? theme.statusActive : theme.statusExpired }}>
               {billingStatus === 'blocked' ? 'Sblocca coach' : 'Blocca coach'}
             </ThemedText>
           </Pressable>
-          <Pressable onPress={handleSave} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={handleSave} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
               Salva modifiche
             </ThemedText>
@@ -216,6 +269,44 @@ function ClientRow({ client }: { client: DemoCoachClient }) {
   );
 }
 
+function BillingProfileCard({ profile }: { profile: CoachBillingProfile | undefined }) {
+  return (
+    <Card style={styles.card}>
+      <ThemedText type="subtitle">Dati fatturazione</ThemedText>
+      {!profile ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Dati fatturazione non ancora compilati.
+        </ThemedText>
+      ) : (
+        <View style={styles.dataGrid}>
+          <Info label="Tipo soggetto" value={getBillingSubjectLabel(profile.subjectType)} />
+          <Info label="Nome/ragione sociale" value={profile.legalName} />
+          <Info label="Email fatturazione" value={profile.billingEmail} />
+          <Info label="Nazione" value={profile.country} />
+          <Info label="Partita IVA" value={profile.vatNumber ?? '-'} />
+          <Info label="Codice fiscale" value={profile.fiscalCode ?? '-'} />
+          <Info label="Indirizzo" value={profile.address ?? '-'} />
+          <Info label="CAP" value={profile.postalCode ?? '-'} />
+          <Info label="Comune" value={profile.city ?? '-'} />
+          <Info label="Provincia" value={profile.province ?? '-'} />
+          <Info label="PEC" value={profile.pec ?? '-'} />
+          <Info label="Codice SDI" value={profile.sdiCode ?? '-'} />
+        </View>
+      )}
+    </Card>
+  );
+}
+
+function getBillingSubjectLabel(subjectType: CoachBillingSubjectType) {
+  const labels: Record<CoachBillingSubjectType, string> = {
+    private: 'Privato',
+    freelancer: 'Libero professionista',
+    sole_proprietorship: 'Ditta individuale',
+    company: 'Societa',
+  };
+  return labels[subjectType];
+}
+
 function StatusBadge({ status }: { status: AppBillingStatus }) {
   const theme = useTheme();
   const color =
@@ -255,6 +346,7 @@ function OptionGroup<T extends string>({
             <Pressable
               key={option.value}
               onPress={() => onChange(option.value)}
+              hitSlop={4}
               style={[styles.option, { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement }]}>
               <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
                 {option.label}
@@ -279,6 +371,7 @@ const styles = StyleSheet.create({
   },
   grow: {
     flex: 1,
+    minWidth: 0,
   },
   dataGrid: {
     flexDirection: 'row',
@@ -310,8 +403,24 @@ const styles = StyleSheet.create({
   option: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  codeBox: {
+    alignItems: 'center',
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.one,
+    padding: Spacing.three,
+  },
+  codeText: {
+    fontSize: 28,
+    lineHeight: 34,
+    textAlign: 'center',
+  },
+  codeActions: {
+    gap: Spacing.two,
   },
   badge: {
     borderRadius: Radius.pill,
@@ -327,12 +436,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },
   saveButton: {
     alignItems: 'center',
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },

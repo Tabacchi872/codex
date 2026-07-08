@@ -17,7 +17,7 @@ export default function SuperadminCoaches() {
   return (
     <SuperadminShell title="Coach" description="Gestione amministrativa di coach, stato pagamento e abbonamento app.">
       <Link href="/superadmin/coaches/new" asChild>
-        <Pressable style={styles.primaryButton}>
+        <Pressable hitSlop={6} style={styles.primaryButton}>
           <ThemedText type="smallBold" style={styles.primaryButtonText}>
             + Aggiungi coach
           </ThemedText>
@@ -30,6 +30,7 @@ export default function SuperadminCoaches() {
         return (
           <Pressable
             key={coach.id}
+            hitSlop={4}
             style={styles.coachLink}
             onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}>
             <CoachCard coach={coach} planName={plan?.name ?? coach.planCode} clientLimit={clientLimit} />
@@ -59,6 +60,9 @@ function CoachCard({
           <ThemedText type="small" themeColor="textSecondary">
             {coach.email}
           </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Codice {coach.coachCode}
+          </ThemedText>
         </View>
         <StatusBadge status={coach.billingStatus} />
       </View>
@@ -68,6 +72,7 @@ function CoachCard({
         <Field label="Clienti usati" value={String(coach.clientsUsed)} />
         <Field label="Limite clienti" value={clientLimit === null ? 'Illimitato' : String(clientLimit)} />
         <Field label="Scadenza periodo" value={coach.periodEndsAt} />
+        <Field label="Codice coach" value={coach.coachCodeActive ? 'Attivo' : 'Disattivato'} />
       </View>
 
       <View style={[styles.footer, { borderColor: theme.border }]}>
@@ -116,6 +121,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#C90018',
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     width: '100%',
@@ -134,6 +140,7 @@ const styles = StyleSheet.create({
   },
   coachIdentity: {
     flex: 1,
+    minWidth: 0,
   },
   dataGrid: {
     flexDirection: 'row',
@@ -146,6 +153,7 @@ const styles = StyleSheet.create({
     gap: Spacing.half,
   },
   badge: {
+    alignSelf: 'flex-start',
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',

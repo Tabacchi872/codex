@@ -17,8 +17,8 @@ export default function SuperadminPlans() {
       <Card style={styles.ruleCard}>
         <ThemedText type="smallBold">Regola prezzi</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          €{demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = €
-          {demoPlanBillingRule.extraMonthlyPricePerStep}/mese. Prorata primo mese documentata, non ancora applicata nel demo locale.
+          EUR {demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = EUR{' '}
+          {demoPlanBillingRule.extraMonthlyPricePerStep}/mese.
         </ThemedText>
       </Card>
       {plans.map((plan) => (
@@ -75,7 +75,10 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
         ))}
       </View>
 
-      <Pressable onPress={() => router.push({ pathname: '/superadmin/plans/[id]', params: { id: plan.code } })} style={[styles.editButton, { borderColor: theme.primary }]}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/superadmin/plans/[id]', params: { id: plan.code } })}
+        hitSlop={6}
+        style={[styles.editButton, { borderColor: theme.primary }]}>
         <ThemedText type="smallBold" style={{ color: theme.primary }}>
           Modifica piano
         </ThemedText>
@@ -111,6 +114,7 @@ const styles = StyleSheet.create({
   },
   nameBlock: {
     flex: 1,
+    minWidth: 0,
   },
   badge: {
     borderRadius: Radius.pill,
@@ -134,6 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },

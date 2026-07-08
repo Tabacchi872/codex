@@ -89,7 +89,7 @@ export default function ClienteHomeScreen() {
           <ThemedText type="title" style={styles.title}>
             Ciao{client ? `, ${client.firstName}` : ''}
           </ThemedText>
-          <Pressable onPress={() => router.push('/chat')}>
+          <Pressable onPress={() => router.push('/chat')} hitSlop={8}>
             <ThemedText type="small" themeColor="primary">
               💬 Chat con il coach
             </ThemedText>
@@ -112,7 +112,7 @@ export default function ClienteHomeScreen() {
               </View>
             </Card>
 
-            <Pressable onPress={() => (nextPlan ? router.push(`/schede/${nextPlan.id}`) : router.push('/workout'))}>
+            <Pressable onPress={() => (nextPlan ? router.push(`/schede/${nextPlan.id}`) : router.push('/workout'))} hitSlop={4}>
               <Card>
                 <CardHeader icon="🏋️" title="Allenamenti" showArrow />
                 {nextPlan ? (
@@ -144,7 +144,7 @@ export default function ClienteHomeScreen() {
               </Card>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/nutrizione')}>
+            <Pressable onPress={() => router.push('/nutrizione')} hitSlop={4}>
               <Card>
                 <CardHeader icon="🍎" title="Nutrizione" showArrow />
                 {nutritionPlan ? (
@@ -164,7 +164,7 @@ export default function ClienteHomeScreen() {
               </Card>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/questionario')}>
+            <Pressable onPress={() => router.push('/questionario')} hitSlop={4}>
               <Card>
                 <CardHeader icon="📋" title="Questionari" showArrow />
                 <View style={styles.checkinRow}>
@@ -181,7 +181,7 @@ export default function ClienteHomeScreen() {
                       )}
                     </View>
                   </View>
-                  <Pressable onPress={() => router.push('/questionario')}>
+                  <Pressable onPress={() => router.push('/questionario')} hitSlop={6}>
                     <View style={[styles.smallButton, { backgroundColor: theme.primary }]}>
                       <ThemedText type="small" themeColor="onPrimary" style={styles.smallButtonText}>
                         Check In
@@ -192,7 +192,7 @@ export default function ClienteHomeScreen() {
               </Card>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/prenotazioni')}>
+            <Pressable onPress={() => router.push('/prenotazioni')} hitSlop={4}>
               <Card>
                 <CardHeader icon="📅" title="Le tue prenotazioni" showArrow />
                 {nextBooking ? (
@@ -207,7 +207,7 @@ export default function ClienteHomeScreen() {
                     <ThemedText type="small" themeColor="textSecondary">
                       Le tue prossime prenotazioni saranno visualizzate qui
                     </ThemedText>
-                    <Pressable onPress={() => router.push('/prenotazioni')} style={styles.bookButtonWrap}>
+                    <Pressable onPress={() => router.push('/prenotazioni')} hitSlop={6} style={styles.bookButtonWrap}>
                       <View style={[styles.bookButton, { backgroundColor: theme.primary }]}>
                         <ThemedText type="smallBold" themeColor="onPrimary">
                           Prenota
@@ -219,7 +219,7 @@ export default function ClienteHomeScreen() {
               </Card>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/bacheca')}>
+            <Pressable onPress={() => router.push('/bacheca')} hitSlop={4}>
               <Card>
                 <CardHeader icon="📣" title="Bacheca" showArrow />
                 {relevantPosts.length === 0 ? (
@@ -294,6 +294,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    minWidth: 0,
   },
   cardIcon: {
     fontSize: 18,
@@ -327,14 +329,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     flex: 1,
+    minWidth: 0,
   },
   checkinIcon: {
     fontSize: 22,
   },
   smallButton: {
     borderRadius: Radius.sm,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    justifyContent: 'center',
   },
   smallButtonText: {
     fontWeight: '700',
@@ -345,8 +350,10 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     borderRadius: Radius.sm,
+    minHeight: 40,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
+    justifyContent: 'center',
   },
   arrow: {
     fontSize: 20,

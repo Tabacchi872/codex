@@ -91,7 +91,7 @@ function WorkoutRow({ plan, myPlans, onPress }: { plan: WorkoutPlan; myPlans: Wo
   const dayLabel = getSessionDayLabel(plan);
 
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} hitSlop={4}>
       <Card style={styles.row}>
         <View style={styles.rowLeft}>
           <View style={styles.badgeRow}>
@@ -128,7 +128,7 @@ function WorkoutRow({ plan, myPlans, onPress }: { plan: WorkoutPlan; myPlans: Wo
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   const theme = useTheme();
   return (
-    <Pressable onPress={onPress} style={styles.tabButton}>
+    <Pressable onPress={onPress} hitSlop={8} style={styles.tabButton}>
       <ThemedText type="smallBold" themeColor={active ? 'primary' : 'textSecondary'}>
         {label}
       </ThemedText>
@@ -158,6 +158,7 @@ const styles = StyleSheet.create({
   tabButton: {
     alignItems: 'center',
     gap: 6,
+    minHeight: 40,
   },
   tabIndicator: {
     height: 3,
@@ -173,12 +174,14 @@ const styles = StyleSheet.create({
   rowLeft: {
     gap: 2,
     flex: 1,
+    minWidth: 0,
     marginRight: Spacing.two,
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
     marginBottom: 2,
   },
   dayBadge: {

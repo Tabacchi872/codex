@@ -5,6 +5,7 @@ import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
 import ClientTabs from './client-tabs';
 import { LoginScreen } from './login-screen';
+import { ClientRegistrationScreen, CoachRegistrationScreen } from './registration-screens';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -61,6 +62,12 @@ export function AuthGate() {
   }
 
   if (!isAuthenticated) {
+    if (pathname === '/registrazione-coach') {
+      return <CoachRegistrationScreen />;
+    }
+    if (pathname === '/registrazione-cliente') {
+      return <ClientRegistrationScreen />;
+    }
     return <LoginScreen />;
   }
 

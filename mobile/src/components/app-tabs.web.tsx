@@ -30,7 +30,7 @@ export default function AppTabs() {
         {TABS.map((tab) => {
           const isActive = pathname === tab.path || (tab.path !== '/' && pathname.startsWith(`${tab.path}/`));
           return (
-            <Pressable key={tab.path.toString()} onPress={() => router.push(tab.path)} style={styles.tabItem}>
+            <Pressable key={tab.path.toString()} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
               <View style={[styles.activeIndicator, isActive && { backgroundColor: theme.primary }]} />
               <View>
                 <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
@@ -70,12 +70,16 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingBottom: 6,
     paddingTop: 8,
+    zIndex: 20,
+    elevation: 20,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: 5,
+    minHeight: 44,
+    minWidth: 0,
     paddingHorizontal: 2,
   },
   activeIndicator: {
@@ -105,9 +109,11 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
-    lineHeight: 14,
+    lineHeight: 13,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   tabLabelActive: {
     fontWeight: '700',

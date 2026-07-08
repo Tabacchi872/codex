@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -15,6 +16,8 @@ import type { CoachSupportMessage } from '@/types/superadmin';
 
 export default function CoachSupportScreen() {
   const currentRole = useAuthStore((s) => s.currentRole);
+  const currentCoachId = useAuthStore((s) => s.currentCoachId);
+  const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
@@ -22,8 +25,9 @@ export default function CoachSupportScreen() {
   const sendSupportMessageAsCoach = useSuperadminStore((s) => s.sendSupportMessageAsCoach);
   const markCoachSupportReadByCoach = useSuperadminStore((s) => s.markCoachSupportReadByCoach);
   const [draft, setDraft] = useState('');
+  const [copyFeedback, setCopyFeedback] = useState('');
 
-  const coach = coaches[0];
+  const coach = coaches.find((item) => item.id === currentCoachId) ?? coaches.find((item) => item.email === currentUserEmail) ?? coaches[0];
   const conversationMessages = useMemo(
     () =>
       messages
@@ -45,6 +49,12 @@ export default function CoachSupportScreen() {
     if (!coach?.id || !text) return;
     sendSupportMessageAsCoach(coach.id, text);
     setDraft('');
+  }
+
+  async function copyCoachCode() {
+    if (!coach?.coachCode) return;
+    await Clipboard.setStringAsync(coach.coachCode);
+    setCopyFeedback('Codice copiato.');
   }
 
   const sendDisabled = !draft.trim();
@@ -70,6 +80,25 @@ export default function CoachSupportScreen() {
           </View>
 
           <Card style={styles.messagesCard}>
+            <View style={[styles.codeBox, { borderColor: theme.border }]}>
+              <View style={styles.codeText}>
+                <ThemedText type="smallBold">Codice coach</ThemedText>
+                <ThemedText type="default" style={{ color: theme.primary }}>
+                  {coach.coachCode}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {coach.coachCodeActive ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
+                </ThemedText>
+              </View>
+              <Pressable onPress={copyCoachCode} hitSlop={6}>
+                <View style={[styles.copyButton, { borderColor: theme.primary }]}>
+                  <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                    Copia
+                  </ThemedText>
+                </View>
+              </Pressable>
+            </View>
+            {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
             {conversationMessages.length === 0 ? (
               <ThemedText type="small" themeColor="textSecondary">
                 Nessun messaggio ancora. Scrivi al superadmin qui sotto.
@@ -96,7 +125,7 @@ export default function CoachSupportScreen() {
             onChangeText={setDraft}
             multiline
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled}>
+          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
             <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.disabled]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
                 Invia
@@ -154,6 +183,27 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     minHeight: 320,
   },
+  codeBox: {
+    alignItems: 'center',
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: Spacing.two,
+    justifyContent: 'space-between',
+    padding: Spacing.two,
+  },
+  codeText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  copyButton: {
+    alignItems: 'center',
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+  },
   bubbleRow: {
     maxWidth: '84%',
     gap: Spacing.half,
@@ -190,8 +240,10 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     borderRadius: Radius.md,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    justifyContent: 'center',
   },
   disabled: {
     opacity: 0.5,

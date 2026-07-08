@@ -1,5 +1,5 @@
 import { Link, type Href } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { SuperadminShell } from '@/components/superadmin-shell';
@@ -13,7 +13,6 @@ export default function SuperadminDashboard() {
   const theme = useTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
   const plans = useSuperadminStore((s) => s.plans);
-  const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
 
   const totalCoaches = coaches.length;
   const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active').length;
@@ -28,20 +27,6 @@ export default function SuperadminDashboard() {
 
   return (
     <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
-      <Link href="/superadmin/notifications" asChild>
-        <Pressable style={StyleSheet.flatten([styles.notificationButton, { borderColor: theme.border }])}>
-          <ThemedText type="smallBold" style={{ color: theme.primary }}>
-            Notifiche
-          </ThemedText>
-          {unreadNotifications > 0 ? (
-            <View style={[styles.notificationBadge, { backgroundColor: theme.primary }]}>
-              <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 12, lineHeight: 16 }}>
-                {unreadNotifications > 99 ? '99+' : unreadNotifications}
-              </ThemedText>
-            </View>
-          ) : null}
-        </Pressable>
-      </Link>
       <View style={styles.grid}>
         <MetricCard label="Coach totali" value={String(totalCoaches)} />
         <MetricCard label="Coach attivi" value={String(activeCoaches)} tone="active" />
@@ -111,24 +96,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
-  },
-  notificationButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: Spacing.two,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-  },
-  notificationBadge: {
-    alignItems: 'center',
-    borderRadius: Radius.pill,
-    justifyContent: 'center',
-    minWidth: 24,
-    paddingHorizontal: Spacing.one,
-    paddingVertical: 2,
   },
   metric: {
     flexBasis: 150,

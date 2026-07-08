@@ -27,6 +27,7 @@ export default function SuperadminNotifications() {
           <Pressable
             onPress={markAllNotificationsRead}
             disabled={unreadCount === 0}
+            hitSlop={6}
             style={[styles.outlineButton, { borderColor: unreadCount > 0 ? theme.primary : theme.border, opacity: unreadCount > 0 ? 1 : 0.55 }]}>
             <ThemedText type="smallBold" style={{ color: unreadCount > 0 ? theme.primary : theme.textSecondary }}>
               Segna tutte come lette
@@ -80,7 +81,7 @@ function NotificationCard({ notification }: { notification: SuperadminNotificati
       </View>
 
       {!notification.read ? (
-        <Pressable onPress={() => markNotificationRead(notification.id)} style={[styles.readButton, { backgroundColor: theme.primary }]}>
+        <Pressable onPress={() => markNotificationRead(notification.id)} hitSlop={6} style={[styles.readButton, { backgroundColor: theme.primary }]}>
           <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
             Segna come letta
           </ThemedText>
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
@@ -175,6 +177,7 @@ const styles = StyleSheet.create({
   readButton: {
     alignItems: 'center',
     borderRadius: Radius.md,
+    minHeight: 44,
     paddingVertical: Spacing.two,
     width: '100%',
   },

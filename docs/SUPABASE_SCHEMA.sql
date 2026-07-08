@@ -36,6 +36,46 @@ create table if not exists public.coach_profiles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.billing_profiles (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null unique references public.profiles(id) on delete cascade,
+  subject_type text not null check (subject_type in ('private', 'freelancer', 'sole_proprietorship', 'company')),
+  legal_name text not null,
+  vat_number text,
+  fiscal_code text,
+  address text,
+  postal_code text,
+  city text,
+  province text,
+  country text not null,
+  pec text,
+  sdi_code text,
+  billing_email text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    country <> 'Italia'
+    or vat_number is null
+    or pec is not null
+    or sdi_code is not null
+  )
+);
+
+create table if not exists public.registration_codes (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  code text not null unique,
+  status text not null default 'active' check (status in ('active', 'disabled', 'expired')),
+  max_uses integer,
+  used_count integer not null default 0,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (max_uses is null or max_uses >= 0),
+  check (used_count >= 0),
+  check (max_uses is null or used_count <= max_uses)
+);
+
 create table if not exists public.client_profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references public.profiles(id) on delete cascade,
@@ -52,6 +92,7 @@ create table if not exists public.coach_clients (
   coach_id uuid not null references public.profiles(id) on delete cascade,
   client_id uuid not null references public.profiles(id) on delete cascade,
   status text not null default 'active',
+  linked_by_code text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (coach_id, client_id),
@@ -96,6 +137,49 @@ create table if not exists public.payment_events (
   processed_at timestamptz,
   created_at timestamptz not null default now(),
   unique (provider, provider_event_id)
+);
+
+create table if not exists public.invoices (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  billing_profile_id uuid references public.billing_profiles(id) on delete set null,
+  invoice_number text unique,
+  status text not null default 'draft' check (status in ('draft', 'ready', 'issued', 'void', 'paid')),
+  currency text not null default 'EUR',
+  subtotal_cents integer not null default 0,
+  tax_rate_basis_points integer,
+  tax_cents integer not null default 0,
+  total_cents integer not null default 0,
+  issued_at timestamptz,
+  due_at timestamptz,
+  period_start date,
+  period_end date,
+  payment_provider text,
+  payment_reference text,
+  sdi_status text,
+  pdf_url text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (subtotal_cents >= 0),
+  check (tax_cents >= 0),
+  check (total_cents >= 0)
+);
+
+create table if not exists public.invoice_items (
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid not null references public.invoices(id) on delete cascade,
+  description text not null,
+  quantity numeric(10,2) not null default 1,
+  unit_amount_cents integer not null default 0,
+  tax_rate_basis_points integer,
+  total_cents integer not null default 0,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (quantity > 0),
+  check (unit_amount_cents >= 0),
+  check (total_cents >= 0)
 );
 
 create table if not exists public.subscriptions (
@@ -158,10 +242,16 @@ create table if not exists public.push_tokens (
 
 create index if not exists profiles_role_idx on public.profiles(role);
 create index if not exists profiles_email_idx on public.profiles(lower(email));
+create index if not exists billing_profiles_coach_id_idx on public.billing_profiles(coach_id);
+create index if not exists registration_codes_coach_id_idx on public.registration_codes(coach_id);
+create index if not exists registration_codes_code_idx on public.registration_codes(code);
 create index if not exists coach_clients_coach_id_idx on public.coach_clients(coach_id);
 create index if not exists coach_clients_client_id_idx on public.coach_clients(client_id);
 create index if not exists coach_billing_coach_id_idx on public.coach_billing(coach_id);
 create index if not exists payment_events_coach_id_idx on public.payment_events(coach_id);
+create index if not exists invoices_coach_id_idx on public.invoices(coach_id);
+create index if not exists invoices_status_idx on public.invoices(status);
+create index if not exists invoice_items_invoice_id_idx on public.invoice_items(invoice_id);
 create index if not exists subscriptions_coach_client_idx on public.subscriptions(coach_id, client_id);
 create index if not exists appointments_coach_start_idx on public.appointments(coach_id, start_at);
 create index if not exists appointments_client_start_idx on public.appointments(client_id, start_at);
@@ -176,8 +266,16 @@ drop trigger if exists coach_profiles_set_updated_at on public.coach_profiles;
 create trigger coach_profiles_set_updated_at before update on public.coach_profiles
 for each row execute function public.set_updated_at();
 
+drop trigger if exists billing_profiles_set_updated_at on public.billing_profiles;
+create trigger billing_profiles_set_updated_at before update on public.billing_profiles
+for each row execute function public.set_updated_at();
+
 drop trigger if exists client_profiles_set_updated_at on public.client_profiles;
 create trigger client_profiles_set_updated_at before update on public.client_profiles
+for each row execute function public.set_updated_at();
+
+drop trigger if exists registration_codes_set_updated_at on public.registration_codes;
+create trigger registration_codes_set_updated_at before update on public.registration_codes
 for each row execute function public.set_updated_at();
 
 drop trigger if exists coach_clients_set_updated_at on public.coach_clients;
@@ -190,6 +288,14 @@ for each row execute function public.set_updated_at();
 
 drop trigger if exists coach_billing_set_updated_at on public.coach_billing;
 create trigger coach_billing_set_updated_at before update on public.coach_billing
+for each row execute function public.set_updated_at();
+
+drop trigger if exists invoices_set_updated_at on public.invoices;
+create trigger invoices_set_updated_at before update on public.invoices
+for each row execute function public.set_updated_at();
+
+drop trigger if exists invoice_items_set_updated_at on public.invoice_items;
+create trigger invoice_items_set_updated_at before update on public.invoice_items
 for each row execute function public.set_updated_at();
 
 drop trigger if exists subscriptions_set_updated_at on public.subscriptions;
@@ -206,11 +312,15 @@ for each row execute function public.set_updated_at();
 
 alter table public.profiles enable row level security;
 alter table public.coach_profiles enable row level security;
+alter table public.billing_profiles enable row level security;
 alter table public.client_profiles enable row level security;
+alter table public.registration_codes enable row level security;
 alter table public.coach_clients enable row level security;
 alter table public.plans enable row level security;
 alter table public.coach_billing enable row level security;
 alter table public.payment_events enable row level security;
+alter table public.invoices enable row level security;
+alter table public.invoice_items enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.appointments enable row level security;
 alter table public.messages enable row level security;
@@ -265,12 +375,24 @@ create policy coach_profiles_superadmin_all on public.coach_profiles
 create policy coach_profiles_owner_read_update on public.coach_profiles
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+create policy billing_profiles_superadmin_all on public.billing_profiles
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+create policy billing_profiles_coach_read_update_own on public.billing_profiles
+  for all using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+
 create policy client_profiles_superadmin_all on public.client_profiles
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy client_profiles_self_read_update on public.client_profiles
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy client_profiles_coach_for_client on public.client_profiles
   for all using (public.is_coach_for_client(user_id)) with check (public.is_coach_for_client(user_id));
+
+create policy registration_codes_superadmin_all on public.registration_codes
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+create policy registration_codes_coach_read_own on public.registration_codes
+  for select using (coach_id = auth.uid());
+create policy registration_codes_coach_update_own on public.registration_codes
+  for update using (coach_id = auth.uid()) with check (coach_id = auth.uid());
 
 create policy coach_clients_superadmin_all on public.coach_clients
   for all using (public.is_superadmin()) with check (public.is_superadmin());
@@ -293,6 +415,23 @@ create policy payment_events_superadmin_all on public.payment_events
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy payment_events_coach_read on public.payment_events
   for select using (coach_id = auth.uid());
+
+create policy invoices_superadmin_all on public.invoices
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+create policy invoices_coach_read_own on public.invoices
+  for select using (coach_id = auth.uid());
+
+create policy invoice_items_superadmin_all on public.invoice_items
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+create policy invoice_items_coach_read_own on public.invoice_items
+  for select using (
+    exists (
+      select 1
+      from public.invoices
+      where invoices.id = invoice_items.invoice_id
+        and invoices.coach_id = auth.uid()
+    )
+  );
 
 create policy subscriptions_superadmin_all on public.subscriptions
   for all using (public.is_superadmin()) with check (public.is_superadmin());
@@ -327,5 +466,11 @@ create policy push_tokens_owner_scope on public.push_tokens
 -- - Superadmin sees and manages all operational, plan, and billing tables.
 -- - Coach rows are scoped by coach_id and coach_clients; coaches cannot read other coaches by default.
 -- - Cliente rows are scoped to auth.uid() and assigned records only.
+-- - Public client signup must validate registration_codes through a controlled RPC/Edge Function.
+-- - Superadmin accounts are not publicly registrable.
 -- - Clienti do not receive policies for admin_notifications, plans writes, or coach_billing writes.
+-- - Billing profiles, invoices and invoice_items prepare future invoicing only; this schema does not emit fiscal documents.
+-- - Italy ordinary VAT is commonly 22%, but rates and regimes must be confirmed by an accountant before automation.
+-- - Italian e-invoicing through SdI must be handled by a compliant provider when applicable.
+-- - Apple/Google mobile payments and future Stripe web payments must be reconciled separately before invoice automation.
 -- - Payment/provider writes should move to service-role Edge Functions when real payments are added.

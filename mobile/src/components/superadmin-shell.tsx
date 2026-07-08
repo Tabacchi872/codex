@@ -59,7 +59,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
               </ThemedText>
             ) : null}
           </View>
-          <Pressable onPress={logout} style={[styles.logoutButton, { borderColor: theme.border }]}>
+          <Pressable onPress={logout} hitSlop={8} style={[styles.logoutButton, { borderColor: theme.border }]}>
             <ThemedText type="smallBold" themeColor="textSecondary">
               Esci
             </ThemedText>
@@ -77,11 +77,15 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
             return (
               <Link key={item.href.toString()} href={item.href} asChild>
                 <Pressable
+                  hitSlop={6}
                   style={StyleSheet.flatten([
                     styles.navItem,
                     { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement },
                   ])}>
-                  <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
+                  <ThemedText
+                    type="smallBold"
+                    numberOfLines={1}
+                    style={[styles.navLabel, { color: active ? theme.primary : theme.textSecondary }]}>
                     {item.label}
                   </ThemedText>
                   {href === '/superadmin/support' && unreadCoachSupport > 0 ? (
@@ -143,16 +147,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
+    width: '100%',
   },
   navItem: {
     alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    flexBasis: '31.5%',
     flexDirection: 'row',
+    flexGrow: 0,
     gap: Spacing.one,
-    maxWidth: '100%',
-    paddingHorizontal: Spacing.three,
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 0,
+    paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
+    position: 'relative',
+  },
+  navLabel: {
+    flexShrink: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   navBadge: {
     alignItems: 'center',
@@ -161,5 +177,8 @@ const styles = StyleSheet.create({
     minWidth: 20,
     paddingHorizontal: Spacing.one,
     paddingVertical: 2,
+    position: 'absolute',
+    right: -4,
+    top: -6,
   },
 });

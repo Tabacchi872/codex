@@ -1,17 +1,35 @@
+import * as Clipboard from 'expo-clipboard';
+import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Card } from '@/components/card';
 import { DeveloperInfoSection } from '@/components/developer-info-section';
 import { ScreenBackground } from '@/components/screen-background';
 import { SoundSettings } from '@/components/sound-settings';
 import { ThemedText } from '@/components/themed-text';
 import { ThemeSettings } from '@/components/theme-settings';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/auth-store';
+import { useSuperadminStore } from '@/store/superadmin-store';
 
 export default function ImpostazioniScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const logout = useAuthStore((s) => s.logout);
+  const currentRole = useAuthStore((s) => s.currentRole);
+  const currentCoachId = useAuthStore((s) => s.currentCoachId);
+  const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
+  const coaches = useSuperadminStore((s) => s.coaches);
+  const [copyFeedback, setCopyFeedback] = useState('');
+  const coach = coaches.find((item) => item.id === currentCoachId) ?? coaches.find((item) => item.email === currentUserEmail);
+
+  async function copyCoachCode() {
+    if (!coach?.coachCode) return;
+    await Clipboard.setStringAsync(coach.coachCode);
+    setCopyFeedback('Codice copiato.');
+  }
 
   return (
     <ScreenBackground>
@@ -35,12 +53,38 @@ export default function ImpostazioniScreen() {
       <SectionLabel>Tema</SectionLabel>
       <ThemeSettings />
 
+      {currentRole === 'coach' && coach ? (
+        <>
+          <SectionLabel>Codice coach</SectionLabel>
+          <Card style={styles.codeCard}>
+            <View style={styles.codeRow}>
+              <View style={styles.codeText}>
+                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                  {coach.coachCode}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {coach.coachCodeActive ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
+                </ThemedText>
+              </View>
+              <Pressable onPress={copyCoachCode} hitSlop={6}>
+                <View style={[styles.copyButton, { borderColor: theme.primary }]}>
+                  <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                    Copia
+                  </ThemedText>
+                </View>
+              </Pressable>
+            </View>
+            {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
+          </Card>
+        </>
+      ) : null}
+
       <SectionLabel>Timer di recupero</SectionLabel>
       <SoundSettings />
 
       <DeveloperInfoSection />
 
-      <Pressable onPress={logout}>
+      <Pressable onPress={logout} hitSlop={8} style={styles.logoutButton}>
         <ThemedText type="small" themeColor="statusExpired" style={styles.logout}>
           Esci
         </ThemedText>
@@ -75,8 +119,34 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
     letterSpacing: 0.4,
   },
+  codeCard: {
+    gap: Spacing.two,
+  },
+  codeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.two,
+    justifyContent: 'space-between',
+  },
+  codeText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  copyButton: {
+    alignItems: 'center',
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: Spacing.three,
+  },
   logout: {
     textAlign: 'center',
+  },
+  logoutButton: {
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
     marginTop: Spacing.two,
   },
 });

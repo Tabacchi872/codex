@@ -4,6 +4,23 @@ export type AppPlanCode = CoachPlanCode | (string & {});
 
 export type AppBillingStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'blocked';
 
+export type CoachBillingSubjectType = 'private' | 'freelancer' | 'sole_proprietorship' | 'company';
+
+export type CoachBillingProfile = {
+  subjectType: CoachBillingSubjectType;
+  legalName: string;
+  vatNumber?: string;
+  fiscalCode?: string;
+  address?: string;
+  postalCode?: string;
+  city?: string;
+  province?: string;
+  country: string;
+  pec?: string;
+  sdiCode?: string;
+  billingEmail: string;
+};
+
 export type SuperadminNotificationType =
   | 'coach_created'
   | 'coach_updated'
@@ -18,10 +35,12 @@ export type SuperadminNotificationType =
 export type DemoCoachClient = {
   id: string;
   coachId: string;
+  clientId?: string;
   name: string;
   contact?: string;
   status?: string;
   createdAt?: string;
+  linkedByCode?: string | null;
 };
 
 export type DemoCoachAccount = {
@@ -29,6 +48,10 @@ export type DemoCoachAccount = {
   name: string;
   email: string;
   phone?: string;
+  businessName?: string;
+  billingProfile?: CoachBillingProfile;
+  coachCode: string;
+  coachCodeActive: boolean;
   planCode: AppPlanCode;
   billingStatus: AppBillingStatus;
   clientsUsed: number;

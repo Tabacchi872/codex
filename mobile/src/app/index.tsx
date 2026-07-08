@@ -80,7 +80,7 @@ export default function DashboardScreen() {
             onPress={() => router.push('/clienti')}
           />
           <StatCard label="Scaduti" value={scaduti} color="statusExpired" onPress={() => router.push('/clienti')} />
-          <Pressable onPress={() => router.push('/appuntamenti')} style={styles.statCardWrap}>
+          <Pressable onPress={() => router.push('/appuntamenti')} hitSlop={4} style={styles.statCardWrap}>
             <Card style={styles.statCard}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
                 Prossimo appuntamento
@@ -105,7 +105,7 @@ export default function DashboardScreen() {
           Azioni rapide
         </ThemedText>
         <View style={styles.quickActions}>
-          <Pressable onPress={() => router.push('/clienti/new')} style={styles.quickActionWrap}>
+          <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={styles.quickActionWrap}>
             <View style={[styles.quickAction, styles.quickActionPrimary, { backgroundColor: theme.primary }]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
                 Nuovo cliente
@@ -134,7 +134,7 @@ function StatCard({
   color?: 'statusWarning' | 'statusExpired';
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.statCardWrap}>
+    <Pressable onPress={onPress} hitSlop={4} style={styles.statCardWrap}>
       <Card style={styles.statCard}>
         <ThemedText type="small" themeColor={color ?? 'textSecondary'} style={styles.statLabel}>
           {label}
@@ -151,7 +151,7 @@ function QuickAction({ label, onPress }: { label: string; onPress: () => void })
   const theme = useTheme();
 
   return (
-    <Pressable onPress={onPress} style={styles.quickActionWrap}>
+    <Pressable onPress={onPress} hitSlop={4} style={styles.quickActionWrap}>
       <View style={[styles.quickAction, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
         <ThemedText type="smallBold">{label}</ThemedText>
       </View>

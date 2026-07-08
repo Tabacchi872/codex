@@ -9,7 +9,7 @@ import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { buildCredentialsMessage, generateTemporaryPassword, generateUsername } from '@/lib/credentials';
 import { clientFullName } from '@/lib/client-helpers';
@@ -98,7 +98,7 @@ export default function ClienteDettaglioScreen() {
     <ScrollView
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.two, paddingBottom: Spacing.six },
+        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.two, paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
       ]}>
       <Stack.Screen options={{ title: clientFullName(cliente) }} />
 
@@ -106,7 +106,7 @@ export default function ClienteDettaglioScreen() {
         {STATUS_OPTIONS.map((option) => {
           const active = option === cliente.status;
           return (
-            <Pressable key={option} onPress={() => setClientStatus(option)}>
+            <Pressable key={option} onPress={() => setClientStatus(option)} hitSlop={6}>
               <View
                 style={[
                   styles.statusChip,
@@ -179,6 +179,7 @@ export default function ClienteDettaglioScreen() {
           </ThemedText>
         )}
         <Pressable
+          hitSlop={6}
           onPress={() =>
             displaySubscription
               ? router.push({
@@ -194,7 +195,7 @@ export default function ClienteDettaglioScreen() {
           </View>
         </Pressable>
         {displaySubscription && (
-          <Pressable onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })}>
+          <Pressable onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })} hitSlop={6}>
             <ThemedText type="small" themeColor="primary" style={styles.secondaryLink}>
               + Crea un nuovo abbonamento
             </ThemedText>
@@ -211,7 +212,7 @@ export default function ClienteDettaglioScreen() {
         ) : (
           sessions.map((session) => <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => router.push(`/schede/${session.id}`)} />)
         )}
-        <Pressable onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })}>
+        <Pressable onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })} hitSlop={6}>
           <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               + Nuova scheda
@@ -233,7 +234,7 @@ export default function ClienteDettaglioScreen() {
             Nessun appuntamento in programma.
           </ThemedText>
         )}
-        <Pressable onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })}>
+        <Pressable onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })} hitSlop={6}>
           <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               + Nuovo appuntamento
@@ -260,7 +261,7 @@ function SessionRow({ session, sessions, onPress }: { session: WorkoutPlan; sess
   const theme = useTheme();
   const status = session.sessionStatus ?? 'todo';
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} hitSlop={4}>
       <View style={[styles.sessionRow, { borderColor: theme.border }]}>
         <View style={styles.sessionRowLeft}>
           <ThemedText type="default" style={styles.sessionName}>
@@ -326,7 +327,7 @@ function CredentialsSection({
       <ThemedText type="smallBold">Credenziali cliente</ThemedText>
 
       {!account ? (
-        <Pressable onPress={onGenerate}>
+        <Pressable onPress={onGenerate} hitSlop={6}>
           <View style={[styles.generateButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               Genera credenziali di accesso
@@ -347,14 +348,14 @@ function CredentialsSection({
           </View>
 
           <View style={styles.credentialsActions}>
-            <Pressable onPress={handleCopy} style={styles.credentialActionWrap}>
+            <Pressable onPress={handleCopy} hitSlop={4} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
                 <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Copia credenziali
                 </ThemedText>
               </View>
             </Pressable>
-            <Pressable onPress={handleShare} style={styles.credentialActionWrap}>
+            <Pressable onPress={handleShare} hitSlop={4} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
                 <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Condividi credenziali
@@ -369,7 +370,7 @@ function CredentialsSection({
             </ThemedText>
           )}
 
-          <DisabledAction label="Invia via email" note="solo UI, backend email mancante" />
+          <DisabledAction label="Invia via email" note="Disponibile prossimamente" />
         </>
       )}
     </Card>
@@ -394,11 +395,13 @@ const styles = StyleSheet.create({
   },
   statusChipsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   statusChip: {
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: 7,
   },
@@ -412,15 +415,19 @@ const styles = StyleSheet.create({
   },
   planButton: {
     borderRadius: Radius.sm,
+    minHeight: 44,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.two,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
   },
   counterText: {
     fontSize: 28,
@@ -439,10 +446,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     padding: Spacing.three,
     marginBottom: Spacing.two,
+    minWidth: 0,
   },
   sessionRowLeft: {
     gap: 2,
     flex: 1,
+    minWidth: 0,
     marginRight: Spacing.two,
   },
   sessionName: {
@@ -460,8 +469,10 @@ const styles = StyleSheet.create({
   },
   generateButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.one,
   },
   credentialsBox: {
@@ -474,6 +485,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
   credentialsActions: {
     gap: Spacing.two,

@@ -52,7 +52,7 @@ export default function AltroScreen() {
 
         <Card style={styles.listCard} padded={false}>
           {MENU_ITEMS.map((item, index) => (
-            <Pressable key={item.key} onPress={() => router.push(item.href)}>
+            <Pressable key={item.key} onPress={() => router.push(item.href)} hitSlop={4}>
               <View style={[styles.row, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
                 <ThemedText style={styles.rowIcon}>{item.icon}</ThemedText>
                 <ThemedText type="default" style={styles.rowTitle}>
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+    minHeight: 52,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
@@ -93,6 +94,7 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     flex: 1,
+    minWidth: 0,
     fontWeight: '600',
   },
   arrow: {

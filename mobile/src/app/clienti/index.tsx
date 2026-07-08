@@ -70,21 +70,13 @@ export default function ClientiListScreen() {
                 {clients.length} clienti in gestione
               </ThemedText>
             </View>
-            <Pressable onPress={() => router.push('/clienti/new')}>
+            <Pressable onPress={() => router.push('/clienti/new')} hitSlop={6}>
               <View style={[styles.newButton, { backgroundColor: theme.primary }]}>
                 <ThemedText type="smallBold" themeColor="onPrimary">
                   + Nuovo cliente
                 </ThemedText>
               </View>
             </Pressable>
-            <View style={[styles.localNotice, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Salvataggio locale
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                I clienti creati qui restano su questo dispositivo/browser finche non sara attiva la sincronizzazione.
-              </ThemedText>
-            </View>
           </View>
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -92,7 +84,7 @@ export default function ClientiListScreen() {
           const subscription = getCurrentSubscription(subscriptions, item.id);
           const status = computeSubscriptionStatus(subscription);
           return (
-            <Pressable onPress={() => router.push(`/clienti/${item.id}`)}>
+            <Pressable onPress={() => router.push(`/clienti/${item.id}`)} hitSlop={4}>
               <Card style={styles.row}>
                 <View style={styles.rowHeader}>
                   <View style={styles.rowText}>
@@ -153,13 +145,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  localNotice: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    gap: 2,
   },
   row: {
     paddingVertical: Spacing.three,

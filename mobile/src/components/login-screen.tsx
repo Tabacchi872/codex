@@ -24,6 +24,7 @@ export function LoginScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const accounts = useClientStore((s) => s.accounts);
+  const coachAccounts = useAuthStore((s) => s.coachAccounts);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
   const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
   const loginAsSuperadmin = useAuthStore((s) => s.loginAsSuperadmin);
@@ -41,7 +42,7 @@ export function LoginScreen() {
     const demoUser = DEMO_USERS.find((user) => user.email === normalized && user.password === password);
     if (demoUser?.role === 'coach') {
       setError(null);
-      loginAsCoach(demoUser.email);
+      loginAsCoach(demoUser.email, demoUser.coachId);
       router.replace('/');
       return;
     }
@@ -55,6 +56,14 @@ export function LoginScreen() {
       setError(null);
       loginAsSuperadmin(demoUser.email);
       router.replace('/superadmin' as Href);
+      return;
+    }
+
+    const coachAccount = coachAccounts.find((account) => account.email.toLowerCase() === normalized && account.password === password);
+    if (coachAccount) {
+      setError(null);
+      loginAsCoach(coachAccount.email, coachAccount.coachId);
+      router.replace('/');
       return;
     }
 
@@ -104,18 +113,30 @@ export function LoginScreen() {
             {error}
           </ThemedText>
         )}
-        <Pressable onPress={handleLogin}>
+        <Pressable onPress={handleLogin} hitSlop={6}>
           <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               Accedi
             </ThemedText>
           </View>
         </Pressable>
-        <Pressable disabled>
+        <Pressable disabled hitSlop={6}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.forgotPassword}>
             Password dimenticata?
           </ThemedText>
         </Pressable>
+        <View style={styles.registerLinks}>
+          <Pressable onPress={() => router.push('/registrazione-coach' as Href)} hitSlop={6}>
+            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
+              Registrati come coach
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={() => router.push('/registrazione-cliente' as Href)} hitSlop={6}>
+            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
+              Registrati come cliente
+            </ThemedText>
+          </Pressable>
+        </View>
       </Card>
     </ScrollView>
     </ScreenBackground>
@@ -143,12 +164,20 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.one,
   },
   forgotPassword: {
     textAlign: 'center',
     opacity: 0.65,
+  },
+  registerLinks: {
+    gap: Spacing.two,
+  },
+  registerLink: {
+    textAlign: 'center',
   },
 });

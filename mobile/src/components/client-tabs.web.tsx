@@ -37,7 +37,7 @@ export default function ClientTabs() {
         {TABS.map((tab) => {
           const isActive = pathname === tab.path;
           return (
-            <Pressable key={tab.path} onPress={() => router.push(tab.path)} style={styles.tabItem}>
+            <Pressable key={tab.path} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
               <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
               <Text
                 numberOfLines={1}
@@ -69,12 +69,16 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingBottom: 6,
     paddingTop: 6,
+    zIndex: 20,
+    elevation: 20,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: 2,
+    minHeight: 44,
+    minWidth: 0,
     paddingHorizontal: 2,
   },
   tabIcon: {
@@ -82,8 +86,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
+    lineHeight: 13,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   tabLabelActive: {
     fontWeight: '700',

@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/card';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
-import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
@@ -78,22 +77,20 @@ export default function SchedeListScreen() {
               {workoutPlans.length} workout tra i tuoi clienti
             </ThemedText>
           </View>
-          <PlaceholderBanner text="Persistenza locale parziale: gli allenamenti restano salvati su questo dispositivo/browser, non ancora sincronizzati con un backend." />
-
           <View style={styles.tabRow}>
             <TabButton label="Da fare" active={tab === 'todo'} onPress={() => setTab('todo')} />
             <TabButton label="Passati" active={tab === 'past'} onPress={() => setTab('past')} />
           </View>
 
           <View style={styles.actionsRow}>
-            <Pressable onPress={() => router.push('/schede/new')} style={styles.actionButtonWrap}>
+            <Pressable onPress={() => router.push('/schede/new')} hitSlop={4} style={styles.actionButtonWrap}>
               <View style={[styles.newButton, { backgroundColor: theme.primary }]}>
                 <ThemedText type="smallBold" themeColor="onPrimary">
                   + Nuova scheda
                 </ThemedText>
               </View>
             </Pressable>
-            <Pressable onPress={() => router.push('/schede/modelli')} style={styles.actionButtonWrap}>
+            <Pressable onPress={() => router.push('/schede/modelli')} hitSlop={4} style={styles.actionButtonWrap}>
               <View style={[styles.newButtonOutline, { borderColor: theme.primary }]}>
                 <ThemedText type="smallBold" style={{ color: theme.primary }}>
                   Modelli allenamento
@@ -113,7 +110,7 @@ export default function SchedeListScreen() {
         const client = getClientById(clients, item.clientId);
         const status: WorkoutSessionStatus = item.sessionStatus ?? 'todo';
         return (
-          <Pressable onPress={() => router.push(`/schede/${item.id}`)}>
+          <Pressable onPress={() => router.push(`/schede/${item.id}`)} hitSlop={4}>
             <Card style={styles.row}>
               <View style={styles.rowLeft}>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -140,7 +137,7 @@ export default function SchedeListScreen() {
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   const theme = useTheme();
   return (
-    <Pressable onPress={onPress} style={styles.tabButton}>
+    <Pressable onPress={onPress} hitSlop={8} style={styles.tabButton}>
       <ThemedText type="smallBold" themeColor={active ? 'primary' : 'textSecondary'}>
         {label}
       </ThemedText>
@@ -198,19 +195,24 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   actionButtonWrap: {
-    flex: 1,
+    flexBasis: 140,
+    flexGrow: 1,
+    minWidth: 0,
   },
   newButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     padding: Spacing.three,
     alignItems: 'center',
   },
   newButtonOutline: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
     padding: Spacing.three,
     alignItems: 'center',
   },

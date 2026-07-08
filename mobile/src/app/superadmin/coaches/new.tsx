@@ -70,7 +70,7 @@ export default function NewSuperadminCoach() {
         </Field>
         <OptionGroup label="Piano" options={plans.map((plan) => ({ value: plan.code, label: plan.name }))} value={planCode} onChange={setPlanCode} />
         <OptionGroup
-          label="Status pagamento"
+          label="Stato pagamento"
           options={STATUSES.map((status) => ({ value: status, label: getBillingStatusLabel(status) }))}
           value={billingStatus}
           onChange={setBillingStatus}
@@ -90,7 +90,7 @@ export default function NewSuperadminCoach() {
           </Field>
         </View>
         {error ? <ThemedText type="small" style={{ color: theme.statusExpired }}>{error}</ThemedText> : null}
-        <Pressable onPress={handleSave} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+        <Pressable onPress={handleSave} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
           <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
             Salva coach
           </ThemedText>
@@ -131,6 +131,7 @@ function OptionGroup<T extends string>({
             <Pressable
               key={option.value}
               onPress={() => onChange(option.value)}
+              hitSlop={4}
               style={[styles.option, { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement }]}>
               <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
                 {option.label}
@@ -167,12 +168,14 @@ const styles = StyleSheet.create({
   option: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
   saveButton: {
     alignItems: 'center',
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     width: '100%',
   },
