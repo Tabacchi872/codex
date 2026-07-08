@@ -26,6 +26,7 @@ export function LoginScreen() {
   const accounts = useClientStore((s) => s.accounts);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
   const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
+  const loginAsSuperadmin = useAuthStore((s) => s.loginAsSuperadmin);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,12 @@ export function LoginScreen() {
     const normalized = identifier.trim().toLowerCase();
     if (!normalized || !password) {
       setError('Inserisci username/email e password.');
+      return;
+    }
+    if (normalized === 'admin@fitcoach.local' && password === 'admin123') {
+      setError(null);
+      loginAsSuperadmin();
+      router.replace('/superadmin');
       return;
     }
     const account = accounts.find(
@@ -93,7 +100,10 @@ export function LoginScreen() {
           </View>
         </Pressable>
         <ThemedText type="small" themeColor="textSecondary">
-          Puoi provare l'accesso con: marco.bianchi / Forza4821!
+          Cliente demo: marco.bianchi / Forza4821!
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Superadmin demo: admin@fitcoach.local / admin123
         </ThemedText>
       </Card>
 

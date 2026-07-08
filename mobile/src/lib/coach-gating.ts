@@ -6,9 +6,9 @@ export type CoachFeatureKey =
   | 'push_notifications'
   | 'advanced_analytics';
 
-export type CoachPlanCode = 'free' | 'starter' | 'pro' | 'studio' | 'custom';
+export type CoachPlanCode = 'free' | 'starter' | 'pro' | 'studio' | 'unlimited' | 'custom';
 
-export type CoachBillingStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'blocked' | 'manual_override';
+export type CoachBillingStatus = 'trial' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'blocked' | 'manual_override';
 
 export type CoachAccessInput = {
   coachId: string;
@@ -34,7 +34,7 @@ export type CoachAccessResult = {
     | 'feature_not_enabled';
 };
 
-const VALID_BILLING_STATUSES = new Set<CoachBillingStatus>(['trialing', 'active', 'manual_override']);
+const VALID_BILLING_STATUSES = new Set<CoachBillingStatus>(['trial', 'trialing', 'active', 'manual_override']);
 
 export function evaluateCoachAccess(input: CoachAccessInput): CoachAccessResult {
   if (input.demoBypass) {

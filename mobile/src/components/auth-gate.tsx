@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { usePathname, useRouter } from 'expo-router';
+import { Slot, usePathname, useRouter } from 'expo-router';
 
 import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
@@ -14,6 +14,7 @@ import type { UserRole } from '@/types/auth';
 
 const CLIENT_HOME = '/cliente-home';
 const COACH_HOME = '/';
+const SUPERADMIN_HOME = '/superadmin';
 
 const CLIENT_ONLY_ROUTES = [
   '/cliente-home',
@@ -29,10 +30,12 @@ const CLIENT_ONLY_ROUTES = [
 
 const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi'];
 const COACH_ONLY_PREFIXES = ['/clienti/', '/appuntamenti/', '/schede/new', '/schede/modelli'];
+const SUPERADMIN_ONLY_PREFIXES = ['/superadmin'];
 
 // Unico punto che decide cosa mostrare in base allo stato di autenticazione
 // demo locale: non autenticato -> login; cliente con password da cambiare ->
-// cambio password obbligatorio; cliente -> tab cliente; coach -> tab coach.
+// cambio password obbligatorio; cliente -> tab cliente; coach -> tab coach;
+// superadmin -> stack gestionale separato.
 // In piu normalizza la route corrente per evitare che uno Slot renderizzi una
 // schermata dell'altro ruolo dopo login o deep link.
 export function AuthGate() {
@@ -71,6 +74,13 @@ export function AuthGate() {
     return <ClientTabs />;
   }
 
+  if (currentRole === 'superadmin') {
+    if (targetPath) {
+      return <LoadingGate />;
+    }
+    return <Slot />;
+  }
+
   if (targetPath) {
     return <LoadingGate />;
   }
@@ -79,11 +89,14 @@ export function AuthGate() {
 }
 
 function getRoleRedirectTarget(role: UserRole | null, pathname: string) {
-  if (role === 'client' && isCoachOnlyPath(pathname)) {
+  if (role === 'client' && (isCoachOnlyPath(pathname) || isSuperadminOnlyPath(pathname))) {
     return CLIENT_HOME;
   }
-  if (role === 'coach' && isClientOnlyPath(pathname)) {
+  if (role === 'coach' && (isClientOnlyPath(pathname) || isSuperadminOnlyPath(pathname))) {
     return COACH_HOME;
+  }
+  if (role === 'superadmin' && !isSuperadminOnlyPath(pathname)) {
+    return SUPERADMIN_HOME;
   }
   return null;
 }
@@ -94,6 +107,10 @@ function isClientOnlyPath(pathname: string) {
 
 function isCoachOnlyPath(pathname: string) {
   return COACH_ONLY_EXACT_ROUTES.includes(pathname) || COACH_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function isSuperadminOnlyPath(pathname: string) {
+  return SUPERADMIN_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 function LoadingGate() {

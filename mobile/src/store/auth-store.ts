@@ -17,6 +17,7 @@ type AuthState = {
   setHasHydrated: (value: boolean) => void;
   loginAsCoach: () => void;
   loginAsClient: (clientId: string) => void;
+  loginAsSuperadmin: () => void;
   logout: () => void;
 };
 
@@ -30,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: (value) => set({ hasHydrated: value }),
       loginAsCoach: () => set({ isAuthenticated: true, currentRole: 'coach', currentClientId: null }),
       loginAsClient: (clientId) => set({ isAuthenticated: true, currentRole: 'client', currentClientId: clientId }),
+      loginAsSuperadmin: () => set({ isAuthenticated: true, currentRole: 'superadmin', currentClientId: null }),
       logout: () => set({ isAuthenticated: false, currentRole: null, currentClientId: null }),
     }),
     {
