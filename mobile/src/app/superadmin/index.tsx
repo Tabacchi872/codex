@@ -1,5 +1,5 @@
-import { Link, type Href } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Link, router, type Href } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { SuperadminShell } from '@/components/superadmin-shell';
@@ -28,12 +28,12 @@ export default function SuperadminDashboard() {
   return (
     <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
       <View style={styles.grid}>
-        <MetricCard label="Coach totali" value={String(totalCoaches)} />
-        <MetricCard label="Coach attivi" value={String(activeCoaches)} tone="active" />
-        <MetricCard label="In prova" value={String(trialCoaches)} tone="warning" />
-        <MetricCard label="Pagamento scaduto" value={String(pastDueCoaches)} tone="expired" />
-        <MetricCard label="Bloccati" value={String(blockedCoaches)} tone="expired" />
-        <MetricCard label="Ricavi mensili stimati" value={`EUR ${monthlyRecurringRevenue}`} />
+        <MetricCard label="Coach totali" value={String(totalCoaches)} onPress={() => router.push('/superadmin/coaches?status=all' as Href)} />
+        <MetricCard label="Coach attivi" value={String(activeCoaches)} tone="active" onPress={() => router.push('/superadmin/coaches?status=active' as Href)} />
+        <MetricCard label="In prova" value={String(trialCoaches)} tone="warning" onPress={() => router.push('/superadmin/coaches?status=trial' as Href)} />
+        <MetricCard label="Pagamento scaduto" value={String(pastDueCoaches)} tone="expired" onPress={() => router.push('/superadmin/coaches?status=past_due' as Href)} />
+        <MetricCard label="Bloccati" value={String(blockedCoaches)} tone="expired" onPress={() => router.push('/superadmin/coaches?status=blocked' as Href)} />
+        <MetricCard label="Ricavi mensili stimati" value={`EUR ${monthlyRecurringRevenue}`} onPress={() => router.push('/superadmin/payment-events' as Href)} />
       </View>
 
       <Card style={styles.card}>
@@ -74,20 +74,32 @@ export default function SuperadminDashboard() {
   );
 }
 
-function MetricCard({ label, value, tone }: { label: string; value: string; tone?: 'active' | 'warning' | 'expired' }) {
+function MetricCard({
+  label,
+  value,
+  tone,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  tone?: 'active' | 'warning' | 'expired';
+  onPress: () => void;
+}) {
   const theme = useTheme();
   const color =
     tone === 'active' ? theme.statusActive : tone === 'warning' ? theme.statusWarning : tone === 'expired' ? theme.statusExpired : theme.text;
 
   return (
-    <Card style={styles.metric}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="subtitle" style={[styles.metricValue, { color }]}>
-        {value}
-      </ThemedText>
-    </Card>
+    <Pressable onPress={onPress} hitSlop={4} style={styles.metricPressable}>
+      <Card style={styles.metric}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {label}
+        </ThemedText>
+        <ThemedText type="subtitle" style={[styles.metricValue, { color }]}>
+          {value}
+        </ThemedText>
+      </Card>
+    </Pressable>
   );
 }
 
@@ -97,9 +109,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.two,
   },
-  metric: {
+  metricPressable: {
     flexBasis: 150,
     flexGrow: 1,
+    minWidth: 0,
+  },
+  metric: {
     justifyContent: 'space-between',
     minHeight: 110,
   },
