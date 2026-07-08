@@ -6,6 +6,7 @@ import { SuperadminShell } from '@/components/superadmin-shell';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
 
 export default function SuperadminDashboard() {
@@ -22,7 +23,7 @@ export default function SuperadminDashboard() {
     if (coach.billingStatus !== 'active') return total;
     return total + (plans.find((plan) => plan.code === coach.planCode)?.monthlyPrice ?? 0);
   }, 0);
-  const paymentAlerts = coaches.filter((coach) => coach.billingStatus === 'past_due' || coach.billingStatus === 'blocked');
+  const paymentAlerts = coaches.filter((coach) => coach.billingStatus === 'past_due');
 
   return (
     <SuperadminShell
@@ -31,8 +32,8 @@ export default function SuperadminDashboard() {
       <View style={styles.grid}>
         <MetricCard label="Coach totali" value={String(totalCoaches)} />
         <MetricCard label="Coach attivi" value={String(activeCoaches)} tone="active" />
-        <MetricCard label="Trial" value={String(trialCoaches)} tone="warning" />
-        <MetricCard label="Past due" value={String(pastDueCoaches)} tone="expired" />
+        <MetricCard label="In prova" value={String(trialCoaches)} tone="warning" />
+        <MetricCard label="Pagamento scaduto" value={String(pastDueCoaches)} tone="expired" />
         <MetricCard label="Bloccati" value={String(blockedCoaches)} tone="expired" />
         <MetricCard label="MRR demo" value={`EUR ${demoMrr}`} />
       </View>
@@ -65,7 +66,7 @@ export default function SuperadminDashboard() {
                   styles.badge,
                   { backgroundColor: theme.dangerSoft, color: theme.statusExpired, borderColor: theme.statusExpired },
                 ]}>
-                {coach.billingStatus}
+                {getBillingStatusLabel(coach.billingStatus)}
               </ThemedText>
             </View>
           ))
