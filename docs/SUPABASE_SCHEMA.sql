@@ -1,5 +1,7 @@
--- FitCoach official Supabase schema draft.
--- This file does not connect the app to Supabase and contains no real keys.
+-- FitCoach official Supabase schema.
+-- This file contains no real keys. Run it once against a real Supabase project
+-- (SQL editor or migration) before setting EXPO_PUBLIC_SUPABASE_URL/ANON_KEY in
+-- mobile/.env: mobile/src/lib/auth-service.ts assumes these tables already exist.
 
 create extension if not exists pgcrypto;
 
@@ -14,7 +16,7 @@ end;
 $$;
 
 create table if not exists public.profiles (
-  id uuid primary key,
+  id uuid primary key references auth.users(id) on delete cascade,
   role text not null check (role in ('superadmin', 'coach', 'cliente')),
   full_name text,
   email text not null,
@@ -364,6 +366,59 @@ as $$
   )
 $$;
 
+-- Crea automaticamente la riga public.profiles quando Supabase Auth crea un
+-- utente (auth.users), leggendo ruolo/nome/telefono da raw_user_meta_data
+-- (passati da mobile/src/lib/auth-service.ts in supabase.auth.signUp options.data).
+-- Essendo security definer, questa funzione bypassa la RLS di profiles: e' il
+-- modo standard Supabase per evitare il problema "l'utente non ha ancora una
+-- riga in profiles quindi le policy self-check falliscono".
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, role, full_name, email, phone, is_active)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'role', 'cliente'),
+    new.raw_user_meta_data->>'full_name',
+    new.email,
+    new.raw_user_meta_data->>'phone',
+    true
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Incrementa used_count in modo controllato (security definer) invece di dare
+-- ai client una policy UPDATE aperta su registration_codes: un cliente che si
+-- registra non e' il proprietario del codice (coach_id <> auth.uid()) quindi
+-- non potrebbe farlo tramite una policy "owner", e una policy aperta a
+-- qualunque utente autenticato permetterebbe di manomettere il contatore di
+-- un coach qualsiasi.
+create or replace function public.increment_registration_code_usage(code_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.registration_codes
+  set used_count = used_count + 1
+  where id = code_id and status = 'active';
+end;
+$$;
+
+grant execute on function public.increment_registration_code_usage(uuid) to authenticated;
+
 create policy profiles_superadmin_all on public.profiles
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy profiles_self_read on public.profiles
@@ -375,6 +430,12 @@ create policy coach_profiles_superadmin_all on public.coach_profiles
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy coach_profiles_owner_read_update on public.coach_profiles
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+-- Lettura pubblica minima (business_name/bio/billing_status) necessaria per
+-- validare "il coach puo' accettare nuovi clienti" PRIMA che il cliente abbia
+-- un account (vedi signUpClientWithCoachCode in auth-service.ts). billing_profiles
+-- (dati fiscali) resta invece privata: nessuna policy pubblica su quella tabella.
+create policy coach_profiles_public_read on public.coach_profiles
+  for select using (true);
 
 create policy billing_profiles_superadmin_all on public.billing_profiles
   for all using (public.is_superadmin()) with check (public.is_superadmin());
@@ -392,8 +453,18 @@ create policy registration_codes_superadmin_all on public.registration_codes
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy registration_codes_coach_read_own on public.registration_codes
   for select using (coach_id = auth.uid());
+create policy registration_codes_coach_insert_own on public.registration_codes
+  for insert with check (coach_id = auth.uid());
 create policy registration_codes_coach_update_own on public.registration_codes
   for update using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+-- Lettura pubblica dei soli codici attivi: necessaria perche' un cliente deve
+-- poter verificare un codice PRIMA di avere un account (nessuna sessione,
+-- quindi nessun coach_id = auth.uid() possibile). Espone code/coach_id/status/
+-- max_uses/used_count/expires_at, non dati sensibili: il codice stesso e' gia'
+-- pensato per essere condiviso dal coach ai propri clienti. L'incremento di
+-- used_count non passa da qui ma dalla funzione increment_registration_code_usage.
+create policy registration_codes_public_read_active on public.registration_codes
+  for select using (status = 'active');
 
 create policy coach_clients_superadmin_all on public.coach_clients
   for all using (public.is_superadmin()) with check (public.is_superadmin());
@@ -401,6 +472,15 @@ create policy coach_clients_coach_scope on public.coach_clients
   for select using (coach_id = auth.uid());
 create policy coach_clients_client_scope on public.coach_clients
   for select using (client_id = auth.uid());
+-- Il cliente appena registrato collega se stesso al coach (client_id = auth.uid()).
+-- NOTA Fase 1: questa policy non verifica qui che sia stato usato un codice
+-- valido (quel controllo avviene lato app in auth-service.ts prima di questo
+-- insert) — un utente autenticato potrebbe in teoria auto-collegarsi a un
+-- coach_id arbitrario. Prima della produzione questo insert va spostato in una
+-- funzione security definer (register_client_with_code, gia' prevista in
+-- SUPABASE_SCHEMA.md) che valida il codice server-side in modo atomico.
+create policy coach_clients_client_self_insert on public.coach_clients
+  for insert with check (client_id = auth.uid());
 
 create policy plans_read_active on public.plans
   for select using (is_active or public.is_superadmin());
@@ -467,7 +547,11 @@ create policy push_tokens_owner_scope on public.push_tokens
 -- - Superadmin sees and manages all operational, plan, and billing tables.
 -- - Coach rows are scoped by coach_id and coach_clients; coaches cannot read other coaches by default.
 -- - Cliente rows are scoped to auth.uid() and assigned records only.
--- - Public client signup must validate registration_codes through a controlled RPC/Edge Function.
+-- - Fase 1 (mobile/src/lib/auth-service.ts): la validazione del codice coach e il
+--   collegamento coach_clients avvengono client-side con policy pubbliche/self-insert
+--   permissive (vedi commenti sopra su registration_codes/coach_clients), non ancora
+--   tramite una RPC/Edge Function security definer che valida tutto atomicamente
+--   lato server. Da rafforzare prima della produzione con register_client_with_code().
 -- - Superadmin accounts are not publicly registrable.
 -- - Clienti do not receive policies for admin_notifications, plans writes, or coach_billing writes.
 -- - Billing profiles, invoices and invoice_items prepare future invoicing only; this schema does not emit fiscal documents.
@@ -475,3 +559,9 @@ create policy push_tokens_owner_scope on public.push_tokens
 -- - Italian e-invoicing through SdI must be handled by a compliant provider when applicable.
 -- - Apple/Google mobile payments and future Stripe web payments must be reconciled separately before invoice automation.
 -- - Payment/provider writes should move to service-role Edge Functions when real payments are added.
+-- - IMPORTANTE Fase 1: in Authentication -> Providers -> Email, "Confirm email" va
+--   disattivato perche' il flusso attuale scriva coach_profiles/billing_profiles/
+--   registration_codes/client_profiles/coach_clients subito dopo signUp nella stessa
+--   sessione. Se "Confirm email" resta attivo, l'utente Auth viene creato ma queste
+--   righe falliscono (nessuna sessione attiva finche' non conferma) — errore visibile
+--   in UI (auth-service.ts non va in crash), non dato silenzioso. Vedi docs/EMAIL_SETUP.md.

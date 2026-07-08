@@ -8,6 +8,7 @@ import { ThemedText } from './themed-text';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { signOut } from '@/lib/auth-service';
 import { useAuthStore } from '@/store/auth-store';
 import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
 
@@ -37,6 +38,11 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
   const unreadCoachSupport = useSuperadminStore(
     (s) => getUnreadSuperadminSupportCount(s.coaches, s.coachSupportMessages)
   );
+
+  async function handleLogout() {
+    await signOut();
+    logout();
+  }
 
   return (
     <ScreenBackground>
@@ -80,7 +86,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
                 </View>
               ) : null}
             </Pressable>
-            <Pressable onPress={logout} hitSlop={8} style={[styles.logoutButton, { borderColor: theme.border }]}>
+            <Pressable onPress={handleLogout} hitSlop={8} style={[styles.logoutButton, { borderColor: theme.border }]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Esci
               </ThemedText>

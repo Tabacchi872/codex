@@ -9,6 +9,7 @@ import { ThemeSettings } from '@/components/theme-settings';
 import { Spacing } from '@/constants/theme';
 import { CLIENT_STATUS_LABEL } from '@/types/client';
 import { getClientById } from '@/lib/client-helpers';
+import { signOut } from '@/lib/auth-service';
 import { getCompletedWorkoutsCount, getNextWorkoutPlan, getPurchasedWorkoutsTotal } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -18,6 +19,11 @@ export default function ClienteProfiloScreen() {
   const insets = useSafeAreaInsets();
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const logout = useAuthStore((s) => s.logout);
+
+  async function handleLogout() {
+    await signOut();
+    logout();
+  }
   const clients = useClientStore((s) => s.clients);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const client = getClientById(clients, currentClientId);
@@ -92,7 +98,7 @@ export default function ClienteProfiloScreen() {
 
       <DeveloperInfoSection />
 
-      <Pressable onPress={logout}>
+      <Pressable onPress={handleLogout}>
         <ThemedText type="small" themeColor="statusExpired" style={styles.logout}>
           Esci
         </ThemedText>

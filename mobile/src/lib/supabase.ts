@@ -1,3 +1,8 @@
+import 'react-native-url-polyfill/auto';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -15,7 +20,7 @@ export type SupabaseClientStatus =
     }
   | {
       ready: false;
-      reason: 'missing_env' | 'missing_package';
+      reason: 'missing_env';
       missing: string[];
     };
 
@@ -29,11 +34,7 @@ export function getSupabaseClientStatus(): SupabaseClientStatus {
     return { ready: false, reason: 'missing_env', missing };
   }
 
-  return {
-    ready: false,
-    reason: 'missing_package',
-    missing: ['@supabase/supabase-js'],
-  };
+  return { ready: true, url: supabaseUrl as string, anonKey: supabaseAnonKey as string };
 }
 
 export function assertSupabaseConfigured() {
@@ -46,7 +47,17 @@ export function assertSupabaseConfigured() {
   return status;
 }
 
-// Fase 1: il pacchetto @supabase/supabase-js non e installato per non cambiare
-// runtime della demo Expo Go senza conferma. In fase 2 questo export andra
-// sostituito con createClient<Database>(url, anonKey, options).
-export const supabase = null;
+// Client reale creato solo se URL/anon key sono presenti in ambiente. Se mancano,
+// `supabase` resta null e ogni chiamata reale (vedi lib/auth-service.ts) deve
+// controllare `supabaseConfig.isConfigured` prima di usarlo, cadendo sul login/
+// registrazione demo locale (AsyncStorage) invece di andare in crash.
+export const supabase: SupabaseClient | null = supabaseConfig.isConfigured
+  ? createClient(supabaseConfig.url as string, supabaseConfig.anonKey as string, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : null;

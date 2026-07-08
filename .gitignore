@@ -4,6 +4,8 @@ dist/
 build/
 .env
 .env.*
+!.env.example
+!mobile/.env.example
 .DS_Store
 
 .claude/

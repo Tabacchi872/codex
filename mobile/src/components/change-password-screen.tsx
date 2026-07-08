@@ -9,6 +9,7 @@ import { ThemedTextInput } from './themed-text-input';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { signOut } from '@/lib/auth-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import type { ClientAccount } from '@/types/client';
@@ -21,6 +22,11 @@ export function ChangePasswordScreen({ account }: { account: ClientAccount }) {
   const insets = useSafeAreaInsets();
   const updateAccount = useClientStore((s) => s.updateAccount);
   const logout = useAuthStore((s) => s.logout);
+
+  async function handleLogout() {
+    await signOut();
+    logout();
+  }
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +82,7 @@ export function ChangePasswordScreen({ account }: { account: ClientAccount }) {
         </Pressable>
       </Card>
 
-      <Pressable onPress={logout}>
+      <Pressable onPress={handleLogout}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.logoutLink}>
           Esci
         </ThemedText>

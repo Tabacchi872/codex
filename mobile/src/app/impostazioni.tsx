@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemeSettings } from '@/components/theme-settings';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { signOut } from '@/lib/auth-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useSuperadminStore } from '@/store/superadmin-store';
 
@@ -18,6 +19,11 @@ export default function ImpostazioniScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const logout = useAuthStore((s) => s.logout);
+
+  async function handleLogout() {
+    await signOut();
+    logout();
+  }
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentCoachId = useAuthStore((s) => s.currentCoachId);
   const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
@@ -84,7 +90,7 @@ export default function ImpostazioniScreen() {
 
       <DeveloperInfoSection />
 
-      <Pressable onPress={logout} hitSlop={8} style={styles.logoutButton}>
+      <Pressable onPress={handleLogout} hitSlop={8} style={styles.logoutButton}>
         <ThemedText type="small" themeColor="statusExpired" style={styles.logout}>
           Esci
         </ThemedText>

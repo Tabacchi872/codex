@@ -11,6 +11,8 @@ import { ThemedTextInput } from './themed-text-input';
 import { APP_NAME } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { signInWithEmail } from '@/lib/auth-service';
+import { supabaseConfig } from '@/lib/supabase';
 import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 
@@ -31,12 +33,44 @@ export function LoginScreen() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleLogin() {
+  async function handleLogin() {
     const normalized = identifier.trim().toLowerCase();
     if (!normalized || !password) {
       setError('Inserisci email e password.');
       return;
+    }
+
+    // Se Supabase e' configurato, prova prima l'accesso reale. Se fallisce
+    // (account demo locale non presente su Supabase, credenziali di un coach/
+    // cliente creato solo in locale, ecc.) si ricade sui controlli locali
+    // sotto invece di bloccare l'utente — vedi docs/DECISIONS.md.
+    if (supabaseConfig.isConfigured) {
+      setSubmitting(true);
+      const result = await signInWithEmail(normalized, password);
+      setSubmitting(false);
+      if (result.ok) {
+        setError(null);
+        const { role } = result.data;
+        if (role === 'coach') {
+          const localAccount = coachAccounts.find((account) => account.email.toLowerCase() === normalized);
+          loginAsCoach(normalized, localAccount?.coachId);
+          router.replace('/');
+          return;
+        }
+        if (role === 'cliente') {
+          const localAccount = accounts.find((account) => account.email.toLowerCase() === normalized);
+          loginAsClient(localAccount?.clientId ?? result.data.session.user.id, normalized);
+          router.replace('/cliente-home');
+          return;
+        }
+        if (role === 'superadmin') {
+          loginAsSuperadmin(normalized);
+          router.replace('/superadmin' as Href);
+          return;
+        }
+      }
     }
 
     const demoUser = DEMO_USERS.find((user) => user.email === normalized && user.password === password);
@@ -113,10 +147,10 @@ export function LoginScreen() {
             {error}
           </ThemedText>
         )}
-        <Pressable onPress={handleLogin} hitSlop={6}>
-          <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+        <Pressable onPress={handleLogin} disabled={submitting} hitSlop={6}>
+          <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
-              Accedi
+              {submitting ? 'Accesso...' : 'Accedi'}
             </ThemedText>
           </View>
         </Pressable>

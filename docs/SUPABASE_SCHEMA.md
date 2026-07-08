@@ -73,6 +73,18 @@ Nessuna email viene inviata ora: login/registrazione restano locali (AsyncStorag
 - Sostituire il login locale con Supabase Auth mantenendo i redirect: coach `/`, cliente `/cliente-home`, superadmin `/superadmin`.
 - Validare RLS con utenti reali per i tre ruoli.
 
+## Fase 1 collegata (2026-07-08): cosa e' cambiato davvero
+
+Questa sezione documenta lo stato reale dopo il collegamento Supabase Fase 1 (`mobile/src/lib/supabase.ts`, `mobile/src/lib/auth-service.ts`). `docs/SUPABASE_SCHEMA.sql` e' stato aggiornato di conseguenza:
+
+- `profiles.id` ora referenzia `auth.users(id) on delete cascade` (prima era una `uuid primary key` isolata).
+- Nuovo trigger `public.handle_new_user()` su `auth.users` (after insert, security definer): crea automaticamente la riga `profiles` leggendo `role`/`full_name`/`phone` da `raw_user_meta_data`, passati da `supabase.auth.signUp({ options: { data: {...} } })`. Bypassa la RLS di `profiles` (nessuna policy self-insert necessaria).
+- Nuova funzione `public.increment_registration_code_usage(code_id uuid)` (security definer): usata per incrementare `used_count` invece di dare ai client una policy UPDATE aperta su `registration_codes`.
+- Nuove policy: `registration_codes_coach_insert_own` (il coach crea il proprio codice), `registration_codes_public_read_active` (lettura pubblica dei soli codici attivi, necessaria per validare un codice prima che il cliente abbia un account), `coach_profiles_public_read` (lettura pubblica per controllare se il coach puo' accettare clienti), `coach_clients_client_self_insert` (il cliente appena registrato collega se stesso al coach).
+- **Semplificazione nota (non ideale, da rafforzare prima della produzione)**: la validazione del codice coach e il collegamento `coach_clients` avvengono lato app (`auth-service.ts`) con policy pubbliche/self-insert, non tramite una funzione `register_client_with_code()` security definer che validi tutto atomicamente lato server (quella funzione resta nell'elenco "Funzioni backend previste" sotto, non ancora implementata). Un utente autenticato potrebbe in teoria forzare un insert in `coach_clients` con un `coach_id` arbitrario bypassando il controllo app-side.
+- **Requisito operativo Fase 1**: in Authentication → Providers → Email su Supabase, "Confirm email" va disattivato. Il flusso attuale scrive `coach_profiles`/`billing_profiles`/`registration_codes` (coach) o `client_profiles`/`coach_clients` (cliente) subito dopo `signUp`, nella stessa sessione: se la conferma email resta obbligatoria, `signUp` crea l'utente Auth ma non restituisce una sessione attiva, quindi questi insert falliscono per RLS (errore visibile in UI, gestito senza crash — non dato silenzioso). Vedi `docs/EMAIL_SETUP.md`.
+- Il "limite clienti" per la registrazione reale usa oggi `registration_codes.max_uses`/`used_count` (non i piani/`plans`): e' una semplificazione voluta per la Fase 1, diversa dalla logica locale demo (`lib/coach-code.ts`, basata su piano/`clientLimit`). Da unificare quando `coach_billing`/`plans` saranno collegati alla registrazione reale.
+
 ---
 
 # Supabase schema fase 1

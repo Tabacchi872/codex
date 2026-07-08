@@ -9,7 +9,9 @@ import { ScreenBackground } from './screen-background';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
 
+import { signUpClientWithCoachCode, signUpCoach } from '@/lib/auth-service';
 import { canCoachAcceptClients, generateCoachCode, normalizeCoachCode } from '@/lib/coach-code';
+import { supabaseConfig } from '@/lib/supabase';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { DEMO_USERS, useAuthStore, type CoachAuthAccount } from '@/store/auth-store';
@@ -54,8 +56,9 @@ export function CoachRegistrationScreen() {
   const [createdCode, setCreatedCode] = useState('');
   const [copyFeedback, setCopyFeedback] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleRegister() {
+  async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
     if (!fullName.trim() || !normalizedEmail || password.length < 6) {
       setError('Inserisci nome, email e una password di almeno 6 caratteri.');
@@ -84,7 +87,6 @@ export function CoachRegistrationScreen() {
       return;
     }
 
-    const coachCode = generateCoachCode(coaches.map((coach) => coach.coachCode));
     const billingProfile: CoachBillingProfile = {
       subjectType,
       legalName: legalName.trim(),
@@ -99,6 +101,33 @@ export function CoachRegistrationScreen() {
       sdiCode: normalizedSdiCode || undefined,
       billingEmail: billingEmail.trim().toLowerCase(),
     };
+
+    let coachCode = generateCoachCode(coaches.map((coach) => coach.coachCode));
+
+    // Se Supabase e' configurato, l'account reale (Supabase Auth + profiles +
+    // coach_profiles + billing_profiles + registration_codes) viene creato per
+    // primo: e' la fonte di verita' per email duplicate/validazione. Il record
+    // locale sotto viene comunque creato in parallelo con lo stesso coachCode,
+    // perche' il resto dell'app (dashboard coach, superadmin, clienti) legge
+    // ancora solo dagli store locali in questa fase — vedi docs/DECISIONS.md.
+    if (supabaseConfig.isConfigured) {
+      setSubmitting(true);
+      const result = await signUpCoach({
+        fullName: fullName.trim(),
+        email: normalizedEmail,
+        password,
+        phone: phone.trim() || undefined,
+        businessName: businessName.trim() || undefined,
+        billingProfile,
+      });
+      setSubmitting(false);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      coachCode = result.data.coachCode;
+    }
+
     const now = new Date();
     const periodEndsAt = new Date(now);
     periodEndsAt.setDate(periodEndsAt.getDate() + 14);
@@ -242,10 +271,10 @@ export function CoachRegistrationScreen() {
             <ThemedTextInput value={billingEmail} onChangeText={setBillingEmail} placeholder="fatture@email.it" autoCapitalize="none" keyboardType="email-address" />
           </Field>
           {error ? <ThemedText type="small" themeColor="statusExpired">{error}</ThemedText> : null}
-          <Pressable onPress={handleRegister} hitSlop={6}>
-            <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={handleRegister} disabled={submitting} hitSlop={6}>
+            <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
-                Crea account coach
+                {submitting ? 'Creazione account...' : 'Crea account coach'}
               </ThemedText>
             </View>
           </Pressable>
@@ -277,8 +306,9 @@ export function ClientRegistrationScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleRegister() {
+  async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedCode = normalizeCoachCode(coachCode);
     if (!normalizedCode || !fullName.trim() || !normalizedEmail || !password || !confirmPassword) {
@@ -303,16 +333,37 @@ export function ClientRegistrationScreen() {
     }
 
     const coach = findCoachByCode(normalizedCode);
-    if (!coach) {
-      setError('Codice coach non valido.');
-      return;
-    }
 
-    const plan = plans.find((item) => item.code === coach.planCode);
-    const eligibility = canCoachAcceptClients(coach, plan);
-    if (!eligibility.allowed) {
-      setError(eligibility.reason);
-      return;
+    // Se Supabase e' configurato, la validazione di codice/coach bloccato/
+    // limite avviene su registration_codes e coach_profiles reali (vedi
+    // lib/auth-service.ts). Il coach locale potrebbe non esistere (registrato
+    // solo su Supabase): il cliente viene comunque creato in locale per far
+    // funzionare da subito le schermate cliente, non ancora migrate — vedi
+    // docs/DECISIONS.md.
+    if (supabaseConfig.isConfigured) {
+      setSubmitting(true);
+      const result = await signUpClientWithCoachCode({
+        coachCode: normalizedCode,
+        fullName: fullName.trim(),
+        email: normalizedEmail,
+        password,
+      });
+      setSubmitting(false);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+    } else {
+      if (!coach) {
+        setError('Codice coach non valido.');
+        return;
+      }
+      const plan = plans.find((item) => item.code === coach.planCode);
+      const eligibility = canCoachAcceptClients(coach, plan);
+      if (!eligibility.allowed) {
+        setError(eligibility.reason);
+        return;
+      }
     }
 
     const now = new Date().toISOString();
@@ -327,8 +378,8 @@ export function ClientRegistrationScreen() {
       notes: '',
       status: 'attivo',
       createdAt: now,
-      coachId: coach.id,
-      linkedByCode: coach.coachCode,
+      coachId: coach?.id,
+      linkedByCode: coach?.coachCode ?? normalizedCode,
     };
     const account: ClientAccount = {
       id: `acc-${Date.now()}`,
@@ -344,16 +395,18 @@ export function ClientRegistrationScreen() {
 
     addClient(client);
     addAccount(account);
-    addCoachClient({
-      id: `coach_client_${Date.now()}`,
-      coachId: coach.id,
-      clientId,
-      name: `${firstName} ${lastName}`.trim(),
-      contact: normalizedEmail,
-      status: 'active',
-      createdAt: now,
-      linkedByCode: coach.coachCode,
-    });
+    if (coach) {
+      addCoachClient({
+        id: `coach_client_${Date.now()}`,
+        coachId: coach.id,
+        clientId,
+        name: `${firstName} ${lastName}`.trim(),
+        contact: normalizedEmail,
+        status: 'active',
+        createdAt: now,
+        linkedByCode: coach.coachCode,
+      });
+    }
     loginAsClient(clientId, normalizedEmail);
     router.replace('/cliente-home');
   }
@@ -381,10 +434,10 @@ export function ClientRegistrationScreen() {
             <ThemedTextInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Ripeti password" secureTextEntry />
           </Field>
           {error ? <ThemedText type="small" themeColor="statusExpired">{error}</ThemedText> : null}
-          <Pressable onPress={handleRegister} hitSlop={6}>
-            <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={handleRegister} disabled={submitting} hitSlop={6}>
+            <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
-                Crea account cliente
+                {submitting ? 'Creazione account...' : 'Crea account cliente'}
               </ThemedText>
             </View>
           </Pressable>
