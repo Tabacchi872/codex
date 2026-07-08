@@ -461,10 +461,18 @@ create policy registration_codes_coach_update_own on public.registration_codes
 -- poter verificare un codice PRIMA di avere un account (nessuna sessione,
 -- quindi nessun coach_id = auth.uid() possibile). Espone code/coach_id/status/
 -- max_uses/used_count/expires_at, non dati sensibili: il codice stesso e' gia'
--- pensato per essere condiviso dal coach ai propri clienti. L'incremento di
--- used_count non passa da qui ma dalla funzione increment_registration_code_usage.
+-- pensato per essere condiviso dal coach ai propri clienti.
 create policy registration_codes_public_read_active on public.registration_codes
   for select using (status = 'active');
+-- Il cliente appena registrato (non proprietario del codice: coach_id <> auth.uid())
+-- incrementa used_count sul proprio codice attivo tramite un update diretto da
+-- auth-service.ts (preferito alla funzione increment_registration_code_usage per
+-- semplicita' Fase 1). Stesso compromesso di sicurezza gia' documentato sopra:
+-- un utente autenticato potrebbe in teoria incrementare used_count di un codice
+-- che non ha usato — da irrigidire insieme al resto della RLS Fase 1 prima della
+-- produzione (register_client_with_code() atomica lato server).
+create policy registration_codes_increment_usage on public.registration_codes
+  for update using (status = 'active') with check (status = 'active');
 
 create policy coach_clients_superadmin_all on public.coach_clients
   for all using (public.is_superadmin()) with check (public.is_superadmin());

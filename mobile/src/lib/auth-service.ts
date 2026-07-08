@@ -151,11 +151,20 @@ export async function signUpClientWithCoachCode(
 ): Promise<AuthServiceResult<ClientSignUpData>> {
   if (!isReady() || !supabase) return notConfigured();
 
+  // Normalizzazione esplicita (trim + uppercase, coerente con normalizeCoachCode).
   const normalizedCode = normalizeCoachCode(input.coachCode);
+
+  // IMPORTANTE: la lista colonne di .select() non deve contenere spazi dopo le
+  // virgole ("id, coach_id" invece di "id,coach_id"). Con spazi, la query string
+  // costruita da postgrest-js puo' risultare non correttamente codificata sul
+  // networking nativo React Native/Expo (funziona su fetch browser, non altrove),
+  // causando "Invalid path specified in request URL". Stesso motivo per cui il
+  // filtro status='active' e' ora nella query stessa invece di un controllo dopo.
   const { data: codeRow, error: codeError } = await supabase
     .from('registration_codes')
-    .select('id, coach_id, status, max_uses, used_count, expires_at')
+    .select('id,coach_id,code,status,max_uses,used_count,expires_at')
     .eq('code', normalizedCode)
+    .eq('status', 'active')
     .maybeSingle();
 
   if (codeError) {
@@ -163,9 +172,6 @@ export async function signUpClientWithCoachCode(
   }
   if (!codeRow) {
     return { ok: false, code: 'invalid_coach_code', message: 'Codice coach non valido.' };
-  }
-  if (codeRow.status !== 'active') {
-    return { ok: false, code: 'invalid_coach_code', message: 'Questo codice coach non e\' attivo.' };
   }
   if (codeRow.expires_at && new Date(codeRow.expires_at).getTime() < Date.now()) {
     return { ok: false, code: 'invalid_coach_code', message: 'Questo codice coach e\' scaduto.' };
@@ -178,6 +184,9 @@ export async function signUpClientWithCoachCode(
     };
   }
 
+  // coach_profiles non ha una colonna client_limit/coach_id: la chiave e' user_id
+  // (references profiles(id)) e il limite clienti reale resta su
+  // registration_codes.max_uses/used_count (vedi docs/DECISIONS.md, Fase 1).
   const { data: coachProfile, error: coachProfileError } = await supabase
     .from('coach_profiles')
     .select('billing_status')
@@ -227,9 +236,14 @@ export async function signUpClientWithCoachCode(
     return { ok: false, code: 'db_error', message: `Errore collegamento al coach: ${coachClientError.message}` };
   }
 
-  const { error: usedCountError } = await supabase.rpc('increment_registration_code_usage', {
-    code_id: codeRow.id,
-  });
+  // Update diretto invece della RPC increment_registration_code_usage: piu'
+  // semplice da far funzionare su un progetto Supabase reale senza dipendere
+  // da una funzione SQL aggiuntiva gia' eseguita/con permessi corretti. Richiede
+  // la policy registration_codes_increment_usage (docs/SUPABASE_SCHEMA.sql).
+  const { error: usedCountError } = await supabase
+    .from('registration_codes')
+    .update({ used_count: codeRow.used_count + 1 })
+    .eq('id', codeRow.id);
   if (usedCountError) {
     return { ok: false, code: 'db_error', message: `Errore aggiornamento codice coach: ${usedCountError.message}` };
   }
