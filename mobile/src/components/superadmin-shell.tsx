@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/superadmin/coaches', label: 'Coach' },
   { href: '/superadmin/plans', label: 'Piani' },
   { href: '/superadmin/payment-events', label: 'Pagamenti' },
+  { href: '/superadmin/support/index', label: 'Supporto' },
   { href: '/superadmin/notifications', label: 'Notifiche' },
 ] as const satisfies readonly { href: Href; label: string }[];
 
@@ -32,6 +33,9 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
   const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
+  const unreadCoachSupport = useSuperadminStore(
+    (s) => s.coachSupportMessages.filter((message) => message.sender === 'coach' && !message.readBySuperadminAt).length
+  );
 
   return (
     <ScreenBackground>
@@ -64,7 +68,8 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
 
         <View style={styles.nav}>
           {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href || (item.href !== '/superadmin' && pathname.startsWith(`${item.href}/`));
+            const supportActive = item.href === '/superadmin/support/index' && pathname.startsWith('/superadmin/support');
+            const active = supportActive || pathname === item.href || (item.href !== '/superadmin' && pathname.startsWith(`${item.href}/`));
             return (
               <Link key={item.href.toString()} href={item.href} asChild>
                 <Pressable
@@ -75,6 +80,13 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
                   <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
                     {item.label}
                   </ThemedText>
+                  {item.href === '/superadmin/support/index' && unreadCoachSupport > 0 ? (
+                    <View style={[styles.navBadge, { backgroundColor: theme.primary }]}>
+                      <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 11, lineHeight: 14 }}>
+                        {unreadCoachSupport > 99 ? '99+' : unreadCoachSupport}
+                      </ThemedText>
+                    </View>
+                  ) : null}
                   {item.href === '/superadmin/notifications' && unreadNotifications > 0 ? (
                     <View style={[styles.navBadge, { backgroundColor: theme.primary }]}>
                       <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 11, lineHeight: 14 }}>

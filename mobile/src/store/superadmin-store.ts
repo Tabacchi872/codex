@@ -7,6 +7,7 @@ import type {
   DemoCoachAccount,
   DemoCoachClient,
   DemoPaymentEvent,
+  CoachSupportMessage,
   SuperadminNotification,
   SuperadminNotificationType,
 } from '@/types/superadmin';
@@ -167,11 +168,40 @@ const demoPaymentEvents: DemoPaymentEvent[] = [
   },
 ];
 
+const demoCoachSupportMessages: CoachSupportMessage[] = [
+  {
+    id: 'support_demo_1',
+    coachId: 'coach_demo_1',
+    sender: 'coach',
+    text: 'Ciao, posso avere una verifica sul rinnovo del piano Pro?',
+    createdAt: '2026-07-08T08:45:00.000Z',
+    readByCoachAt: '2026-07-08T08:45:00.000Z',
+    readBySuperadminAt: '2026-07-08T09:10:00.000Z',
+  },
+  {
+    id: 'support_demo_2',
+    coachId: 'coach_demo_1',
+    sender: 'superadmin',
+    text: 'Certo Giulia, il rinnovo risulta attivo fino al 01/08/2026.',
+    createdAt: '2026-07-08T09:10:00.000Z',
+    readBySuperadminAt: '2026-07-08T09:10:00.000Z',
+  },
+  {
+    id: 'support_demo_3',
+    coachId: 'coach_demo_2',
+    sender: 'coach',
+    text: 'Vorrei capire come passare da Starter a Pro per il prossimo mese.',
+    createdAt: '2026-07-08T10:20:00.000Z',
+    readByCoachAt: '2026-07-08T10:20:00.000Z',
+  },
+];
+
 type SuperadminState = {
   coaches: DemoCoachAccount[];
   plans: DemoAppPlan[];
   coachClients: DemoCoachClient[];
   paymentEvents: DemoPaymentEvent[];
+  coachSupportMessages: CoachSupportMessage[];
   notifications: SuperadminNotification[];
   createCoach: (coach: Omit<DemoCoachAccount, 'id' | 'clientsUsed' | 'blocked'> & { clientsUsed?: number }) => DemoCoachAccount;
   updateCoach: (coachId: string, patch: Partial<Omit<DemoCoachAccount, 'id'>>) => void;
@@ -180,6 +210,10 @@ type SuperadminState = {
   updatePlan: (planCode: AppPlanCode, patch: Partial<DemoAppPlan>) => void;
   markNotificationRead: (notificationId: string) => void;
   markAllNotificationsRead: () => void;
+  sendSupportMessageAsCoach: (coachId: string, text: string) => void;
+  sendSupportMessageAsSuperadmin: (coachId: string, text: string) => void;
+  markCoachSupportReadByCoach: (coachId: string) => void;
+  markCoachSupportReadBySuperadmin: (coachId: string) => void;
 };
 
 function normalizeCoach(coach: DemoCoachAccount): DemoCoachAccount {
@@ -289,6 +323,7 @@ export const useSuperadminStore = create<SuperadminState>()((set) => ({
   plans: demoPlans,
   coachClients: demoCoachClients,
   paymentEvents: demoPaymentEvents,
+  coachSupportMessages: demoCoachSupportMessages,
   notifications: [],
   createCoach: (coachInput) => {
     const coach = normalizeCoach({
@@ -365,4 +400,73 @@ export const useSuperadminStore = create<SuperadminState>()((set) => ({
     set((state) => ({
       notifications: state.notifications.map((notification) => ({ ...notification, read: true })),
     })),
+  sendSupportMessageAsCoach: (coachId, text) =>
+    set((state) => {
+      const coach = state.coaches.find((item) => item.id === coachId);
+      if (!coach) return {};
+      const now = new Date().toISOString();
+      const message: CoachSupportMessage = {
+        id: `support_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        coachId,
+        sender: 'coach',
+        text,
+        createdAt: now,
+        readByCoachAt: now,
+      };
+      const notification = createNotification({
+        title: 'Nuovo messaggio coach',
+        description: `${coach.name} ha inviato un messaggio al supporto.`,
+        type: 'coach_support_message',
+        relatedCoachId: coach.id,
+      });
+      return {
+        coachSupportMessages: [...state.coachSupportMessages, message],
+        notifications: [notification, ...state.notifications],
+      };
+    }),
+  sendSupportMessageAsSuperadmin: (coachId, text) =>
+    set((state) => {
+      if (!state.coaches.some((coach) => coach.id === coachId)) return {};
+      const now = new Date().toISOString();
+      const message: CoachSupportMessage = {
+        id: `support_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        coachId,
+        sender: 'superadmin',
+        text,
+        createdAt: now,
+        readBySuperadminAt: now,
+      };
+      return { coachSupportMessages: [...state.coachSupportMessages, message] };
+    }),
+  markCoachSupportReadByCoach: (coachId) =>
+    set((state) => {
+      const now = new Date().toISOString();
+      let changed = false;
+      const coachSupportMessages = state.coachSupportMessages.map((message) => {
+        if (message.coachId === coachId && message.sender === 'superadmin' && !message.readByCoachAt) {
+          changed = true;
+          return { ...message, readByCoachAt: now };
+        }
+        return message;
+      });
+      return changed ? { coachSupportMessages } : {};
+    }),
+  markCoachSupportReadBySuperadmin: (coachId) =>
+    set((state) => {
+      const now = new Date().toISOString();
+      let changed = false;
+      const coachSupportMessages = state.coachSupportMessages.map((message) => {
+        if (message.coachId === coachId && message.sender === 'coach' && !message.readBySuperadminAt) {
+          changed = true;
+          return { ...message, readBySuperadminAt: now };
+        }
+        return message;
+      });
+      const notifications = state.notifications.map((notification) =>
+        notification.type === 'coach_support_message' && notification.relatedCoachId === coachId
+          ? { ...notification, read: true }
+          : notification,
+      );
+      return changed ? { coachSupportMessages, notifications } : { notifications };
+    }),
 }));

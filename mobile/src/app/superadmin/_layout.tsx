@@ -24,6 +24,8 @@ export default function SuperadminLayout() {
       <Stack.Screen name="plans/index" options={{ title: 'Piani coach' }} />
       <Stack.Screen name="plans/[id]" options={{ title: 'Dettaglio piano' }} />
       <Stack.Screen name="payment-events" options={{ title: 'Eventi pagamento' }} />
+      <Stack.Screen name="support/index" options={{ title: 'Supporto coach' }} />
+      <Stack.Screen name="support/[coachId]" options={{ title: 'Chat coach' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifiche' }} />
     </Stack>
   );

@@ -11,6 +11,7 @@ export type SuperadminNotificationType =
   | 'coach_unblocked'
   | 'coach_plan_assigned'
   | 'coach_plan_changed'
+  | 'coach_support_message'
   | 'payment_past_due'
   | 'plan_updated';
 
@@ -64,4 +65,15 @@ export type SuperadminNotification = {
   createdAt: string;
   type: SuperadminNotificationType;
   read: boolean;
+  relatedCoachId?: string;
+};
+
+export type CoachSupportMessage = {
+  id: string;
+  coachId: string;
+  sender: 'coach' | 'superadmin';
+  text: string;
+  createdAt: string;
+  readByCoachAt?: string;
+  readBySuperadminAt?: string;
 };

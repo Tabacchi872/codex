@@ -28,7 +28,7 @@ const CLIENT_ONLY_ROUTES = [
   '/questionario',
 ];
 
-const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi'];
+const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto'];
 const COACH_ONLY_PREFIXES = ['/clienti/', '/appuntamenti/', '/schede/new', '/schede/modelli'];
 const SUPERADMIN_ONLY_PREFIXES = ['/superadmin'];
 

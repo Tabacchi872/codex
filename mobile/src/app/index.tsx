@@ -114,6 +114,7 @@ export default function DashboardScreen() {
           </Pressable>
           <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
           <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
+          <QuickAction label="Supporto" onPress={() => router.push('/supporto')} />
           <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
         </View>
       </ScrollView>

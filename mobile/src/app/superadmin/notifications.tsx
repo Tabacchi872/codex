@@ -98,6 +98,7 @@ function getNotificationTypeLabel(type: SuperadminNotificationType) {
     coach_unblocked: 'Accesso',
     coach_plan_assigned: 'Abbonamento',
     coach_plan_changed: 'Piano coach',
+    coach_support_message: 'Supporto',
     payment_past_due: 'Pagamento',
     plan_updated: 'Piano',
   };
