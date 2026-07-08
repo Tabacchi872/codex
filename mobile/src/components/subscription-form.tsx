@@ -8,6 +8,7 @@ import { ThemedTextInput } from './themed-text-input';
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { formatDateForDisplay, parseDateFromDisplay } from '@/lib/format-date';
 import { SUBSCRIPTION_STATUS_LABEL, type SubscriptionPackage, type SubscriptionStatus } from '@/types/subscription';
 
 const STATUS_OPTIONS: SubscriptionStatus[] = ['active', 'paused', 'completed', 'expired', 'cancelled'];
@@ -33,8 +34,10 @@ export function SubscriptionForm({
     String(initialSubscription?.totalWorkoutsPurchased ?? 12)
   );
   const [completedWorkouts, setCompletedWorkouts] = useState(String(initialSubscription?.completedWorkouts ?? 0));
-  const [startDate, setStartDate] = useState(initialSubscription?.startDate ?? new Date().toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(initialSubscription?.endDate ?? '');
+  const [startDate, setStartDate] = useState(
+    formatDateForDisplay(initialSubscription?.startDate ?? new Date().toISOString().slice(0, 10))
+  );
+  const [endDate, setEndDate] = useState(initialSubscription?.endDate ? formatDateForDisplay(initialSubscription.endDate) : '');
   const [status, setStatus] = useState<SubscriptionStatus>(initialSubscription?.status ?? 'active');
   const [notes, setNotes] = useState(initialSubscription?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +57,14 @@ export function SubscriptionForm({
       setError('Inserisci un numero di allenamenti completati valido (0 o più).');
       return;
     }
-    if (!startDate.trim()) {
-      setError('Inserisci una data di inizio (formato AAAA-MM-GG).');
+    const isoStartDate = parseDateFromDisplay(startDate);
+    const isoEndDate = endDate.trim() ? parseDateFromDisplay(endDate) : '';
+    if (!isoStartDate) {
+      setError('Inserisci una data di inizio valida nel formato GG/MM/AAAA.');
+      return;
+    }
+    if (endDate.trim() && !isoEndDate) {
+      setError('Inserisci una data di fine valida nel formato GG/MM/AAAA.');
       return;
     }
     setError(null);
@@ -67,8 +76,8 @@ export function SubscriptionForm({
       packageName: packageName.trim(),
       totalWorkoutsPurchased: total,
       completedWorkouts: completed,
-      startDate: startDate.trim(),
-      endDate: endDate.trim() || undefined,
+      startDate: isoStartDate,
+      endDate: isoEndDate || undefined,
       status,
       notes: notes.trim() || undefined,
       createdAt: initialSubscription?.createdAt ?? now,
@@ -101,12 +110,12 @@ export function SubscriptionForm({
           />
         </Field>
 
-        <Field label="Data inizio (AAAA-MM-GG)">
-          <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="2026-07-05" />
+        <Field label="Data inizio">
+          <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="gg/mm/aaaa" />
         </Field>
 
         <Field label="Data fine (opzionale)">
-          <ThemedTextInput value={endDate} onChangeText={setEndDate} placeholder="2026-09-05" />
+          <ThemedTextInput value={endDate} onChangeText={setEndDate} placeholder="gg/mm/aaaa" />
         </Field>
 
         <Field label="Stato">

@@ -346,17 +346,17 @@ function CredentialsSection({
             </ThemedText>
           </View>
 
-          <View style={styles.actionsRow}>
-            <Pressable onPress={handleCopy} style={styles.actionButtonWrap}>
+          <View style={styles.credentialsActions}>
+            <Pressable onPress={handleCopy} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Copia credenziali
                 </ThemedText>
               </View>
             </Pressable>
-            <Pressable onPress={handleShare} style={styles.actionButtonWrap}>
+            <Pressable onPress={handleShare} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Condividi credenziali
                 </ThemedText>
               </View>
@@ -475,18 +475,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  actionsRow: {
-    flexDirection: 'row',
+  credentialsActions: {
     gap: Spacing.two,
   },
-  actionButtonWrap: {
-    flex: 1,
+  credentialActionWrap: {
+    width: '100%',
   },
   actionButton: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
     paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    textAlign: 'center',
   },
   notFound: {
     flex: 1,

@@ -6,13 +6,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useChatStore } from '@/store/chat-store';
 
 const TABS = [
-  { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/', label: 'Home', icon: '⌂' },
   { path: '/clienti', label: 'Clienti', icon: '👥' },
-  { path: '/esercizi', label: 'Esercizi', icon: '🏋️' },
   { path: '/schede', label: 'Schede', icon: '📋' },
   { path: '/appuntamenti', label: 'Agenda', icon: '📅' },
   { path: '/chat', label: 'Messaggi', icon: '💬' },
-  { path: '/impostazioni', label: 'Impostazioni', icon: '⚙️' },
 ] as const satisfies readonly { path: Href; label: string; icon: string }[];
 
 export default function AppTabs() {
@@ -77,8 +75,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 4,
+    gap: 5,
+    paddingHorizontal: 2,
   },
   activeIndicator: {
     width: 20,
@@ -107,8 +105,9 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
+    lineHeight: 14,
   },
   tabLabelActive: {
     fontWeight: '700',

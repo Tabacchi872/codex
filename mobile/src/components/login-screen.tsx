@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +20,7 @@ import { useClientStore } from '@/store/client-store';
 // previsto verso un backend/auth vero. Il testo in UI resta volutamente
 // discorsivo: i dettagli tecnici restano in docs/report, non in questa schermata.
 export function LoginScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const accounts = useClientStore((s) => s.accounts);
@@ -45,6 +47,12 @@ export function LoginScreen() {
     }
     setError(null);
     loginAsClient(account.clientId);
+    router.replace('/cliente-home');
+  }
+
+  function handleCoachLogin() {
+    loginAsCoach();
+    router.replace('/');
   }
 
   return (
@@ -97,7 +105,7 @@ export function LoginScreen() {
         <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
       </View>
 
-      <Pressable onPress={loginAsCoach}>
+      <Pressable onPress={handleCoachLogin}>
         <View style={[styles.coachButton, { borderColor: theme.primary }]}>
           <ThemedText type="smallBold" style={{ color: theme.primary }}>
             Entra come Coach

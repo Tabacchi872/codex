@@ -1,14 +1,16 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/card';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
 import { useAppointmentStore } from '@/store/appointment-store';
+import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
@@ -16,6 +18,8 @@ import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subsc
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const currentRole = useAuthStore((s) => s.currentRole);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
@@ -32,12 +36,16 @@ export default function DashboardScreen() {
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
   const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
 
+  if (currentRole === 'client') {
+    return <Redirect href="/cliente-home" />;
+  }
+
   if (!clientsHydrated || !subscriptionsHydrated) {
     return (
       <ScreenBackground>
         <View style={styles.loading}>
           <ThemedText type="default" themeColor="textSecondary">
-            Caricamento…
+            Caricamento...
           </ThemedText>
         </View>
       </ScreenBackground>
@@ -46,59 +54,74 @@ export default function DashboardScreen() {
 
   return (
     <ScreenBackground>
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three,
-          paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
-        },
-      ]}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>
-          Dashboard
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Riepilogo clienti e prossimi impegni
-        </ThemedText>
-      </View>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three,
+            paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
+          },
+        ]}>
+        <View style={styles.header}>
+          <ThemedText type="title" style={styles.title}>
+            Dashboard
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.headerSubtitle}>
+            Panoramica clienti, abbonamenti e prossimi impegni.
+          </ThemedText>
+        </View>
 
-      <Card padded={false} style={styles.statsCard}>
-        <StatCell label="Attivi" value={attivi} onPress={() => router.push('/clienti')} />
-        <View style={styles.statDivider} />
-        <StatCell label="In scadenza" value={inScadenza} color="statusWarning" onPress={() => router.push('/clienti')} />
-        <View style={styles.statDivider} />
-        <StatCell label="Scaduti" value={scaduti} color="statusExpired" onPress={() => router.push('/clienti')} />
-      </Card>
-
-      <ThemedText type="smallBold" style={styles.sectionLabel}>
-        Prossimo appuntamento
-      </ThemedText>
-      {prossimoAppuntamento ? (
-        <Pressable onPress={() => router.push('/appuntamenti')}>
-          <Card style={styles.appointmentRow}>
-            <View>
-              <ThemedText type="default">
-                {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Cliente non trovato'}
+        <View style={styles.statsGrid}>
+          <StatCard label="Attivi" value={attivi} onPress={() => router.push('/clienti')} />
+          <StatCard
+            label="In scadenza"
+            value={inScadenza}
+            color="statusWarning"
+            onPress={() => router.push('/clienti')}
+          />
+          <StatCard label="Scaduti" value={scaduti} color="statusExpired" onPress={() => router.push('/clienti')} />
+          <Pressable onPress={() => router.push('/appuntamenti')} style={styles.statCardWrap}>
+            <Card style={styles.statCard}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+                Prossimo appuntamento
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatDayMonth(prossimoAppuntamento.date)} · {prossimoAppuntamento.startTime}
+              <ThemedText type="default" style={styles.appointmentKpiTitle} numberOfLines={2}>
+                {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Nessun appuntamento'}
+              </ThemedText>
+              {prossimoAppuntamento ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {formatDayMonth(prossimoAppuntamento.date)} · {prossimoAppuntamento.startTime}
+                </ThemedText>
+              ) : (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Agenda libera
+                </ThemedText>
+              )}
+            </Card>
+          </Pressable>
+        </View>
+
+        <ThemedText type="smallBold" style={styles.sectionLabel}>
+          Azioni rapide
+        </ThemedText>
+        <View style={styles.quickActions}>
+          <Pressable onPress={() => router.push('/clienti/new')} style={styles.quickActionWrap}>
+            <View style={[styles.quickAction, styles.quickActionPrimary, { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" themeColor="onPrimary">
+                Nuovo cliente
               </ThemedText>
             </View>
-            <ThemedText type="linkPrimary">Vedi</ThemedText>
-          </Card>
-        </Pressable>
-      ) : (
-        <ThemedText type="small" themeColor="textSecondary">
-          Nessun appuntamento in programma.
-        </ThemedText>
-      )}
-    </ScrollView>
+          </Pressable>
+          <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
+          <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
+          <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
+        </View>
+      </ScrollView>
     </ScreenBackground>
   );
 }
 
-function StatCell({
+function StatCard({
   label,
   value,
   onPress,
@@ -110,13 +133,27 @@ function StatCell({
   color?: 'statusWarning' | 'statusExpired';
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.statCell}>
-      <ThemedText type="title" style={styles.statValue} themeColor={color}>
-        {value}
-      </ThemedText>
-      <ThemedText type="small" themeColor={color ?? 'textSecondary'}>
-        {label}
-      </ThemedText>
+    <Pressable onPress={onPress} style={styles.statCardWrap}>
+      <Card style={styles.statCard}>
+        <ThemedText type="small" themeColor={color ?? 'textSecondary'} style={styles.statLabel}>
+          {label}
+        </ThemedText>
+        <ThemedText type="title" style={styles.statValue} themeColor={color}>
+          {value}
+        </ThemedText>
+      </Card>
+    </Pressable>
+  );
+}
+
+function QuickAction({ label, onPress }: { label: string; onPress: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <Pressable onPress={onPress} style={styles.quickActionWrap}>
+      <View style={[styles.quickAction, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+        <ThemedText type="smallBold">{label}</ThemedText>
+      </View>
     </Pressable>
   );
 }
@@ -124,42 +161,70 @@ function StatCell({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+    gap: Spacing.four,
   },
   header: {
-    gap: 4,
+    gap: Spacing.one,
   },
   title: {
     fontSize: 26,
     lineHeight: 32,
     fontWeight: '700',
   },
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
+  headerSubtitle: {
+    maxWidth: 420,
   },
-  statCell: {
-    flex: 1,
-    alignItems: 'center',
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  statCardWrap: {
+    width: '48.5%',
+    minWidth: 136,
+    flexGrow: 1,
+  },
+  statCard: {
+    minHeight: 104,
     justifyContent: 'center',
-    paddingVertical: Spacing.three,
-    gap: 2,
+    gap: Spacing.one,
+  },
+  statLabel: {
+    fontWeight: '700',
   },
   statValue: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '800',
   },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(120,124,130,0.25)',
+  appointmentKpiTitle: {
+    fontWeight: '700',
+    minHeight: 48,
   },
   sectionLabel: {
-    marginTop: Spacing.two,
+    marginTop: Spacing.one,
   },
-  appointmentRow: {
+  quickActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  quickActionWrap: {
+    width: '48.5%',
+    minWidth: 136,
+    flexGrow: 1,
+  },
+  quickAction: {
+    minHeight: 52,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+  },
+  quickActionPrimary: {
+    borderWidth: 0,
   },
   loading: {
     flex: 1,

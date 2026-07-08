@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,6 +26,7 @@ export default function ClienteHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const clients = useClientStore((s) => s.clients);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
@@ -37,6 +38,10 @@ export default function ClienteHomeScreen() {
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
 
   const client = getClientById(clients, currentClientId);
+
+  if (currentRole === 'coach') {
+    return <Redirect href="/" />;
+  }
 
   if (!hasHydrated) {
     return (

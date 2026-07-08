@@ -18,18 +18,13 @@ export default function AppTabs() {
       indicatorColor={colors.backgroundElement}
       labelStyle={{ selected: { color: colors.text } }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'gauge', selected: 'gauge.with.needle.fill' }} md="dashboard" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="clienti">
         <NativeTabs.Trigger.Label>Clienti</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="people" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="esercizi">
-        <NativeTabs.Trigger.Label>Esercizi</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="figure.strengthtraining.traditional" md="fitness_center" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="schede">
@@ -48,11 +43,6 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Badge hidden={unreadMessagesCount === 0}>
           {unreadMessagesCount > 99 ? '99+' : String(unreadMessagesCount)}
         </NativeTabs.Trigger.Badge>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="impostazioni">
-        <NativeTabs.Trigger.Label>Impostazioni</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="gearshape" md="settings" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

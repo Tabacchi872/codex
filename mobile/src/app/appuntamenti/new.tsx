@@ -12,6 +12,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { findOverlappingAppointment, isValidTimeRange } from '@/lib/appointment-overlap';
 import { clientFullName } from '@/lib/client-helpers';
+import { formatDateForDisplay, parseDateFromDisplay } from '@/lib/format-date';
 import { getClientPlans } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useClientStore } from '@/store/client-store';
@@ -36,7 +37,7 @@ export default function NuovoAppuntamentoScreen() {
 
   const [clientId, setClientId] = useState(initialClientId ?? clients[0]?.id ?? '');
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(formatDateForDisplay(new Date().toISOString().slice(0, 10)));
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [type, setType] = useState<AppointmentType>('workout');
@@ -55,8 +56,9 @@ export default function NuovoAppuntamentoScreen() {
       setError('Inserisci un titolo per l’appuntamento.');
       return;
     }
-    if (!date.trim()) {
-      setError('Inserisci una data (formato AAAA-MM-GG).');
+    const isoDate = parseDateFromDisplay(date);
+    if (!isoDate) {
+      setError('Inserisci una data valida nel formato GG/MM/AAAA.');
       return;
     }
     if (!isValidTimeRange(startTime.trim(), endTime.trim())) {
@@ -64,7 +66,7 @@ export default function NuovoAppuntamentoScreen() {
       return;
     }
 
-    const candidate = { coachId: DEFAULT_COACH_ID, date: date.trim(), startTime: startTime.trim(), endTime: endTime.trim() };
+    const candidate = { coachId: DEFAULT_COACH_ID, date: isoDate, startTime: startTime.trim(), endTime: endTime.trim() };
     const conflict = findOverlappingAppointment(appointments, candidate);
     if (conflict) {
       setError('Orario non disponibile. Scegli un altro orario.');
@@ -78,7 +80,7 @@ export default function NuovoAppuntamentoScreen() {
       coachId: DEFAULT_COACH_ID,
       workoutSessionId: workoutSessionId || undefined,
       title: title.trim(),
-      date: date.trim(),
+      date: isoDate,
       startTime: startTime.trim(),
       endTime: endTime.trim(),
       status: 'scheduled',
@@ -123,8 +125,8 @@ export default function NuovoAppuntamentoScreen() {
             <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Es. Sessione Pull+Gambe" />
           </Field>
 
-          <Field label="Data appuntamento (AAAA-MM-GG)">
-            <ThemedTextInput value={date} onChangeText={setDate} placeholder="2026-07-05" />
+          <Field label="Data appuntamento">
+            <ThemedTextInput value={date} onChangeText={setDate} placeholder="gg/mm/aaaa" />
           </Field>
           <View style={styles.fieldsRow}>
             <Field label="Ora inizio (HH:mm)">
