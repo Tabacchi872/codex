@@ -83,33 +83,31 @@ export function SubscriptionForm({
           <ThemedTextInput value={packageName} onChangeText={setPackageName} placeholder="Es. 12 allenamenti" />
         </Field>
 
-        <View style={styles.fieldsRow}>
-          <Field label="Totale acquistati">
-            <ThemedTextInput
-              value={totalWorkoutsPurchased}
-              onChangeText={setTotalWorkoutsPurchased}
-              placeholder="12"
-              keyboardType="number-pad"
-            />
-          </Field>
-          <Field label="Completati">
-            <ThemedTextInput
-              value={completedWorkouts}
-              onChangeText={setCompletedWorkouts}
-              placeholder="0"
-              keyboardType="number-pad"
-            />
-          </Field>
-        </View>
+        <Field label="Totale acquistati">
+          <ThemedTextInput
+            value={totalWorkoutsPurchased}
+            onChangeText={setTotalWorkoutsPurchased}
+            placeholder="12"
+            keyboardType="number-pad"
+          />
+        </Field>
 
-        <View style={styles.fieldsRow}>
-          <Field label="Data inizio (AAAA-MM-GG)">
-            <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="2026-07-05" />
-          </Field>
-          <Field label="Data fine (opzionale)">
-            <ThemedTextInput value={endDate} onChangeText={setEndDate} placeholder="2026-09-05" />
-          </Field>
-        </View>
+        <Field label="Completati">
+          <ThemedTextInput
+            value={completedWorkouts}
+            onChangeText={setCompletedWorkouts}
+            placeholder="0"
+            keyboardType="number-pad"
+          />
+        </Field>
+
+        <Field label="Data inizio (AAAA-MM-GG)">
+          <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="2026-07-05" />
+        </Field>
+
+        <Field label="Data fine (opzionale)">
+          <ThemedTextInput value={endDate} onChangeText={setEndDate} placeholder="2026-09-05" />
+        </Field>
 
         <Field label="Stato">
           <View style={styles.chipsRow}>
@@ -174,10 +172,7 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: 4,
-  },
-  fieldsRow: {
-    flexDirection: 'row',
-    gap: Spacing.three,
+    width: '100%',
   },
   chipsRow: {
     flexDirection: 'row',
@@ -194,6 +189,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.three,
     alignItems: 'center',
-    marginTop: Spacing.two,
+    marginTop: Spacing.one,
   },
 });

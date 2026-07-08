@@ -7,22 +7,22 @@ import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
-import { getClientStatus } from '@/lib/client-status';
 import { formatDayMonth } from '@/lib/format-date';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useClientStore } from '@/store/client-store';
-import { useTrainingStore } from '@/store/training-store';
+import { useSubscriptionStore } from '@/store/subscription-store';
+import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const workoutPlans = useTrainingStore((s) => s.workoutPlans);
-  const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
+  const subscriptionsHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const appointments = useAppointmentStore((s) => s.appointments);
 
-  const statuses = clients.map((c) => getClientStatus(workoutPlans, c.id));
+  const statuses = clients.map((c) => computeSubscriptionStatus(getCurrentSubscription(subscriptions, c.id)));
   const attivi = statuses.filter((s) => s === 'active').length;
   const inScadenza = statuses.filter((s) => s === 'expiring').length;
   const scaduti = statuses.filter((s) => s === 'expired').length;
@@ -32,7 +32,7 @@ export default function DashboardScreen() {
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
   const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
 
-  if (!hasHydrated || !clientsHydrated) {
+  if (!clientsHydrated || !subscriptionsHydrated) {
     return (
       <ScreenBackground>
         <View style={styles.loading}>

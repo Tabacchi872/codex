@@ -6,7 +6,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SubscriptionForm } from '@/components/subscription-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import type { SubscriptionPackage } from '@/types/subscription';
 
@@ -40,7 +40,10 @@ export default function AggiornaAbbonamentoScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
+            paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
+          },
         ]}>
         <SubscriptionForm
           initialSubscription={subscription}

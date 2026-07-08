@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { ScreenBackground } from '@/components/screen-background';
 import { SubscriptionForm } from '@/components/subscription-form';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { computeSubscriptionStatus, getCurrentSubscription, type SubscriptionPackage } from '@/types/subscription';
 
@@ -30,7 +30,10 @@ export default function NuovoAbbonamentoScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
+            paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
+          },
         ]}>
         {existingValidSubscription && (
           <PlaceholderBanner
