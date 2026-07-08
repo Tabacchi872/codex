@@ -49,7 +49,7 @@ export default function SchedaDettaglioScreen() {
   const deleteWorkoutPlan = useTrainingStore((s) => s.deleteWorkoutPlan);
   const clients = useClientStore((s) => s.clients);
   const incrementSubscriptionCompletedWorkouts = useSubscriptionStore((s) => s.incrementCompletedWorkouts);
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   const plan = workoutPlans.find((p) => p.id === id);

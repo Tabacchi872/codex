@@ -60,7 +60,7 @@ export default function EsercizioDettaglioScreen() {
     plan.exercises.filter((we) => we.exerciseId === exercise.id).map((we) => ({ plan, workoutExercise: we }))
   );
   const assignments =
-    currentRole === 'client' ? allAssignments.filter((a) => a.plan.clientId === currentClientId) : allAssignments;
+    currentRole === 'cliente' ? allAssignments.filter((a) => a.plan.clientId === currentClientId) : allAssignments;
 
   const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
   const selectedClient = selected ? getClientById(clients, selected.plan.clientId) : null;
@@ -69,7 +69,7 @@ export default function EsercizioDettaglioScreen() {
   // quando si arriva qui da schede/[id].tsx (client, planId nell'URL), mai per
   // il coach e mai se l'esercizio viene aperto da un altro punto dell'app
   // (dove "avanti/indietro nella scheda" non avrebbe senso).
-  const sessionPlan = currentRole === 'client' && planId ? workoutPlans.find((p) => p.id === planId) : null;
+  const sessionPlan = currentRole === 'cliente' && planId ? workoutPlans.find((p) => p.id === planId) : null;
   const sessionOrder = sessionPlan ? [...sessionPlan.exercises].sort((a, b) => a.order - b.order) : [];
   const sessionPosition = sessionOrder.findIndex((we) => we.exerciseId === exercise.id);
   const nextInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition + 1] : undefined;
@@ -171,7 +171,7 @@ export default function EsercizioDettaglioScreen() {
                 <ExerciseHistory clientId={selectedClient.id} exerciseId={exercise.id} workoutPlanId={selected.plan.id} />
               )}
 
-              {currentRole === 'client' && selectedClient && (
+              {currentRole === 'cliente' && selectedClient && (
                 <>
                   <ExerciseSetLogger
                     clientId={selectedClient.id}

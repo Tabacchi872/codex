@@ -20,7 +20,7 @@ export default function NuovoClienteScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const addClient = useClientStore((s) => s.addClient);
 
   const [firstName, setFirstName] = useState('');

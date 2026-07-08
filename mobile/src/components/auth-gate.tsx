@@ -45,6 +45,7 @@ export function AuthGate() {
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const currentRole = useAuthStore((s) => s.currentRole);
+  const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const accounts = useClientStore((s) => s.accounts);
 
@@ -63,8 +64,11 @@ export function AuthGate() {
     return <LoginScreen />;
   }
 
-  if (currentRole === 'client') {
-    const account = accounts.find((a) => a.clientId === currentClientId);
+  if (currentRole === 'cliente') {
+    const normalizedEmail = currentUserEmail?.toLowerCase() ?? null;
+    const account = normalizedEmail
+      ? accounts.find((a) => a.email.toLowerCase() === normalizedEmail || a.username.toLowerCase() === normalizedEmail)
+      : accounts.find((a) => a.clientId === currentClientId);
     if (account?.mustChangePassword) {
       return <ChangePasswordScreen account={account} />;
     }
@@ -89,7 +93,7 @@ export function AuthGate() {
 }
 
 function getRoleRedirectTarget(role: UserRole | null, pathname: string) {
-  if (role === 'client' && (isCoachOnlyPath(pathname) || isSuperadminOnlyPath(pathname))) {
+  if (role === 'cliente' && (isCoachOnlyPath(pathname) || isSuperadminOnlyPath(pathname))) {
     return CLIENT_HOME;
   }
   if (role === 'coach' && (isClientOnlyPath(pathname) || isSuperadminOnlyPath(pathname))) {

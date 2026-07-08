@@ -42,7 +42,7 @@ export type ClientAccount = {
   username: string;
   email: string;
   temporaryPassword: string;
-  role: 'client';
+  role: 'cliente';
   mustChangePassword: boolean;
   status: 'active';
   createdAt: string;

@@ -1,3 +1,54 @@
+# Supabase schema ufficiale
+
+Questo documento descrive la base database per clienti, coach e superadmin. La app mobile resta ancora su login locale demo: non sono stati aggiunti URL Supabase, anon key, pacchetti o client reale.
+
+Il SQL eseguibile e in `docs/SUPABASE_SCHEMA.sql`. Questa sezione e il file SQL sono il riferimento aggiornato; le note storiche sotto restano solo come contesto della fase precedente.
+
+## Ruoli ufficiali
+
+- `superadmin`: gestisce piattaforma, piani, billing e notifiche amministrative.
+- `coach`: gestisce solo i propri clienti, appuntamenti, abbonamenti cliente e messaggi.
+- `cliente`: vede solo il proprio profilo e i dati assegnati dal proprio coach.
+
+## Tabelle ufficiali
+
+- `profiles`: `id uuid primary key`, `role text check in ('superadmin','coach','cliente')`, `full_name`, `email`, `phone`, `avatar_url`, `is_active`, `created_at`, `updated_at`.
+- `coach_profiles`: `id uuid primary key`, `user_id references profiles(id)`, `business_name`, `bio`, `phone`, `billing_status`, `created_at`, `updated_at`.
+- `client_profiles`: `id uuid primary key`, `user_id references profiles(id)`, `goal`, `height`, `weight`, `notes`, `created_at`, `updated_at`.
+- `coach_clients`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `status`, `created_at`, `updated_at`.
+- `plans`: `id uuid primary key`, `code`, `name`, `price_monthly`, `price_yearly`, `max_clients`, `features jsonb`, `is_active`, `created_at`, `updated_at`.
+- `coach_billing`: `id uuid primary key`, `coach_id references profiles(id)`, `plan_id references plans(id)`, `status check in ('trial','active','past_due','canceled','blocked')`, `current_period_start`, `current_period_end`, `cancel_at_period_end`, `provider`, `provider_customer_id`, `provider_subscription_id`, `created_at`, `updated_at`.
+- `payment_events`: `id uuid primary key`, `coach_id references profiles(id)`, `provider`, `event_type`, `provider_event_id`, `payload jsonb`, `processed_at`, `created_at`.
+- `subscriptions`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `name`, `start_date`, `end_date`, `total_sessions`, `used_sessions`, `status`, `created_at`, `updated_at`.
+- `appointments`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `title`, `description`, `start_at`, `end_at`, `status`, `created_at`, `updated_at`.
+- `messages`: `id uuid primary key`, `coach_id references profiles(id)`, `client_id references profiles(id)`, `sender_id references profiles(id)`, `sender_role`, `body`, `read_at`, `created_at`.
+- `admin_notifications`: `id uuid primary key`, `title`, `description`, `type`, `read_at`, `created_at`.
+- `push_tokens`: `id uuid primary key`, `user_id references profiles(id)`, `token`, `platform`, `device_id`, `created_at`, `updated_at`.
+
+## RLS ufficiale iniziale
+
+Le policy in `docs/SUPABASE_SCHEMA.sql` sono una base da validare prima della produzione.
+
+- Superadmin: accesso completo alle tabelle operative, piani, billing, eventi pagamento e notifiche admin.
+- Coach: accesso ai dati con `coach_id = auth.uid()` e ai clienti collegati tramite `coach_clients`.
+- Cliente: accesso solo a `profiles`, `client_profiles`, appuntamenti, subscription e messaggi in cui `client_id = auth.uid()`.
+- Coach non vede altri coach: `coach_profiles` e `profiles` non hanno policy di lettura generale tra coach.
+- Cliente non vede superadmin: nessuna policy cliente su `admin_notifications`, scrittura piani o billing.
+- Superadmin gestisce piani e billing; il coach legge solo il proprio billing.
+- Eventi pagamento: in produzione gli insert dovranno passare da backend/Edge Function con service role.
+
+## Cosa manca per collegare Supabase reale
+
+- Creare progetto Supabase.
+- Eseguire `docs/SUPABASE_SCHEMA.sql` nel SQL editor o in una migration.
+- Collegare `profiles.id` a `auth.users.id` quando si attiva Supabase Auth.
+- Aggiungere `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+- Installare `@supabase/supabase-js` solo dopo conferma.
+- Sostituire il login locale con Supabase Auth mantenendo i redirect: coach `/`, cliente `/cliente-home`, superadmin `/superadmin`.
+- Validare RLS con utenti reali per i tre ruoli.
+
+---
+
 # Supabase schema fase 1
 
 Questo schema prepara il backend ufficiale senza migrare la demo locale da AsyncStorage. I nomi sono stabili per la fase 2, ma le policy RLS vanno validate su un progetto Supabase reale prima della migrazione.

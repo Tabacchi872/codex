@@ -26,7 +26,7 @@ export default function SchedeListScreen() {
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const clients = useClientStore((s) => s.clients);
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [tab, setTab] = useState<Tab>('todo');
 
   const filtered = useMemo(() => {

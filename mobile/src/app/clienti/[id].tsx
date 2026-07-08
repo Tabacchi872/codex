@@ -36,7 +36,7 @@ export default function ClienteDettaglioScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const clients = useClientStore((s) => s.clients);
   const accounts = useClientStore((s) => s.accounts);
@@ -85,7 +85,7 @@ export default function ClienteDettaglioScreen() {
       username: generateUsername(cliente!),
       email: cliente!.email,
       temporaryPassword: generateTemporaryPassword(),
-      role: 'client',
+      role: 'cliente',
       mustChangePassword: true,
       status: 'active',
       createdAt: new Date().toISOString(),

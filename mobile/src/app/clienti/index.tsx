@@ -26,7 +26,7 @@ export default function ClientiListScreen() {
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
 
   if (!isCoach) {
     return (

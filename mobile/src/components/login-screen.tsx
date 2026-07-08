@@ -11,7 +11,7 @@ import { ThemedTextInput } from './themed-text-input';
 import { APP_NAME } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/store/auth-store';
+import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 
 // Login locale: confronta le credenziali con gli account salvati in
@@ -34,32 +34,42 @@ export function LoginScreen() {
   function handleLogin() {
     const normalized = identifier.trim().toLowerCase();
     if (!normalized || !password) {
-      setError('Inserisci username/email e password.');
+      setError('Inserisci email e password.');
       return;
     }
-    if (normalized === 'admin@fitcoach.local' && password === 'admin123') {
+
+    const demoUser = DEMO_USERS.find((user) => user.email === normalized && user.password === password);
+    if (demoUser?.role === 'coach') {
       setError(null);
-      loginAsSuperadmin();
+      loginAsCoach(demoUser.email);
+      router.replace('/');
+      return;
+    }
+    if (demoUser?.role === 'cliente') {
+      setError(null);
+      loginAsClient(demoUser.clientId ?? '1', demoUser.email);
+      router.replace('/cliente-home');
+      return;
+    }
+    if (demoUser?.role === 'superadmin') {
+      setError(null);
+      loginAsSuperadmin(demoUser.email);
       router.replace('/superadmin');
       return;
     }
+
     const account = accounts.find(
       (a) =>
-        (a.username.toLowerCase() === normalized || a.email.toLowerCase() === normalized) &&
+        (a.email.toLowerCase() === normalized || a.username.toLowerCase() === normalized) &&
         a.temporaryPassword === password
     );
     if (!account) {
-      setError('Credenziali non valide. Controlla username/email e password.');
+      setError('Credenziali non valide. Controlla email e password.');
       return;
     }
     setError(null);
-    loginAsClient(account.clientId);
+    loginAsClient(account.clientId, account.email);
     router.replace('/cliente-home');
-  }
-
-  function handleCoachLogin() {
-    loginAsCoach();
-    router.replace('/');
   }
 
   return (
@@ -74,15 +84,17 @@ export function LoginScreen() {
           {APP_NAME}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Accedi come cliente o come coach
+          Accesso riservato
         </ThemedText>
       </View>
 
       <Card style={styles.form}>
-        <ThemedText type="smallBold">Accesso cliente</ThemedText>
+        <ThemedText type="smallBold">Accedi al tuo account</ThemedText>
         <ThemedTextInput
-          placeholder="Username o email"
+          placeholder="Email"
           autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
           value={identifier}
           onChangeText={setIdentifier}
         />
@@ -99,29 +111,12 @@ export function LoginScreen() {
             </ThemedText>
           </View>
         </Pressable>
-        <ThemedText type="small" themeColor="textSecondary">
-          Cliente demo: marco.bianchi / Forza4821!
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Superadmin demo: admin@fitcoach.local / admin123
-        </ThemedText>
-      </Card>
-
-      <View style={styles.divider}>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-        <ThemedText type="small" themeColor="textSecondary">
-          oppure
-        </ThemedText>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-      </View>
-
-      <Pressable onPress={handleCoachLogin}>
-        <View style={[styles.coachButton, { borderColor: theme.primary }]}>
-          <ThemedText type="smallBold" style={{ color: theme.primary }}>
-            Entra come Coach
+        <Pressable disabled>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.forgotPassword}>
+            Password dimenticata?
           </ThemedText>
-        </View>
-      </Pressable>
+        </Pressable>
+      </Card>
     </ScrollView>
     </ScreenBackground>
   );
@@ -132,6 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
     flexGrow: 1,
+    justifyContent: 'center',
   },
   titleBlock: {
     gap: 4,
@@ -143,7 +139,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   form: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
   primaryButton: {
     borderRadius: Radius.md,
@@ -151,19 +147,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.one,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
-  coachButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
+  forgotPassword: {
+    textAlign: 'center',
+    opacity: 0.65,
   },
 });

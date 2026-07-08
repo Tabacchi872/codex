@@ -36,7 +36,7 @@ export default function DashboardScreen() {
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
   const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
 
-  if (currentRole === 'client') {
+  if (currentRole === 'cliente') {
     return <Redirect href="/cliente-home" />;
   }
 
