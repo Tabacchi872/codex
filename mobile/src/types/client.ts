@@ -19,6 +19,8 @@ export type Client = {
   notes: string;
   status: ClientStatus;
   createdAt: string;
+  coachId?: string;
+  linkedByCode?: string | null;
   // Totale allenamenti del pacchetto acquistato dal cliente (es. 12). Assente per
   // i clienti creati prima di questo campo: in quel caso si usa un default (vedi
   // lib/workout-progress.ts), non un valore finto scritto qui.
@@ -42,7 +44,7 @@ export type ClientAccount = {
   username: string;
   email: string;
   temporaryPassword: string;
-  role: 'client';
+  role: 'cliente';
   mustChangePassword: boolean;
   status: 'active';
   createdAt: string;

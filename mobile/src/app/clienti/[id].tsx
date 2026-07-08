@@ -9,7 +9,7 @@ import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { buildCredentialsMessage, generateTemporaryPassword, generateUsername } from '@/lib/credentials';
 import { clientFullName } from '@/lib/client-helpers';
@@ -23,7 +23,11 @@ import { useTrainingStore } from '@/store/training-store';
 import { APPOINTMENT_TYPE_LABEL } from '@/types/appointment';
 import { CLIENT_STATUS_LABEL, type Client, type ClientAccount, type ClientStatus } from '@/types/client';
 import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
-import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
+import {
+  COMPUTED_SUBSCRIPTION_STATUS_LABEL,
+  computeSubscriptionStatus,
+  getCurrentSubscription,
+} from '@/types/subscription';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
 
@@ -32,7 +36,7 @@ export default function ClienteDettaglioScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const clients = useClientStore((s) => s.clients);
   const accounts = useClientStore((s) => s.accounts);
@@ -61,15 +65,10 @@ export default function ClienteDettaglioScreen() {
   }
 
   const sessions = getClientPlans(workoutPlans, cliente.id);
-  const activeSubscription = subscriptions.find((s) => s.clientId === cliente.id && s.status === 'active');
-  const clientSubscriptions = subscriptions
-    .filter((s) => s.clientId === cliente.id)
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  // Sempre il più rilevante: quello attivo se esiste, altrimenti il più recente
-  // per data di inizio. Prima si mostrava SOLO se `status === 'active'`: cambiare
-  // stato (es. a "In pausa"/"Completato") faceva sparire ogni informazione,
-  // dando l'impressione che il salvataggio non fosse avvenuto — vedi docs/BUGS.md.
-  const displaySubscription = activeSubscription ?? clientSubscriptions[0];
+  const displaySubscription = getCurrentSubscription(subscriptions, cliente.id);
+  const displaySubscriptionStatus = computeSubscriptionStatus(displaySubscription);
+  // Sempre lo stesso abbonamento scelto dalla logica condivisa: corrente se valido,
+  // altrimenti il più recente, così lista e dettaglio non divergono.
   const clientAppointments = appointments
     .filter((a) => a.clientId === cliente.id && a.status !== 'cancelled')
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
@@ -86,7 +85,7 @@ export default function ClienteDettaglioScreen() {
       username: generateUsername(cliente!),
       email: cliente!.email,
       temporaryPassword: generateTemporaryPassword(),
-      role: 'client',
+      role: 'cliente',
       mustChangePassword: true,
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -99,7 +98,7 @@ export default function ClienteDettaglioScreen() {
     <ScrollView
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.two, paddingBottom: Spacing.six },
+        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.two, paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
       ]}>
       <Stack.Screen options={{ title: clientFullName(cliente) }} />
 
@@ -107,7 +106,7 @@ export default function ClienteDettaglioScreen() {
         {STATUS_OPTIONS.map((option) => {
           const active = option === cliente.status;
           return (
-            <Pressable key={option} onPress={() => setClientStatus(option)}>
+            <Pressable key={option} onPress={() => setClientStatus(option)} hitSlop={6}>
               <View
                 style={[
                   styles.statusChip,
@@ -159,8 +158,14 @@ export default function ClienteDettaglioScreen() {
             <View style={styles.sectionHeaderRow}>
               <ThemedText
                 type="smallBold"
-                themeColor={displaySubscription.status === 'active' ? 'statusActive' : 'textSecondary'}>
-                {SUBSCRIPTION_STATUS_LABEL[displaySubscription.status]}
+                themeColor={
+                  displaySubscriptionStatus === 'active'
+                    ? 'statusActive'
+                    : displaySubscriptionStatus === 'expiring'
+                      ? 'statusWarning'
+                      : 'statusExpired'
+                }>
+                {COMPUTED_SUBSCRIPTION_STATUS_LABEL[displaySubscriptionStatus]}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 Inizio {formatDayMonth(displaySubscription.startDate)}
@@ -174,6 +179,7 @@ export default function ClienteDettaglioScreen() {
           </ThemedText>
         )}
         <Pressable
+          hitSlop={6}
           onPress={() =>
             displaySubscription
               ? router.push({
@@ -189,7 +195,7 @@ export default function ClienteDettaglioScreen() {
           </View>
         </Pressable>
         {displaySubscription && (
-          <Pressable onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })}>
+          <Pressable onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })} hitSlop={6}>
             <ThemedText type="small" themeColor="primary" style={styles.secondaryLink}>
               + Crea un nuovo abbonamento
             </ThemedText>
@@ -206,7 +212,7 @@ export default function ClienteDettaglioScreen() {
         ) : (
           sessions.map((session) => <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => router.push(`/schede/${session.id}`)} />)
         )}
-        <Pressable onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })}>
+        <Pressable onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })} hitSlop={6}>
           <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               + Nuova scheda
@@ -228,7 +234,7 @@ export default function ClienteDettaglioScreen() {
             Nessun appuntamento in programma.
           </ThemedText>
         )}
-        <Pressable onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })}>
+        <Pressable onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })} hitSlop={6}>
           <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               + Nuovo appuntamento
@@ -255,7 +261,7 @@ function SessionRow({ session, sessions, onPress }: { session: WorkoutPlan; sess
   const theme = useTheme();
   const status = session.sessionStatus ?? 'todo';
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} hitSlop={4}>
       <View style={[styles.sessionRow, { borderColor: theme.border }]}>
         <View style={styles.sessionRowLeft}>
           <ThemedText type="default" style={styles.sessionName}>
@@ -321,7 +327,7 @@ function CredentialsSection({
       <ThemedText type="smallBold">Credenziali cliente</ThemedText>
 
       {!account ? (
-        <Pressable onPress={onGenerate}>
+        <Pressable onPress={onGenerate} hitSlop={6}>
           <View style={[styles.generateButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               Genera credenziali di accesso
@@ -341,17 +347,17 @@ function CredentialsSection({
             </ThemedText>
           </View>
 
-          <View style={styles.actionsRow}>
-            <Pressable onPress={handleCopy} style={styles.actionButtonWrap}>
+          <View style={styles.credentialsActions}>
+            <Pressable onPress={handleCopy} hitSlop={4} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Copia credenziali
                 </ThemedText>
               </View>
             </Pressable>
-            <Pressable onPress={handleShare} style={styles.actionButtonWrap}>
+            <Pressable onPress={handleShare} hitSlop={4} style={styles.credentialActionWrap}>
               <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
                   Condividi credenziali
                 </ThemedText>
               </View>
@@ -364,7 +370,7 @@ function CredentialsSection({
             </ThemedText>
           )}
 
-          <DisabledAction label="Invia via email" note="solo UI, backend email mancante" />
+          <DisabledAction label="Invia via email" note="Disponibile prossimamente" />
         </>
       )}
     </Card>
@@ -389,11 +395,13 @@ const styles = StyleSheet.create({
   },
   statusChipsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   statusChip: {
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
     paddingHorizontal: Spacing.three,
     paddingVertical: 7,
   },
@@ -407,15 +415,19 @@ const styles = StyleSheet.create({
   },
   planButton: {
     borderRadius: Radius.sm,
+    minHeight: 44,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.two,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
   },
   counterText: {
     fontSize: 28,
@@ -434,10 +446,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     padding: Spacing.three,
     marginBottom: Spacing.two,
+    minWidth: 0,
   },
   sessionRowLeft: {
     gap: 2,
     flex: 1,
+    minWidth: 0,
     marginRight: Spacing.two,
   },
   sessionName: {
@@ -455,8 +469,10 @@ const styles = StyleSheet.create({
   },
   generateButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.one,
   },
   credentialsBox: {
@@ -469,19 +485,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  actionsRow: {
-    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
-  actionButtonWrap: {
-    flex: 1,
+  credentialsActions: {
+    gap: Spacing.two,
+  },
+  credentialActionWrap: {
+    width: '100%',
   },
   actionButton: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
     paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    textAlign: 'center',
   },
   notFound: {
     flex: 1,

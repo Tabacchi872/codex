@@ -52,7 +52,7 @@ export const SEED_CLIENT_ACCOUNTS: ClientAccount[] = [
     username: 'marco.bianchi',
     email: 'marco.bianchi@example.com',
     temporaryPassword: 'Forza4821!',
-    role: 'client',
+    role: 'cliente',
     mustChangePassword: true,
     status: 'active',
     createdAt: '2026-06-01T09:05:00.000Z',

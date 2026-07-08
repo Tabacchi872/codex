@@ -6,7 +6,7 @@ import { Card } from '@/components/card';
 import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useNutritionStore } from '@/store/nutrition-store';
 
@@ -38,7 +38,7 @@ export default function NutrizioneScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three, paddingBottom: Spacing.six },
+          { paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three, paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
         ]}>
         <ThemedText type="title" style={styles.title}>
           Nutrizione
@@ -178,10 +178,14 @@ const styles = StyleSheet.create({
   },
   macrosRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
     justifyContent: 'space-around',
   },
   macroStat: {
     alignItems: 'center',
+    flexBasis: 120,
+    flexGrow: 1,
     gap: 2,
   },
   listCard: {

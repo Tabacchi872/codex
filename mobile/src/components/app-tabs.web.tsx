@@ -1,93 +1,66 @@
-import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
+import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { WebTabBarHeight } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useChatStore } from '@/store/chat-store';
 
-const TAB_LABELS: Record<string, string> = {
-  index: 'Dashboard',
-  clienti: 'Clienti',
-  esercizi: 'Esercizi',
-  schede: 'Schede',
-  appuntamenti: 'Agenda',
-  impostazioni: 'Impostazioni',
-};
-
-// Stesso stile del lato cliente (client-tabs.web.tsx): glifo Unicode, non una
-// libreria icone, per restare coerenti con la scelta già fatta lì.
-const TAB_ICONS: Record<string, string> = {
-  index: '📊',
-  clienti: '👥',
-  esercizi: '🏋️',
-  schede: '📋',
-  appuntamenti: '📅',
-  impostazioni: '⚙️',
-};
+const TABS = [
+  { path: '/', label: 'Home', icon: '⌂' },
+  { path: '/clienti', label: 'Clienti', icon: '👥' },
+  { path: '/schede', label: 'Schede', icon: '📋' },
+  { path: '/appuntamenti', label: 'Agenda', icon: '📅' },
+  { path: '/chat', label: 'Messaggi', icon: '💬' },
+] as const satisfies readonly { path: Href; label: string; icon: string }[];
 
 export default function AppTabs() {
-  return (
-    <Tabs>
-      <TabSlot style={styles.slot} />
-      <TabList asChild>
-        <TabBar>
-          <TabTrigger name="index" href="/" asChild>
-            <TabButton name="index" />
-          </TabTrigger>
-          <TabTrigger name="clienti" href="/clienti" asChild>
-            <TabButton name="clienti" />
-          </TabTrigger>
-          <TabTrigger name="esercizi" href="/esercizi" asChild>
-            <TabButton name="esercizi" />
-          </TabTrigger>
-          <TabTrigger name="schede" href="/schede" asChild>
-            <TabButton name="schede" />
-          </TabTrigger>
-          <TabTrigger name="appuntamenti" href="/appuntamenti" asChild>
-            <TabButton name="appuntamenti" />
-          </TabTrigger>
-          <TabTrigger name="impostazioni" href="/impostazioni" asChild>
-            <TabButton name="impostazioni" />
-          </TabTrigger>
-        </TabBar>
-      </TabList>
-    </Tabs>
-  );
-}
-
-// name non arriva sempre nello slot props di expo-router/ui: lo passiamo esplicitamente
-// per poter mostrare l'etichetta corretta e distinguere lo stato attivo.
-function TabButton({ name, isFocused, ...props }: TabTriggerSlotProps & { name: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const theme = useTheme();
-
-  return (
-    <Pressable {...props} style={styles.tabItem}>
-      <View style={[styles.activeIndicator, isFocused && { backgroundColor: theme.primary }]} />
-      <Text style={[styles.tabIcon, { opacity: isFocused ? 1 : 0.6 }]}>{TAB_ICONS[name] ?? '•'}</Text>
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.tabLabel,
-          { color: isFocused ? theme.primary : theme.textSecondary },
-          isFocused && styles.tabLabelActive,
-        ]}>
-        {TAB_LABELS[name] ?? name}
-      </Text>
-    </Pressable>
+  const unreadMessagesCount = useChatStore(
+    (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
   );
-}
-
-function TabBar(props: TabListProps) {
-  const theme = useTheme();
 
   return (
-    <View
-      {...props}
-      style={[styles.tabBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}
-    />
+    <View style={styles.container}>
+      <View style={styles.slot}>
+        <Slot screenOptions={{ headerShown: false }} />
+      </View>
+      <View style={[styles.tabBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}>
+        {TABS.map((tab) => {
+          const isActive = pathname === tab.path || (tab.path !== '/' && pathname.startsWith(`${tab.path}/`));
+          return (
+            <Pressable key={tab.path.toString()} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
+              <View style={[styles.activeIndicator, isActive && { backgroundColor: theme.primary }]} />
+              <View>
+                <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
+                {tab.path === '/chat' && unreadMessagesCount > 0 && (
+                  <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                    <Text style={styles.badgeText}>{unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}</Text>
+                  </View>
+                )}
+              </View>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tabLabel,
+                  { color: isActive ? theme.primary : theme.textSecondary },
+                  isActive && styles.tabLabelActive,
+                ]}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   slot: {
     flex: 1,
   },
@@ -97,13 +70,17 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingBottom: 6,
     paddingTop: 8,
+    zIndex: 20,
+    elevation: 20,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 4,
+    gap: 5,
+    minHeight: 44,
+    minWidth: 0,
+    paddingHorizontal: 2,
   },
   activeIndicator: {
     width: 20,
@@ -115,9 +92,28 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 20,
   },
+  badge: {
+    alignItems: 'center',
+    borderRadius: 999,
+    minWidth: 17,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    position: 'absolute',
+    right: -10,
+    top: -6,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 13,
+  },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
+    lineHeight: 13,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   tabLabelActive: {
     fontWeight: '700',

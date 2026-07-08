@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,84 +7,213 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { clientFullName } from '@/lib/client-helpers';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore } from '@/store/chat-store';
+import { useClientStore } from '@/store/client-store';
 import type { ChatMessage } from '@/types/chat';
+import type { Client } from '@/types/client';
+
+type CoachConversation = {
+  client: Client;
+  lastMessage: ChatMessage;
+  unreadCount: number;
+};
 
 function formatTime(iso: string) {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// Chat locale con il coach: invio reale nello store persistito, ma senza
-// backend/realtime il coach non la riceve su un altro dispositivo — limite
-// dichiarato nel report tecnico, non in UI (nessuna scritta "demo").
+function formatConversationTime(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const isToday =
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate();
+
+  if (isToday) return formatTime(iso);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function sortByCreatedAt(a: ChatMessage, b: ChatMessage) {
+  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+}
+
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
+  const clients = useClientStore((s) => s.clients);
   const messages = useChatStore((s) => s.messages);
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const markClientThreadReadByCoach = useChatStore((s) => s.markClientThreadReadByCoach);
+  const markClientThreadReadByClient = useChatStore((s) => s.markClientThreadReadByClient);
   const [draft, setDraft] = useState('');
+  const [selectedCoachClientId, setSelectedCoachClientId] = useState<string | null>(null);
+  const [isSelectingClient, setIsSelectingClient] = useState(false);
 
-  const myMessages = useMemo(
-    () =>
-      messages
-        .filter((m) => m.clientId === currentClientId)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-    [messages, currentClientId]
+  const isCoach = currentRole === 'coach';
+  const selectedClientId = isCoach ? selectedCoachClientId ?? '' : currentClientId ?? '';
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === selectedClientId),
+    [clients, selectedClientId]
   );
+
+  const threadMessages = useMemo(
+    () => messages.filter((m) => m.clientId === selectedClientId).sort(sortByCreatedAt),
+    [messages, selectedClientId]
+  );
+
+  const conversations = useMemo<CoachConversation[]>(() => {
+    return clients
+      .map((client) => {
+        const clientMessages = messages.filter((message) => message.clientId === client.id).sort(sortByCreatedAt);
+        const lastMessage = clientMessages.at(-1);
+        if (!lastMessage) return null;
+
+        return {
+          client,
+          lastMessage,
+          unreadCount: clientMessages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length,
+        };
+      })
+      .filter((conversation): conversation is CoachConversation => conversation !== null)
+      .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+  }, [clients, messages]);
+
+  const clientsWithoutConversation = useMemo(() => {
+    const conversationClientIds = new Set(conversations.map((conversation) => conversation.client.id));
+    return clients.filter((client) => !conversationClientIds.has(client.id));
+  }, [clients, conversations]);
+
+  const selectedCoachUnreadCount = useMemo(() => {
+    if (!selectedCoachClientId) return 0;
+    return messages.filter(
+      (message) => message.clientId === selectedCoachClientId && message.sender === 'client' && !message.readByCoachAt
+    ).length;
+  }, [messages, selectedCoachClientId]);
+
+  const selectedClientUnreadCount = useMemo(() => {
+    if (!currentClientId) return 0;
+    return messages.filter(
+      (message) => message.clientId === currentClientId && message.sender === 'coach' && !message.readByClientAt
+    ).length;
+  }, [currentClientId, messages]);
+
+  useEffect(() => {
+    if (isCoach && selectedCoachClientId && selectedCoachUnreadCount > 0) {
+      markClientThreadReadByCoach(selectedCoachClientId);
+    }
+  }, [isCoach, markClientThreadReadByCoach, selectedCoachClientId, selectedCoachUnreadCount]);
+
+  useEffect(() => {
+    if (!isCoach && currentClientId && selectedClientUnreadCount > 0) {
+      markClientThreadReadByClient(currentClientId);
+    }
+  }, [currentClientId, isCoach, markClientThreadReadByClient, selectedClientUnreadCount]);
+
+  function handleOpenConversation(clientId: string) {
+    setIsSelectingClient(false);
+    setSelectedCoachClientId(clientId);
+    markClientThreadReadByCoach(clientId);
+  }
 
   function handleSend() {
     const text = draft.trim();
-    if (!text || !currentClientId) return;
+    if (!text || !selectedClientId) return;
+
+    const now = new Date().toISOString();
     const message: ChatMessage = {
       id: `chat-${Date.now()}`,
-      clientId: currentClientId,
-      sender: 'client',
+      clientId: selectedClientId,
+      sender: isCoach ? 'coach' : 'client',
       text,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      ...(isCoach ? { readByCoachAt: now } : { readByClientAt: now }),
     };
     sendMessage(message);
     setDraft('');
   }
 
+  if (isCoach && isSelectingClient) {
+    return (
+      <CoachClientSelector
+        clients={clientsWithoutConversation}
+        insetsTop={insets.top}
+        insetsBottom={insets.bottom}
+        onCancel={() => setIsSelectingClient(false)}
+        onSelect={handleOpenConversation}
+      />
+    );
+  }
+
+  if (isCoach && !selectedCoachClientId) {
+    return (
+      <CoachConversationList
+        conversations={conversations}
+        insetsTop={insets.top}
+        insetsBottom={insets.bottom}
+        onNewConversation={() => setIsSelectingClient(true)}
+        onSelect={handleOpenConversation}
+      />
+    );
+  }
+
+  const sendDisabled = !draft.trim() || !selectedClientId;
+
   return (
     <ScreenBackground>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
-          data={myMessages}
+          data={threadMessages}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.list,
             { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three },
           ]}
           ListHeaderComponent={
-            <ThemedText type="title" style={styles.title}>
-              Chat con il coach
-            </ThemedText>
+            <View style={styles.header}>
+              {isCoach && (
+                <Pressable onPress={() => setSelectedCoachClientId(null)} hitSlop={8} style={styles.backButton}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    Indietro
+                  </ThemedText>
+                </Pressable>
+              )}
+              <ThemedText type="title" style={styles.title}>
+                {isCoach && selectedClient ? clientFullName(selectedClient) : 'Chat con il coach'}
+              </ThemedText>
+            </View>
           }
           ListEmptyComponent={
             <ThemedText type="small" themeColor="textSecondary">
-              Nessun messaggio ancora. Scrivi al tuo coach qui sotto.
+              {isCoach
+                ? 'Nessun messaggio con questo cliente. Scrivi il primo messaggio qui sotto.'
+                : 'Nessun messaggio ancora. Scrivi al tuo coach qui sotto.'}
             </ThemedText>
           }
-          renderItem={({ item }) => <MessageBubble message={item} />}
+          renderItem={({ item }) => <MessageBubble message={item} isCoach={isCoach} />}
         />
         <View
           style={[
             styles.inputRow,
-            { borderTopColor: theme.border, paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + Spacing.two : Spacing.two) },
+            {
+              borderTopColor: theme.border,
+              paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + Spacing.two : Spacing.two),
+            },
           ]}>
           <ThemedTextInput
             style={styles.input}
-            placeholder="Scrivi un messaggio…"
+            placeholder={isCoach && selectedClient ? `Scrivi a ${clientFullName(selectedClient)}` : 'Scrivi un messaggio...'}
             value={draft}
             onChangeText={setDraft}
             multiline
           />
-          <Pressable onPress={handleSend} disabled={!draft.trim()}>
-            <View style={[styles.sendButton, { backgroundColor: theme.primary }, !draft.trim() && styles.sendButtonDisabled]}>
+          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
+            <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.sendButtonDisabled]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
                 Invia
               </ThemedText>
@@ -96,22 +225,166 @@ export default function ChatScreen() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function CoachConversationList({
+  conversations,
+  insetsTop,
+  insetsBottom,
+  onNewConversation,
+  onSelect,
+}: {
+  conversations: CoachConversation[];
+  insetsTop: number;
+  insetsBottom: number;
+  onNewConversation: () => void;
+  onSelect: (clientId: string) => void;
+}) {
   const theme = useTheme();
-  const isClient = message.sender === 'client';
+
   return (
-    <View style={[styles.bubbleRow, isClient ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
+    <ScreenBackground>
+      <FlatList
+        data={conversations}
+        keyExtractor={(item) => item.client.id}
+        contentContainerStyle={[
+          styles.list,
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
+            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+          },
+        ]}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <ThemedText type="title" style={styles.title}>
+              Messaggi
+            </ThemedText>
+            <Pressable onPress={onNewConversation} hitSlop={8} accessibilityLabel="Nuova conversazione">
+              <View style={[styles.addButton, { backgroundColor: theme.primary }]}>
+                <ThemedText type="title" themeColor="onPrimary" style={styles.addButtonText}>
+                  +
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={[styles.emptyBox, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <ThemedText type="subtitle">Nessun messaggio</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Quando un cliente ti scrive, la conversazione comparira qui. Usa + per iniziare tu.
+            </ThemedText>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <Pressable onPress={() => onSelect(item.client.id)} hitSlop={4}>
+            <View style={[styles.conversationRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <View style={styles.conversationMain}>
+                <View style={styles.conversationTitleRow}>
+                  <ThemedText type="smallBold" numberOfLines={1} style={styles.conversationName}>
+                    {clientFullName(item.client)}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {formatConversationTime(item.lastMessage.createdAt)}
+                  </ThemedText>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {item.lastMessage.text}
+                </ThemedText>
+              </View>
+              {item.unreadCount > 0 && <UnreadBadge count={item.unreadCount} />}
+            </View>
+          </Pressable>
+        )}
+      />
+    </ScreenBackground>
+  );
+}
+
+function CoachClientSelector({
+  clients,
+  insetsTop,
+  insetsBottom,
+  onCancel,
+  onSelect,
+}: {
+  clients: Client[];
+  insetsTop: number;
+  insetsBottom: number;
+  onCancel: () => void;
+  onSelect: (clientId: string) => void;
+}) {
+  const theme = useTheme();
+
+  return (
+    <ScreenBackground>
+      <FlatList
+        data={clients}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[
+          styles.list,
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
+            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+          },
+        ]}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Pressable onPress={onCancel} hitSlop={8} style={styles.backButton}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                Annulla
+              </ThemedText>
+            </Pressable>
+            <ThemedText type="title" style={styles.title}>
+              Nuovo messaggio
+            </ThemedText>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={[styles.emptyBox, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <ThemedText type="subtitle">Tutti i clienti sono gia in lista</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Apri una conversazione esistente per continuare a scrivere.
+            </ThemedText>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <Pressable onPress={() => onSelect(item.id)} hitSlop={4}>
+            <View style={[styles.clientRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <ThemedText type="smallBold">{clientFullName(item)}</ThemedText>
+            </View>
+          </Pressable>
+        )}
+      />
+    </ScreenBackground>
+  );
+}
+
+function MessageBubble({ message, isCoach }: { message: ChatMessage; isCoach: boolean }) {
+  const theme = useTheme();
+  const isMine = isCoach ? message.sender === 'coach' : message.sender === 'client';
+  return (
+    <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       <View
         style={[
           styles.bubble,
-          { backgroundColor: isClient ? theme.primary : theme.backgroundElement, borderColor: theme.border },
+          { backgroundColor: isMine ? theme.primary : theme.backgroundElement, borderColor: theme.border },
         ]}>
-        <ThemedText type="small" themeColor={isClient ? 'onPrimary' : 'text'}>
+        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'}>
           {message.text}
         </ThemedText>
       </View>
       <ThemedText type="small" themeColor="textSecondary" style={styles.bubbleTime}>
         {formatTime(message.createdAt)}
+      </ThemedText>
+    </View>
+  );
+}
+
+function UnreadBadge({ count }: { count: number }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
+      <ThemedText type="smallBold" themeColor="onPrimary" style={styles.unreadBadgeText}>
+        {count > 99 ? '99+' : String(count)}
       </ThemedText>
     </View>
   );
@@ -126,11 +399,82 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     flexGrow: 1,
   },
+  header: {
+    gap: Spacing.two,
+    marginBottom: Spacing.two,
+  },
+  listHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.two,
+  },
   title: {
     fontSize: 26,
     lineHeight: 32,
     fontWeight: '700',
-    marginBottom: Spacing.two,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    minHeight: 40,
+    paddingVertical: Spacing.one,
+  },
+  addButton: {
+    alignItems: 'center',
+    borderRadius: Radius.pill,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  addButtonText: {
+    fontSize: 28,
+    lineHeight: 30,
+  },
+  emptyBox: {
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.one,
+    padding: Spacing.three,
+  },
+  conversationRow: {
+    alignItems: 'center',
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: Spacing.two,
+    padding: Spacing.three,
+  },
+  conversationMain: {
+    flex: 1,
+    gap: Spacing.one,
+    minWidth: 0,
+  },
+  conversationTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.two,
+    justifyContent: 'space-between',
+    minWidth: 0,
+  },
+  conversationName: {
+    flex: 1,
+  },
+  clientRow: {
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
+    padding: Spacing.three,
+  },
+  unreadBadge: {
+    alignItems: 'center',
+    borderRadius: Radius.pill,
+    minWidth: 22,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  unreadBadgeText: {
+    fontSize: 11,
+    lineHeight: 14,
   },
   bubbleRow: {
     maxWidth: '80%',
@@ -167,8 +511,10 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     borderRadius: Radius.md,
+    minHeight: 44,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    justifyContent: 'center',
   },
   sendButtonDisabled: {
     opacity: 0.5,

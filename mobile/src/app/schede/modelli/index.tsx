@@ -20,7 +20,7 @@ export default function ModelliAllenamentoScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
 
   if (!isCoach) {
     return (

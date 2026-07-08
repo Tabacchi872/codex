@@ -25,7 +25,7 @@ export default function AppuntamentiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const isCoach = useAuthStore((s) => s.currentRole !== 'client');
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const appointments = useAppointmentStore((s) => s.appointments);
   const clients = useClientStore((s) => s.clients);
 
@@ -67,7 +67,7 @@ export default function AppuntamentiScreen() {
                 Prossimi appuntamenti con i tuoi clienti
               </ThemedText>
             </View>
-            <Pressable onPress={() => router.push('/appuntamenti/new')}>
+            <Pressable onPress={() => router.push('/appuntamenti/new')} hitSlop={6}>
               <View style={[styles.newButton, { backgroundColor: theme.primary }]}>
                 <ThemedText type="smallBold" themeColor="onPrimary">
                   + Nuovo appuntamento
@@ -109,7 +109,7 @@ function AppointmentRow({
   const theme = useTheme();
   const isCompleted = appointment.status === 'completed';
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} hitSlop={4}>
       <Card style={styles.row}>
         <ThemedText type="default" style={styles.name}>
           {clientName}
@@ -152,8 +152,10 @@ const styles = StyleSheet.create({
   },
   newButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     padding: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     gap: 2,

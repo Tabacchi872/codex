@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { ScreenBackground } from '@/components/screen-background';
 import { SubscriptionForm } from '@/components/subscription-form';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useSubscriptionStore } from '@/store/subscription-store';
-import type { SubscriptionPackage } from '@/types/subscription';
+import { computeSubscriptionStatus, getCurrentSubscription, type SubscriptionPackage } from '@/types/subscription';
 
 export default function NuovoAbbonamentoScreen() {
   const router = useRouter();
@@ -16,7 +16,8 @@ export default function NuovoAbbonamentoScreen() {
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const addSubscription = useSubscriptionStore((s) => s.addSubscription);
 
-  const existingActive = subscriptions.find((s) => s.clientId === clientId && s.status === 'active');
+  const existingSubscription = getCurrentSubscription(subscriptions, clientId);
+  const existingValidSubscription = computeSubscriptionStatus(existingSubscription) !== 'expired' ? existingSubscription : null;
 
   function handleSave(subscription: SubscriptionPackage) {
     addSubscription(subscription);
@@ -29,11 +30,14 @@ export default function NuovoAbbonamentoScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
+          {
+            paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
+            paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
+          },
         ]}>
-        {existingActive && (
+        {existingValidSubscription && (
           <PlaceholderBanner
-            text={`Questo cliente ha già un abbonamento attivo ("${existingActive.packageName}"). Crearne uno nuovo non lo modifica: se è un rinnovo, valuta prima di impostarlo su Completato/Scaduto da "Aggiorna abbonamento".`}
+            text={`Questo cliente ha già un abbonamento valido ("${existingValidSubscription.packageName}"). Crearne uno nuovo non lo modifica: se è un rinnovo, valuta prima di impostarlo su Completato/Scaduto da "Aggiorna abbonamento".`}
           />
         )}
         <SubscriptionForm clientId={clientId} onSave={handleSave} saveLabel="Crea abbonamento" />

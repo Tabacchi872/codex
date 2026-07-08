@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter, type Href } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,7 +11,7 @@ import { ThemedTextInput } from './themed-text-input';
 import { APP_NAME } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/store/auth-store';
+import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 
 // Login locale: confronta le credenziali con gli account salvati in
@@ -19,11 +20,14 @@ import { useClientStore } from '@/store/client-store';
 // previsto verso un backend/auth vero. Il testo in UI resta volutamente
 // discorsivo: i dettagli tecnici restano in docs/report, non in questa schermata.
 export function LoginScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const accounts = useClientStore((s) => s.accounts);
+  const coachAccounts = useAuthStore((s) => s.coachAccounts);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
   const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
+  const loginAsSuperadmin = useAuthStore((s) => s.loginAsSuperadmin);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,20 +35,50 @@ export function LoginScreen() {
   function handleLogin() {
     const normalized = identifier.trim().toLowerCase();
     if (!normalized || !password) {
-      setError('Inserisci username/email e password.');
+      setError('Inserisci email e password.');
       return;
     }
+
+    const demoUser = DEMO_USERS.find((user) => user.email === normalized && user.password === password);
+    if (demoUser?.role === 'coach') {
+      setError(null);
+      loginAsCoach(demoUser.email, demoUser.coachId);
+      router.replace('/');
+      return;
+    }
+    if (demoUser?.role === 'cliente') {
+      setError(null);
+      loginAsClient(demoUser.clientId ?? '1', demoUser.email);
+      router.replace('/cliente-home');
+      return;
+    }
+    if (demoUser?.role === 'superadmin') {
+      setError(null);
+      loginAsSuperadmin(demoUser.email);
+      router.replace('/superadmin' as Href);
+      return;
+    }
+
+    const coachAccount = coachAccounts.find((account) => account.email.toLowerCase() === normalized && account.password === password);
+    if (coachAccount) {
+      setError(null);
+      loginAsCoach(coachAccount.email, coachAccount.coachId);
+      router.replace('/');
+      return;
+    }
+
     const account = accounts.find(
       (a) =>
-        (a.username.toLowerCase() === normalized || a.email.toLowerCase() === normalized) &&
+        (a.email.toLowerCase() === normalized || a.username.toLowerCase() === normalized) &&
         a.temporaryPassword === password
     );
     if (!account) {
-      setError('Credenziali non valide. Controlla username/email e password.');
+      setError('Credenziali non valide. Controlla email e password.');
       return;
     }
     setError(null);
-    loginAsClient(account.clientId);
+    loginAsClient(account.clientId, account.email);
+    router.replace('/cliente-home');
   }
 
   return (
@@ -59,15 +93,17 @@ export function LoginScreen() {
           {APP_NAME}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Accedi come cliente o come coach
+          Accesso riservato
         </ThemedText>
       </View>
 
       <Card style={styles.form}>
-        <ThemedText type="smallBold">Accesso cliente</ThemedText>
+        <ThemedText type="smallBold">Accedi al tuo account</ThemedText>
         <ThemedTextInput
-          placeholder="Username o email"
+          placeholder="Email"
           autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
           value={identifier}
           onChangeText={setIdentifier}
         />
@@ -77,33 +113,31 @@ export function LoginScreen() {
             {error}
           </ThemedText>
         )}
-        <Pressable onPress={handleLogin}>
+        <Pressable onPress={handleLogin} hitSlop={6}>
           <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               Accedi
             </ThemedText>
           </View>
         </Pressable>
-        <ThemedText type="small" themeColor="textSecondary">
-          Puoi provare l'accesso con: marco.bianchi / Forza4821!
-        </ThemedText>
-      </Card>
-
-      <View style={styles.divider}>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-        <ThemedText type="small" themeColor="textSecondary">
-          oppure
-        </ThemedText>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-      </View>
-
-      <Pressable onPress={loginAsCoach}>
-        <View style={[styles.coachButton, { borderColor: theme.primary }]}>
-          <ThemedText type="smallBold" style={{ color: theme.primary }}>
-            Entra come Coach
+        <Pressable disabled hitSlop={6}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.forgotPassword}>
+            Password dimenticata?
           </ThemedText>
+        </Pressable>
+        <View style={styles.registerLinks}>
+          <Pressable onPress={() => router.push('/registrazione-coach' as Href)} hitSlop={6}>
+            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
+              Registrati come coach
+            </ThemedText>
+          </Pressable>
+          <Pressable onPress={() => router.push('/registrazione-cliente' as Href)} hitSlop={6}>
+            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
+              Registrati come cliente
+            </ThemedText>
+          </Pressable>
         </View>
-      </Pressable>
+      </Card>
     </ScrollView>
     </ScreenBackground>
   );
@@ -114,6 +148,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
     flexGrow: 1,
+    justifyContent: 'center',
   },
   titleBlock: {
     gap: 4,
@@ -125,27 +160,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   form: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
   primaryButton: {
     borderRadius: Radius.md,
+    minHeight: 48,
     paddingVertical: Spacing.three,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Spacing.one,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  forgotPassword: {
+    textAlign: 'center',
+    opacity: 0.65,
+  },
+  registerLinks: {
     gap: Spacing.two,
   },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
-  coachButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
+  registerLink: {
+    textAlign: 'center',
   },
 });
