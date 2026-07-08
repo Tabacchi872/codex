@@ -13,7 +13,7 @@ export default function SuperadminPaymentEvents() {
   const events = useSuperadminStore((s) => s.paymentEvents);
 
   return (
-    <SuperadminShell title="Pagamenti" description="Storico demo degli eventi pagamento. Nessun provider reale collegato.">
+    <SuperadminShell title="Pagamenti" description="Storico amministrativo degli eventi pagamento.">
       {events.map((event) => (
         <PaymentEventCard
           key={event.id}
@@ -35,21 +35,50 @@ function PaymentEventCard({ event, coachName }: { event: DemoPaymentEvent; coach
         <View style={styles.titleBlock}>
           <ThemedText type="smallBold">{coachName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {event.eventType}
+            {getPaymentEventLabel(event.eventType)}
           </ThemedText>
         </View>
         <ThemedText type="smallBold" style={[styles.badge, { borderColor: color, color }]}>
-          {event.status}
+          {getPaymentStatusLabel(event.status)}
         </ThemedText>
       </View>
 
       <View style={styles.grid}>
-        <Field label="Provider" value={event.provider} />
+        <Field label="Origine" value={getPaymentProviderLabel(event.provider)} />
         <Field label="Data" value={event.createdAt} />
         <Field label="Importo" value={event.amount === undefined ? '-' : `EUR ${event.amount}`} />
       </View>
     </Card>
   );
+}
+
+function getPaymentEventLabel(eventType: string) {
+  const labels: Record<string, string> = {
+    subscription_renewed: 'Abbonamento rinnovato',
+    trial_started: 'Periodo di prova avviato',
+    invoice_payment_failed: 'Pagamento fattura non riuscito',
+    access_blocked_manual: 'Accesso bloccato manualmente',
+  };
+  return labels[eventType] ?? 'Evento pagamento';
+}
+
+function getPaymentStatusLabel(status: DemoPaymentEvent['status']) {
+  const labels: Record<DemoPaymentEvent['status'], string> = {
+    succeeded: 'Completato',
+    pending: 'In attesa',
+    failed: 'Non riuscito',
+    ignored: 'Archiviato',
+  };
+  return labels[status];
+}
+
+function getPaymentProviderLabel(provider: DemoPaymentEvent['provider']) {
+  const labels: Record<DemoPaymentEvent['provider'], string> = {
+    demo: 'Sistema amministrativo',
+    demo_gateway: 'Canale pagamenti',
+    manual_admin: 'Intervento amministratore',
+  };
+  return labels[provider];
 }
 
 function Field({ label, value }: { label: string; value: string }) {

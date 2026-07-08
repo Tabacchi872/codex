@@ -9,12 +9,14 @@ import { ThemedText } from './themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/auth-store';
+import { useSuperadminStore } from '@/store/superadmin-store';
 
 const NAV_ITEMS = [
   { href: '/superadmin', label: 'Dashboard' },
   { href: '/superadmin/coaches', label: 'Coach' },
   { href: '/superadmin/plans', label: 'Piani' },
   { href: '/superadmin/payment-events', label: 'Pagamenti' },
+  { href: '/superadmin/notifications', label: 'Notifiche' },
 ] as const satisfies readonly { href: Href; label: string }[];
 
 type SuperadminShellProps = {
@@ -29,6 +31,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
+  const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
 
   return (
     <ScreenBackground>
@@ -72,6 +75,13 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
                   <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
                     {item.label}
                   </ThemedText>
+                  {item.href === '/superadmin/notifications' && unreadNotifications > 0 ? (
+                    <View style={[styles.navBadge, { backgroundColor: theme.primary }]}>
+                      <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 11, lineHeight: 14 }}>
+                        {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                      </ThemedText>
+                    </View>
+                  ) : null}
                 </Pressable>
               </Link>
             );
@@ -116,9 +126,20 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   navItem: {
+    alignItems: 'center',
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: Spacing.one,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  navBadge: {
+    alignItems: 'center',
+    borderRadius: Radius.pill,
+    justifyContent: 'center',
+    minWidth: 20,
+    paddingHorizontal: Spacing.one,
+    paddingVertical: 2,
   },
 });

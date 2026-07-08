@@ -54,13 +54,13 @@ export default function NewSuperadminCoach() {
   }
 
   return (
-    <SuperadminShell title="Nuovo coach" description="Crea un coach demo locale, senza registrazione backend.">
+    <SuperadminShell title="Nuovo coach" description="Crea un coach e assegna piano, stato pagamento e periodo di validita'.">
       <Card style={styles.card}>
         <Field label="Nome">
           <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Laura Bassi" />
         </Field>
         <Field label="Email">
-          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.local" autoCapitalize="none" keyboardType="email-address" />
+          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.it" autoCapitalize="none" keyboardType="email-address" />
         </Field>
         <Field label="Telefono opzionale">
           <ThemedTextInput value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />

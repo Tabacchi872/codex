@@ -15,7 +15,7 @@ export default function SuperadminCoaches() {
   const plans = useSuperadminStore((s) => s.plans);
 
   return (
-    <SuperadminShell title="Coach" description="Gestione manuale demo di coach, stato pagamento e abbonamento app.">
+    <SuperadminShell title="Coach" description="Gestione amministrativa di coach, stato pagamento e abbonamento app.">
       <Link href="/superadmin/coaches/new" asChild>
         <Pressable style={styles.primaryButton}>
           <ThemedText type="smallBold" style={styles.primaryButtonText}>

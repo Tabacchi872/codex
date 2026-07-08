@@ -4,6 +4,16 @@ export type AppPlanCode = CoachPlanCode | (string & {});
 
 export type AppBillingStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'blocked';
 
+export type SuperadminNotificationType =
+  | 'coach_created'
+  | 'coach_updated'
+  | 'coach_blocked'
+  | 'coach_unblocked'
+  | 'coach_plan_assigned'
+  | 'coach_plan_changed'
+  | 'payment_past_due'
+  | 'plan_updated';
+
 export type DemoCoachClient = {
   id: string;
   coachId: string;
@@ -45,4 +55,13 @@ export type DemoPaymentEvent = {
   createdAt: string;
   status: 'succeeded' | 'pending' | 'failed' | 'ignored';
   amount?: number;
+};
+
+export type SuperadminNotification = {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  type: SuperadminNotificationType;
+  read: boolean;
 };

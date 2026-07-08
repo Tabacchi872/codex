@@ -49,7 +49,7 @@ export default function SuperadminCoachDetail() {
       <SuperadminShell title="Coach non trovato">
         <Card style={styles.card}>
           <ThemedText type="small" themeColor="textSecondary">
-            Il coach demo richiesto non esiste piu' nello store locale.
+            Il coach richiesto non e' disponibile.
           </ThemedText>
           <Pressable onPress={() => router.replace('/superadmin/coaches')} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
@@ -93,13 +93,13 @@ export default function SuperadminCoachDetail() {
   }
 
   return (
-    <SuperadminShell title={coach.name} description="Dettaglio coach demo con modifica manuale e clienti associati.">
+    <SuperadminShell title={coach.name} description="Dettaglio coach con modifica manuale e clienti associati.">
       <Card style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.grow}>
             <ThemedText type="smallBold">Stato attuale</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {coach.blocked ? 'Accesso bloccato manualmente' : 'Accesso demo non bloccato'}
+              {coach.blocked ? 'Accesso bloccato manualmente' : 'Accesso non bloccato'}
             </ThemedText>
           </View>
           <StatusBadge status={coach.billingStatus} />
@@ -119,7 +119,7 @@ export default function SuperadminCoachDetail() {
           <ThemedTextInput value={name} onChangeText={setName} placeholder="Nome coach" />
         </Field>
         <Field label="Email">
-          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.local" autoCapitalize="none" keyboardType="email-address" />
+          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.it" autoCapitalize="none" keyboardType="email-address" />
         </Field>
         <OptionGroup label="Piano" options={plans.map((item) => ({ value: item.code, label: item.name }))} value={planCode} onChange={setPlanCode} />
         <OptionGroup
@@ -158,7 +158,7 @@ export default function SuperadminCoachDetail() {
         <ThemedText type="subtitle">Clienti attivi</ThemedText>
         {coachClients.length === 0 ? (
           <ThemedText type="small" themeColor="textSecondary">
-            Nessun cliente attivo associato a questo coach nella demo.
+            Nessun cliente attivo associato a questo coach.
           </ThemedText>
         ) : (
           coachClients.map((client) => <ClientRow key={client.id} client={client} />)

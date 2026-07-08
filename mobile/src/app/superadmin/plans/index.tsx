@@ -6,13 +6,14 @@ import { SuperadminShell } from '@/components/superadmin-shell';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import type { CoachFeatureKey } from '@/lib/coach-gating';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import type { DemoAppPlan } from '@/types/superadmin';
 
 export default function SuperadminPlans() {
   const plans = useSuperadminStore((s) => s.plans);
   return (
-    <SuperadminShell title="Piani" description="Catalogo piani demo dell'app coach. Prezzi e limiti sono locali.">
+    <SuperadminShell title="Piani" description="Catalogo piani dell'app coach con prezzi, limiti e funzionalita'.">
       {plans.map((plan) => (
         <PlanCard key={plan.code} plan={plan} />
       ))}
@@ -29,7 +30,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
         <View style={styles.nameBlock}>
           <ThemedText type="smallBold">{plan.name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            EUR {plan.monthlyPrice}/mese demo
+            EUR {plan.monthlyPrice}/mese
           </ThemedText>
         </View>
         <ThemedText
@@ -49,7 +50,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
         <ThemedText type="small" themeColor="textSecondary">
           Prezzo annuale
         </ThemedText>
-        <ThemedText type="smallBold">EUR {plan.annualPrice}/anno demo</ThemedText>
+        <ThemedText type="smallBold">EUR {plan.annualPrice}/anno</ThemedText>
       </View>
 
       <View style={styles.row}>
@@ -62,7 +63,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
       <View style={styles.features}>
         {plan.features.map((feature) => (
           <ThemedText key={feature} type="small" themeColor="textSecondary" style={[styles.feature, { borderColor: theme.border }]}>
-            {feature}
+            {getFeatureLabel(feature)}
           </ThemedText>
         ))}
       </View>
@@ -74,6 +75,18 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
       </Pressable>
     </Card>
   );
+}
+
+function getFeatureLabel(feature: CoachFeatureKey) {
+  const labels: Record<CoachFeatureKey, string> = {
+    clients: 'Clienti',
+    workout_templates: 'Modelli allenamento',
+    appointments: 'Appuntamenti',
+    messages_realtime: 'Messaggi',
+    push_notifications: 'Notifiche app',
+    advanced_analytics: 'Analisi avanzate',
+  };
+  return labels[feature];
 }
 
 const styles = StyleSheet.create({

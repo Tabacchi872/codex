@@ -51,7 +51,7 @@ export default function SuperadminPlanDetail() {
       <SuperadminShell title="Piano non trovato">
         <Card style={styles.card}>
           <ThemedText type="small" themeColor="textSecondary">
-            Il piano demo richiesto non esiste piu' nello store locale.
+            Il piano richiesto non e' disponibile.
           </ThemedText>
           <Pressable onPress={() => router.replace('/superadmin/plans')} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
@@ -95,7 +95,7 @@ export default function SuperadminPlanDetail() {
   }
 
   return (
-    <SuperadminShell title={plan.name} description="Modifica manuale locale del piano demo.">
+    <SuperadminShell title={plan.name} description="Modifica manuale del piano.">
       <Card style={styles.card}>
         <Field label="Nome piano">
           <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Pro" />
@@ -116,7 +116,7 @@ export default function SuperadminPlanDetail() {
         </Field>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Features</ThemedText>
+          <ThemedText type="smallBold">Funzionalita'</ThemedText>
           <View style={styles.options}>
             {KNOWN_FEATURES.map((feature) => {
               const selected = features.includes(feature);
@@ -132,7 +132,7 @@ export default function SuperadminPlanDetail() {
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.primary : theme.textSecondary }}>
-                    {feature}
+                    {getFeatureLabel(feature)}
                   </ThemedText>
                 </Pressable>
               );
@@ -158,6 +158,18 @@ export default function SuperadminPlanDetail() {
       </Card>
     </SuperadminShell>
   );
+}
+
+function getFeatureLabel(feature: CoachFeatureKey) {
+  const labels: Record<CoachFeatureKey, string> = {
+    clients: 'Clienti',
+    workout_templates: 'Modelli allenamento',
+    appointments: 'Appuntamenti',
+    messages_realtime: 'Messaggi',
+    push_notifications: 'Notifiche app',
+    advanced_analytics: 'Analisi avanzate',
+  };
+  return labels[feature];
 }
 
 function Field({ label, children, style }: { label: string; children: ReactNode; style?: object }) {
