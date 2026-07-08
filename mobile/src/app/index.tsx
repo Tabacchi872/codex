@@ -5,24 +5,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '@/components/card';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
-import { getClientStatus } from '@/lib/client-status';
 import { formatDayMonth } from '@/lib/format-date';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useClientStore } from '@/store/client-store';
-import { useTrainingStore } from '@/store/training-store';
+import { useSubscriptionStore } from '@/store/subscription-store';
+import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const workoutPlans = useTrainingStore((s) => s.workoutPlans);
-  const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
+  const subscriptionsHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const appointments = useAppointmentStore((s) => s.appointments);
 
-  const statuses = clients.map((c) => getClientStatus(workoutPlans, c.id));
+  const statuses = clients.map((client) => computeSubscriptionStatus(getCurrentSubscription(subscriptions, client.id)));
   const attivi = statuses.filter((s) => s === 'active').length;
   const inScadenza = statuses.filter((s) => s === 'expiring').length;
   const scaduti = statuses.filter((s) => s === 'expired').length;
@@ -32,7 +33,7 @@ export default function DashboardScreen() {
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
   const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
 
-  if (!hasHydrated || !clientsHydrated) {
+  if (!clientsHydrated || !subscriptionsHydrated) {
     return (
       <ScreenBackground>
         <View style={styles.loading}>
@@ -63,13 +64,11 @@ export default function DashboardScreen() {
         </ThemedText>
       </View>
 
-      <Card padded={false} style={styles.statsCard}>
-        <StatCell label="Attivi" value={attivi} onPress={() => router.push('/clienti')} />
-        <View style={styles.statDivider} />
+      <View style={styles.statsGrid}>
+        <StatCell label="Attivi" value={attivi} color="statusActive" onPress={() => router.push('/clienti')} />
         <StatCell label="In scadenza" value={inScadenza} color="statusWarning" onPress={() => router.push('/clienti')} />
-        <View style={styles.statDivider} />
         <StatCell label="Scaduti" value={scaduti} color="statusExpired" onPress={() => router.push('/clienti')} />
-      </Card>
+      </View>
 
       <ThemedText type="smallBold" style={styles.sectionLabel}>
         Prossimo appuntamento
@@ -77,7 +76,7 @@ export default function DashboardScreen() {
       {prossimoAppuntamento ? (
         <Pressable onPress={() => router.push('/appuntamenti')}>
           <Card style={styles.appointmentRow}>
-            <View>
+            <View style={styles.appointmentText}>
               <ThemedText type="default">
                 {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Cliente non trovato'}
               </ThemedText>
@@ -85,7 +84,9 @@ export default function DashboardScreen() {
                 {formatDayMonth(prossimoAppuntamento.date)} · {prossimoAppuntamento.startTime}
               </ThemedText>
             </View>
-            <ThemedText type="linkPrimary">Vedi</ThemedText>
+            <ThemedText type="linkPrimary" style={styles.appointmentLink}>
+              Vedi
+            </ThemedText>
           </Card>
         </Pressable>
       ) : (
@@ -107,14 +108,18 @@ function StatCell({
   label: string;
   value: number;
   onPress: () => void;
-  color?: 'statusWarning' | 'statusExpired';
+  color: 'statusActive' | 'statusWarning' | 'statusExpired';
 }) {
+  const theme = useTheme();
+
   return (
-    <Pressable onPress={onPress} style={styles.statCell}>
+    <Pressable
+      onPress={onPress}
+      style={[styles.statCell, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <ThemedText type="title" style={styles.statValue} themeColor={color}>
         {value}
       </ThemedText>
-      <ThemedText type="small" themeColor={color ?? 'textSecondary'}>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel} numberOfLines={2}>
         {label}
       </ThemedText>
     </Pressable>
@@ -123,8 +128,9 @@ function StatCell({
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
     gap: Spacing.three,
+    width: '100%',
   },
   header: {
     gap: 4,
@@ -134,24 +140,30 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     fontWeight: '700',
   },
-  statsCard: {
+  statsGrid: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    gap: Spacing.two,
   },
   statCell: {
+    flexBasis: 0,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.three,
-    gap: 2,
+    minWidth: 0,
+    minHeight: 88,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: Spacing.one,
+    paddingVertical: Spacing.two,
+    gap: 4,
   },
   statValue: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 25,
+    lineHeight: 30,
   },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(120,124,130,0.25)',
+  statLabel: {
+    textAlign: 'center',
+    lineHeight: 18,
   },
   sectionLabel: {
     marginTop: Spacing.two,
@@ -160,6 +172,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.two,
+  },
+  appointmentText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  appointmentLink: {
+    flexShrink: 0,
   },
   loading: {
     flex: 1,
