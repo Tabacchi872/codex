@@ -7,39 +7,22 @@ import { SuperadminShell } from '@/components/superadmin-shell';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useSuperadminStore } from '@/store/superadmin-store';
-import type { CoachSupportMessage, DemoCoachAccount } from '@/types/superadmin';
-
-type SupportConversation = {
-  coach: DemoCoachAccount;
-  lastMessage: CoachSupportMessage;
-  unreadCount: number;
-};
+import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
+import type { SuperadminSupportConversation } from '@/types/superadmin';
 
 export default function SuperadminSupport() {
   const coaches = useSuperadminStore((s) => s.coaches);
   const messages = useSuperadminStore((s) => s.coachSupportMessages);
 
-  const conversations = useMemo<SupportConversation[]>(() => {
-    return coaches
-      .map((coach) => {
-        const coachMessages = messages
-          .filter((message) => message.coachId === coach.id)
-          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        const lastMessage = coachMessages.at(-1);
-        if (!lastMessage || !coachMessages.some((message) => message.sender === 'coach')) return null;
-        return {
-          coach,
-          lastMessage,
-          unreadCount: coachMessages.filter((message) => message.sender === 'coach' && !message.readBySuperadminAt).length,
-        };
-      })
-      .filter((item): item is SupportConversation => item !== null)
-      .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+  const conversations = useMemo<SuperadminSupportConversation[]>(() => {
+    return getSuperadminSupportConversations(coaches, messages);
   }, [coaches, messages]);
 
   return (
-    <SuperadminShell title="Supporto coach" description="Chat interna tra coach e superadmin per assistenza e comunicazioni amministrative.">
+    <SuperadminShell
+      title="Supporto coach"
+      description="Chat interna tra coach e superadmin per assistenza e comunicazioni amministrative."
+      contentStyle={styles.shellContent}>
       {conversations.length === 0 ? (
         <Card style={styles.emptyCard}>
           <ThemedText type="smallBold">Nessun coach ha scritto</ThemedText>
@@ -51,6 +34,7 @@ export default function SuperadminSupport() {
         conversations.map((conversation) => (
           <Pressable
             key={conversation.coach.id}
+            style={styles.conversationLink}
             onPress={() =>
               router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } })
             }>
@@ -62,26 +46,28 @@ export default function SuperadminSupport() {
   );
 }
 
-function ConversationCard({ conversation }: { conversation: SupportConversation }) {
+function ConversationCard({ conversation }: { conversation: SuperadminSupportConversation }) {
   const theme = useTheme();
 
   return (
     <Card style={[styles.card, { borderColor: conversation.unreadCount > 0 ? theme.primary : theme.border }]}>
       <View style={styles.headerRow}>
         <View style={styles.identity}>
-          <ThemedText type="smallBold">{conversation.coach.name}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="smallBold" numberOfLines={1}>
+            {conversation.coach.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             {conversation.coach.email}
           </ThemedText>
         </View>
         <View style={styles.metaColumn}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="small" themeColor="textSecondary" style={styles.metaText}>
             {formatDateTime(conversation.lastMessage.createdAt)}
           </ThemedText>
           {conversation.unreadCount > 0 ? <UnreadBadge count={conversation.unreadCount} /> : null}
         </View>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2} style={styles.previewText}>
         {conversation.lastMessage.text}
       </ThemedText>
     </Card>
@@ -109,18 +95,33 @@ function formatDateTime(value: string) {
 }
 
 const styles = StyleSheet.create({
+  shellContent: {
+    maxWidth: '100%',
+    width: '100%',
+  },
+  conversationLink: {
+    maxWidth: '100%',
+    width: '100%',
+  },
   emptyCard: {
     gap: Spacing.one,
+    maxWidth: '100%',
+    width: '100%',
   },
   card: {
     borderWidth: StyleSheet.hairlineWidth,
     gap: Spacing.two,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    width: '100%',
   },
   headerRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: Spacing.two,
     justifyContent: 'space-between',
+    maxWidth: '100%',
+    minWidth: 0,
   },
   identity: {
     flex: 1,
@@ -129,6 +130,14 @@ const styles = StyleSheet.create({
   metaColumn: {
     alignItems: 'flex-end',
     gap: Spacing.one,
+    flexShrink: 0,
+    maxWidth: 116,
+  },
+  metaText: {
+    textAlign: 'right',
+  },
+  previewText: {
+    minWidth: 0,
   },
   unreadBadge: {
     alignItems: 'center',

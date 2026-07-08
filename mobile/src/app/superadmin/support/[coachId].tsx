@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -25,28 +25,28 @@ export default function SuperadminCoachSupportDetail() {
   const conversationMessages = useMemo(
     () =>
       messages
-        .filter((message) => message.coachId === coachId)
+        .filter((message) => message.coachId === coach?.id)
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-    [coachId, messages],
+    [coach?.id, messages],
   );
 
   useEffect(() => {
-    if (coachId) markCoachSupportReadBySuperadmin(coachId);
-  }, [coachId, markCoachSupportReadBySuperadmin]);
+    if (coach?.id) markCoachSupportReadBySuperadmin(coach.id);
+  }, [coach?.id, markCoachSupportReadBySuperadmin]);
 
   function handleSend() {
     const text = draft.trim();
-    if (!coachId || !text) return;
-    sendSupportMessageAsSuperadmin(coachId, text);
+    if (!coach || !text) return;
+    sendSupportMessageAsSuperadmin(coach.id, text);
     setDraft('');
   }
 
   if (!coach || !coachId) {
     return (
-      <SuperadminShell title="Chat coach" description="Conversazione non trovata.">
+      <SuperadminShell title="Chat coach" description="Conversazione non trovata." contentStyle={styles.shellContent}>
         <Card style={styles.card}>
           <ThemedText type="smallBold">Coach non trovato</ThemedText>
-          <Pressable onPress={() => router.push('/superadmin/support/index')}>
+          <Pressable onPress={() => router.push('/superadmin/support' as Href)}>
             <ThemedText type="smallBold" style={{ color: theme.primary }}>
               Torna al supporto
             </ThemedText>
@@ -59,9 +59,9 @@ export default function SuperadminCoachSupportDetail() {
   const sendDisabled = !draft.trim();
 
   return (
-    <SuperadminShell title={coach.name} description={coach.email}>
+    <SuperadminShell title={coach.name} description={coach.email} contentStyle={styles.shellContent}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
-        <Pressable onPress={() => router.push('/superadmin/support/index')} style={styles.backButton}>
+        <Pressable onPress={() => router.push('/superadmin/support' as Href)} style={styles.backButton}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             Indietro
           </ThemedText>
@@ -108,7 +108,7 @@ function MessageBubble({ message }: { message: CoachSupportMessage }) {
           styles.bubble,
           { backgroundColor: isMine ? theme.primary : theme.background, borderColor: theme.border },
         ]}>
-        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'}>
+        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'} style={styles.messageText}>
           {message.text}
         </ThemedText>
       </View>
@@ -124,11 +124,19 @@ function formatTime(value: string) {
 }
 
 const styles = StyleSheet.create({
+  shellContent: {
+    maxWidth: '100%',
+    width: '100%',
+  },
   keyboard: {
     gap: Spacing.two,
+    maxWidth: '100%',
+    width: '100%',
   },
   card: {
     gap: Spacing.two,
+    maxWidth: '100%',
+    width: '100%',
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -136,10 +144,14 @@ const styles = StyleSheet.create({
   },
   messagesCard: {
     gap: Spacing.two,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    width: '100%',
   },
   bubbleRow: {
     maxWidth: '84%',
     gap: Spacing.half,
+    minWidth: 0,
   },
   bubbleLeft: {
     alignItems: 'flex-start',
@@ -152,8 +164,14 @@ const styles = StyleSheet.create({
   bubble: {
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: '100%',
+    minWidth: 0,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  messageText: {
+    flexShrink: 1,
+    minWidth: 0,
   },
   timeText: {
     fontSize: 11,
@@ -165,11 +183,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: Spacing.two,
+    maxWidth: '100%',
     padding: Spacing.two,
+    width: '100%',
   },
   input: {
     flex: 1,
     maxHeight: 100,
+    minWidth: 0,
   },
   sendButton: {
     borderRadius: Radius.md,

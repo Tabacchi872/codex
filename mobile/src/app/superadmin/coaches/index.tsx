@@ -19,7 +19,7 @@ export default function SuperadminCoaches() {
       <Link href="/superadmin/coaches/new" asChild>
         <Pressable style={styles.primaryButton}>
           <ThemedText type="smallBold" style={styles.primaryButtonText}>
-            + Nuovo coach
+            + Aggiungi coach
           </ThemedText>
         </Pressable>
       </Link>
@@ -28,7 +28,10 @@ export default function SuperadminCoaches() {
         const plan = plans.find((item) => item.code === coach.planCode);
         const clientLimit = coach.clientLimitOverride ?? plan?.clientLimit ?? null;
         return (
-          <Pressable key={coach.id} onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}>
+          <Pressable
+            key={coach.id}
+            style={styles.coachLink}
+            onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}>
             <CoachCard coach={coach} planName={plan?.name ?? coach.planCode} clientLimit={clientLimit} />
           </Pressable>
         );
@@ -106,6 +109,9 @@ function StatusBadge({ status }: { status: AppBillingStatus }) {
 }
 
 const styles = StyleSheet.create({
+  coachLink: {
+    width: '100%',
+  },
   primaryButton: {
     alignItems: 'center',
     backgroundColor: '#C90018',

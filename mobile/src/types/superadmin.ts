@@ -48,6 +48,13 @@ export type DemoAppPlan = {
   active: boolean;
 };
 
+export type DemoPlanBillingRule = {
+  monthlyPricePerClient: number;
+  extraClientStep: number;
+  extraMonthlyPricePerStep: number;
+  prorataFirstMonthImplemented: boolean;
+};
+
 export type DemoPaymentEvent = {
   id: string;
   coachId: string;
@@ -76,4 +83,10 @@ export type CoachSupportMessage = {
   createdAt: string;
   readByCoachAt?: string;
   readBySuperadminAt?: string;
+};
+
+export type SuperadminSupportConversation = {
+  coach: DemoCoachAccount;
+  lastMessage: CoachSupportMessage;
+  unreadCount: number;
 };

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Slot, usePathname, useRouter } from 'expo-router';
+import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 
 import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
@@ -14,7 +14,7 @@ import type { UserRole } from '@/types/auth';
 
 const CLIENT_HOME = '/cliente-home';
 const COACH_HOME = '/';
-const SUPERADMIN_HOME = '/superadmin';
+const SUPERADMIN_HOME = '/superadmin' as Href;
 
 const CLIENT_ONLY_ROUTES = [
   '/cliente-home',

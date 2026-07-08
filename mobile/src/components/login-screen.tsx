@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -54,7 +54,7 @@ export function LoginScreen() {
     if (demoUser?.role === 'superadmin') {
       setError(null);
       loginAsSuperadmin(demoUser.email);
-      router.replace('/superadmin');
+      router.replace('/superadmin' as Href);
       return;
     }
 

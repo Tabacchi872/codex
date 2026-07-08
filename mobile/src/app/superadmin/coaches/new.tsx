@@ -25,6 +25,7 @@ export default function NewSuperadminCoach() {
   const [planCode, setPlanCode] = useState<AppPlanCode>(firstPlan);
   const [billingStatus, setBillingStatus] = useState<AppBillingStatus>('trial');
   const [clientLimit, setClientLimit] = useState('');
+  const [clientsUsed, setClientsUsed] = useState('0');
   const [periodStartsAt, setPeriodStartsAt] = useState('2026-07-08');
   const [periodEndsAt, setPeriodEndsAt] = useState('2026-08-08');
   const [error, setError] = useState('');
@@ -36,8 +37,9 @@ export default function NewSuperadminCoach() {
     }
     const plan = plans.find((item) => item.code === planCode);
     const parsedLimit = clientLimit.trim() === '' ? plan?.clientLimit ?? null : Number(clientLimit);
-    if (Number.isNaN(parsedLimit)) {
-      setError('Il limite clienti deve essere un numero oppure vuoto.');
+    const parsedClientsUsed = clientsUsed.trim() === '' ? 0 : Number(clientsUsed);
+    if (Number.isNaN(parsedLimit) || Number.isNaN(parsedClientsUsed)) {
+      setError('Limite clienti e clienti usati devono essere numeri. Il limite puo essere vuoto.');
       return;
     }
     const coach = createCoach({
@@ -47,6 +49,7 @@ export default function NewSuperadminCoach() {
       planCode,
       billingStatus,
       clientLimitOverride: parsedLimit,
+      clientsUsed: parsedClientsUsed,
       periodStartsAt,
       periodEndsAt,
     });
@@ -74,6 +77,9 @@ export default function NewSuperadminCoach() {
         />
         <Field label="Limite clienti">
           <ThemedTextInput value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite piano" keyboardType="number-pad" />
+        </Field>
+        <Field label="Clienti usati">
+          <ThemedTextInput value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" />
         </Field>
         <View style={styles.row}>
           <Field label="Inizio periodo" style={styles.half}>

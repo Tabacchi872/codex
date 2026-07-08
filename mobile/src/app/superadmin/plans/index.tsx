@@ -7,13 +7,20 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CoachFeatureKey } from '@/lib/coach-gating';
-import { useSuperadminStore } from '@/store/superadmin-store';
+import { demoPlanBillingRule, useSuperadminStore } from '@/store/superadmin-store';
 import type { DemoAppPlan } from '@/types/superadmin';
 
 export default function SuperadminPlans() {
   const plans = useSuperadminStore((s) => s.plans);
   return (
     <SuperadminShell title="Piani" description="Catalogo piani dell'app coach con prezzi, limiti e funzionalita'.">
+      <Card style={styles.ruleCard}>
+        <ThemedText type="smallBold">Regola prezzi</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          €{demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = €
+          {demoPlanBillingRule.extraMonthlyPricePerStep}/mese. Prorata primo mese documentata, non ancora applicata nel demo locale.
+        </ThemedText>
+      </Card>
       {plans.map((plan) => (
         <PlanCard key={plan.code} plan={plan} />
       ))}
@@ -30,7 +37,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
         <View style={styles.nameBlock}>
           <ThemedText type="smallBold">{plan.name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            EUR {plan.monthlyPrice}/mese
+            €{plan.monthlyPrice}/mese
           </ThemedText>
         </View>
         <ThemedText
@@ -42,7 +49,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
               color: plan.active ? theme.statusActive : theme.disabled,
             },
           ]}>
-          {plan.active ? 'attivo' : 'non attivo'}
+          {plan.active ? 'Attivo' : 'Non attivo'}
         </ThemedText>
       </View>
 
@@ -50,7 +57,7 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
         <ThemedText type="small" themeColor="textSecondary">
           Prezzo annuale
         </ThemedText>
-        <ThemedText type="smallBold">EUR {plan.annualPrice}/anno</ThemedText>
+        <ThemedText type="smallBold">€{plan.annualPrice}/anno</ThemedText>
       </View>
 
       <View style={styles.row}>
@@ -90,6 +97,9 @@ function getFeatureLabel(feature: CoachFeatureKey) {
 }
 
 const styles = StyleSheet.create({
+  ruleCard: {
+    gap: Spacing.one,
+  },
   card: {
     gap: Spacing.two,
   },

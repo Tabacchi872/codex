@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -21,11 +21,12 @@ const KNOWN_FEATURES: CoachFeatureKey[] = [
 ];
 
 export default function SuperadminPlanDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const planId = Array.isArray(params.id) ? params.id[0] : params.id;
   const theme = useTheme();
   const plans = useSuperadminStore((s) => s.plans);
   const updatePlan = useSuperadminStore((s) => s.updatePlan);
-  const plan = plans.find((item) => item.code === id);
+  const plan = plans.find((item) => item.code === planId);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [monthlyPrice, setMonthlyPrice] = useState('');
@@ -53,7 +54,7 @@ export default function SuperadminPlanDetail() {
           <ThemedText type="small" themeColor="textSecondary">
             Il piano richiesto non e' disponibile.
           </ThemedText>
-          <Pressable onPress={() => router.replace('/superadmin/plans')} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={() => router.replace('/superadmin/plans' as Href)} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
               Torna ai piani
             </ThemedText>

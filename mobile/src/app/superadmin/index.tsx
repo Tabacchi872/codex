@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
@@ -54,7 +54,7 @@ export default function SuperadminDashboard() {
       <Card style={styles.card}>
         <View style={styles.sectionHeader}>
           <ThemedText type="smallBold">Alert pagamento scaduto</ThemedText>
-          <Link href="/superadmin/coaches">
+          <Link href={'/superadmin/coaches' as Href}>
             <ThemedText type="smallBold" style={{ color: theme.primary }}>
               Vedi coach
             </ThemedText>

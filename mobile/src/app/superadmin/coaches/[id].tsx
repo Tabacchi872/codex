@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -15,20 +15,22 @@ import type { AppBillingStatus, AppPlanCode, DemoCoachClient } from '@/types/sup
 const STATUSES: AppBillingStatus[] = ['trial', 'active', 'past_due', 'canceled', 'blocked'];
 
 export default function SuperadminCoachDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const coachIdParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const theme = useTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
   const plans = useSuperadminStore((s) => s.plans);
   const clients = useSuperadminStore((s) => s.coachClients);
   const updateCoach = useSuperadminStore((s) => s.updateCoach);
-  const coach = coaches.find((item) => item.id === id);
+  const coach = coaches.find((item) => item.id === coachIdParam);
   const plan = plans.find((item) => item.code === coach?.planCode);
-  const coachClients = clients.filter((client) => client.coachId === id);
+  const coachClients = clients.filter((client) => client.coachId === coachIdParam);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [planCode, setPlanCode] = useState<AppPlanCode>('free');
   const [billingStatus, setBillingStatus] = useState<AppBillingStatus>('trial');
   const [clientLimit, setClientLimit] = useState('');
+  const [clientsUsed, setClientsUsed] = useState('');
   const [periodStartsAt, setPeriodStartsAt] = useState('');
   const [periodEndsAt, setPeriodEndsAt] = useState('');
   const [error, setError] = useState('');
@@ -40,6 +42,7 @@ export default function SuperadminCoachDetail() {
     setPlanCode(coach.planCode);
     setBillingStatus(coach.billingStatus);
     setClientLimit(coach.clientLimitOverride === undefined || coach.clientLimitOverride === null ? '' : String(coach.clientLimitOverride));
+    setClientsUsed(String(coach.clientsUsed));
     setPeriodStartsAt(coach.periodStartsAt);
     setPeriodEndsAt(coach.periodEndsAt);
   }, [coach]);
@@ -51,7 +54,7 @@ export default function SuperadminCoachDetail() {
           <ThemedText type="small" themeColor="textSecondary">
             Il coach richiesto non e' disponibile.
           </ThemedText>
-          <Pressable onPress={() => router.replace('/superadmin/coaches')} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
+          <Pressable onPress={() => router.replace('/superadmin/coaches' as Href)} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
             <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
               Torna alla lista coach
             </ThemedText>
@@ -70,8 +73,9 @@ export default function SuperadminCoachDetail() {
       return;
     }
     const parsedLimit = clientLimit.trim() === '' ? undefined : Number(clientLimit);
-    if (parsedLimit !== undefined && Number.isNaN(parsedLimit)) {
-      setError('Il limite clienti deve essere un numero oppure vuoto.');
+    const parsedClientsUsed = clientsUsed.trim() === '' ? 0 : Number(clientsUsed);
+    if ((parsedLimit !== undefined && Number.isNaN(parsedLimit)) || Number.isNaN(parsedClientsUsed)) {
+      setError('Limite clienti e clienti usati devono essere numeri. Il limite puo essere vuoto.');
       return;
     }
     updateCoach(coachId, {
@@ -80,6 +84,7 @@ export default function SuperadminCoachDetail() {
       planCode,
       billingStatus,
       clientLimitOverride: parsedLimit,
+      clientsUsed: parsedClientsUsed,
       periodStartsAt,
       periodEndsAt,
     });
@@ -130,6 +135,9 @@ export default function SuperadminCoachDetail() {
         />
         <Field label="Limite clienti">
           <ThemedTextInput value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite piano" keyboardType="number-pad" />
+        </Field>
+        <Field label="Clienti usati">
+          <ThemedTextInput value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" />
         </Field>
         <View style={styles.row}>
           <Field label="Inizio periodo" style={styles.half}>

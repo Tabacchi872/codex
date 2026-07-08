@@ -7,9 +7,11 @@ import type {
   DemoCoachAccount,
   DemoCoachClient,
   DemoPaymentEvent,
+  DemoPlanBillingRule,
   CoachSupportMessage,
   SuperadminNotification,
   SuperadminNotificationType,
+  SuperadminSupportConversation,
 } from '@/types/superadmin';
 
 const demoPlans: DemoAppPlan[] = [
@@ -18,33 +20,42 @@ const demoPlans: DemoAppPlan[] = [
     name: 'Free',
     monthlyPrice: 0,
     annualPrice: 0,
-    clientLimit: 3,
+    clientLimit: 10,
     features: ['clients', 'workout_templates'],
     active: true,
   },
   {
     code: 'starter',
     name: 'Starter',
-    monthlyPrice: 19,
-    annualPrice: 190,
-    clientLimit: 10,
+    monthlyPrice: 30,
+    annualPrice: 300,
+    clientLimit: 30,
     features: ['clients', 'workout_templates', 'appointments'],
     active: true,
   },
   {
     code: 'pro',
     name: 'Pro',
-    monthlyPrice: 49,
-    annualPrice: 490,
-    clientLimit: 30,
+    monthlyPrice: 50,
+    annualPrice: 500,
+    clientLimit: 50,
     features: ['clients', 'workout_templates', 'appointments', 'messages_realtime', 'advanced_analytics'],
+    active: true,
+  },
+  {
+    code: 'plus',
+    name: 'Plus',
+    monthlyPrice: 70,
+    annualPrice: 700,
+    clientLimit: 70,
+    features: ['clients', 'workout_templates', 'appointments', 'messages_realtime', 'push_notifications'],
     active: true,
   },
   {
     code: 'studio',
     name: 'Studio',
-    monthlyPrice: 99,
-    annualPrice: 990,
+    monthlyPrice: 100,
+    annualPrice: 1000,
     clientLimit: 100,
     features: [
       'clients',
@@ -56,23 +67,14 @@ const demoPlans: DemoAppPlan[] = [
     ],
     active: true,
   },
-  {
-    code: 'unlimited',
-    name: 'Unlimited',
-    monthlyPrice: 199,
-    annualPrice: 1990,
-    clientLimit: null,
-    features: [
-      'clients',
-      'workout_templates',
-      'appointments',
-      'messages_realtime',
-      'push_notifications',
-      'advanced_analytics',
-    ],
-    active: false,
-  },
 ];
+
+export const demoPlanBillingRule: DemoPlanBillingRule = {
+  monthlyPricePerClient: 1,
+  extraClientStep: 10,
+  extraMonthlyPricePerStep: 10,
+  prorataFirstMonthImplemented: false,
+};
 
 const demoCoaches: DemoCoachAccount[] = [
   {
@@ -232,6 +234,34 @@ function createNotification(input: Omit<SuperadminNotification, 'id' | 'createdA
 
 function findPlanName(plans: DemoAppPlan[], planCode: AppPlanCode) {
   return plans.find((plan) => plan.code === planCode)?.name ?? String(planCode);
+}
+
+export function getSuperadminSupportConversations(
+  coaches: DemoCoachAccount[],
+  messages: CoachSupportMessage[],
+): SuperadminSupportConversation[] {
+  return coaches
+    .map((coach) => {
+      const coachMessages = messages
+        .filter((message) => message.coachId === coach.id)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const lastMessage = coachMessages.at(-1);
+      if (!lastMessage || !coachMessages.some((message) => message.sender === 'coach')) return null;
+      return {
+        coach,
+        lastMessage,
+        unreadCount: coachMessages.filter((message) => message.sender === 'coach' && !message.readBySuperadminAt).length,
+      };
+    })
+    .filter((item): item is SuperadminSupportConversation => item !== null)
+    .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+}
+
+export function getUnreadSuperadminSupportCount(coaches: DemoCoachAccount[], messages: CoachSupportMessage[]) {
+  return getSuperadminSupportConversations(coaches, messages).reduce(
+    (total, conversation) => total + conversation.unreadCount,
+    0,
+  );
 }
 
 function buildCoachNotifications(

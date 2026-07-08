@@ -9,16 +9,16 @@ import { ThemedText } from './themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/auth-store';
-import { useSuperadminStore } from '@/store/superadmin-store';
+import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
 
 const NAV_ITEMS = [
-  { href: '/superadmin', label: 'Dashboard' },
-  { href: '/superadmin/coaches', label: 'Coach' },
-  { href: '/superadmin/plans', label: 'Piani' },
+  { href: '/superadmin' as Href, label: 'Dashboard', activePrefix: '/superadmin' },
+  { href: '/superadmin/coaches' as Href, label: 'Coach', activePrefix: '/superadmin/coaches' },
+  { href: '/superadmin/plans' as Href, label: 'Piani', activePrefix: '/superadmin/plans' },
   { href: '/superadmin/payment-events', label: 'Pagamenti' },
-  { href: '/superadmin/support/index', label: 'Supporto' },
+  { href: '/superadmin/support' as Href, label: 'Supporto', activePrefix: '/superadmin/support' },
   { href: '/superadmin/notifications', label: 'Notifiche' },
-] as const satisfies readonly { href: Href; label: string }[];
+] as const satisfies readonly { href: Href; label: string; activePrefix?: string }[];
 
 type SuperadminShellProps = {
   title: string;
@@ -34,7 +34,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
   const logout = useAuthStore((s) => s.logout);
   const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
   const unreadCoachSupport = useSuperadminStore(
-    (s) => s.coachSupportMessages.filter((message) => message.sender === 'coach' && !message.readBySuperadminAt).length
+    (s) => getUnreadSuperadminSupportCount(s.coaches, s.coachSupportMessages)
   );
 
   return (
@@ -68,8 +68,12 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
 
         <View style={styles.nav}>
           {NAV_ITEMS.map((item) => {
-            const supportActive = item.href === '/superadmin/support/index' && pathname.startsWith('/superadmin/support');
-            const active = supportActive || pathname === item.href || (item.href !== '/superadmin' && pathname.startsWith(`${item.href}/`));
+            const href = item.href.toString();
+            const activePrefix = 'activePrefix' in item ? item.activePrefix : href;
+            const dashboardActive = href === '/superadmin' && pathname === '/superadmin';
+            const supportActive = href === '/superadmin/support' && pathname.startsWith('/superadmin/support');
+            const active =
+              dashboardActive || supportActive || (href !== '/superadmin' && (pathname === activePrefix || pathname.startsWith(`${activePrefix}/`)));
             return (
               <Link key={item.href.toString()} href={item.href} asChild>
                 <Pressable
@@ -80,14 +84,14 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
                   <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
                     {item.label}
                   </ThemedText>
-                  {item.href === '/superadmin/support/index' && unreadCoachSupport > 0 ? (
+                  {href === '/superadmin/support' && unreadCoachSupport > 0 ? (
                     <View style={[styles.navBadge, { backgroundColor: theme.primary }]}>
                       <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 11, lineHeight: 14 }}>
                         {unreadCoachSupport > 99 ? '99+' : unreadCoachSupport}
                       </ThemedText>
                     </View>
                   ) : null}
-                  {item.href === '/superadmin/notifications' && unreadNotifications > 0 ? (
+                  {href === '/superadmin/notifications' && unreadNotifications > 0 ? (
                     <View style={[styles.navBadge, { backgroundColor: theme.primary }]}>
                       <ThemedText type="smallBold" style={{ color: theme.onPrimary, fontSize: 11, lineHeight: 14 }}>
                         {unreadNotifications > 99 ? '99+' : unreadNotifications}
@@ -110,6 +114,8 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
+    maxWidth: '100%',
+    width: '100%',
   },
   header: {
     alignItems: 'flex-start',
@@ -120,6 +126,7 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: Spacing.one,
+    minWidth: 0,
   },
   title: {
     fontSize: 30,
@@ -143,6 +150,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: Spacing.one,
+    maxWidth: '100%',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
