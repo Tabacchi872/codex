@@ -16,7 +16,7 @@ const FILTERS: { value: CoachFilterStatus; label: string }[] = [
   { value: 'all', label: 'Tutti' },
   { value: 'active', label: 'Attivi' },
   { value: 'trial', label: 'In prova' },
-  { value: 'past_due', label: 'Pagamento scaduto' },
+  { value: 'past_due', label: 'Scaduti' },
   { value: 'blocked', label: 'Bloccati' },
   { value: 'canceled', label: 'Annullati' },
 ];
@@ -180,10 +180,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 40,
+    justifyContent: 'center',
+    minHeight: 32,
     maxWidth: '100%',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
   },
   emptyCard: {
     gap: Spacing.one,
