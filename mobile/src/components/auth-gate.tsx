@@ -4,8 +4,10 @@ import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
 import ClientTabs from './client-tabs';
+import { ForgotPasswordScreen } from './forgot-password-screen';
 import { LoginScreen } from './login-screen';
 import { ClientRegistrationScreen, CoachRegistrationScreen } from './registration-screens';
+import { ResetPasswordScreen } from './reset-password-screen';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -67,6 +69,12 @@ export function AuthGate() {
     }
     if (pathname === '/registrazione-cliente') {
       return <ClientRegistrationScreen />;
+    }
+    if (pathname === '/password-dimenticata') {
+      return <ForgotPasswordScreen />;
+    }
+    if (pathname === '/reimposta-password') {
+      return <ResetPasswordScreen />;
     }
     return <LoginScreen />;
   }

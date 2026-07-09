@@ -55,6 +55,14 @@ export function LoginScreen() {
       setSubmitting(true);
       const result = await signInWithEmail(normalized, password);
       setSubmitting(false);
+      // Errore specifico e reale (l'account Supabase esiste ma l'email non e'
+      // ancora confermata): non deve ricadere sui controlli locali sotto, che
+      // darebbero il generico "Credenziali non valide" e nasconderebbero il
+      // vero motivo del blocco.
+      if (!result.ok && result.code === 'email_not_confirmed') {
+        setError('Email non ancora confermata. Controlla la tua casella di posta e clicca il link di conferma prima di accedere.');
+        return;
+      }
       if (result.ok) {
         setError(null);
         const { role } = result.data;
@@ -191,7 +199,7 @@ export function LoginScreen() {
             </ThemedText>
           </View>
         </Pressable>
-        <Pressable disabled hitSlop={6}>
+        <Pressable onPress={() => router.push('/password-dimenticata' as Href)} hitSlop={6}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.forgotPassword}>
             Password dimenticata?
           </ThemedText>

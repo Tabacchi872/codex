@@ -18,6 +18,7 @@ export type AuthServiceErrorCode =
   | 'not_configured'
   | 'auth_error'
   | 'email_taken'
+  | 'email_not_confirmed'
   | 'invalid_coach_code'
   | 'coach_not_accepting_clients'
   | 'no_client_profile'
@@ -385,10 +386,42 @@ export async function getCurrentSession(): Promise<AuthServiceResult<Session | n
   return { ok: true, data: data.session };
 }
 
+// Non rivela mai se l'email esiste o meno (comportamento di default di
+// Supabase): il messaggio mostrato in UI resta lo stesso a prescindere,
+// vedi forgot-password-screen.tsx.
+export async function requestPasswordReset(email: string, redirectTo?: string): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    email.trim().toLowerCase(),
+    redirectTo ? { redirectTo } : undefined,
+  );
+  if (error) {
+    return { ok: false, code: 'auth_error', message: error.message };
+  }
+  return { ok: true, data: null };
+}
+
+// Richiede una sessione di recovery gia' attiva (stabilita da Supabase quando
+// l'utente apre il link ricevuto via resetPasswordForEmail, vedi
+// reset-password-screen.tsx + supabase.ts detectSessionInUrl).
+export async function updatePassword(newPassword: string): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    return { ok: false, code: 'auth_error', message: error.message };
+  }
+  return { ok: true, data: null };
+}
+
 function isBlockedBillingStatus(status: string) {
   return status === 'blocked' || status === 'past_due' || status === 'canceled';
 }
 
 function mapAuthErrorCode(message: string): AuthServiceErrorCode {
-  return message.toLowerCase().includes('already registered') ? 'email_taken' : 'auth_error';
+  const normalized = message.toLowerCase();
+  if (normalized.includes('already registered')) return 'email_taken';
+  if (normalized.includes('email not confirmed') || normalized.includes('not confirmed')) return 'email_not_confirmed';
+  return 'auth_error';
 }

@@ -57,6 +57,7 @@ export function CoachRegistrationScreen() {
   const [copyFeedback, setCopyFeedback] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
 
   async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -126,6 +127,10 @@ export function CoachRegistrationScreen() {
         return;
       }
       coachCode = result.data.coachCode;
+      // Con "Confirm email" attivo su Supabase, data.session torna null finche'
+      // l'utente non clicca il link di conferma: non e' un errore, va solo
+      // segnalato (non si puo' fare login finche' l'email non e' confermata).
+      setPendingEmailConfirmation(result.data.session === null);
     }
 
     const now = new Date();
@@ -176,6 +181,11 @@ export function CoachRegistrationScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               Condividi questo codice con i tuoi clienti per consentire la registrazione.
             </ThemedText>
+            {pendingEmailConfirmation ? (
+              <ThemedText type="small" themeColor="statusExpired">
+                Registrazione completata. Controlla la tua email per confermare l&apos;account: potrai accedere solo dopo la conferma.
+              </ThemedText>
+            ) : null}
             <View style={[styles.codeBox, { borderColor: theme.primary, backgroundColor: theme.softRed }]}>
               <ThemedText type="subtitle" style={[styles.codeText, { color: theme.primary }]}>
                 {createdCode}
@@ -307,6 +317,7 @@ export function ClientRegistrationScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
 
   async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -359,6 +370,15 @@ export function ClientRegistrationScreen() {
         return;
       }
       clientId = result.data.userId;
+      if (!result.data.session) {
+        // Con "Confirm email" attivo, l'utente esiste su Supabase ma non ha
+        // ancora una sessione: NON va fatto login automatico ne' scritto il
+        // mirror locale come se fosse gia' attivo. Al primo login reale (dopo
+        // conferma), login-screen.tsx ricostruisce il profilo da Supabase
+        // (loadClientProfile), quindi qui non serve altro.
+        setPendingEmailConfirmation(true);
+        return;
+      }
     } else {
       if (!coach) {
         setError('Codice coach non valido.');
@@ -414,6 +434,30 @@ export function ClientRegistrationScreen() {
     }
     loginAsClient(clientId, normalizedEmail);
     router.replace('/cliente-home');
+  }
+
+  if (pendingEmailConfirmation) {
+    return (
+      <ScreenBackground>
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five }]}>
+          <Card style={styles.form}>
+            <ThemedText type="title" style={styles.title}>
+              Controlla la tua email
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Registrazione completata. Controlla la tua email per confermare l&apos;account. Dopo la conferma potrai accedere normalmente.
+            </ThemedText>
+            <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
+              <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+                <ThemedText type="smallBold" themeColor="onPrimary">
+                  Torna al login
+                </ThemedText>
+              </View>
+            </Pressable>
+          </Card>
+        </ScrollView>
+      </ScreenBackground>
+    );
   }
 
   return (
