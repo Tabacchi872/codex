@@ -333,13 +333,18 @@ export function ClientRegistrationScreen() {
     }
 
     const coach = findCoachByCode(normalizedCode);
+    let clientId = `client-${Date.now()}`;
 
     // Se Supabase e' configurato, la validazione di codice/coach bloccato/
     // limite avviene su registration_codes e coach_profiles reali (vedi
     // lib/auth-service.ts). Il coach locale potrebbe non esistere (registrato
     // solo su Supabase): il cliente viene comunque creato in locale per far
     // funzionare da subito le schermate cliente, non ancora migrate — vedi
-    // docs/DECISIONS.md.
+    // docs/DECISIONS.md. L'id locale del cliente usa lo stesso id dell'utente
+    // Supabase (result.data.userId), non un id generato a parte: cosi' un
+    // login successivo (anche su un altro device/browser, vedi login-screen.tsx
+    // + lib/auth-service.ts loadClientProfile) ritrova lo stesso cliente invece
+    // di doverne ricostruire uno nuovo con un id diverso.
     if (supabaseConfig.isConfigured) {
       setSubmitting(true);
       const result = await signUpClientWithCoachCode({
@@ -353,6 +358,7 @@ export function ClientRegistrationScreen() {
         setError(result.message);
         return;
       }
+      clientId = result.data.userId;
     } else {
       if (!coach) {
         setError('Codice coach non valido.');
@@ -368,7 +374,6 @@ export function ClientRegistrationScreen() {
 
     const now = new Date().toISOString();
     const { firstName, lastName } = splitFullName(fullName.trim());
-    const clientId = `client-${Date.now()}`;
     const client: Client = {
       id: clientId,
       firstName,

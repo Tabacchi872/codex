@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { generateCoachCode, normalizeCoachCode } from './coach-code';
 import { getSupabaseClientStatus, supabase } from './supabase';
 
+import type { Client } from '@/types/client';
 import type { CoachBillingProfile } from '@/types/superadmin';
 
 // Livello reale di autenticazione/registrazione sopra Supabase Auth + Postgres
@@ -19,6 +20,8 @@ export type AuthServiceErrorCode =
   | 'email_taken'
   | 'invalid_coach_code'
   | 'coach_not_accepting_clients'
+  | 'no_client_profile'
+  | 'no_coach_link'
   | 'db_error';
 
 export type AuthServiceResult<T> =
@@ -57,6 +60,11 @@ export type SignInData = {
   session: Session;
   role: 'superadmin' | 'coach' | 'cliente';
   fullName: string | null;
+};
+
+export type ClientProfileData = {
+  client: Client;
+  coachBusinessName: string | null;
 };
 
 const NOT_CONFIGURED_MESSAGE =
@@ -249,6 +257,86 @@ export async function signUpClientWithCoachCode(
   }
 
   return { ok: true, data: { userId, coachId: codeRow.coach_id, session: signUpData.session } };
+}
+
+// Ricostruisce il "profilo cliente" (Client locale + collegamento coach) da
+// Supabase, invece di affidarsi al mirror locale (che puo' non esistere se il
+// login avviene su un device/browser diverso da quello usato in registrazione
+// — AsyncStorage web e AsyncStorage Expo Go NON condividono storage). Chiamata
+// da login-screen.tsx dopo signInWithEmail per role 'cliente' e usata per
+// popolare/aggiornare client-store prima di considerare l'accesso riuscito.
+export async function loadClientProfile(userId: string, fallbackEmail: string): Promise<AuthServiceResult<ClientProfileData>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name,email,created_at')
+    .eq('id', userId)
+    .maybeSingle();
+  if (profileError) {
+    return { ok: false, code: 'db_error', message: `Errore caricamento profilo: ${profileError.message}` };
+  }
+
+  const { data: clientProfile, error: clientProfileError } = await supabase
+    .from('client_profiles')
+    .select('goal,notes')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (clientProfileError) {
+    return { ok: false, code: 'db_error', message: `Errore caricamento dati cliente: ${clientProfileError.message}` };
+  }
+  if (!clientProfile) {
+    return {
+      ok: false,
+      code: 'no_client_profile',
+      message: 'Profilo cliente non completato. Contatta il coach o l\'assistenza.',
+    };
+  }
+
+  const { data: coachClient, error: coachClientError } = await supabase
+    .from('coach_clients')
+    .select('coach_id,status,linked_by_code')
+    .eq('client_id', userId)
+    .maybeSingle();
+  if (coachClientError) {
+    return { ok: false, code: 'db_error', message: `Errore caricamento collegamento coach: ${coachClientError.message}` };
+  }
+  if (!coachClient) {
+    return { ok: false, code: 'no_coach_link', message: 'Cliente non collegato a nessun coach.' };
+  }
+
+  // Lettura del coach collegato: solo coach_profiles (letto pubblicamente, vedi
+  // coach_profiles_public_read in docs/SUPABASE_SCHEMA.sql), non profiles del
+  // coach — un cliente non ha policy per leggere il profiles altrui, quindi
+  // resta un dato opzionale/best-effort, non un dato mancante bloccante.
+  const { data: coachProfile } = await supabase
+    .from('coach_profiles')
+    .select('business_name')
+    .eq('user_id', coachClient.coach_id)
+    .maybeSingle();
+
+  const { firstName, lastName } = splitFullName(profile?.full_name ?? '');
+  const client: Client = {
+    id: userId,
+    firstName,
+    lastName,
+    email: profile?.email ?? fallbackEmail,
+    goal: clientProfile.goal ?? '',
+    notes: clientProfile.notes ?? '',
+    status: coachClient.status === 'active' ? 'attivo' : 'in_pausa',
+    createdAt: profile?.created_at ?? new Date().toISOString(),
+    coachId: coachClient.coach_id,
+    linkedByCode: coachClient.linked_by_code ?? null,
+  };
+
+  return { ok: true, data: { client, coachBusinessName: coachProfile?.business_name ?? null } };
+}
+
+function splitFullName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  return { firstName: parts.slice(0, -1).join(' '), lastName: parts.at(-1) ?? '' };
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<AuthServiceResult<SignInData>> {

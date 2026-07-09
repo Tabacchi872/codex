@@ -11,7 +11,7 @@ import { ThemedTextInput } from './themed-text-input';
 import { APP_NAME } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { signInWithEmail } from '@/lib/auth-service';
+import { loadClientProfile, signInWithEmail } from '@/lib/auth-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -26,6 +26,11 @@ export function LoginScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const accounts = useClientStore((s) => s.accounts);
+  const clients = useClientStore((s) => s.clients);
+  const addClient = useClientStore((s) => s.addClient);
+  const updateClient = useClientStore((s) => s.updateClient);
+  const addAccount = useClientStore((s) => s.addAccount);
+  const updateAccount = useClientStore((s) => s.updateAccount);
   const coachAccounts = useAuthStore((s) => s.coachAccounts);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
   const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
@@ -60,8 +65,40 @@ export function LoginScreen() {
           return;
         }
         if (role === 'cliente') {
-          const localAccount = accounts.find((account) => account.email.toLowerCase() === normalized);
-          loginAsClient(localAccount?.clientId ?? result.data.session.user.id, normalized);
+          // Ricarica sempre client_profiles/coach_clients da Supabase (fonte di
+          // verita'), invece di fidarsi solo del mirror locale: quest'ultimo
+          // puo' non esistere se la registrazione e' avvenuta su un altro
+          // device/browser (AsyncStorage web e Expo Go non condividono lo
+          // storage) — vedi lib/auth-service.ts, loadClientProfile.
+          const userId = result.data.session.user.id;
+          const profileResult = await loadClientProfile(userId, normalized);
+          if (!profileResult.ok) {
+            setError(profileResult.message);
+            return;
+          }
+          const { client } = profileResult.data;
+          if (clients.some((c) => c.id === client.id)) {
+            updateClient(client);
+          } else {
+            addClient(client);
+          }
+          const existingAccount = accounts.find((a) => a.clientId === client.id);
+          if (existingAccount) {
+            updateAccount({ ...existingAccount, email: normalized, username: normalized, mustChangePassword: false });
+          } else {
+            addAccount({
+              id: `acc-${client.id}`,
+              clientId: client.id,
+              username: normalized,
+              email: normalized,
+              temporaryPassword: password,
+              role: 'cliente',
+              mustChangePassword: false,
+              status: 'active',
+              createdAt: new Date().toISOString(),
+            });
+          }
+          loginAsClient(client.id, normalized);
           router.replace('/cliente-home');
           return;
         }
