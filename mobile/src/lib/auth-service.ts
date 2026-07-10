@@ -40,7 +40,11 @@ export type CoachSignUpInput = {
 
 export type CoachSignUpData = {
   userId: string;
-  coachCode: string;
+  // null quando "Confirm email" e' attivo e non esiste ancora una sessione:
+  // coach_profiles/billing_profiles/registration_codes non possono essere
+  // scritti (RLS richiede auth.uid(), che senza sessione e' null) — vengono
+  // completati da ensureCoachOnboarding al primo login reale, dopo la conferma.
+  coachCode: string | null;
   session: Session | null;
 };
 
@@ -83,14 +87,26 @@ export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceR
   if (!isReady() || !supabase) return notConfigured();
 
   const email = input.email.trim().toLowerCase();
+  const businessName = input.businessName?.trim() || null;
+  const billing = input.billingProfile;
   // role/full_name/phone in user_metadata: letti dal trigger public.handle_new_user
   // (docs/SUPABASE_SCHEMA.sql) che crea la riga profiles al posto nostro, con
   // privilegi security definer che bypassano la RLS su quella tabella.
+  // business_name/billing_profile restano anch'essi in user_metadata: se
+  // "Confirm email" e' attivo, gli insert sotto non possono avvenire subito
+  // (nessuna sessione => RLS blocca), quindi questi dati devono sopravvivere
+  // fino al primo login reale, dove ensureCoachOnboarding li rilegge da li'.
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password: input.password,
     options: {
-      data: { role: 'coach', full_name: input.fullName.trim(), phone: input.phone?.trim() || null },
+      data: {
+        role: 'coach',
+        full_name: input.fullName.trim(),
+        phone: input.phone?.trim() || null,
+        business_name: businessName,
+        billing_profile: billing,
+      },
     },
   });
   if (signUpError) {
@@ -101,33 +117,89 @@ export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceR
     return { ok: false, code: 'auth_error', message: 'Registrazione non riuscita: utente non creato.' };
   }
 
-  const { error: coachProfileError } = await supabase.from('coach_profiles').insert({
-    user_id: userId,
-    business_name: input.businessName?.trim() || null,
-    billing_status: 'trial',
-  });
-  if (coachProfileError) {
-    return { ok: false, code: 'db_error', message: `Errore creazione profilo attivita': ${coachProfileError.message}` };
+  if (!signUpData.session) {
+    return { ok: true, data: { userId, coachCode: null, session: null } };
   }
 
-  const billing = input.billingProfile;
-  const { error: billingError } = await supabase.from('billing_profiles').insert({
-    coach_id: userId,
-    subject_type: billing.subjectType,
-    legal_name: billing.legalName,
-    vat_number: billing.vatNumber || null,
-    fiscal_code: billing.fiscalCode || null,
-    address: billing.address || null,
-    postal_code: billing.postalCode || null,
-    city: billing.city || null,
-    province: billing.province || null,
-    country: billing.country,
-    pec: billing.pec || null,
-    sdi_code: billing.sdiCode || null,
-    billing_email: billing.billingEmail,
-  });
-  if (billingError) {
-    return { ok: false, code: 'db_error', message: `Errore creazione dati fatturazione: ${billingError.message}` };
+  const onboarding = await completeCoachOnboarding(userId, businessName, billing);
+  if (!onboarding.ok) return onboarding;
+
+  return { ok: true, data: { userId, coachCode: onboarding.data.coachCode, session: signUpData.session } };
+}
+
+// Crea (se mancano) coach_profiles/billing_profiles/registration_codes per un
+// coach gia' autenticato. Usata sia da signUpCoach quando la sessione esiste
+// subito (Confirm email disattivato), sia da ensureCoachOnboarding al primo
+// login reale (Confirm email attivo: questi insert non erano potuti avvenire
+// in fase di registrazione, vedi sopra). Idempotente: non duplica righe se
+// eseguita piu' volte.
+async function completeCoachOnboarding(
+  userId: string,
+  businessName: string | null,
+  billing: CoachBillingProfile,
+): Promise<AuthServiceResult<{ coachCode: string }>> {
+  if (!supabase) return notConfigured();
+
+  const { data: existingCoachProfile, error: coachProfileReadError } = await supabase
+    .from('coach_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (coachProfileReadError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica profilo attivita': ${coachProfileReadError.message}` };
+  }
+  if (!existingCoachProfile) {
+    const { error: coachProfileError } = await supabase.from('coach_profiles').insert({
+      user_id: userId,
+      business_name: businessName,
+      billing_status: 'trial',
+    });
+    if (coachProfileError) {
+      return { ok: false, code: 'db_error', message: `Errore creazione profilo attivita': ${coachProfileError.message}` };
+    }
+  }
+
+  const { data: existingBilling, error: billingReadError } = await supabase
+    .from('billing_profiles')
+    .select('id')
+    .eq('coach_id', userId)
+    .maybeSingle();
+  if (billingReadError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica dati fatturazione: ${billingReadError.message}` };
+  }
+  if (!existingBilling) {
+    const { error: billingError } = await supabase.from('billing_profiles').insert({
+      coach_id: userId,
+      subject_type: billing.subjectType,
+      legal_name: billing.legalName,
+      vat_number: billing.vatNumber || null,
+      fiscal_code: billing.fiscalCode || null,
+      address: billing.address || null,
+      postal_code: billing.postalCode || null,
+      city: billing.city || null,
+      province: billing.province || null,
+      country: billing.country,
+      pec: billing.pec || null,
+      sdi_code: billing.sdiCode || null,
+      billing_email: billing.billingEmail,
+    });
+    if (billingError) {
+      return { ok: false, code: 'db_error', message: `Errore creazione dati fatturazione: ${billingError.message}` };
+    }
+  }
+
+  const { data: existingCode, error: existingCodeError } = await supabase
+    .from('registration_codes')
+    .select('code')
+    .eq('coach_id', userId)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (existingCodeError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica codice coach: ${existingCodeError.message}` };
+  }
+  if (existingCode) {
+    return { ok: true, data: { coachCode: existingCode.code } };
   }
 
   const coachCode = await insertUniqueCoachCode(userId);
@@ -135,7 +207,32 @@ export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceR
     return { ok: false, code: 'db_error', message: 'Impossibile generare un codice coach univoco. Riprova.' };
   }
 
-  return { ok: true, data: { userId, coachCode, session: signUpData.session } };
+  return { ok: true, data: { coachCode } };
+}
+
+// Fallback chiamato dopo login (login-screen.tsx) se il coach si era
+// registrato con "Confirm email" attivo: al momento della registrazione non
+// esisteva ancora una sessione, quindi coach_profiles/billing_profiles/
+// registration_codes potrebbero non essere mai stati creati. business_name/
+// billing_profile vengono riletti da user_metadata (salvati li' da
+// signUpCoach), non persi.
+export async function ensureCoachOnboarding(
+  userId: string,
+  metadata: Record<string, unknown>,
+): Promise<AuthServiceResult<{ coachCode: string }>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const billing = metadata.billing_profile as CoachBillingProfile | undefined;
+  if (!billing) {
+    return {
+      ok: false,
+      code: 'db_error',
+      message: 'Dati di fatturazione non trovati per completare la registrazione del coach.',
+    };
+  }
+  const businessName = (metadata.business_name as string | null | undefined) ?? null;
+
+  return completeCoachOnboarding(userId, businessName, billing);
 }
 
 async function insertUniqueCoachCode(coachId: string, attempts = 5): Promise<string | null> {
@@ -213,11 +310,16 @@ export async function signUpClientWithCoachCode(
   }
 
   const email = input.email.trim().toLowerCase();
+  // coach_id/coach_code in user_metadata: se "Confirm email" e' attivo, gli
+  // insert sotto non possono avvenire subito (nessuna sessione => RLS blocca
+  // client_profiles/coach_clients), quindi questi dati devono sopravvivere
+  // fino al primo login reale, dove ensureClientOnboarding li rilegge da li'
+  // invece di richiedere di nuovo il codice coach (che a quel punto e' perso).
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password: input.password,
     options: {
-      data: { role: 'cliente', full_name: input.fullName.trim() },
+      data: { role: 'cliente', full_name: input.fullName.trim(), coach_id: codeRow.coach_id, coach_code: normalizedCode },
     },
   });
   if (signUpError) {
@@ -228,18 +330,61 @@ export async function signUpClientWithCoachCode(
     return { ok: false, code: 'auth_error', message: 'Registrazione non riuscita: utente non creato.' };
   }
 
-  const { error: clientProfileError } = await supabase.from('client_profiles').insert({
-    user_id: userId,
-  });
-  if (clientProfileError) {
-    return { ok: false, code: 'db_error', message: `Errore creazione dati cliente: ${clientProfileError.message}` };
+  if (!signUpData.session) {
+    return { ok: true, data: { userId, coachId: codeRow.coach_id, session: null } };
+  }
+
+  const onboarding = await completeClientOnboarding(userId, codeRow.coach_id, normalizedCode);
+  if (!onboarding.ok) return onboarding;
+
+  return { ok: true, data: { userId, coachId: codeRow.coach_id, session: signUpData.session } };
+}
+
+// Crea (se mancano) client_profiles/coach_clients per un cliente gia'
+// autenticato, incrementando used_count solo la prima volta che il
+// collegamento coach_clients viene effettivamente creato (idempotente: non
+// duplica righe ne' incrementa due volte se eseguita piu' volte). Usata sia
+// da signUpClientWithCoachCode quando la sessione esiste subito, sia da
+// ensureClientOnboarding al primo login reale (Confirm email attivo).
+async function completeClientOnboarding(
+  userId: string,
+  coachId: string,
+  linkedByCode: string,
+): Promise<AuthServiceResult<null>> {
+  if (!supabase) return notConfigured();
+
+  const { data: existingClientProfile, error: clientProfileReadError } = await supabase
+    .from('client_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (clientProfileReadError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica dati cliente: ${clientProfileReadError.message}` };
+  }
+  if (!existingClientProfile) {
+    const { error: clientProfileError } = await supabase.from('client_profiles').insert({ user_id: userId });
+    if (clientProfileError) {
+      return { ok: false, code: 'db_error', message: `Errore creazione dati cliente: ${clientProfileError.message}` };
+    }
+  }
+
+  const { data: existingCoachClient, error: coachClientReadError } = await supabase
+    .from('coach_clients')
+    .select('id')
+    .eq('client_id', userId)
+    .maybeSingle();
+  if (coachClientReadError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica collegamento coach: ${coachClientReadError.message}` };
+  }
+  if (existingCoachClient) {
+    return { ok: true, data: null };
   }
 
   const { error: coachClientError } = await supabase.from('coach_clients').insert({
-    coach_id: codeRow.coach_id,
+    coach_id: coachId,
     client_id: userId,
     status: 'active',
-    linked_by_code: normalizedCode,
+    linked_by_code: linkedByCode || null,
   });
   if (coachClientError) {
     return { ok: false, code: 'db_error', message: `Errore collegamento al coach: ${coachClientError.message}` };
@@ -249,15 +394,39 @@ export async function signUpClientWithCoachCode(
   // semplice da far funzionare su un progetto Supabase reale senza dipendere
   // da una funzione SQL aggiuntiva gia' eseguita/con permessi corretti. Richiede
   // la policy registration_codes_increment_usage (docs/SUPABASE_SCHEMA.sql).
-  const { error: usedCountError } = await supabase
-    .from('registration_codes')
-    .update({ used_count: codeRow.used_count + 1 })
-    .eq('id', codeRow.id);
-  if (usedCountError) {
-    return { ok: false, code: 'db_error', message: `Errore aggiornamento codice coach: ${usedCountError.message}` };
+  // Best-effort: se il codice non si trova piu' (es. disattivato nel
+  // frattempo) non blocchiamo l'onboarding gia' completato sopra.
+  if (linkedByCode) {
+    const { data: codeRow } = await supabase
+      .from('registration_codes')
+      .select('id,used_count')
+      .eq('code', linkedByCode)
+      .maybeSingle();
+    if (codeRow) {
+      await supabase.from('registration_codes').update({ used_count: codeRow.used_count + 1 }).eq('id', codeRow.id);
+    }
   }
 
-  return { ok: true, data: { userId, coachId: codeRow.coach_id, session: signUpData.session } };
+  return { ok: true, data: null };
+}
+
+// Fallback chiamato dopo login (login-screen.tsx) se il cliente si era
+// registrato con "Confirm email" attivo: coach_id/coach_code vengono riletti
+// da user_metadata (salvati li' da signUpClientWithCoachCode), non richiesti
+// di nuovo all'utente (che a questo punto non li ha piu' sottomano).
+export async function ensureClientOnboarding(
+  userId: string,
+  metadata: Record<string, unknown>,
+): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const coachId = metadata.coach_id as string | undefined;
+  if (!coachId) {
+    return { ok: false, code: 'no_coach_link', message: 'Nessun coach collegato trovato per questo account.' };
+  }
+  const linkedByCode = (metadata.coach_code as string | undefined) ?? '';
+
+  return completeClientOnboarding(userId, coachId, linkedByCode);
 }
 
 // Ricostruisce il "profilo cliente" (Client locale + collegamento coach) da
@@ -354,16 +523,86 @@ export async function signInWithEmail(email: string, password: string): Promise<
     return { ok: false, code: 'auth_error', message: 'Accesso non riuscito: sessione non creata.' };
   }
 
+  const userId = data.session.user.id;
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role, full_name')
-    .eq('id', data.session.user.id)
+    .eq('id', userId)
     .maybeSingle();
-  if (profileError || !profile) {
-    return { ok: false, code: 'db_error', message: 'Accesso riuscito ma profilo non trovato.' };
+  if (profileError) {
+    return { ok: false, code: 'db_error', message: `Accesso riuscito ma errore lettura profilo: ${profileError.message}` };
+  }
+  if (profile) {
+    return { ok: true, data: { session: data.session, role: profile.role, fullName: profile.full_name } };
   }
 
-  return { ok: true, data: { session: data.session, role: profile.role, fullName: profile.full_name } };
+  // Riga profiles mancante: il trigger public.handle_new_user (docs/
+  // SUPABASE_SCHEMA.sql) non l'ha creata (non installato/aggiornato sul
+  // progetto, o eseguito prima che il trigger esistesse). Invece di bloccare
+  // il login con "profilo non trovato", la creiamo qui dal client autenticato
+  // usando gli stessi dati passati a signUp (role/full_name in user_metadata).
+  // Richiede la policy profiles_self_insert (docs/SUPABASE_SCHEMA.sql).
+  const created = await ensureProfileRow(userId, data.session.user.email ?? email, data.session.user.user_metadata ?? {});
+  if (!created.ok) return created;
+
+  return { ok: true, data: { session: data.session, role: created.data.role, fullName: created.data.fullName } };
+}
+
+type EnsuredProfile = { role: 'superadmin' | 'coach' | 'cliente'; fullName: string | null };
+
+function readRoleFromMetadata(metadata: Record<string, unknown>): 'superadmin' | 'coach' | 'cliente' {
+  const role = metadata.role;
+  if (role === 'coach' || role === 'superadmin') return role;
+  return 'cliente';
+}
+
+async function ensureProfileRow(
+  userId: string,
+  email: string,
+  metadata: Record<string, unknown>,
+): Promise<AuthServiceResult<EnsuredProfile>> {
+  if (!supabase) return notConfigured();
+
+  const role = readRoleFromMetadata(metadata);
+  const fullName = (metadata.full_name as string | undefined) ?? null;
+  const { error } = await supabase.from('profiles').insert({ id: userId, role, full_name: fullName, email });
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore creazione profilo: ${error.message}` };
+  }
+  return { ok: true, data: { role, fullName } };
+}
+
+// Fallback esplicito equivalente a quello dentro signInWithEmail, riutilizzabile
+// per un utente gia' autenticato (es. dopo il reset password, o per una
+// verifica difensiva indipendente dal login): legge l'utente Supabase corrente
+// e crea la riga profiles se manca ancora.
+export async function ensureProfileForCurrentUser(): Promise<
+  AuthServiceResult<{ id: string; role: 'superadmin' | 'coach' | 'cliente'; fullName: string | null; email: string }>
+> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    return { ok: false, code: 'auth_error', message: userError?.message ?? 'Nessun utente autenticato.' };
+  }
+  const user = userData.user;
+
+  const { data: existing, error: existingError } = await supabase
+    .from('profiles')
+    .select('role, full_name, email')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (existingError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica profilo: ${existingError.message}` };
+  }
+  if (existing) {
+    return { ok: true, data: { id: user.id, role: existing.role, fullName: existing.full_name, email: existing.email } };
+  }
+
+  const created = await ensureProfileRow(user.id, user.email ?? '', user.user_metadata ?? {});
+  if (!created.ok) return created;
+
+  return { ok: true, data: { id: user.id, role: created.data.role, fullName: created.data.fullName, email: user.email ?? '' } };
 }
 
 export async function signOut(): Promise<AuthServiceResult<null>> {

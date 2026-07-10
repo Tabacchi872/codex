@@ -126,10 +126,16 @@ export function CoachRegistrationScreen() {
         setError(result.message);
         return;
       }
-      coachCode = result.data.coachCode;
       // Con "Confirm email" attivo su Supabase, data.session torna null finche'
-      // l'utente non clicca il link di conferma: non e' un errore, va solo
-      // segnalato (non si puo' fare login finche' l'email non e' confermata).
+      // l'utente non clicca il link di conferma: in quel caso coachCode e'
+      // anch'esso null (registration_codes non e' stato ancora scritto, nessuna
+      // sessione => RLS blocca) e verra' generato al primo login reale
+      // (ensureCoachOnboarding). Il codice locale generato sopra resta solo per
+      // il mirror locale, NON va mostrato all'utente: non esiste ancora su
+      // Supabase, un cliente non potrebbe usarlo per registrarsi.
+      if (result.data.coachCode) {
+        coachCode = result.data.coachCode;
+      }
       setPendingEmailConfirmation(result.data.session === null);
     }
 
@@ -175,30 +181,38 @@ export function CoachRegistrationScreen() {
       <ScreenBackground>
         <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five }]}>
           <Card style={styles.form}>
-            <ThemedText type="title" style={styles.title}>
-              Il tuo codice coach
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Condividi questo codice con i tuoi clienti per consentire la registrazione.
-            </ThemedText>
             {pendingEmailConfirmation ? (
-              <ThemedText type="small" themeColor="statusExpired">
-                Registrazione completata. Controlla la tua email per confermare l&apos;account: potrai accedere solo dopo la conferma.
-              </ThemedText>
-            ) : null}
-            <View style={[styles.codeBox, { borderColor: theme.primary, backgroundColor: theme.softRed }]}>
-              <ThemedText type="subtitle" style={[styles.codeText, { color: theme.primary }]}>
-                {createdCode}
-              </ThemedText>
-            </View>
-            <Pressable onPress={copyCode} hitSlop={6}>
-              <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
-                <ThemedText type="smallBold" themeColor="onPrimary">
-                  Copia codice
+              <>
+                <ThemedText type="title" style={styles.title}>
+                  Controlla la tua email
                 </ThemedText>
-              </View>
-            </Pressable>
-            {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
+                <ThemedText type="small" themeColor="textSecondary">
+                  Registrazione completata. Controlla la tua email per confermare l&apos;account: il tuo codice coach sara&apos; disponibile al primo accesso, dopo la conferma.
+                </ThemedText>
+              </>
+            ) : (
+              <>
+                <ThemedText type="title" style={styles.title}>
+                  Il tuo codice coach
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Condividi questo codice con i tuoi clienti per consentire la registrazione.
+                </ThemedText>
+                <View style={[styles.codeBox, { borderColor: theme.primary, backgroundColor: theme.softRed }]}>
+                  <ThemedText type="subtitle" style={[styles.codeText, { color: theme.primary }]}>
+                    {createdCode}
+                  </ThemedText>
+                </View>
+                <Pressable onPress={copyCode} hitSlop={6}>
+                  <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
+                    <ThemedText type="smallBold" themeColor="onPrimary">
+                      Copia codice
+                    </ThemedText>
+                  </View>
+                </Pressable>
+                {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
+              </>
+            )}
             <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
               <ThemedText type="smallBold" themeColor="primary" style={styles.centerText}>
                 Vai al login

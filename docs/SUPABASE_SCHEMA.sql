@@ -371,7 +371,14 @@ $$;
 -- (passati da mobile/src/lib/auth-service.ts in supabase.auth.signUp options.data).
 -- Essendo security definer, questa funzione bypassa la RLS di profiles: e' il
 -- modo standard Supabase per evitare il problema "l'utente non ha ancora una
--- riga in profiles quindi le policy self-check falliscono".
+-- riga in profiles quindi le policy self-check falliscono". Il trigger scatta
+-- SUBITO all'insert in auth.users, indipendentemente da "Confirm email"
+-- (l'utente non ha ancora confermato, ma la riga auth.users esiste gia').
+-- L'"exception when others" e' una difesa aggiuntiva: se per qualunque motivo
+-- questo insert fallisse (es. constraint imprevisto), NON deve mai bloccare la
+-- creazione dell'utente Auth stesso — public.ensureProfileForCurrentUser /
+-- signInWithEmail (mobile/src/lib/auth-service.ts) ricreano la riga al primo
+-- login reale se manca ancora, quindi il fallimento qui e' recuperabile.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -388,8 +395,14 @@ begin
     new.raw_user_meta_data->>'phone',
     true
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    email = excluded.email,
+    full_name = coalesce(excluded.full_name, public.profiles.full_name);
   return new;
+exception
+  when others then
+    raise warning 'handle_new_user fallito per user %: %', new.id, sqlerrm;
+    return new;
 end;
 $$;
 
@@ -423,6 +436,19 @@ create policy profiles_superadmin_all on public.profiles
   for all using (public.is_superadmin()) with check (public.is_superadmin());
 create policy profiles_self_read on public.profiles
   for select using (id = auth.uid());
+-- Necessarie per ensureProfileForCurrentUser/signInWithEmail (mobile/src/lib/
+-- auth-service.ts): fallback client-side che ricrea/aggiorna la propria riga
+-- profiles se il trigger handle_new_user non l'ha creata (es. trigger non
+-- ancora installato sul progetto al momento della registrazione). Senza
+-- queste due policy, un utente autenticato non potrebbe mai scrivere la
+-- propria riga profiles (solo il trigger, security definer, puo' bypassare la
+-- RLS) e resterebbe bloccato su "profilo non trovato" per sempre.
+drop policy if exists profiles_self_insert on public.profiles;
+create policy profiles_self_insert on public.profiles
+  for insert with check (id = auth.uid());
+drop policy if exists profiles_self_update on public.profiles;
+create policy profiles_self_update on public.profiles
+  for update using (id = auth.uid()) with check (id = auth.uid());
 create policy profiles_coach_reads_own_clients on public.profiles
   for select using (public.is_coach_for_client(id));
 
@@ -567,9 +593,14 @@ create policy push_tokens_owner_scope on public.push_tokens
 -- - Italian e-invoicing through SdI must be handled by a compliant provider when applicable.
 -- - Apple/Google mobile payments and future Stripe web payments must be reconciled separately before invoice automation.
 -- - Payment/provider writes should move to service-role Edge Functions when real payments are added.
--- - IMPORTANTE Fase 1: in Authentication -> Providers -> Email, "Confirm email" va
---   disattivato perche' il flusso attuale scriva coach_profiles/billing_profiles/
---   registration_codes/client_profiles/coach_clients subito dopo signUp nella stessa
---   sessione. Se "Confirm email" resta attivo, l'utente Auth viene creato ma queste
---   righe falliscono (nessuna sessione attiva finche' non conferma) — errore visibile
---   in UI (auth-service.ts non va in crash), non dato silenzioso. Vedi docs/EMAIL_SETUP.md.
+-- - AGGIORNATO (Fase 2, docs/EMAIL_SETUP.md): "Confirm email" puo' restare attivo.
+--   Con signUp, mobile/src/lib/auth-service.ts scrive coach_profiles/billing_profiles/
+--   registration_codes/client_profiles/coach_clients SOLO se torna gia' una sessione
+--   (Confirm email disattivato); se "Confirm email" e' attivo (session null), quei
+--   dati restano in user_metadata e vengono completati da ensureCoachOnboarding/
+--   ensureClientOnboarding al primo login reale (chiamate da login-screen.tsx), non
+--   subito dopo signUp. profiles resta creato dal trigger handle_new_user
+--   indipendentemente da "Confirm email" (scatta all'insert in auth.users, non alla
+--   conferma); se anche quello fallisse, signInWithEmail/ensureProfileForCurrentUser
+--   lo ricreano dal client autenticato (richiede profiles_self_insert/self_update
+--   sopra). Vedi anche docs/BUGS.md BUG-008.

@@ -11,10 +11,11 @@ import { ThemedTextInput } from './themed-text-input';
 import { APP_NAME } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { loadClientProfile, signInWithEmail } from '@/lib/auth-service';
+import { ensureClientOnboarding, ensureCoachOnboarding, loadClientProfile, signInWithEmail } from '@/lib/auth-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
+import { useSuperadminStore } from '@/store/superadmin-store';
 
 // Login locale: confronta le credenziali con gli account salvati in
 // client-store (creati dal coach). Nessun server dietro — vedi
@@ -32,6 +33,8 @@ export function LoginScreen() {
   const addAccount = useClientStore((s) => s.addAccount);
   const updateAccount = useClientStore((s) => s.updateAccount);
   const coachAccounts = useAuthStore((s) => s.coachAccounts);
+  const localCoaches = useSuperadminStore((s) => s.coaches);
+  const updateCoach = useSuperadminStore((s) => s.updateCoach);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
   const loginAsCoach = useAuthStore((s) => s.loginAsCoach);
   const loginAsSuperadmin = useAuthStore((s) => s.loginAsSuperadmin);
@@ -66,19 +69,43 @@ export function LoginScreen() {
       if (result.ok) {
         setError(null);
         const { role } = result.data;
+        const userId = result.data.session.user.id;
+        const metadata = result.data.session.user.user_metadata ?? {};
         if (role === 'coach') {
+          // Best-effort: se il coach si era registrato con "Confirm email"
+          // attivo, coach_profiles/billing_profiles/registration_codes
+          // potrebbero non essere mai stati creati (nessuna sessione al
+          // momento della registrazione). Riprova qui, ora che la sessione
+          // esiste; se fallisce (es. account vecchio senza billing_profile in
+          // user_metadata) non blocca comunque il login.
+          const onboarding = await ensureCoachOnboarding(userId, metadata);
           const localAccount = coachAccounts.find((account) => account.email.toLowerCase() === normalized);
+          if (onboarding.ok && localAccount?.coachId) {
+            // Se la registrazione era rimasta "in sospeso" (Confirm email),
+            // il mirror locale aveva un codice segnaposto mai scritto su
+            // Supabase (registration_codes creato solo ora, con un codice
+            // nuovo): allinea il mirror al codice reale, altrimenti
+            // Impostazioni mostrerebbe al coach un codice che i clienti non
+            // potrebbero mai usare per registrarsi.
+            const localCoach = localCoaches.find((coach) => coach.id === localAccount.coachId);
+            if (localCoach && localCoach.coachCode !== onboarding.data.coachCode) {
+              updateCoach(localAccount.coachId, { coachCode: onboarding.data.coachCode, coachCodeActive: true });
+            }
+          }
           loginAsCoach(normalized, localAccount?.coachId);
           router.replace('/');
           return;
         }
         if (role === 'cliente') {
-          // Ricarica sempre client_profiles/coach_clients da Supabase (fonte di
-          // verita'), invece di fidarsi solo del mirror locale: quest'ultimo
-          // puo' non esistere se la registrazione e' avvenuta su un altro
-          // device/browser (AsyncStorage web e Expo Go non condividono lo
-          // storage) — vedi lib/auth-service.ts, loadClientProfile.
-          const userId = result.data.session.user.id;
+          // Stesso fallback lato cliente: completa client_profiles/coach_clients
+          // se mancano (Confirm email attivo in fase di registrazione), usando
+          // coach_id/coach_code salvati in user_metadata — non li richiediamo di
+          // nuovo all'utente. Poi ricarica sempre client_profiles/coach_clients
+          // da Supabase (fonte di verita'), invece di fidarsi solo del mirror
+          // locale: quest'ultimo puo' non esistere se la registrazione e'
+          // avvenuta su un altro device/browser (AsyncStorage web e Expo Go non
+          // condividono lo storage) — vedi lib/auth-service.ts, loadClientProfile.
+          await ensureClientOnboarding(userId, metadata);
           const profileResult = await loadClientProfile(userId, normalized);
           if (!profileResult.ok) {
             setError(profileResult.message);

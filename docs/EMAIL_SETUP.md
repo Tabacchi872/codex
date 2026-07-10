@@ -6,10 +6,20 @@ Questo documento spiega cosa configurare su Supabase perche' le email dell'app (
 
 - `signUpCoach`/`signUpClientWithCoachCode` (`mobile/src/lib/auth-service.ts`) chiamano `supabase.auth.signUp`, che invia l'email di conferma da solo se "Confirm email" e' attivo.
 - Con "Confirm email" attivo, `data.session` torna `null` finche' l'utente non clicca il link: **la UI non finge piu' che l'utente sia attivo**.
-  - Coach (`registration-screens.tsx`, `CoachRegistrationScreen`): la schermata "Il tuo codice coach" mostra comunque il codice (serve subito per invitare clienti), ma con un avviso aggiuntivo se `session` e' `null`: "Registrazione completata. Controlla la tua email per confermare l'account: potrai accedere solo dopo la conferma."
+  - Coach (`registration-screens.tsx`, `CoachRegistrationScreen`): se `session` e' `null`, il codice coach **non esiste ancora** (nessuna sessione per scriverlo, vedi sotto) — la schermata mostra "Controlla la tua email", il codice comparira' al primo login reale, dopo la conferma. Se `session` esiste gia' (Confirm email disattivato), il comportamento resta quello di sempre: codice mostrato subito.
   - Cliente (`ClientRegistrationScreen`): se `session` e' `null`, **non** fa piu' login automatico ne' scrive il mirror locale — mostra una schermata dedicata "Controlla la tua email" con pulsante "Torna al login". Il profilo cliente locale viene ricostruito al primo login reale (vedi `loadClientProfile`).
 - Login (`login-screen.tsx`): se Supabase risponde con errore "email not confirmed", `auth-service.ts` lo mappa nel codice `email_not_confirmed` e la UI mostra un messaggio dedicato ("Email non ancora confermata...") invece di ricadere sui controlli locali/demo con un generico "Credenziali non valide".
-- Dopo la conferma (click sul link), l'utente fa login normalmente con `signInWithEmail`: nessuna azione aggiuntiva richiesta lato app.
+- Dopo la conferma (click sul link), l'utente fa login normalmente con `signInWithEmail`, che ora completa anche l'onboarding rimasto in sospeso (vedi sezione dedicata sotto) prima di entrare nell'app.
+
+## Onboarding coach/cliente al primo login reale (fix 2026-07-10, BUG-008)
+
+Con "Confirm email" attivo, al momento di `signUp` non esiste ancora nessuna sessione autenticata: `coach_profiles`/`billing_profiles`/`registration_codes` (coach) e `client_profiles`/`coach_clients` (cliente) non possono essere scritti subito (le policy RLS richiedono `auth.uid()`, che senza sessione e' `null` — l'insert viene rifiutato). Per non perdere i dati che l'utente ha gia' inserito nella form:
+
+- `signUpCoach` salva `business_name`/`billing_profile` (l'intero form di fatturazione) in `user_metadata` al momento di `signUp`. Se la sessione esiste gia', scrive subito le tabelle come prima; altrimenti si ferma li'.
+- `signUpClientWithCoachCode` salva `coach_id`/`coach_code` in `user_metadata`. Stesso comportamento condizionale.
+- `signInWithEmail` (`login-screen.tsx`, dopo un login riuscito) chiama `ensureCoachOnboarding`/`ensureClientOnboarding` (`auth-service.ts`), che rileggono quei dati da `user_metadata` e completano gli insert mancanti — **senza richiedere di nuovo nulla all'utente**. Sono idempotenti: se le righe esistono gia' non fanno nulla.
+- `profiles` (creata dal trigger `handle_new_user`, indipendente dalla sessione) ha in piu' un fallback: se manca ancora, `signInWithEmail`/`ensureProfileForCurrentUser` la ricreano dal client autenticato usando `role`/`full_name` da `user_metadata` — richiede le policy `profiles_self_insert`/`profiles_self_update` (vedi snippet SQL sotto).
+- **Limite noto**: account registrati PRIMA di questo fix (senza `billing_profile`/`coach_id` in `user_metadata`) non vengono riparati automaticamente — vanno sistemati a mano su Supabase o registrati di nuovo.
 
 ## Flusso 2 — Password dimenticata
 
@@ -49,11 +59,55 @@ Questo documento spiega cosa configurare su Supabase perche' le email dell'app (
    - **Reset password**: template per il reset password (Flussi 2-3). Deve contenere il link con `{{ .ConfirmationURL }}`.
    - `{{ .ConfirmationURL }}` e' la variabile obbligatoria in entrambi i template: e' il link che, se rimosso o rinominato, rompe il flusso (l'utente non ha modo di confermare l'account o reimpostare la password).
 4. **SMTP personalizzato (consigliato prima di andare in produzione, non fatto ora)**: Authentication → Settings → SMTP Settings, collegando un provider reale (es. Resend, Postmark, SendGrid) con dominio verificato (SPF/DKIM). Il default di Supabase ha limiti di invio e non e' pensato per produzione. **Non collegato in questa fase, per scelta esplicita.**
+5. **SQL Editor — rieseguire questo snippet dopo l'aggiornamento del 2026-07-10** (fix BUG-008, `docs/SUPABASE_SCHEMA.sql`), anche se lo schema era gia' stato eseguito in precedenza: e' pensato per essere rieseguibile senza errori (drop-if-exists sulle policy nuove, `create or replace` sulla funzione).
+
+   ```sql
+   create or replace function public.handle_new_user()
+   returns trigger
+   language plpgsql
+   security definer
+   set search_path = public
+   as $$
+   begin
+     insert into public.profiles (id, role, full_name, email, phone, is_active)
+     values (
+       new.id,
+       coalesce(new.raw_user_meta_data->>'role', 'cliente'),
+       new.raw_user_meta_data->>'full_name',
+       new.email,
+       new.raw_user_meta_data->>'phone',
+       true
+     )
+     on conflict (id) do update set
+       email = excluded.email,
+       full_name = coalesce(excluded.full_name, public.profiles.full_name);
+     return new;
+   exception
+     when others then
+       raise warning 'handle_new_user fallito per user %: %', new.id, sqlerrm;
+       return new;
+   end;
+   $$;
+
+   drop trigger if exists on_auth_user_created on auth.users;
+   create trigger on_auth_user_created
+     after insert on auth.users
+     for each row execute function public.handle_new_user();
+
+   drop policy if exists profiles_self_insert on public.profiles;
+   create policy profiles_self_insert on public.profiles
+     for insert with check (id = auth.uid());
+   drop policy if exists profiles_self_update on public.profiles;
+   create policy profiles_self_update on public.profiles
+     for update using (id = auth.uid()) with check (id = auth.uid());
+   ```
+
+   Verifica dopo averlo eseguito: `select * from public.profiles order by created_at desc limit 5;` deve mostrare la riga per l'ultimo utente registrato, anche prima che confermi l'email.
 
 ## Come testare da web
 
 1. `npx.cmd expo start --web`, apri `http://localhost:8081` (o la porta assegnata).
-2. **Conferma registrazione**: registra un coach o un cliente con un'email reale che puoi controllare. Verifica che compaia il messaggio "Controlla la tua email" (cliente) o l'avviso sul codice coach (coach), e che il login prima della conferma dia "Email non ancora confermata...". Clicca il link ricevuto via email, poi rifai login: deve funzionare.
+2. **Conferma registrazione**: registra un coach o un cliente con un'email reale che puoi controllare. Verifica che compaia il messaggio "Controlla la tua email" (cliente) o la stessa schermata al posto del codice (coach), e che il login prima della conferma dia "Email non ancora confermata...". Clicca il link ricevuto via email, poi rifai login: deve funzionare **e** deve comparire il codice coach (se ti eri registrato come coach). Controlla in Supabase (Table editor) che dopo questo primo login esistano davvero `profiles`, e (coach) `coach_profiles`/`billing_profiles`/`registration_codes`, oppure (cliente) `client_profiles`/`coach_clients`.
 3. **Password dimenticata**: da login, "Password dimenticata?" → inserisci l'email di un account gia' confermato → verifica il messaggio di invio e l'arrivo dell'email.
 4. **Reset password**: apri il link ricevuto → deve arrivare su `/reimposta-password` con il form attivo (non su "Link non valido"). Imposta una nuova password, salva, verifica il messaggio di conferma, poi fai login con la nuova password.
 
