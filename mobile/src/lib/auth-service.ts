@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { generateCoachCode, normalizeCoachCode } from './coach-code';
+import { getWebRedirectUrl } from './redirect-url';
 import { getSupabaseClientStatus, supabase } from './supabase';
 
 import type { Client } from '@/types/client';
@@ -84,47 +85,72 @@ function isReady() {
 }
 
 export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceResult<CoachSignUpData>> {
-  if (!isReady() || !supabase) return notConfigured();
+  if (!isReady() || !supabase) {
+    if (__DEV__) console.warn('SIGNUP_COACH_NOT_CONFIGURED', getSupabaseClientStatus());
+    return notConfigured();
+  }
 
-  const email = input.email.trim().toLowerCase();
-  const businessName = input.businessName?.trim() || null;
-  const billing = input.billingProfile;
-  // role/full_name/phone in user_metadata: letti dal trigger public.handle_new_user
-  // (docs/SUPABASE_SCHEMA.sql) che crea la riga profiles al posto nostro, con
-  // privilegi security definer che bypassano la RLS su quella tabella.
-  // business_name/billing_profile restano anch'essi in user_metadata: se
-  // "Confirm email" e' attivo, gli insert sotto non possono avvenire subito
-  // (nessuna sessione => RLS blocca), quindi questi dati devono sopravvivere
-  // fino al primo login reale, dove ensureCoachOnboarding li rilegge da li'.
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password: input.password,
-    options: {
-      data: {
-        role: 'coach',
-        full_name: input.fullName.trim(),
-        phone: input.phone?.trim() || null,
-        business_name: businessName,
-        billing_profile: billing,
+  // Tutta la funzione e' avvolta in try/catch: supabase.auth.signUp() e le
+  // .insert() sotto normalmente ritornano { error } senza lanciare, ma un
+  // fallimento di rete/polyfill (es. su Expo web/nativo) puo' far esplodere
+  // una fetch prima ancora di arrivare a un error object gestito — senza
+  // questo try/catch, l'eccezione risalirebbe non gestita fino al chiamante
+  // (registration-screens.tsx), lasciando il bottone bloccato su "Creazione
+  // account..." senza alcun errore visibile. Qui viene sempre convertita in
+  // un AuthServiceResult leggibile.
+  try {
+    const email = input.email.trim().toLowerCase();
+    const businessName = input.businessName?.trim() || null;
+    const billing = input.billingProfile;
+    // role/full_name/phone in user_metadata: letti dal trigger public.handle_new_user
+    // (docs/SUPABASE_SCHEMA.sql) che crea la riga profiles al posto nostro, con
+    // privilegi security definer che bypassano la RLS su quella tabella.
+    // business_name/billing_profile restano anch'essi in user_metadata: se
+    // "Confirm email" e' attivo, gli insert sotto non possono avvenire subito
+    // (nessuna sessione => RLS blocca), quindi questi dati devono sopravvivere
+    // fino al primo login reale, dove ensureCoachOnboarding li rilegge da li'.
+    // emailRedirectTo: window.location.origin su web (nessuna porta vecchia
+    // hardcodata), undefined su nativo (Supabase usa la Site URL configurata).
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: input.password,
+      options: {
+        data: {
+          role: 'coach',
+          full_name: input.fullName.trim(),
+          phone: input.phone?.trim() || null,
+          business_name: businessName,
+          billing_profile: billing,
+        },
+        emailRedirectTo: getWebRedirectUrl('/'),
       },
-    },
-  });
-  if (signUpError) {
-    return { ok: false, code: mapAuthErrorCode(signUpError.message), message: signUpError.message };
-  }
-  const userId = signUpData.user?.id;
-  if (!userId) {
-    return { ok: false, code: 'auth_error', message: 'Registrazione non riuscita: utente non creato.' };
-  }
+    });
+    if (signUpError) {
+      if (__DEV__) console.error('SIGNUP_COACH_ERROR', signUpError);
+      return { ok: false, code: mapAuthErrorCode(signUpError.message), message: signUpError.message };
+    }
+    const userId = signUpData.user?.id;
+    if (!userId) {
+      if (__DEV__) console.error('SIGNUP_COACH_ERROR', 'signUp ok ma nessun user id nella risposta', signUpData);
+      return { ok: false, code: 'auth_error', message: 'Registrazione non riuscita: utente non creato.' };
+    }
 
-  if (!signUpData.session) {
-    return { ok: true, data: { userId, coachCode: null, session: null } };
+    if (!signUpData.session) {
+      return { ok: true, data: { userId, coachCode: null, session: null } };
+    }
+
+    const onboarding = await completeCoachOnboarding(userId, businessName, billing);
+    if (!onboarding.ok) {
+      if (__DEV__) console.error('SIGNUP_COACH_ERROR', onboarding);
+      return onboarding;
+    }
+
+    return { ok: true, data: { userId, coachCode: onboarding.data.coachCode, session: signUpData.session } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (__DEV__) console.error('SIGNUP_COACH_ERROR', err);
+    return { ok: false, code: 'auth_error', message: `Errore imprevisto durante la registrazione: ${message}` };
   }
-
-  const onboarding = await completeCoachOnboarding(userId, businessName, billing);
-  if (!onboarding.ok) return onboarding;
-
-  return { ok: true, data: { userId, coachCode: onboarding.data.coachCode, session: signUpData.session } };
 }
 
 // Crea (se mancano) coach_profiles/billing_profiles/registration_codes per un

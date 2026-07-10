@@ -105,26 +105,57 @@ export function CoachRegistrationScreen() {
 
     let coachCode = generateCoachCode(coaches.map((coach) => coach.coachCode));
 
+    if (__DEV__) {
+      console.log('START_SIGNUP_COACH', { email: normalizedEmail });
+      console.log('SUPABASE_CONFIGURED', supabaseConfig.isConfigured);
+    }
+
     // Se Supabase e' configurato, l'account reale (Supabase Auth + profiles +
     // coach_profiles + billing_profiles + registration_codes) viene creato per
     // primo: e' la fonte di verita' per email duplicate/validazione. Il record
     // locale sotto viene comunque creato in parallelo con lo stesso coachCode,
     // perche' il resto dell'app (dashboard coach, superadmin, clienti) legge
     // ancora solo dagli store locali in questa fase — vedi docs/DECISIONS.md.
+    // Se signUpCoach fallisce, la funzione si ferma qui (return): NON deve mai
+    // proseguire a creare il coach solo in locale, altrimenti "Il tuo codice
+    // coach" comparirebbe come se la registrazione fosse riuscita, mascherando
+    // che su Supabase non e' stato creato nulla.
     if (supabaseConfig.isConfigured) {
       setSubmitting(true);
-      const result = await signUpCoach({
-        fullName: fullName.trim(),
-        email: normalizedEmail,
-        password,
-        phone: phone.trim() || undefined,
-        businessName: businessName.trim() || undefined,
-        billingProfile,
-      });
+      setError('');
+      let result: Awaited<ReturnType<typeof signUpCoach>>;
+      try {
+        result = await signUpCoach({
+          fullName: fullName.trim(),
+          email: normalizedEmail,
+          password,
+          phone: phone.trim() || undefined,
+          businessName: businessName.trim() || undefined,
+          billingProfile,
+        });
+      } catch (err) {
+        // Difesa aggiuntiva: signUpCoach (auth-service.ts) gia' converte le
+        // proprie eccezioni in un risultato leggibile, ma se qualcosa di
+        // imprevisto sfuggisse comunque, il bottone non deve restare bloccato
+        // su "Creazione account..." senza alcun errore visibile.
+        setSubmitting(false);
+        const message = err instanceof Error ? err.message : 'Errore imprevisto durante la registrazione. Riprova.';
+        if (__DEV__) console.error('SIGNUP_COACH_ERROR', err);
+        setError(message);
+        return;
+      }
       setSubmitting(false);
       if (!result.ok) {
+        if (__DEV__) console.error('SIGNUP_COACH_ERROR', result);
         setError(result.message);
         return;
+      }
+      if (__DEV__) {
+        console.log('SIGNUP_COACH_SUCCESS', {
+          userId: result.data.userId,
+          email: normalizedEmail,
+          session: result.data.session ? 'present' : 'null',
+        });
       }
       // Con "Confirm email" attivo su Supabase, data.session torna null finche'
       // l'utente non clicca il link di conferma: in quel caso coachCode e'

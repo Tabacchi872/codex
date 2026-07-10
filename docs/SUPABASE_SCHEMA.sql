@@ -366,25 +366,62 @@ as $$
   )
 $$;
 
--- Crea automaticamente la riga public.profiles quando Supabase Auth crea un
--- utente (auth.users), leggendo ruolo/nome/telefono da raw_user_meta_data
--- (passati da mobile/src/lib/auth-service.ts in supabase.auth.signUp options.data).
--- Essendo security definer, questa funzione bypassa la RLS di profiles: e' il
--- modo standard Supabase per evitare il problema "l'utente non ha ancora una
--- riga in profiles quindi le policy self-check falliscono". Il trigger scatta
--- SUBITO all'insert in auth.users, indipendentemente da "Confirm email"
--- (l'utente non ha ancora confermato, ma la riga auth.users esiste gia').
--- L'"exception when others" e' una difesa aggiuntiva: se per qualunque motivo
--- questo insert fallisse (es. constraint imprevisto), NON deve mai bloccare la
--- creazione dell'utente Auth stesso — public.ensureProfileForCurrentUser /
--- signInWithEmail (mobile/src/lib/auth-service.ts) ricreano la riga al primo
--- login reale se manca ancora, quindi il fallimento qui e' recuperabile.
+-- Genera un segmento di 4 caratteri per il codice coach FC-XXXX-XXXX, con lo
+-- stesso alfabeto (niente 0/1/I/O ambigui) di generateCoachCode()
+-- (mobile/src/lib/coach-code.ts), cosi' i codici creati lato DB dal trigger
+-- sotto sono nello stesso formato di quelli generati lato client.
+create or replace function public.random_coach_code_segment()
+returns text
+language sql
+volatile
+as $$
+  select string_agg(
+    substr('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', (floor(random() * 32) + 1)::int, 1),
+    ''
+  )
+  from generate_series(1, 4);
+$$;
+
+-- Trigger definitivo per "Confirm email" ON: crea automaticamente TUTTE le
+-- righe dipendenti da una registrazione (profiles sempre; coach_profiles/
+-- billing_profiles/registration_codes per un coach; client_profiles/
+-- coach_clients per un cliente) leggendo solo da auth.users.raw_user_meta_data
+-- (i campi passati da mobile/src/lib/auth-service.ts in supabase.auth.signUp
+-- options.data). Essendo security definer, bypassa la RLS: puo' scrivere
+-- anche senza una sessione autenticata, che e' esattamente il caso "Confirm
+-- email" attivo (nessuna sessione esiste finche' l'utente non conferma). Il
+-- trigger scatta SUBITO all'insert in auth.users, indipendentemente dalla
+-- conferma email.
+--
+-- Isolamento dei fallimenti: ogni gruppo di insert (coach_profiles,
+-- billing_profiles, registration_codes, client_profiles+coach_clients) e'
+-- avvolto nel proprio blocco begin/exception, cosi' un fallimento in uno
+-- (es. billing_profiles che viola il check "Italia + P.IVA richiede PEC o
+-- SDI") non fa rollback della riga profiles gia' scritta ne' impedisce agli
+-- altri gruppi di essere tentati. Il blocco "exception when others" piu'
+-- esterno resta una difesa finale solo per l'insert di profiles: non deve mai
+-- bloccare la creazione dell'utente Auth stesso.
+--
+-- Fallback lato app invariato: mobile/src/lib/auth-service.ts
+-- (ensureCoachOnboarding/ensureClientOnboarding, chiamate da login-screen.tsx
+-- al primo login) restano come rete di sicurezza idempotente per i soli casi
+-- in cui questo trigger non sia riuscito a scrivere una riga (es. dati di
+-- fatturazione non validi): controllano se la riga esiste gia' prima di
+-- inserirla, quindi non duplicano ne' incrementano used_count due volte se il
+-- trigger ha gia' fatto il lavoro.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_role text;
+  v_billing jsonb;
+  v_coach_id uuid;
+  v_coach_code text;
+  v_candidate text;
+  v_attempts int;
 begin
   insert into public.profiles (id, role, full_name, email, phone, is_active)
   values (
@@ -398,6 +435,109 @@ begin
   on conflict (id) do update set
     email = excluded.email,
     full_name = coalesce(excluded.full_name, public.profiles.full_name);
+
+  v_role := coalesce(new.raw_user_meta_data->>'role', 'cliente');
+
+  if v_role = 'coach' then
+    begin
+      insert into public.coach_profiles (user_id, business_name, billing_status)
+      values (new.id, new.raw_user_meta_data->>'business_name', 'trial')
+      on conflict (user_id) do nothing;
+    exception
+      when others then
+        raise warning 'handle_new_user: coach_profiles fallito per user %: %', new.id, sqlerrm;
+    end;
+
+    begin
+      v_billing := new.raw_user_meta_data->'billing_profile';
+      if v_billing is not null and v_billing->>'legalName' is not null and v_billing->>'billingEmail' is not null then
+        insert into public.billing_profiles (
+          coach_id, subject_type, legal_name, vat_number, fiscal_code, address,
+          postal_code, city, province, country, pec, sdi_code, billing_email
+        )
+        values (
+          new.id,
+          coalesce(v_billing->>'subjectType', 'private'),
+          v_billing->>'legalName',
+          nullif(v_billing->>'vatNumber', ''),
+          nullif(v_billing->>'fiscalCode', ''),
+          nullif(v_billing->>'address', ''),
+          nullif(v_billing->>'postalCode', ''),
+          nullif(v_billing->>'city', ''),
+          nullif(v_billing->>'province', ''),
+          coalesce(v_billing->>'country', 'Italia'),
+          nullif(v_billing->>'pec', ''),
+          nullif(v_billing->>'sdiCode', ''),
+          v_billing->>'billingEmail'
+        )
+        on conflict (coach_id) do nothing;
+      end if;
+    exception
+      when others then
+        raise warning 'handle_new_user: billing_profiles fallito per user %: %', new.id, sqlerrm;
+    end;
+
+    begin
+      if not exists (
+        select 1 from public.registration_codes
+        where coach_id = new.id and status = 'active'
+      ) then
+        v_attempts := 0;
+        v_candidate := null;
+        while v_candidate is null and v_attempts < 5 loop
+          v_attempts := v_attempts + 1;
+          begin
+            insert into public.registration_codes (coach_id, code, status)
+            values (
+              new.id,
+              'FC-' || public.random_coach_code_segment() || '-' || public.random_coach_code_segment(),
+              'active'
+            )
+            returning code into v_candidate;
+          exception
+            when unique_violation then
+              v_candidate := null;
+          end;
+        end loop;
+      end if;
+    exception
+      when others then
+        raise warning 'handle_new_user: registration_codes fallito per user %: %', new.id, sqlerrm;
+    end;
+
+  elsif v_role = 'cliente' then
+    begin
+      insert into public.client_profiles (user_id)
+      values (new.id)
+      on conflict (user_id) do nothing;
+    exception
+      when others then
+        raise warning 'handle_new_user: client_profiles fallito per user %: %', new.id, sqlerrm;
+    end;
+
+    begin
+      v_coach_id := nullif(new.raw_user_meta_data->>'coach_id', '')::uuid;
+      v_coach_code := new.raw_user_meta_data->>'coach_code';
+      if v_coach_id is not null then
+        insert into public.coach_clients (coach_id, client_id, status, linked_by_code)
+        values (v_coach_id, new.id, 'active', nullif(v_coach_code, ''))
+        on conflict (coach_id, client_id) do nothing;
+
+        if v_coach_code is not null then
+          update public.registration_codes
+          set used_count = used_count + 1
+          where code = v_coach_code
+            and coach_id = v_coach_id
+            and status = 'active'
+            and (max_uses is null or used_count < max_uses);
+        end if;
+      end if;
+    exception
+      when others then
+        raise warning 'handle_new_user: coach_clients fallito per user %: %', new.id, sqlerrm;
+    end;
+  end if;
+
   return new;
 exception
   when others then
@@ -593,14 +733,18 @@ create policy push_tokens_owner_scope on public.push_tokens
 -- - Italian e-invoicing through SdI must be handled by a compliant provider when applicable.
 -- - Apple/Google mobile payments and future Stripe web payments must be reconciled separately before invoice automation.
 -- - Payment/provider writes should move to service-role Edge Functions when real payments are added.
--- - AGGIORNATO (Fase 2, docs/EMAIL_SETUP.md): "Confirm email" puo' restare attivo.
---   Con signUp, mobile/src/lib/auth-service.ts scrive coach_profiles/billing_profiles/
---   registration_codes/client_profiles/coach_clients SOLO se torna gia' una sessione
---   (Confirm email disattivato); se "Confirm email" e' attivo (session null), quei
---   dati restano in user_metadata e vengono completati da ensureCoachOnboarding/
---   ensureClientOnboarding al primo login reale (chiamate da login-screen.tsx), non
---   subito dopo signUp. profiles resta creato dal trigger handle_new_user
---   indipendentemente da "Confirm email" (scatta all'insert in auth.users, non alla
---   conferma); se anche quello fallisse, signInWithEmail/ensureProfileForCurrentUser
---   lo ricreano dal client autenticato (richiede profiles_self_insert/self_update
---   sopra). Vedi anche docs/BUGS.md BUG-008.
+-- - AGGIORNATO (trigger definitivo, docs/EMAIL_SETUP.md): "Confirm email" puo' restare
+--   attivo. Il trigger handle_new_user (security definer, bypassa la RLS) crea ORA
+--   direttamente, all'insert in auth.users, TUTTE le righe dipendenti da
+--   raw_user_meta_data: profiles sempre; coach_profiles/billing_profiles/
+--   registration_codes per un coach; client_profiles/coach_clients (+ incremento
+--   used_count) per un cliente — indipendentemente da "Confirm email" (scatta
+--   all'insert, non alla conferma, quindi non serve alcuna sessione). Ogni gruppo di
+--   insert e' isolato nel proprio blocco begin/exception, cosi' un fallimento su un
+--   gruppo (es. billing_profiles che viola il check Italia+P.IVA) non blocca ne'
+--   profiles ne' gli altri gruppi. mobile/src/lib/auth-service.ts
+--   (ensureCoachOnboarding/ensureClientOnboarding, chiamate da login-screen.tsx al
+--   primo login; signInWithEmail/ensureProfileForCurrentUser per profiles) restano
+--   come rete di sicurezza idempotente solo per i casi in cui il trigger non sia
+--   riuscito a scrivere una riga specifica, non piu' come percorso primario. Vedi
+--   anche docs/BUGS.md BUG-008 (causa originale, ora risolta alla radice dal trigger).
