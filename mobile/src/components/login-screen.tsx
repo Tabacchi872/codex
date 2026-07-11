@@ -1,21 +1,15 @@
 import { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ScreenBackground } from './screen-background';
-import { ThemedText } from './themed-text';
-import { ThemedTextInput } from './themed-text-input';
-
+import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { APP_NAME } from '@/constants/app-info';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { ensureClientOnboarding, ensureCoachOnboarding, loadClientProfile, signInWithEmail } from '@/lib/auth-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { DEMO_USERS, useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 
 // Login locale: confronta le credenziali con gli account salvati in
 // client-store (creati dal coach). Nessun server dietro — vedi
@@ -24,8 +18,7 @@ import { useSuperadminStore } from '@/store/superadmin-store';
 // discorsivo: i dettagli tecnici restano in docs/report, non in questa schermata.
 export function LoginScreen() {
   const router = useRouter();
-  const theme = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const accounts = useClientStore((s) => s.accounts);
   const clients = useClientStore((s) => s.clients);
   const addClient = useClientStore((s) => s.addClient);
@@ -188,24 +181,15 @@ export function LoginScreen() {
   }
 
   return (
-    <ScreenBackground>
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five, paddingBottom: Spacing.six },
-      ]}>
+    <AppScreen contentStyle={styles.content} bottomTabInset={false}>
       <View style={styles.titleBlock}>
-        <ThemedText type="title" style={styles.title}>
-          {APP_NAME}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Accesso riservato
-        </ThemedText>
+        <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>{APP_NAME}</Text>
+        <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Accesso riservato</Text>
       </View>
 
-      <Card style={styles.form}>
-        <ThemedText type="smallBold">Accedi al tuo account</ThemedText>
-        <ThemedTextInput
+      <AppCard style={styles.form}>
+        <Text style={[styles.formTitle, { color: colors.ink }]}>Accedi al tuo account</Text>
+        <AppTextField
           placeholder="Email"
           autoCapitalize="none"
           autoComplete="email"
@@ -213,77 +197,65 @@ export function LoginScreen() {
           value={identifier}
           onChangeText={setIdentifier}
         />
-        <ThemedTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-        {error && (
-          <ThemedText type="small" themeColor="statusExpired">
-            {error}
-          </ThemedText>
-        )}
-        <Pressable onPress={handleLogin} disabled={submitting} hitSlop={6}>
-          <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              {submitting ? 'Accesso...' : 'Accedi'}
-            </ThemedText>
-          </View>
-        </Pressable>
+        <AppTextField placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+        {error ? <Text style={[styles.error, { color: colors.rust }]}>{error}</Text> : null}
+        <AppButton label={submitting ? 'Accesso...' : 'Accedi'} onPress={handleLogin} loading={submitting} fullWidth size="lg" />
         <Pressable onPress={() => router.push('/password-dimenticata' as Href)} hitSlop={6}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.forgotPassword}>
-            Password dimenticata?
-          </ThemedText>
+          <Text style={[styles.forgotPassword, { color: colors.inkSoft }]}>Password dimenticata?</Text>
         </Pressable>
         <View style={styles.registerLinks}>
           <Pressable onPress={() => router.push('/registrazione-coach' as Href)} hitSlop={6}>
-            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
-              Registrati come coach
-            </ThemedText>
+            <Text style={[styles.registerLink, { color: colors.moss }]}>Registrati come coach</Text>
           </Pressable>
           <Pressable onPress={() => router.push('/registrazione-cliente' as Href)} hitSlop={6}>
-            <ThemedText type="smallBold" themeColor="primary" style={styles.registerLink}>
-              Registrati come cliente
-            </ThemedText>
+            <Text style={[styles.registerLink, { color: colors.moss }]}>Registrati come cliente</Text>
           </Pressable>
         </View>
-      </Card>
-    </ScrollView>
-    </ScreenBackground>
+      </AppCard>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
     flexGrow: 1,
     justifyContent: 'center',
   },
   titleBlock: {
     gap: 4,
     alignItems: 'center',
+    marginBottom: AppSpacing[6],
   },
   title: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '800',
+    fontSize: 32,
+  },
+  subtitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '600',
   },
   form: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
-  primaryButton: {
-    borderRadius: Radius.md,
-    minHeight: 48,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.one,
+  formTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  error: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   forgotPassword: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
     textAlign: 'center',
-    opacity: 0.65,
   },
   registerLinks: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+    marginTop: AppSpacing[1],
   },
   registerLink: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
     textAlign: 'center',
   },
 });

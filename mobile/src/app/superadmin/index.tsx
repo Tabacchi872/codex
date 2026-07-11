@@ -1,16 +1,14 @@
-import { Link, router, type Href } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppCard, AppStatCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
 export default function SuperadminDashboard() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
   const plans = useSuperadminStore((s) => s.plans);
 
@@ -28,78 +26,76 @@ export default function SuperadminDashboard() {
   return (
     <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
       <View style={styles.grid}>
-        <MetricCard label="Coach totali" value={String(totalCoaches)} onPress={() => router.push('/superadmin/coaches?status=all' as Href)} />
-        <MetricCard label="Coach attivi" value={String(activeCoaches)} tone="active" onPress={() => router.push('/superadmin/coaches?status=active' as Href)} />
-        <MetricCard label="In prova" value={String(trialCoaches)} tone="warning" onPress={() => router.push('/superadmin/coaches?status=trial' as Href)} />
-        <MetricCard label="Pagamento scaduto" value={String(pastDueCoaches)} tone="expired" onPress={() => router.push('/superadmin/coaches?status=past_due' as Href)} />
-        <MetricCard label="Bloccati" value={String(blockedCoaches)} tone="expired" onPress={() => router.push('/superadmin/coaches?status=blocked' as Href)} />
-        <MetricCard label="Ricavi mensili stimati" value={`EUR ${monthlyRecurringRevenue}`} onPress={() => router.push('/superadmin/payment-events' as Href)} />
+        <AppStatCard
+          size="lg"
+          label="Coach totali"
+          value={String(totalCoaches)}
+          onPress={() => router.push('/superadmin/coaches?status=all' as Href)}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="Coach attivi"
+          value={String(activeCoaches)}
+          accentColor={colors.moss}
+          onPress={() => router.push('/superadmin/coaches?status=active' as Href)}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="In prova"
+          value={String(trialCoaches)}
+          accentColor={colors.amber}
+          onPress={() => router.push('/superadmin/coaches?status=trial' as Href)}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="Pagamento scaduto"
+          value={String(pastDueCoaches)}
+          accentColor={colors.rust}
+          onPress={() => router.push('/superadmin/coaches?status=past_due' as Href)}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="Bloccati"
+          value={String(blockedCoaches)}
+          accentColor={colors.rust}
+          onPress={() => router.push('/superadmin/coaches?status=blocked' as Href)}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="Ricavi mensili stimati"
+          value={`EUR ${monthlyRecurringRevenue}`}
+          onPress={() => router.push('/superadmin/payment-events' as Href)}
+          style={styles.statCardWrap}
+        />
       </View>
 
-      <Card style={styles.card}>
+      <AppCard style={styles.card}>
         <View style={styles.sectionHeader}>
-          <ThemedText type="smallBold">Alert pagamento scaduto</ThemedText>
-          <Link href={'/superadmin/coaches' as Href}>
-            <ThemedText type="smallBold" style={{ color: theme.primary }}>
-              Vedi coach
-            </ThemedText>
-          </Link>
+          <Text style={[styles.sectionTitle, { color: colors.ink }]}>Alert pagamento scaduto</Text>
+          <Pressable onPress={() => router.push('/superadmin/coaches' as Href)} hitSlop={6}>
+            <Text style={[styles.sectionLink, { color: colors.moss }]}>Vedi coach</Text>
+          </Pressable>
         </View>
         {paymentAlerts.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Nessun coach con pagamento scaduto.
-          </ThemedText>
+          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun coach con pagamento scaduto.</Text>
         ) : (
           paymentAlerts.map((coach) => (
-            <View key={coach.id} style={[styles.alertRow, { borderColor: theme.border }]}>
+            <View key={coach.id} style={[styles.alertRow, { borderColor: colors.border }]}>
               <View style={styles.alertText}>
-                <ThemedText type="smallBold">{coach.name}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {coach.email}
-                </ThemedText>
+                <Text style={[styles.alertName, { color: colors.ink }]}>{coach.name}</Text>
+                <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>{coach.email}</Text>
               </View>
-              <ThemedText
-                type="smallBold"
-                style={[
-                  styles.badge,
-                  { backgroundColor: theme.dangerSoft, color: theme.statusExpired, borderColor: theme.statusExpired },
-                ]}>
-                {getBillingStatusLabel(coach.billingStatus)}
-              </ThemedText>
+              <AppBadge label={getBillingStatusLabel(coach.billingStatus)} tone="rust" />
             </View>
           ))
         )}
-      </Card>
+      </AppCard>
     </SuperadminShell>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  tone,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  tone?: 'active' | 'warning' | 'expired';
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  const color =
-    tone === 'active' ? theme.statusActive : tone === 'warning' ? theme.statusWarning : tone === 'expired' ? theme.statusExpired : theme.text;
-
-  return (
-    <Pressable onPress={onPress} hitSlop={4} style={styles.metricPressable}>
-      <Card style={styles.metric}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {label}
-        </ThemedText>
-        <ThemedText type="subtitle" style={[styles.metricValue, { color }]}>
-          {value}
-        </ThemedText>
-      </Card>
-    </Pressable>
   );
 }
 
@@ -107,46 +103,43 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
-  metricPressable: {
-    flexBasis: 150,
+  statCardWrap: {
+    width: '48.5%',
+    minWidth: 136,
     flexGrow: 1,
-    minWidth: 0,
-  },
-  metric: {
-    justifyContent: 'space-between',
-    minHeight: 110,
-  },
-  metricValue: {
-    fontSize: 28,
-    lineHeight: 34,
   },
   card: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   sectionHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  sectionLink: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
   alertRow: {
     alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
-    paddingTop: Spacing.two,
+    paddingTop: AppSpacing[2],
   },
   alertText: {
     flex: 1,
   },
-  badge: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
+  alertName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
 });

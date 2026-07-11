@@ -1,24 +1,19 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppCard, AppHeader, AppScreen, AppSectionTitle, AppStatCard } from '@/components/ui';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const currentRole = useAuthStore((s) => s.currentRole);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
@@ -42,173 +37,119 @@ export default function DashboardScreen() {
 
   if (!clientsHydrated || !subscriptionsHydrated) {
     return (
-      <ScreenBackground>
+      <AppScreen scroll={false}>
         <View style={styles.loading}>
-          <ThemedText type="default" themeColor="textSecondary">
-            Caricamento...
-          </ThemedText>
+          <Text style={{ color: colors.inkSoft }}>Caricamento...</Text>
         </View>
-      </ScreenBackground>
+      </AppScreen>
     );
   }
 
   return (
-    <ScreenBackground>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three,
-            paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
-          },
-        ]}>
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>
-            Dashboard
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.headerSubtitle}>
-            Panoramica clienti, abbonamenti e prossimi impegni.
-          </ThemedText>
-        </View>
+    <AppScreen>
+      <AppHeader title="Dashboard" />
+      <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Panoramica clienti, abbonamenti e prossimi impegni.</Text>
 
-        <View style={styles.statsGrid}>
-          <StatCard label="Attivi" value={attivi} onPress={() => router.push('/clienti')} />
-          <StatCard
-            label="In scadenza"
-            value={inScadenza}
-            color="statusWarning"
-            onPress={() => router.push('/clienti')}
-          />
-          <StatCard label="Scaduti" value={scaduti} color="statusExpired" onPress={() => router.push('/clienti')} />
-          <Pressable onPress={() => router.push('/appuntamenti')} hitSlop={4} style={styles.statCardWrap}>
-            <Card style={styles.statCard}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                Prossimo appuntamento
-              </ThemedText>
-              <ThemedText type="default" style={styles.appointmentKpiTitle} numberOfLines={2}>
-                {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Nessun appuntamento'}
-              </ThemedText>
-              {prossimoAppuntamento ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {formatDayMonth(prossimoAppuntamento.date)} · {prossimoAppuntamento.startTime}
-                </ThemedText>
-              ) : (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Agenda libera
-                </ThemedText>
-              )}
-            </Card>
-          </Pressable>
+      <View style={styles.statsGrid}>
+        <AppStatCard
+          size="lg"
+          label="Attivi"
+          value={String(attivi)}
+          accentColor={colors.moss}
+          onPress={() => router.push('/clienti')}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="In scadenza"
+          value={String(inScadenza)}
+          accentColor={colors.amber}
+          onPress={() => router.push('/clienti')}
+          style={styles.statCardWrap}
+        />
+        <AppStatCard
+          size="lg"
+          label="Scaduti"
+          value={String(scaduti)}
+          accentColor={colors.rust}
+          onPress={() => router.push('/clienti')}
+          style={styles.statCardWrap}
+        />
+        <View style={styles.statCardWrap}>
+          <AppCard onPress={() => router.push('/appuntamenti')} style={styles.appointmentCard}>
+            <Text style={[styles.statLabel, { color: colors.inkSoft }]}>Prossimo appuntamento</Text>
+            <Text style={[styles.appointmentTitle, { color: colors.ink }]} numberOfLines={2}>
+              {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Nessun appuntamento'}
+            </Text>
+            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+              {prossimoAppuntamento ? `${formatDayMonth(prossimoAppuntamento.date)} · ${prossimoAppuntamento.startTime}` : 'Agenda libera'}
+            </Text>
+          </AppCard>
         </View>
+      </View>
 
-        <ThemedText type="smallBold" style={styles.sectionLabel}>
-          Azioni rapide
-        </ThemedText>
-        <View style={styles.quickActions}>
-          <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={styles.quickActionWrap}>
-            <View style={[styles.quickAction, styles.quickActionPrimary, { backgroundColor: theme.primary }]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                Nuovo cliente
-              </ThemedText>
-            </View>
-          </Pressable>
-          <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
-          <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
-          <QuickAction label="Supporto" onPress={() => router.push('/supporto')} />
-          <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
-        </View>
-      </ScrollView>
-    </ScreenBackground>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  onPress,
-  color,
-}: {
-  label: string;
-  value: number;
-  onPress: () => void;
-  color?: 'statusWarning' | 'statusExpired';
-}) {
-  return (
-    <Pressable onPress={onPress} hitSlop={4} style={styles.statCardWrap}>
-      <Card style={styles.statCard}>
-        <ThemedText type="small" themeColor={color ?? 'textSecondary'} style={styles.statLabel}>
-          {label}
-        </ThemedText>
-        <ThemedText type="title" style={styles.statValue} themeColor={color}>
-          {value}
-        </ThemedText>
-      </Card>
-    </Pressable>
+      <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
+      <View style={styles.quickActions}>
+        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={styles.quickActionWrap}>
+          <View style={[styles.quickAction, { backgroundColor: colors.coral }]}>
+            <Text style={[styles.quickActionLabel, { color: colors.onCoral }]}>Nuovo cliente</Text>
+          </View>
+        </Pressable>
+        <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
+        <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
+        <QuickAction label="Supporto" onPress={() => router.push('/supporto')} />
+        <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
+      </View>
+    </AppScreen>
   );
 }
 
 function QuickAction({ label, onPress }: { label: string; onPress: () => void }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
     <Pressable onPress={onPress} hitSlop={4} style={styles.quickActionWrap}>
-      <View style={[styles.quickAction, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-        <ThemedText type="smallBold">{label}</ThemedText>
+      <View style={[styles.quickAction, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+        <Text style={[styles.quickActionLabel, { color: colors.ink }]}>{label}</Text>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  header: {
-    gap: Spacing.one,
-  },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
+  subtitle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+    marginTop: -AppSpacing[2],
     maxWidth: 420,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   statCardWrap: {
     width: '48.5%',
     minWidth: 136,
     flexGrow: 1,
   },
-  statCard: {
+  appointmentCard: {
     minHeight: 104,
     justifyContent: 'center',
-    gap: Spacing.one,
+    gap: 4,
   },
   statLabel: {
+    fontSize: AppFontSize.sm,
     fontWeight: '700',
   },
-  statValue: {
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '800',
-  },
-  appointmentKpiTitle: {
+  appointmentTitle: {
     fontWeight: '700',
-    minHeight: 48,
-  },
-  sectionLabel: {
-    marginTop: Spacing.one,
+    minHeight: 40,
   },
   quickActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   quickActionWrap: {
     width: '48.5%',
@@ -217,15 +158,15 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     minHeight: 52,
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[2],
   },
-  quickActionPrimary: {
-    borderWidth: 0,
+  quickActionLabel: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
   loading: {
     flex: 1,

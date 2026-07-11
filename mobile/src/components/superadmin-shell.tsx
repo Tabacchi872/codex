@@ -1,16 +1,13 @@
 import { router, usePathname, type Href } from 'expo-router';
 import type React from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenBackground } from './screen-background';
-import { ThemedText } from './themed-text';
-
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppButton, AppIconButton } from '@/components/ui';
 import { signOut } from '@/lib/auth-service';
 import { useAuthStore } from '@/store/auth-store';
 import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 
 const NAV_ITEMS = [
   { href: '/superadmin' as Href, label: 'Dashboard', icon: '⌂', activePrefix: '/superadmin' },
@@ -20,7 +17,7 @@ const NAV_ITEMS = [
   { href: '/superadmin/support' as Href, label: 'Supporto', icon: '?', activePrefix: '/superadmin/support' },
 ] as const satisfies readonly { href: Href; label: string; icon: string; activePrefix?: string }[];
 
-const SUPERADMIN_TAB_BAR_HEIGHT = 72;
+const SUPERADMIN_TAB_BAR_HEIGHT = 74;
 
 type SuperadminShellProps = {
   title: string;
@@ -29,9 +26,15 @@ type SuperadminShellProps = {
   contentStyle?: ViewStyle;
 };
 
+// Shell superadmin migrata al nuovo design system: stesso sfondo/spacing/
+// header/badge del resto dell'app, bottom bar custom (non è una NativeTabs:
+// il superadmin non usa Tabs di expo-router, vedi app/superadmin/_layout.tsx
+// che è uno Stack) con pillola coralSoft dietro la voce attiva, come la tab
+// bar del mockup — qui è raggiungibile perché la tab bar è JS/React Native,
+// non nativa OS (a differenza di app-tabs.tsx/client-tabs.tsx).
 export function SuperadminShell({ title, description, children, contentStyle }: SuperadminShellProps) {
   const pathname = usePathname();
-  const theme = useTheme();
+  const { colors, cardShadow } = useAppTheme();
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
   const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
@@ -45,52 +48,37 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
   }
 
   return (
-    <ScreenBackground>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + Spacing.four,
-            paddingBottom: insets.bottom + SUPERADMIN_TAB_BAR_HEIGHT + Spacing.four,
+            paddingTop: insets.top + AppSpacing[4],
+            paddingBottom: insets.bottom + SUPERADMIN_TAB_BAR_HEIGHT + AppSpacing[4],
           },
           contentStyle,
         ]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <ThemedText type="smallBold" style={{ color: theme.primary }}>
-              Area Superadmin
-            </ThemedText>
-            <ThemedText type="title" style={styles.title}>
-              {title}
-            </ThemedText>
-            {description ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                {description}
-              </ThemedText>
-            ) : null}
+            <Text style={[AppTextStyle.eyebrow, { color: colors.moss }]}>AREA SUPERADMIN</Text>
+            <Text style={[AppTextStyle.title, styles.title, { color: colors.ink }]}>{title}</Text>
+            {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
           </View>
           <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => router.push('/superadmin/notifications' as Href)}
-              hitSlop={8}
-              accessibilityLabel="Notifiche"
-              style={StyleSheet.flatten([styles.notificationButton, { borderColor: theme.border, backgroundColor: theme.backgroundElement }])}>
-              <ThemedText type="default" style={[styles.notificationIcon, { color: theme.primary }]}>
-                🔔
-              </ThemedText>
+            <View>
+              <AppIconButton
+                icon={<Text style={{ fontSize: 17 }}>🔔</Text>}
+                onPress={() => router.push('/superadmin/notifications' as Href)}
+                accessibilityLabel="Notifiche"
+                size={42}
+              />
               {unreadNotifications > 0 ? (
-                <View style={[styles.notificationBadge, { backgroundColor: theme.primary }]}>
-                  <ThemedText type="smallBold" style={styles.badgeText}>
-                    {unreadNotifications > 99 ? '99+' : String(unreadNotifications)}
-                  </ThemedText>
+                <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]}>
+                  <Text style={styles.badgeText}>{unreadNotifications > 99 ? '99+' : String(unreadNotifications)}</Text>
                 </View>
               ) : null}
-            </Pressable>
-            <Pressable onPress={handleLogout} hitSlop={8} style={[styles.logoutButton, { borderColor: theme.border }]}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Esci
-              </ThemedText>
-            </Pressable>
+            </View>
+            <AppButton label="Esci" onPress={handleLogout} variant="outline" size="sm" />
           </View>
         </View>
 
@@ -100,10 +88,11 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
         style={[
           styles.bottomBar,
           {
-            backgroundColor: theme.backgroundElement,
-            borderTopColor: theme.border,
-            paddingBottom: insets.bottom + Spacing.one,
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            paddingBottom: insets.bottom + AppSpacing[1],
           },
+          cardShadow,
         ]}>
         {NAV_ITEMS.map((item) => {
           const href = item.href.toString();
@@ -113,91 +102,69 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
             : pathname === activePrefix || pathname.startsWith(`${activePrefix}/`);
           const isSupport = href === '/superadmin/support';
           return (
-            <Pressable
-              key={href}
-              onPress={() => router.push(item.href)}
-              hitSlop={4}
-              style={styles.tabItem}>
-              <View style={[styles.activeIndicator, active && { backgroundColor: theme.primary }]} />
-              <View style={styles.tabIconWrap}>
-                <ThemedText style={[styles.tabIcon, { color: active ? theme.primary : theme.textSecondary }]}>
-                  {item.icon}
-                </ThemedText>
+            <Pressable key={href} onPress={() => router.push(item.href)} hitSlop={4} style={styles.tabItem}>
+              <View style={[styles.tabIconPill, active && { backgroundColor: colors.coralSoft }]}>
+                <Text style={[styles.tabIcon, { color: active ? colors.coral : colors.inkFaint }]}>{item.icon}</Text>
                 {isSupport && unreadCoachSupport > 0 ? (
-                  <View style={[styles.supportBadge, { backgroundColor: theme.primary }]}>
-                    <ThemedText type="smallBold" style={styles.badgeText}>
-                      {unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}
-                    </ThemedText>
+                  <View style={[styles.supportBadge, { backgroundColor: colors.coral }]}>
+                    <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
                   </View>
                 ) : null}
               </View>
-              <ThemedText
-                type="smallBold"
+              <Text
                 numberOfLines={1}
-                style={[styles.tabLabel, { color: active ? theme.primary : theme.textSecondary }]}>
+                style={[styles.tabLabel, { color: active ? colors.ink : colors.inkFaint, fontWeight: active ? '700' : '500' }]}>
                 {item.label}
-              </ThemedText>
+              </Text>
             </Pressable>
           );
         })}
       </View>
-    </ScreenBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+    paddingHorizontal: AppSpacing[5],
+    gap: AppSpacing[4],
     maxWidth: '100%',
     width: '100%',
   },
   header: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   headerText: {
     flex: 1,
-    gap: Spacing.one,
+    gap: 2,
     minWidth: 0,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '800',
-    lineHeight: 36,
+    fontSize: 26,
   },
-  logoutButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+  description: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+    marginTop: 2,
   },
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  notificationButton: {
-    alignItems: 'center',
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    height: 42,
-    justifyContent: 'center',
-    position: 'relative',
-    width: 42,
-  },
-  notificationIcon: {
-    fontSize: 18,
-    lineHeight: 22,
+    gap: AppSpacing[2],
   },
   notificationBadge: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
     justifyContent: 'center',
     minWidth: 18,
-    paddingHorizontal: Spacing.one,
+    height: 18,
+    paddingHorizontal: 4,
     position: 'absolute',
     right: -2,
     top: -4,
@@ -205,12 +172,11 @@ const styles = StyleSheet.create({
   bottomBar: {
     borderTopWidth: StyleSheet.hairlineWidth,
     bottom: 0,
-    elevation: 20,
     flexDirection: 'row',
     height: SUPERADMIN_TAB_BAR_HEIGHT,
     left: 0,
-    paddingHorizontal: Spacing.one,
-    paddingTop: Spacing.two,
+    paddingHorizontal: AppSpacing[1],
+    paddingTop: AppSpacing[2],
     position: 'absolute',
     right: 0,
     zIndex: 20,
@@ -218,25 +184,22 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: 'center',
     flex: 1,
-    gap: 3,
+    gap: 4,
     justifyContent: 'flex-start',
     minHeight: 44,
     minWidth: 0,
     paddingHorizontal: 1,
   },
-  activeIndicator: {
-    backgroundColor: 'transparent',
-    borderRadius: 2,
-    height: 3,
-    width: 20,
-  },
-  tabIconWrap: {
-    position: 'relative',
+  tabIconPill: {
+    width: 40,
+    height: 26,
+    borderRadius: AppRadius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabIcon: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 21,
     textAlign: 'center',
   },
   tabLabel: {
@@ -247,17 +210,19 @@ const styles = StyleSheet.create({
   },
   supportBadge: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
     justifyContent: 'center',
-    minWidth: 17,
-    paddingHorizontal: 4,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
     position: 'absolute',
-    right: -12,
-    top: -7,
+    right: -10,
+    top: -6,
   },
   badgeText: {
     color: '#FFFFFF',
     fontSize: 10,
+    fontWeight: '700',
     lineHeight: 13,
   },
 });
