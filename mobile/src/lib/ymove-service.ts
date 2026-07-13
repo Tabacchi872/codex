@@ -180,3 +180,42 @@ export async function getYmoveExerciseDetail(ymoveExerciseId: string): Promise<Y
   }
   return { ok: true, data: detail };
 }
+
+export type YmoveTranslatableTexts = { title: string; description: string; instructions: string };
+
+// Traduce title/description/instructions in italiano (Azure Translator, solo
+// se AZURE_TRANSLATOR_KEY/REGION sono configurate lato Edge Function) —
+// chiamata UNA SOLA VOLTA
+// da fitcoach-exercises-service.ts al momento dell'import, mai ad ogni
+// apertura dell'esercizio. Se il servizio non e' configurato o la traduzione
+// fallisce, ok e' false con un code dedicato ('translation_not_configured' /
+// 'translation_failed'): il chiamante deve ricadere sui testi originali,
+// MAI inventare una traduzione.
+export async function translateYmoveTexts(texts: YmoveTranslatableTexts): Promise<YmoveServiceResult<YmoveTranslatableTexts>> {
+  return invokeYmove<YmoveTranslatableTexts>({ action: 'translate', texts });
+}
+
+// Traduzione generica array-based (2026-07-13, per l'associazione automatica
+// dei video YMove, ymove-auto-link-service.ts): traduce un array di stringhe
+// in QUALUNQUE direzione (from opzionale, Azure rileva la lingua se omesso),
+// preservando ordine e lunghezza dell'array — usata per tradurre IT->EN i
+// nomi degli esercizi locali/custom prima di cercarli nel catalogo YMove.
+// Stesso principio di onesta' di translateYmoveTexts: se il servizio non e'
+// configurato o la chiamata fallisce, ok e' false, il chiamante NON deve mai
+// inventare una traduzione (ricade sul nome originale, accettando che la
+// ricerca su YMove possa non trovare nulla di utile).
+export async function translateTexts(
+  texts: string[],
+  from: string | null,
+  to: string,
+): Promise<YmoveServiceResult<string[]>> {
+  const result = await invokeYmove<{ texts?: unknown }>({ action: 'translate', texts, from: from ?? undefined, to });
+  if (!result.ok) return result;
+  const translated = Array.isArray(result.data.texts)
+    ? result.data.texts.filter((t): t is string => typeof t === 'string')
+    : [];
+  if (translated.length !== texts.length) {
+    return { ok: false, code: 'invalid_response', message: 'Risposta di traduzione inattesa.' };
+  }
+  return { ok: true, data: translated };
+}

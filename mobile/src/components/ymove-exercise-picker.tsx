@@ -15,8 +15,18 @@ import { createOrReuseExerciseFromYmove } from '@/lib/fitcoach-exercises-service
 import { getYmoveExerciseDetail, searchYmoveExercises, type YmoveExerciseDetail, type YmoveExerciseSummary } from '@/lib/ymove-service';
 import type { Exercise } from '@/types/training';
 
+export type YmoveVideoLinkSelection = { ymoveExerciseId: string; ymoveSlug: string | null };
+
 type YMoveExercisePickerProps = {
-  onExerciseAdded: (exercise: Exercise) => void;
+  // 'import' (default): comportamento originale, crea/riusa un esercizio
+  // FitCoach ("Aggiungi a FitCoach"). 'link-video' (2026-07-13): associa
+  // SOLO il video di un esercizio YMove a un esercizio gia' esistente
+  // (locale o FitCoach) — non crea alcuna riga in public.exercises, il
+  // chiamante (esercizi/[id].tsx) salva ymove_exercise_id/ymove_slug su
+  // exercise_videos.
+  mode?: 'import' | 'link-video';
+  onExerciseAdded?: (exercise: Exercise) => void;
+  onVideoLinkSelected?: (selection: YmoveVideoLinkSelection) => void;
   onClose: () => void;
 };
 
@@ -41,7 +51,7 @@ function safeText(value: unknown): string {
 // coerente col cluster editor scheda/esercizio, deliberatamente NON migrato
 // al nuovo design system (vedi docs/PROJECT_STATE.md) — usa Card/ThemedText/
 // ThemedTextInput come il resto di questo file, non AppCard/AppButton.
-export function YMoveExercisePicker({ onExerciseAdded, onClose }: YMoveExercisePickerProps) {
+export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoLinkSelected, onClose }: YMoveExercisePickerProps) {
   const theme = useTheme();
   const [name, setName] = useState('');
   const [muscle, setMuscle] = useState('');
@@ -121,13 +131,29 @@ export function YMoveExercisePicker({ onExerciseAdded, onClose }: YMoveExerciseP
         // invece di rompere key={item.id} o il rendering di YMoveResultRow.
         .filter((item): item is YmoveExerciseSummary => Boolean(item) && Boolean(item.id) && Boolean(item.title))
         .map((item) => (
-          <YMoveResultRow key={item.id} item={item} onExerciseAdded={onExerciseAdded} />
+          <YMoveResultRow
+            key={item.id}
+            item={item}
+            mode={mode}
+            onExerciseAdded={onExerciseAdded}
+            onVideoLinkSelected={onVideoLinkSelected}
+          />
         ))}
     </Card>
   );
 }
 
-function YMoveResultRow({ item, onExerciseAdded }: { item: YmoveExerciseSummary; onExerciseAdded: (exercise: Exercise) => void }) {
+function YMoveResultRow({
+  item,
+  mode,
+  onExerciseAdded,
+  onVideoLinkSelected,
+}: {
+  item: YmoveExerciseSummary;
+  mode: 'import' | 'link-video';
+  onExerciseAdded?: (exercise: Exercise) => void;
+  onVideoLinkSelected?: (selection: YmoveVideoLinkSelection) => void;
+}) {
   const theme = useTheme();
   const [showPreview, setShowPreview] = useState(false);
   const [detail, setDetail] = useState<YmoveExerciseDetail | null>(null);
@@ -159,6 +185,14 @@ function YMoveResultRow({ item, onExerciseAdded }: { item: YmoveExerciseSummary;
   }
 
   async function handleAdd() {
+    if (mode === 'link-video') {
+      // Qui basta id/slug (gia' noti da item, il risultato di ricerca): non
+      // serve richiedere il dettaglio completo solo per collegare il video.
+      onVideoLinkSelected?.({ ymoveExerciseId: item.id, ymoveSlug: item.slug });
+      setImported(true);
+      return;
+    }
+
     setImporting(true);
     setImportError('');
     // Serve sempre il dettaglio completo (descrizione/istruzioni/muscoli/
@@ -177,7 +211,7 @@ function YMoveResultRow({ item, onExerciseAdded }: { item: YmoveExerciseSummary;
       return;
     }
     setImported(true);
-    onExerciseAdded(result.data);
+    onExerciseAdded?.(result.data);
   }
 
   return (
@@ -202,7 +236,13 @@ function YMoveResultRow({ item, onExerciseAdded }: { item: YmoveExerciseSummary;
               <ActivityIndicator size="small" color={imported ? theme.text : '#fff'} />
             ) : (
               <ThemedText type="small" themeColor={imported ? 'text' : 'onPrimary'} style={styles.addButtonLabel}>
-                {imported ? 'Aggiunto' : 'Aggiungi a FitCoach'}
+                {imported
+                  ? mode === 'link-video'
+                    ? 'Selezionato'
+                    : 'Aggiunto'
+                  : mode === 'link-video'
+                    ? 'Usa questo video'
+                    : 'Aggiungi a FitCoach'}
               </ThemedText>
             )}
           </View>

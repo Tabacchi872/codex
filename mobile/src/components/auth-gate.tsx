@@ -12,8 +12,11 @@ import { SupabaseChangePasswordScreen } from './supabase-change-password-screen'
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
+import { supabaseConfig } from '@/lib/supabase';
+import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
+import { useYmoveAutoLinkStore } from '@/store/ymove-autolink-store';
 import type { UserRole } from '@/types/auth';
 
 const CLIENT_HOME = '/cliente-home';
@@ -54,8 +57,25 @@ export function AuthGate() {
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const mustChangePasswordSupabase = useAuthStore((s) => s.mustChangePasswordSupabase);
   const accounts = useClientStore((s) => s.accounts);
+  const setAutoLinkRunning = useYmoveAutoLinkStore((s) => s.setRunning);
+  const setAutoLinkDone = useYmoveAutoLinkStore((s) => s.setDone);
 
   const targetPath = getRoleRedirectTarget(currentRole, pathname);
+
+  // Associazione automatica video YMove (2026-07-13): avviata UNA sola volta
+  // per sessione app quando il ruolo diventa 'coach' (non ad ogni render/
+  // cambio di rotta — la dipendenza e' solo currentRole, che non cambia
+  // durante la normale navigazione). Il servizio stesso decide se c'e'
+  // davvero qualcosa da fare (dedup in sessione + cooldown di 7 giorni tra
+  // un riavvio e l'altro, vedi ymove-auto-link-service.ts): qui ci si limita
+  // ad avviarlo e ad aggiornare lo stato UI (store dedicato, mostrato dal
+  // banner non bloccante nella dashboard coach).
+  useEffect(() => {
+    if (currentRole !== 'coach' || !supabaseConfig.isConfigured) return;
+    autoLinkYmoveVideosForCoach((progress) => setAutoLinkRunning(progress.processed, progress.total)).then((result) => {
+      if (result.ok && result.data.total > 0) setAutoLinkDone(result.data);
+    });
+  }, [currentRole, setAutoLinkRunning, setAutoLinkDone]);
 
   useEffect(() => {
     if (!authHydrated || !clientsHydrated || !isAuthenticated || !targetPath) return;
