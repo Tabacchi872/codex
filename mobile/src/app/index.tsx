@@ -2,6 +2,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppCard, AppHeader, AppScreen, AppSectionTitle, AppStatCard } from '@/components/ui';
+import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
 import { useAppointmentStore } from '@/store/appointment-store';
@@ -49,6 +50,8 @@ export default function DashboardScreen() {
     <AppScreen>
       <AppHeader title="Dashboard" />
       <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Panoramica clienti, abbonamenti e prossimi impegni.</Text>
+
+      <YmoveAutoLinkBanner />
 
       <View style={styles.statsGrid}>
         <AppStatCard

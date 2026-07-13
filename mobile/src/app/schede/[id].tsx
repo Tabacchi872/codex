@@ -11,7 +11,7 @@ import { WorkoutExerciseRow } from '@/components/workout-exercise-row';
 import { WorkoutPlanForm } from '@/components/workout-plan-form';
 import { WorkoutSessionControls } from '@/components/workout-session-controls';
 import { Radius, Spacing } from '@/constants/theme';
-import { getExerciseById } from '@/data/exercise-library';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
@@ -51,6 +51,14 @@ export default function SchedaDettaglioScreen() {
   const incrementSubscriptionCompletedWorkouts = useSubscriptionStore((s) => s.incrementCompletedWorkouts);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  // Bug reale trovato e corretto (2026-07-13): questa vista usava ancora
+  // getExerciseById diretto (solo i 44 esercizi locali) per renderizzare gli
+  // esercizi della scheda — un esercizio importato/collegato a YMove (id
+  // Supabase, non nella libreria locale) spariva silenziosamente dalla lista
+  // subito dopo il salvataggio, perche' `if (!exercise) return null` scartava
+  // la riga. Il resolver (gia' usato in workout-plan-form.tsx/esercizi/[id].tsx)
+  // risolve prima il locale, poi FitCoach/Supabase in background.
+  const { resolve: resolveExercise } = useExerciseResolver();
 
   const plan = workoutPlans.find((p) => p.id === id);
 
@@ -234,7 +242,7 @@ export default function SchedaDettaglioScreen() {
               return (
                 <SupersetBlock key={group.groupId} technique={technique}>
                   {group.items.map((we) => {
-                    const exercise = getExerciseById(we.exerciseId);
+                    const exercise = resolveExercise(we.exerciseId);
                     if (!exercise) return null;
                     return (
                       <WorkoutExerciseRow
@@ -252,7 +260,7 @@ export default function SchedaDettaglioScreen() {
               );
             }
             const we = group.items[0];
-            const exercise = getExerciseById(we.exerciseId);
+            const exercise = resolveExercise(we.exerciseId);
             if (!exercise) return null;
             return (
               <WorkoutExerciseRow

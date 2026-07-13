@@ -1324,9 +1324,15 @@ create policy exercises_client_read_own_coach on public.exercises
 -- Import: un coach autenticato puo' inserire SOLO un proprio 'custom' o un
 -- 'ymove' condiviso (mai un 'ymove' intestato a se stesso, mai un 'custom' di
 -- un altro coach) — coerente col vincolo exercises_source_ownership sopra.
--- L'update/delete dei 'ymove' condivisi resta riservato al superadmin
--- (policy _superadmin_all): nessun coach puo' modificare/eliminare un
--- esercizio importato da un altro coach, anche se lo riusa.
+-- L'eliminazione E la modifica dei testi di un 'ymove' condiviso restano
+-- riservate al superadmin (policy _superadmin_all): nessun coach puo'
+-- modificare/eliminare il testo GLOBALE di un esercizio importato da un
+-- altro coach. La personalizzazione per-coach del testo italiano vive nella
+-- tabella exercise_text_overrides (sezione "Traduzione italiana..." piu' in
+-- basso) — vedi docs/DECISIONS.md, 2026-07-13, per il perche' la policy
+-- "wiki-style" precedente (che permetteva a QUALUNQUE coach di modificare il
+-- testo condiviso) e' stata rimossa: un coach non deve poter cambiare cio'
+-- che vedono gli altri coach.
 drop policy if exists exercises_coach_insert on public.exercises;
 create policy exercises_coach_insert on public.exercises
   for insert
@@ -1337,5 +1343,112 @@ create policy exercises_coach_insert on public.exercises
       or (source = 'ymove' and coach_id is null)
     )
   );
+
+notify pgrst, 'reload schema';
+
+-- ============================================================================
+-- Traduzione italiana esercizi YMove + associazione video su esercizi
+-- esistenti (2026-07-13). Due estensioni distinte:
+--
+-- 1) Traduzione: name/description/technical_notes di public.exercises
+--    restano i testi ATTUALMENTE mostrati/modificabili (in italiano dopo
+--    l'import, modificabili a mano dal coach in qualunque momento dopo) — non
+--    sono nuove colonne, sono quelle gia' esistenti. Le tre colonne nuove
+--    sotto conservano SEPARATAMENTE il testo originale YMove cosi' come
+--    ricevuto, mai piu' toccato dopo l'import (nessuna ri-traduzione ad ogni
+--    apertura: la traduzione avviene una sola volta, lato mobile, in
+--    fitcoach-exercises-service.ts, chiamando l'azione 'translate' della Edge
+--    Function SOLO quando si crea la riga la prima volta).
+alter table public.exercises add column if not exists ymove_original_title text;
+alter table public.exercises add column if not exists ymove_original_description text;
+alter table public.exercises add column if not exists ymove_original_instructions text;
+
+-- CORREZIONE (2026-07-13, continuazione): la policy exercises_coach_update_
+-- ymove_text (rimossa qui) permetteva a QUALUNQUE coach di modificare
+-- name/description/technical_notes di un esercizio 'ymove' condiviso — un
+-- bug di design, non solo di sicurezza: un coach vedeva il proprio testo
+-- cambiare a sua insaputa se un altro coach modificava lo stesso esercizio
+-- condiviso. Ora SOLO il superadmin puo' modificare il testo GLOBALE
+-- (gia' coperto da exercises_superadmin_all sopra, nessuna policy aggiuntiva
+-- serve). Ogni coach personalizza il proprio testo nella tabella dedicata
+-- sotto, mai nella riga condivisa.
+drop policy if exists exercises_coach_update_ymove_text on public.exercises;
+
+-- Personalizzazione per-coach del testo italiano di un esercizio (solo
+-- source='ymove' nell'uso applicativo attuale, ma non vincolato a livello
+-- DB: exercise_id referenzia qualunque riga di public.exercises). In
+-- lettura, l'app usa PRIMA l'override del coach (o quello del proprio coach,
+-- per un cliente), poi ricade sul testo globale di public.exercises se
+-- l'override non esiste — vedi mobile/src/lib/fitcoach-exercises-service.ts,
+-- getFitCoachExerciseById.
+create table if not exists public.exercise_text_overrides (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  exercise_id uuid not null references public.exercises(id) on delete cascade,
+  name text not null,
+  description text,
+  technical_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (coach_id, exercise_id)
+);
+
+create index if not exists exercise_text_overrides_exercise_id_idx on public.exercise_text_overrides(exercise_id);
+
+drop trigger if exists exercise_text_overrides_set_updated_at on public.exercise_text_overrides;
+create trigger exercise_text_overrides_set_updated_at before update on public.exercise_text_overrides
+for each row execute function public.set_updated_at();
+
+alter table public.exercise_text_overrides enable row level security;
+
+drop policy if exists exercise_text_overrides_superadmin_all on public.exercise_text_overrides;
+create policy exercise_text_overrides_superadmin_all on public.exercise_text_overrides
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+
+-- Il coach gestisce SOLO la propria personalizzazione, mai quella di un
+-- altro coach per lo stesso esercizio (garantito anche dal vincolo univoco
+-- coach_id+exercise_id sopra, oltre che da questa policy).
+drop policy if exists exercise_text_overrides_coach_own_all on public.exercise_text_overrides;
+create policy exercise_text_overrides_coach_own_all on public.exercise_text_overrides
+  for all using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+
+-- Il cliente legge SOLO l'override del PROPRIO coach (mai quello di un
+-- coach diverso a cui non e' collegato), per qualunque esercizio.
+drop policy if exists exercise_text_overrides_client_read_own_coach on public.exercise_text_overrides;
+create policy exercise_text_overrides_client_read_own_coach on public.exercise_text_overrides
+  for select using (
+    exists (
+      select 1 from public.coach_clients
+      where coach_clients.client_id = auth.uid()
+        and coach_clients.coach_id = exercise_text_overrides.coach_id
+        and coach_clients.status in ('active', 'invited')
+    )
+  );
+
+-- 2) Associazione video YMove su un esercizio ESISTENTE (locale storico o
+-- FitCoach 'custom'), senza creare un nuovo esercizio: riusa la tabella
+-- exercise_videos gia' esistente (coach_id + exercise_id, stesso scoping
+-- gia' usato per i video caricati manualmente) invece di inventare una
+-- struttura parallela — coerente con la regola "non duplicare" della prima
+-- integrazione YMove. Una riga exercise_videos ora rappresenta O un file
+-- caricato (video_path/video_url valorizzati) O un collegamento YMove
+-- (ymove_exercise_id/ymove_slug valorizzati), mai entrambi vuoti: da qui il
+-- check "almeno una sorgente" e le due colonne NOT NULL originarie rese
+-- nullable.
+alter table public.exercise_videos add column if not exists ymove_exercise_id text;
+alter table public.exercise_videos add column if not exists ymove_slug text;
+alter table public.exercise_videos alter column video_path drop not null;
+alter table public.exercise_videos alter column video_url drop not null;
+
+alter table public.exercise_videos drop constraint if exists exercise_videos_has_source;
+alter table public.exercise_videos add constraint exercise_videos_has_source
+  check (video_path is not null or ymove_exercise_id is not null);
+
+-- Un coach non puo' collegare lo STESSO esercizio YMove a due esercizi
+-- diversi nella propria libreria (evita duplicati silenziosi, vedi requisito
+-- esplicito): coach diversi possono pero' collegare lo stesso esercizio
+-- YMove ciascuno al proprio, senza conflitti (nessun vincolo globale).
+create unique index if not exists exercise_videos_coach_ymove_unique
+  on public.exercise_videos(coach_id, ymove_exercise_id) where ymove_exercise_id is not null;
 
 notify pgrst, 'reload schema';

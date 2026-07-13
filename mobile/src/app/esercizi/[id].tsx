@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/card';
@@ -14,13 +14,23 @@ import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { RestTimer } from '@/components/rest-timer';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
+import { YMoveExercisePicker, type YmoveVideoLinkSelection } from '@/components/ymove-exercise-picker';
 import { YMoveVideoPlayer } from '@/components/ymove-video-player';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
-import { getExerciseVideo } from '@/lib/exercise-video-service';
+import { invalidateExerciseVideoInfo } from '@/lib/exercise-video-info-cache';
+import {
+  findExerciseVideoLinkByYmoveId,
+  getCurrentCoachIdForUpload,
+  getExerciseVideo,
+  linkExerciseVideoToYmove,
+  unlinkExerciseVideoFromYmove,
+} from '@/lib/exercise-video-service';
+import { updateCustomExerciseText, upsertExerciseTextOverride } from '@/lib/fitcoach-exercises-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -53,21 +63,61 @@ export default function EsercizioDettaglioScreen() {
   // exercise-library.ts una volta noto, ma finche' e' null si ricade su
   // quest'ultimo (mai un player vuoto se esiste un fallback dimostrativo).
   const [remoteVideoUrl, setRemoteVideoUrl] = useState<string | null>(null);
+  // Collegamento YMove su un esercizio ESISTENTE (locale storico o FitCoach
+  // custom), 2026-07-13: alternativo al file caricato sopra, mai entrambi.
+  const [remoteYmoveExerciseId, setRemoteYmoveExerciseId] = useState<string | null>(null);
+  const [remoteYmoveSlug, setRemoteYmoveSlug] = useState<string | null>(null);
+  const [showYMoveVideoPicker, setShowYMoveVideoPicker] = useState(false);
+  const [videoLinkBusy, setVideoLinkBusy] = useState(false);
+  const [videoLinkError, setVideoLinkError] = useState('');
+  const [duplicateExerciseId, setDuplicateExerciseId] = useState<string | null>(null);
+
+  // Testi italiani modificabili (2026-07-13) — solo per esercizi FitCoach su
+  // Supabase (custom/ymove): i 44 storici locali restano di sola lettura,
+  // nessuna riga DB su cui persistere una modifica.
+  const [editingText, setEditingText] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [technicalNotesDraft, setTechnicalNotesDraft] = useState('');
+  const [savingText, setSavingText] = useState(false);
+  const [textError, setTextError] = useState('');
 
   useEffect(() => {
     if (!supabaseConfig.isConfigured) return;
     let cancelled = false;
     getExerciseVideo(id).then((result) => {
-      if (cancelled) return;
-      if (result.ok) setRemoteVideoUrl(result.data?.videoUrl ?? null);
+      if (cancelled || !result.ok) return;
+      if (!result.data) {
+        setRemoteVideoUrl(null);
+        setRemoteYmoveExerciseId(null);
+        setRemoteYmoveSlug(null);
+      } else if (result.data.source === 'ymove') {
+        setRemoteVideoUrl(null);
+        setRemoteYmoveExerciseId(result.data.ymoveExerciseId);
+        setRemoteYmoveSlug(result.data.ymoveSlug);
+      } else {
+        setRemoteVideoUrl(result.data.videoUrl);
+        setRemoteYmoveExerciseId(null);
+        setRemoteYmoveSlug(null);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  const { resolve: resolveExercise } = useExerciseResolver();
+  const { resolve: resolveExercise, registerExercise } = useExerciseResolver();
   const exercise = resolveExercise(id);
+
+  // Sincronizza le bozze testo quando l'esercizio (ri)diventa disponibile —
+  // stesso principio del video sopra: l'oggetto puo' arrivare async (fetch
+  // Supabase per esercizi custom/ymove) dopo il primo render.
+  useEffect(() => {
+    if (!exercise) return;
+    setNameDraft(exercise.name);
+    setDescriptionDraft(exercise.description);
+    setTechnicalNotesDraft(exercise.technicalNotes);
+  }, [exercise?.id, exercise?.name, exercise?.description, exercise?.technicalNotes]);
 
   if (!exercise) {
     return (
@@ -77,6 +127,125 @@ export default function EsercizioDettaglioScreen() {
         </ThemedView>
       </ScreenBackground>
     );
+  }
+
+  // Associa/sostituisce il video di QUESTO esercizio con un video YMove
+  // (mai un URL salvato: solo ymove_exercise_id/ymove_slug, il video resta
+  // sempre richiesto live). Controllo anti-duplicati PRIMA di salvare: se lo
+  // stesso video e' gia' collegato a un ALTRO esercizio di questo coach, non
+  // si sovrascrive silenziosamente — si mostra quale esercizio lo usa gia'.
+  async function handleVideoLinkSelected(selection: YmoveVideoLinkSelection) {
+    setShowYMoveVideoPicker(false);
+    setVideoLinkError('');
+    setDuplicateExerciseId(null);
+    if (!exercise) return;
+
+    const coachId = await getCurrentCoachIdForUpload();
+    if (!coachId) {
+      setVideoLinkError('Nessuna sessione coach reale trovata.');
+      return;
+    }
+
+    setVideoLinkBusy(true);
+    const existingLink = await findExerciseVideoLinkByYmoveId(coachId, selection.ymoveExerciseId);
+    if (existingLink.ok && existingLink.data && existingLink.data.exerciseId !== exercise.id) {
+      setVideoLinkBusy(false);
+      setDuplicateExerciseId(existingLink.data.exerciseId);
+      return;
+    }
+
+    const result = await linkExerciseVideoToYmove(coachId, exercise.id, selection.ymoveExerciseId, selection.ymoveSlug);
+    setVideoLinkBusy(false);
+    if (!result.ok) {
+      setVideoLinkError(result.message);
+      return;
+    }
+    invalidateExerciseVideoInfo(exercise.id);
+    setRemoteYmoveExerciseId(selection.ymoveExerciseId);
+    setRemoteYmoveSlug(selection.ymoveSlug);
+    setRemoteVideoUrl(null);
+  }
+
+  async function handleUnlinkYmoveVideo() {
+    if (!exercise) return;
+    const coachId = await getCurrentCoachIdForUpload();
+    if (!coachId) {
+      setVideoLinkError('Nessuna sessione coach reale trovata.');
+      return;
+    }
+    setVideoLinkBusy(true);
+    setVideoLinkError('');
+    const result = await unlinkExerciseVideoFromYmove(coachId, exercise.id);
+    setVideoLinkBusy(false);
+    if (!result.ok) {
+      setVideoLinkError(result.message);
+      return;
+    }
+    invalidateExerciseVideoInfo(exercise.id);
+    setRemoteYmoveExerciseId(null);
+    setRemoteYmoveSlug(null);
+  }
+
+  // Modifica manuale dei testi italiani (name/description/technical_notes) —
+  // solo per esercizi FitCoach su Supabase (custom/ymove): i 44 storici
+  // locali non hanno una riga DB su cui salvare, quindi questa sezione non
+  // viene mai mostrata per loro (vedi JSX sotto).
+  //
+  // 2026-07-13 (correzione): un esercizio 'custom' appartiene davvero a quel
+  // coach, quindi si modifica direttamente (updateCustomExerciseText). Un
+  // esercizio 'ymove' e' invece condiviso tra tutti i coach: non si tocca
+  // MAI il testo globale (la RLS lo impedirebbe comunque, solo il superadmin
+  // puo' farlo), si crea/aggiorna sempre una personalizzazione PROPRIA
+  // (upsertExerciseTextOverride) — altri coach continuano a vedere il testo
+  // globale (o la LORO personalizzazione), mai influenzati da questa modifica.
+  async function handleSaveItalianText() {
+    if (!exercise) return;
+    if (!nameDraft.trim()) {
+      setTextError('Il nome non puo\' essere vuoto.');
+      return;
+    }
+    setSavingText(true);
+    setTextError('');
+
+    if (exercise.source === 'custom') {
+      const result = await updateCustomExerciseText(exercise.id, {
+        name: nameDraft,
+        description: descriptionDraft,
+        technicalNotes: technicalNotesDraft,
+      });
+      setSavingText(false);
+      if (!result.ok) {
+        setTextError(result.message);
+        return;
+      }
+      registerExercise(result.data);
+      setEditingText(false);
+      return;
+    }
+
+    const coachId = await getCurrentCoachIdForUpload();
+    if (!coachId) {
+      setSavingText(false);
+      setTextError('Nessuna sessione coach reale trovata.');
+      return;
+    }
+    const result = await upsertExerciseTextOverride(coachId, exercise.id, {
+      name: nameDraft,
+      description: descriptionDraft,
+      technicalNotes: technicalNotesDraft,
+    });
+    setSavingText(false);
+    if (!result.ok) {
+      setTextError(result.message);
+      return;
+    }
+    registerExercise({
+      ...exercise,
+      name: nameDraft.trim(),
+      description: descriptionDraft.trim(),
+      technicalNotes: technicalNotesDraft.trim(),
+    });
+    setEditingText(false);
   }
 
   // Un cliente vede solo la propria assegnazione, mai quella di altri clienti.
@@ -118,21 +287,84 @@ export default function EsercizioDettaglioScreen() {
       </View>
 
       {exercise.source === 'ymove' && exercise.ymoveExerciseId ? (
-        // Video sempre live dal catalogo YMove: mai un URL salvato, mai un
-        // upload coach (non ha senso per un esercizio del catalogo esterno).
+        // Esercizio importato DA YMove: il suo video e' sempre quello
+        // dell'esercizio YMove di origine, mai sostituibile qui (per un
+        // video diverso il coach importa/collega un altro esercizio YMove).
         <YMoveVideoPlayer ymoveExerciseId={exercise.ymoveExerciseId} />
+      ) : remoteYmoveExerciseId ? (
+        // Esercizio esistente (locale storico o FitCoach custom) con un
+        // video YMove ASSOCIATO (2026-07-13): stesso player live, mai un URL
+        // salvato, indipendentemente da dove viene l'id dell'esercizio.
+        <YMoveVideoPlayer ymoveExerciseId={remoteYmoveExerciseId} />
       ) : (
-        <>
-          <ExerciseVideoPlayer videoUrl={remoteVideoUrl ?? exercise.videoUrl} videoFile={exercise.videoFile} />
-          {currentRole === 'coach' && supabaseConfig.isConfigured ? (
+        <ExerciseVideoPlayer videoUrl={remoteVideoUrl ?? exercise.videoUrl} videoFile={exercise.videoFile} />
+      )}
+
+      {currentRole === 'coach' && supabaseConfig.isConfigured && exercise.source !== 'ymove' ? (
+        <Card style={styles.coachToolsCard}>
+          <ThemedText type="smallBold">Video YMove</ThemedText>
+          {remoteYmoveExerciseId ? (
+            <View style={styles.coachToolsRow}>
+              <Pressable onPress={() => setShowYMoveVideoPicker(true)} disabled={videoLinkBusy} hitSlop={6}>
+                <ThemedText type="small" style={{ color: theme.primary }}>
+                  Sostituisci video
+                </ThemedText>
+              </Pressable>
+              <Pressable onPress={handleUnlinkYmoveVideo} disabled={videoLinkBusy} hitSlop={6}>
+                <ThemedText type="small" themeColor="statusExpired">
+                  Rimuovi collegamento YMove
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={() => setShowYMoveVideoPicker(true)} disabled={videoLinkBusy}>
+              <View style={[styles.addButton, { borderColor: theme.primary }]}>
+                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                  Associa video YMove
+                </ThemedText>
+              </View>
+            </Pressable>
+          )}
+          {videoLinkBusy ? <ActivityIndicator /> : null}
+          {videoLinkError ? (
+            <ThemedText type="small" themeColor="statusExpired">
+              {videoLinkError}
+            </ThemedText>
+          ) : null}
+          {duplicateExerciseId ? (
+            <View style={styles.coachToolsRow}>
+              <ThemedText type="small" themeColor="statusExpired">
+                Questo video e' gia' associato a "{resolveExercise(duplicateExerciseId)?.name ?? duplicateExerciseId}".
+              </ThemedText>
+              <Pressable onPress={() => router.push(`/esercizi/${duplicateExerciseId}`)} hitSlop={6}>
+                <ThemedText type="small" style={{ color: theme.primary }}>
+                  Vai a quell'esercizio
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
+          {showYMoveVideoPicker ? (
+            <YMoveExercisePicker
+              mode="link-video"
+              onVideoLinkSelected={handleVideoLinkSelected}
+              onClose={() => setShowYMoveVideoPicker(false)}
+            />
+          ) : null}
+          {/* Nessun upload/collegamento contemporaneo: associare un video YMove
+              sostituisce sempre un eventuale file caricato (vedi
+              linkExerciseVideoToYmove/uploadExerciseVideo). */}
+          {!remoteYmoveExerciseId ? (
             <ExerciseVideoUploadControl
               exerciseId={exercise.id}
               hasExistingVideo={Boolean(remoteVideoUrl)}
-              onUploaded={setRemoteVideoUrl}
+              onUploaded={(url) => {
+                invalidateExerciseVideoInfo(exercise.id);
+                setRemoteVideoUrl(url);
+              }}
             />
           ) : null}
-        </>
-      )}
+        </Card>
+      ) : null}
 
       <View style={styles.infoTabsRow}>
         <InfoTabButton label="Esecuzione" active={infoTab === 'esecuzione'} onPress={() => setInfoTab('esecuzione')} />
@@ -143,6 +375,76 @@ export default function EsercizioDettaglioScreen() {
           {infoTab === 'esecuzione' ? exercise.technicalNotes : exercise.description}
         </ThemedText>
       </Card>
+
+      {currentRole === 'coach' && (exercise.source === 'custom' || exercise.source === 'ymove') ? (
+        <Card style={styles.coachToolsCard}>
+          <View style={styles.coachToolsHeader}>
+            <ThemedText type="smallBold">Testi italiani</ThemedText>
+            {!editingText ? (
+              <Pressable onPress={() => setEditingText(true)} hitSlop={6}>
+                <ThemedText type="small" style={{ color: theme.primary }}>
+                  Modifica
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+          {editingText ? (
+            <>
+              <ThemedTextInput value={nameDraft} onChangeText={setNameDraft} placeholder="Nome esercizio" />
+              <ThemedTextInput
+                value={descriptionDraft}
+                onChangeText={setDescriptionDraft}
+                placeholder="Descrizione"
+                multiline
+              />
+              <ThemedTextInput
+                value={technicalNotesDraft}
+                onChangeText={setTechnicalNotesDraft}
+                placeholder="Note tecniche / esecuzione"
+                multiline
+              />
+              {textError ? (
+                <ThemedText type="small" themeColor="statusExpired">
+                  {textError}
+                </ThemedText>
+              ) : null}
+              <View style={styles.coachToolsRow}>
+                <Pressable
+                  onPress={() => {
+                    setEditingText(false);
+                    setTextError('');
+                    setNameDraft(exercise.name);
+                    setDescriptionDraft(exercise.description);
+                    setTechnicalNotesDraft(exercise.technicalNotes);
+                  }}
+                  disabled={savingText}
+                  hitSlop={6}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Annulla
+                  </ThemedText>
+                </Pressable>
+                <Pressable onPress={handleSaveItalianText} disabled={savingText}>
+                  <View style={[styles.saveTextButton, { backgroundColor: theme.primary, opacity: savingText ? 0.7 : 1 }]}>
+                    {savingText ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <ThemedText type="small" themeColor="onPrimary">
+                        Salva
+                      </ThemedText>
+                    )}
+                  </View>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <ThemedText type="small" themeColor="textSecondary">
+              {exercise.source === 'ymove'
+                ? "Nome, descrizione e note sono modificabili: la modifica crea una tua personalizzazione, senza cambiare il testo che vedono gli altri coach."
+                : 'Nome, descrizione e note sono modificabili.'}
+            </ThemedText>
+          )}
+        </Card>
+      ) : null}
 
       {assignments.length === 0 ? (
         <PlaceholderBanner text="Esercizio non ancora assegnato in nessuna scheda cliente: timer e storico si attivano quando fa parte di una scheda." />
@@ -298,6 +600,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  coachToolsCard: {
+    gap: Spacing.two,
+  },
+  coachToolsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  coachToolsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+    alignItems: 'center',
+  },
+  addButton: {
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    padding: Spacing.three,
+    alignItems: 'center',
+  },
+  saveTextButton: {
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
   },
   infoTabsRow: {
     flexDirection: 'row',
