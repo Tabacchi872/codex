@@ -12,6 +12,7 @@ import { SupabaseChangePasswordScreen } from './supabase-change-password-screen'
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
+import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
@@ -59,8 +60,22 @@ export function AuthGate() {
   const accounts = useClientStore((s) => s.accounts);
   const setAutoLinkRunning = useYmoveAutoLinkStore((s) => s.setRunning);
   const setAutoLinkDone = useYmoveAutoLinkStore((s) => s.setDone);
+  const { refresh: refreshWorkoutPlans } = useWorkoutPlansSync();
 
   const targetPath = getRoleRedirectTarget(currentRole, pathname);
+
+  // Prima sincronizzazione schede/allenamenti con Supabase (2026-07-14):
+  // avviata quando il ruolo diventa coach/cliente, cosi' la dashboard e le
+  // altre schermate che leggono workoutPlans (cliente-home.tsx,
+  // cliente-profilo.tsx, ecc.) vedono dati gia' aggiornati al primo render,
+  // senza dover per forza visitare prima la lista schede/allenamenti (che fa
+  // comunque il proprio refresh-on-focus, vedi schede/index.tsx/workout.tsx).
+  // useWorkoutPlansSync gestisce da sola dedup/cooldown della migrazione e
+  // il canale Realtime — qui ci si limita ad avviare refresh().
+  useEffect(() => {
+    if (currentRole !== 'coach' && currentRole !== 'cliente') return;
+    refreshWorkoutPlans();
+  }, [currentRole, refreshWorkoutPlans]);
 
   // Associazione automatica video YMove (2026-07-13): avviata UNA sola volta
   // per sessione app quando il ruolo diventa 'coach' (non ad ogni render/

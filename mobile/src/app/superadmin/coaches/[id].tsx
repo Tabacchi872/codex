@@ -27,7 +27,7 @@ export default function SuperadminCoachDetail() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const coachIdParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const { colors } = useAppTheme();
-  const { coaches, loading, reload } = useSuperadminCoaches();
+  const { coaches, loading, error: loadError, reload } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
   const clients = useSuperadminStore((s) => s.coachClients);
   const updateCoach = useSuperadminStore((s) => s.updateCoach);
@@ -72,11 +72,16 @@ export default function SuperadminCoachDetail() {
 
   if (!coach) {
     return (
-      <SuperadminShell title={loading ? 'Caricamento...' : 'Coach non trovato'}>
+      <SuperadminShell title={loading ? 'Caricamento...' : loadError ? 'Errore' : 'Coach non trovato'}>
         <AppCard style={styles.card}>
-          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
-            {loading ? 'Caricamento coach da Supabase in corso...' : "Il coach richiesto non e' disponibile."}
+          <Text style={{ color: loadError ? colors.rust : colors.inkSoft, fontSize: AppFontSize.sm }}>
+            {loading
+              ? 'Caricamento coach da Supabase in corso...'
+              : loadError
+                ? loadError
+                : "Il coach richiesto non e' disponibile."}
           </Text>
+          {!loading && loadError ? <AppButton label="Riprova" onPress={reload} variant="outline" fullWidth /> : null}
           {!loading ? (
             <AppButton label="Torna alla lista coach" onPress={() => router.replace('/superadmin/coaches' as Href)} fullWidth />
           ) : null}

@@ -22,8 +22,9 @@ const FILTERS: { value: CoachFilterStatus; label: string }[] = [
 ];
 
 export default function SuperadminCoaches() {
+  const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ status?: string | string[] }>();
-  const { coaches, loading } = useSuperadminCoaches();
+  const { coaches, loading, error, reload } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
   const selectedStatus = getSelectedFilter(params.status);
   const filteredCoaches = selectedStatus === 'all' ? coaches : coaches.filter((coach) => coach.billingStatus === selectedStatus);
@@ -36,11 +37,21 @@ export default function SuperadminCoaches() {
         ))}
       </View>
 
-      <AppButton label="+ Aggiungi coach" onPress={() => router.push('/superadmin/coaches/new')} fullWidth size="lg" />
+      <View style={styles.topActions}>
+        <AppButton label="+ Aggiungi coach" onPress={() => router.push('/superadmin/coaches/new')} fullWidth size="lg" />
+        <AppButton label="Aggiorna" onPress={reload} variant="outline" fullWidth loading={loading} />
+      </View>
 
-      {filteredCoaches.length === 0 ? (
+      {error ? (
         <AppCard style={styles.emptyCard}>
-          {loading ? <EmptyText loading /> : <EmptyText />}
+          <Text style={[styles.emptyTitle, { color: colors.rust }]}>{error}</Text>
+          <AppButton label="Riprova" onPress={reload} variant="outline" fullWidth />
+        </AppCard>
+      ) : null}
+
+      {!error && filteredCoaches.length === 0 ? (
+        <AppCard style={styles.emptyCard}>
+          {loading ? <EmptyText loading /> : <EmptyText noFilter={selectedStatus === 'all'} />}
         </AppCard>
       ) : null}
 
@@ -61,10 +72,13 @@ export default function SuperadminCoaches() {
   );
 }
 
-function EmptyText({ loading = false }: { loading?: boolean }) {
+function EmptyText({ loading = false, noFilter = false }: { loading?: boolean; noFilter?: boolean }) {
   const { colors } = useAppTheme();
   if (loading) {
     return <Text style={[styles.emptyTitle, { color: colors.ink }]}>Caricamento coach da Supabase...</Text>;
+  }
+  if (noFilter) {
+    return <Text style={[styles.emptyTitle, { color: colors.ink }]}>Nessun coach registrato</Text>;
   }
   return (
     <>
@@ -116,7 +130,7 @@ function CoachCard({
         </View>
         <View style={styles.badgeStack}>
           <AppBadge label={getBillingStatusLabel(coach.billingStatus)} tone={statusTone(coach.billingStatus)} />
-          {coach.source === 'local' ? <AppBadge label="Solo locale" tone="neutral" /> : null}
+          {coach.source === 'local' ? <AppBadge label="Demo" tone="neutral" /> : null}
         </View>
       </View>
 
@@ -175,6 +189,9 @@ const styles = StyleSheet.create({
   filters: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: AppSpacing[2],
+  },
+  topActions: {
     gap: AppSpacing[2],
   },
   filterChip: {
