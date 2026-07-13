@@ -1,10 +1,9 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ThemedText } from './themed-text';
+import { AppCard } from './ui';
 
-import { useTheme } from '@/hooks/use-theme';
 import { useThemeStore, type ThemeMode } from '@/store/theme-store';
+import { AppFontSize, useAppTheme } from '@/theme';
 
 const OPTIONS: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Chiaro' },
@@ -15,29 +14,27 @@ const OPTIONS: { mode: ThemeMode; label: string }[] = [
 // Preferenza tema: persistenza locale demo (AsyncStorage su questo dispositivo/
 // browser), non un profilo utente sincronizzato.
 export function ThemeSettings() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
 
   return (
-    <Card padded={false}>
+    <AppCard padded={false}>
       {OPTIONS.map((option, index) => {
         const active = option.mode === mode;
         return (
           <View key={option.mode}>
             <Pressable onPress={() => setMode(option.mode)} style={styles.row}>
-              <ThemedText type="default" themeColor={active ? 'primary' : 'text'} style={active && styles.activeLabel}>
-                {option.label}
-              </ThemedText>
-              <View style={[styles.radio, { borderColor: theme.primary }]}>
-                {active && <View style={[styles.radioDot, { backgroundColor: theme.primary }]} />}
+              <Text style={[styles.label, { color: colors.ink, fontWeight: active ? '700' : '500' }]}>{option.label}</Text>
+              <View style={[styles.radio, { borderColor: colors.moss }]}>
+                {active ? <View style={[styles.radioDot, { backgroundColor: colors.moss }]} /> : null}
               </View>
             </Pressable>
-            {index < OPTIONS.length - 1 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
+            {index < OPTIONS.length - 1 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
           </View>
         );
       })}
-    </Card>
+    </AppCard>
   );
 }
 
@@ -49,15 +46,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  activeLabel: {
-    fontWeight: '700',
+  label: {
+    fontSize: AppFontSize.md,
   },
   radio: {
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: '#C90018',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -65,11 +61,9 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: '#C90018',
   },
   divider: {
     height: StyleSheet.hairlineWidth,
     marginLeft: 16,
-    backgroundColor: 'rgba(120,124,130,0.25)',
   },
 });

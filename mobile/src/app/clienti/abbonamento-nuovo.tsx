@@ -1,17 +1,15 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { PlaceholderBanner } from '@/components/placeholder-banner';
-import { ScreenBackground } from '@/components/screen-background';
+import { AppScreen } from '@/components/ui';
 import { SubscriptionForm } from '@/components/subscription-form';
-import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useSubscriptionStore } from '@/store/subscription-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { computeSubscriptionStatus, getCurrentSubscription, type SubscriptionPackage } from '@/types/subscription';
 
 export default function NuovoAbbonamentoScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const { clientId } = useLocalSearchParams<{ clientId: string }>();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const addSubscription = useSubscriptionStore((s) => s.addSubscription);
@@ -25,30 +23,30 @@ export default function NuovoAbbonamentoScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <AppScreen>
       <Stack.Screen options={{ title: 'Nuovo abbonamento' }} />
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
-            paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
-          },
-        ]}>
-        {existingValidSubscription && (
-          <PlaceholderBanner
-            text={`Questo cliente ha già un abbonamento valido ("${existingValidSubscription.packageName}"). Crearne uno nuovo non lo modifica: se è un rinnovo, valuta prima di impostarlo su Completato/Scaduto da "Aggiorna abbonamento".`}
-          />
-        )}
-        <SubscriptionForm clientId={clientId} onSave={handleSave} saveLabel="Crea abbonamento" />
-      </ScrollView>
-    </ScreenBackground>
+      {existingValidSubscription ? (
+        <View style={[styles.notice, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
+          <Text style={[styles.noticeText, { color: colors.inkSoft }]}>
+            Questo cliente ha già un abbonamento valido (&quot;{existingValidSubscription.packageName}&quot;). Crearne uno nuovo
+            non lo modifica: se è un rinnovo, valuta prima di impostarlo su Completato/Scaduto da &quot;Aggiorna abbonamento&quot;.
+          </Text>
+        </View>
+      ) : null}
+      <SubscriptionForm clientId={clientId} onSave={handleSave} saveLabel="Crea abbonamento" />
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+  notice: {
+    borderRadius: AppRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: AppSpacing[2],
+    paddingHorizontal: AppSpacing[3],
+    marginBottom: AppSpacing[1],
+  },
+  noticeText: {
+    fontSize: AppFontSize.sm,
   },
 });

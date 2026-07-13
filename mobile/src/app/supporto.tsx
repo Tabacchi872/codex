@@ -1,17 +1,15 @@
 import * as Clipboard from 'expo-clipboard';
 import { Redirect } from 'expo-router';
+import { Send } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/card';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppButton, AppCard, AppIconButton, AppTextField } from '@/components/ui';
+import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import type { CoachSupportMessage } from '@/types/superadmin';
 
 export default function CoachSupportScreen() {
@@ -19,7 +17,7 @@ export default function CoachSupportScreen() {
   const currentCoachId = useAuthStore((s) => s.currentCoachId);
   const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
   const messages = useSuperadminStore((s) => s.coachSupportMessages);
   const sendSupportMessageAsCoach = useSuperadminStore((s) => s.sendSupportMessageAsCoach);
@@ -60,101 +58,79 @@ export default function CoachSupportScreen() {
   const sendDisabled = !draft.trim();
 
   return (
-    <ScreenBackground>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            {
-              paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three,
-              paddingBottom: Spacing.three,
-            },
+            { paddingTop: Platform.OS === 'web' ? AppSpacing[5] : insets.top + AppSpacing[3], paddingBottom: AppSpacing[3] },
           ]}>
           <View style={styles.header}>
-            <ThemedText type="title" style={styles.title}>
-              Supporto
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <Text style={[AppTextStyle.title, { color: colors.ink }]}>Supporto</Text>
+            <Text style={[styles.subtitle, { color: colors.inkSoft }]}>
               Chat interna con il superadmin per assistenza e comunicazioni amministrative.
-            </ThemedText>
+            </Text>
           </View>
 
-          <Card style={styles.messagesCard}>
-            <View style={[styles.codeBox, { borderColor: theme.border }]}>
+          <AppCard style={styles.messagesCard}>
+            <View style={[styles.codeBox, { borderColor: colors.border }]}>
               <View style={styles.codeText}>
-                <ThemedText type="smallBold">Codice coach</ThemedText>
-                <ThemedText type="default" style={{ color: theme.primary }}>
-                  {coach.coachCode}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
+                <Text style={[styles.codeLabel, { color: colors.ink }]}>Codice coach</Text>
+                <Text style={[styles.codeValue, { color: colors.coral }]}>{coach.coachCode}</Text>
+                <Text style={[styles.smallText, { color: colors.inkSoft }]}>
                   {coach.coachCodeActive ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
-                </ThemedText>
+                </Text>
               </View>
-              <Pressable onPress={copyCoachCode} hitSlop={6}>
-                <View style={[styles.copyButton, { borderColor: theme.primary }]}>
-                  <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                    Copia
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <AppButton label="Copia" onPress={copyCoachCode} variant="outline" size="sm" />
             </View>
-            {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
+            {copyFeedback ? <Text style={[styles.smallText, { color: colors.moss, fontWeight: '600' }]}>{copyFeedback}</Text> : null}
             {conversationMessages.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Nessun messaggio ancora. Scrivi al superadmin qui sotto.
-              </ThemedText>
+              <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun messaggio ancora. Scrivi al superadmin qui sotto.</Text>
             ) : (
               conversationMessages.map((message) => <MessageBubble key={message.id} message={message} />)
             )}
-          </Card>
+          </AppCard>
         </ScrollView>
 
         <View
           style={[
             styles.inputRow,
             {
-              borderTopColor: theme.border,
-              backgroundColor: theme.backgroundElement,
-              paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + Spacing.two : Spacing.two),
+              borderTopColor: colors.border,
+              backgroundColor: colors.surface,
+              paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + AppSpacing[2] : AppSpacing[2]),
             },
           ]}>
-          <ThemedTextInput
-            style={styles.input}
-            placeholder="Scrivi al superadmin..."
-            value={draft}
-            onChangeText={setDraft}
-            multiline
+          <View style={styles.inputWrap}>
+            <AppTextField placeholder="Scrivi al superadmin..." value={draft} onChangeText={setDraft} multiline style={styles.input} />
+          </View>
+          <AppIconButton
+            icon={<Send size={17} color={colors.onCoral} />}
+            onPress={handleSend}
+            disabled={sendDisabled}
+            tone="coral"
+            bordered={false}
+            accessibilityLabel="Invia messaggio"
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
-            <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.disabled]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                Invia
-              </ThemedText>
-            </View>
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </ScreenBackground>
+    </View>
   );
 }
 
 function MessageBubble({ message }: { message: CoachSupportMessage }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const isMine = message.sender === 'coach';
   return (
     <View style={[styles.bubbleRow, isMine ? styles.bubbleRight : styles.bubbleLeft]}>
       <View
         style={[
           styles.bubble,
-          { backgroundColor: isMine ? theme.primary : theme.backgroundElement, borderColor: theme.border },
+          isMine ? { backgroundColor: colors.coral, borderColor: colors.coral } : { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
         ]}>
-        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'}>
-          {message.text}
-        </ThemedText>
+        <Text style={[styles.bubbleText, { color: isMine ? colors.onCoral : colors.ink }]}>{message.text}</Text>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.timeText}>
-        {formatTime(message.createdAt)}
-      </ThemedText>
+      <Text style={[styles.timeText, { color: colors.inkFaint }]}>{formatTime(message.createdAt)}</Text>
     </View>
   );
 }
@@ -164,49 +140,55 @@ function formatTime(value: string) {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   flex: {
     flex: 1,
   },
   content: {
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    gap: AppSpacing[3],
+    paddingHorizontal: AppSpacing[5],
   },
   header: {
-    gap: Spacing.one,
+    gap: 4,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    lineHeight: 32,
+  subtitle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   messagesCard: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     minHeight: 320,
   },
   codeBox: {
     alignItems: 'center',
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
-    padding: Spacing.two,
+    padding: AppSpacing[2],
   },
   codeText: {
     flex: 1,
     minWidth: 0,
   },
-  copyButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 40,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.three,
+  codeLabel: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  codeValue: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   bubbleRow: {
     maxWidth: '84%',
-    gap: Spacing.half,
+    gap: 2,
   },
   bubbleLeft: {
     alignItems: 'flex-start',
@@ -217,35 +199,29 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   bubble: {
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    paddingVertical: AppSpacing[2],
+  },
+  bubbleText: {
+    fontSize: AppFontSize.sm,
   },
   timeText: {
     fontSize: 11,
-    lineHeight: 14,
   },
   inputRow: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    gap: AppSpacing[2],
+    paddingHorizontal: AppSpacing[5],
+    paddingTop: AppSpacing[2],
+  },
+  inputWrap: {
+    flex: 1,
   },
   input: {
-    flex: 1,
     maxHeight: 100,
-  },
-  sendButton: {
-    borderRadius: Radius.md,
-    minHeight: 44,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    justifyContent: 'center',
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

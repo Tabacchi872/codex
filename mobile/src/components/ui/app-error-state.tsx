@@ -1,3 +1,4 @@
+import { RefreshCw, TriangleAlert } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from './app-button';
@@ -18,12 +19,18 @@ export function AppErrorState({ message, onRetry }: AppErrorStateProps) {
   return (
     <View style={styles.wrap}>
       <View style={[styles.iconWrap, { backgroundColor: colors.rustSoft }]}>
-        <Text style={[styles.iconGlyph, { color: colors.rust }]}>!</Text>
+        <TriangleAlert size={20} color={colors.rust} strokeWidth={2} />
       </View>
       <Text style={[styles.title, { color: colors.ink }]}>Impossibile caricare i dati</Text>
       <Text style={[styles.subtitle, { color: colors.inkSoft }]}>{message || 'Controlla la connessione e riprova.'}</Text>
       <View style={styles.action}>
-        <AppButton label="Riprova" onPress={onRetry} variant="dark" size="sm" />
+        <AppButton
+          label="Riprova"
+          onPress={onRetry}
+          variant="dark"
+          size="sm"
+          icon={<RefreshCw size={14} color={colors.background} />}
+        />
       </View>
     </View>
   );
@@ -41,10 +48,6 @@ const styles = StyleSheet.create({
     borderRadius: AppRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconGlyph: {
-    fontSize: 20,
-    fontWeight: '800',
   },
   title: {
     fontSize: AppFontSize.base,

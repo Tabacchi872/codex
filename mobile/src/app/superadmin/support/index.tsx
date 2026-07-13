@@ -1,13 +1,11 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { SuperadminSupportConversation } from '@/types/superadmin';
 
 export default function SuperadminSupport() {
@@ -24,64 +22,63 @@ export default function SuperadminSupport() {
       description="Chat interna tra coach e superadmin per assistenza e comunicazioni amministrative."
       contentStyle={styles.shellContent}>
       {conversations.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <ThemedText type="smallBold">Nessun coach ha scritto</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Le richieste dei coach verranno mostrate qui.
-          </ThemedText>
-        </Card>
+        <AppCard style={styles.emptyCard}>
+          <EmptyText />
+        </AppCard>
       ) : (
         conversations.map((conversation) => (
-          <Pressable
+          <ConversationCard
             key={conversation.coach.id}
-            hitSlop={4}
-            style={styles.conversationLink}
-            onPress={() =>
-              router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } })
-            }>
-            <ConversationCard conversation={conversation} />
-          </Pressable>
+            conversation={conversation}
+            onPress={() => router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } })}
+          />
         ))
       )}
     </SuperadminShell>
   );
 }
 
-function ConversationCard({ conversation }: { conversation: SuperadminSupportConversation }) {
-  const theme = useTheme();
+function EmptyText() {
+  const { colors } = useAppTheme();
+  return (
+    <>
+      <Text style={[styles.emptyTitle, { color: colors.ink }]}>Nessun coach ha scritto</Text>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>Le richieste dei coach verranno mostrate qui.</Text>
+    </>
+  );
+}
+
+function ConversationCard({ conversation, onPress }: { conversation: SuperadminSupportConversation; onPress: () => void }) {
+  const { colors } = useAppTheme();
 
   return (
-    <Card style={[styles.card, { borderColor: conversation.unreadCount > 0 ? theme.primary : theme.border }]}>
+    <AppCard onPress={onPress} style={[styles.card, { borderColor: conversation.unreadCount > 0 ? colors.coral : colors.border }]}>
       <View style={styles.headerRow}>
         <View style={styles.identity}>
-          <ThemedText type="smallBold" numberOfLines={1}>
+          <Text style={[styles.coachName, { color: colors.ink }]} numberOfLines={1}>
             {conversation.coach.name}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          </Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]} numberOfLines={1}>
             {conversation.coach.email}
-          </ThemedText>
+          </Text>
         </View>
         <View style={styles.metaColumn}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.metaText}>
-            {formatDateTime(conversation.lastMessage.createdAt)}
-          </ThemedText>
+          <Text style={[styles.metaText, { color: colors.inkSoft }]}>{formatDateTime(conversation.lastMessage.createdAt)}</Text>
           {conversation.unreadCount > 0 ? <UnreadBadge count={conversation.unreadCount} /> : null}
         </View>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2} style={styles.previewText}>
+      <Text style={[styles.smallText, styles.previewText, { color: colors.inkSoft }]} numberOfLines={2}>
         {conversation.lastMessage.text}
-      </ThemedText>
-    </Card>
+      </Text>
+    </AppCard>
   );
 }
 
 function UnreadBadge({ count }: { count: number }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   return (
-    <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
-      <ThemedText type="smallBold" style={styles.unreadText} themeColor="onPrimary">
-        {count > 99 ? '99+' : String(count)}
-      </ThemedText>
+    <View style={[styles.unreadBadge, { backgroundColor: colors.coral }]}>
+      <Text style={[styles.unreadText, { color: colors.onCoral }]}>{count > 99 ? '99+' : String(count)}</Text>
     </View>
   );
 }
@@ -100,18 +97,21 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     width: '100%',
   },
-  conversationLink: {
+  emptyCard: {
+    gap: 4,
     maxWidth: '100%',
     width: '100%',
   },
-  emptyCard: {
-    gap: Spacing.one,
-    maxWidth: '100%',
-    width: '100%',
+  emptyTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   card: {
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
+    borderWidth: 1.5,
+    gap: AppSpacing[2],
     maxWidth: '100%',
     overflow: 'hidden',
     width: '100%',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   headerRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
     maxWidth: '100%',
     minWidth: 0,
@@ -128,13 +128,18 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  coachName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
   metaColumn: {
     alignItems: 'flex-end',
-    gap: Spacing.one,
+    gap: AppSpacing[1],
     flexShrink: 0,
     maxWidth: 116,
   },
   metaText: {
+    fontSize: AppFontSize.sm,
     textAlign: 'right',
   },
   previewText: {
@@ -142,14 +147,15 @@ const styles = StyleSheet.create({
   },
   unreadBadge: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
     justifyContent: 'center',
     minWidth: 24,
-    paddingHorizontal: Spacing.one,
+    paddingHorizontal: AppSpacing[1],
     paddingVertical: 2,
   },
   unreadText: {
     fontSize: 11,
+    fontWeight: '700',
     lineHeight: 14,
   },
 });

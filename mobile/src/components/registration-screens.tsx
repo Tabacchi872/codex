@@ -1,22 +1,16 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ScreenBackground } from './screen-background';
-import { ThemedText } from './themed-text';
-import { ThemedTextInput } from './themed-text-input';
-
+import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { signUpClientWithCoachCode, signUpCoach } from '@/lib/auth-service';
 import { canCoachAcceptClients, generateCoachCode, normalizeCoachCode } from '@/lib/coach-code';
 import { supabaseConfig } from '@/lib/supabase';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { DEMO_USERS, useAuthStore, type CoachAuthAccount } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import type { Client, ClientAccount } from '@/types/client';
 import type { CoachBillingProfile, CoachBillingSubjectType } from '@/types/superadmin';
 
@@ -28,8 +22,7 @@ const SUBJECT_OPTIONS: { value: CoachBillingSubjectType; label: string }[] = [
 ];
 
 export function CoachRegistrationScreen() {
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const coaches = useSuperadminStore((s) => s.coaches);
   const createCoach = useSuperadminStore((s) => s.createCoach);
   const addCoachAccount = useAuthStore((s) => s.addCoachAccount);
@@ -209,144 +202,152 @@ export function CoachRegistrationScreen() {
 
   if (createdCode) {
     return (
-      <ScreenBackground>
-        <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five }]}>
-          <Card style={styles.form}>
-            {pendingEmailConfirmation ? (
-              <>
-                <ThemedText type="title" style={styles.title}>
-                  Controlla la tua email
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Registrazione completata. Controlla la tua email per confermare l&apos;account: il tuo codice coach sara&apos; disponibile al primo accesso, dopo la conferma.
-                </ThemedText>
-              </>
-            ) : (
-              <>
-                <ThemedText type="title" style={styles.title}>
-                  Il tuo codice coach
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Condividi questo codice con i tuoi clienti per consentire la registrazione.
-                </ThemedText>
-                <View style={[styles.codeBox, { borderColor: theme.primary, backgroundColor: theme.softRed }]}>
-                  <ThemedText type="subtitle" style={[styles.codeText, { color: theme.primary }]}>
-                    {createdCode}
-                  </ThemedText>
-                </View>
-                <Pressable onPress={copyCode} hitSlop={6}>
-                  <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
-                    <ThemedText type="smallBold" themeColor="onPrimary">
-                      Copia codice
-                    </ThemedText>
-                  </View>
-                </Pressable>
-                {copyFeedback ? <ThemedText type="small" themeColor="statusActive">{copyFeedback}</ThemedText> : null}
-              </>
-            )}
-            <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
-              <ThemedText type="smallBold" themeColor="primary" style={styles.centerText}>
-                Vai al login
-              </ThemedText>
-            </Pressable>
-          </Card>
-        </ScrollView>
-      </ScreenBackground>
+      <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+        <AppCard style={styles.form}>
+          {pendingEmailConfirmation ? (
+            <>
+              <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Controlla la tua email</Text>
+              <Text style={[styles.bodyText, { color: colors.inkSoft }]}>
+                Registrazione completata. Controlla la tua email per confermare l&apos;account: il tuo codice coach sara&apos;
+                disponibile al primo accesso, dopo la conferma.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Il tuo codice coach</Text>
+              <Text style={[styles.bodyText, { color: colors.inkSoft }]}>
+                Condividi questo codice con i tuoi clienti per consentire la registrazione.
+              </Text>
+              <View style={[styles.codeBox, { borderColor: colors.moss, backgroundColor: colors.mossSoft }]}>
+                <Text style={[styles.codeText, { color: colors.moss }]}>{createdCode}</Text>
+              </View>
+              <AppButton label="Copia codice" onPress={copyCode} fullWidth />
+              {copyFeedback ? <Text style={[styles.feedback, { color: colors.moss }]}>{copyFeedback}</Text> : null}
+            </>
+          )}
+          <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
+            <Text style={[styles.link, { color: colors.moss }]}>Vai al login</Text>
+          </Pressable>
+        </AppCard>
+      </AppScreen>
     );
   }
 
   return (
-    <ScreenBackground>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three }]}>
-        <Card style={styles.form}>
-          <ThemedText type="title" style={styles.title}>
-            Registrati come coach
-          </ThemedText>
-          <Field label="Nome e cognome">
-            <ThemedTextInput value={fullName} onChangeText={setFullName} placeholder="Es. Laura Bassi" />
-          </Field>
-          <Field label="Email">
-            <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.it" autoCapitalize="none" keyboardType="email-address" />
-          </Field>
-          <Field label="Password">
-            <ThemedTextInput value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
-          </Field>
-          <Field label="Conferma password">
-            <ThemedTextInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Ripeti password" secureTextEntry />
-          </Field>
-          <Field label="Telefono opzionale">
-            <ThemedTextInput value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
-          </Field>
-          <Field label="Nome attivita/studio opzionale">
-            <ThemedTextInput value={businessName} onChangeText={setBusinessName} placeholder="Es. Studio Performance" />
-          </Field>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Dati attivita e fatturazione
-            </ThemedText>
+    <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+      <AppCard style={styles.form}>
+        <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Registrati come coach</Text>
+        <AppTextField label="Nome e cognome" value={fullName} onChangeText={setFullName} placeholder="Es. Laura Bassi" />
+        <AppTextField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="coach@email.it"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <AppTextField label="Password" value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
+        <AppTextField
+          label="Conferma password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Ripeti password"
+          secureTextEntry
+        />
+        <AppTextField label="Telefono opzionale" value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
+        <AppTextField
+          label="Nome attivita/studio opzionale"
+          value={businessName}
+          onChangeText={setBusinessName}
+          placeholder="Es. Studio Performance"
+        />
+
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Dati attivita e fatturazione</Text>
+        </View>
+
+        <Field label="Tipo soggetto">
+          <OptionGroup options={SUBJECT_OPTIONS} value={subjectType} onChange={setSubjectType} />
+        </Field>
+        <AppTextField
+          label="Nome attivita o ragione sociale"
+          value={legalName}
+          onChangeText={setLegalName}
+          placeholder="Es. Studio Performance SRL"
+        />
+        <AppTextField
+          label="Partita IVA"
+          value={vatNumber}
+          onChangeText={setVatNumber}
+          placeholder="Es. 12345678901"
+          keyboardType="number-pad"
+        />
+        <AppTextField
+          label="Codice fiscale"
+          value={fiscalCode}
+          onChangeText={(value) => setFiscalCode(value.toUpperCase())}
+          placeholder="Codice fiscale"
+          autoCapitalize="characters"
+        />
+        <AppTextField label="Indirizzo" value={billingAddress} onChangeText={setBillingAddress} placeholder="Via e numero civico" />
+        <View style={styles.inlineFields}>
+          <View style={styles.inlineSmall}>
+            <AppTextField label="CAP" value={postalCode} onChangeText={setPostalCode} placeholder="00100" keyboardType="number-pad" />
           </View>
-          <Field label="Tipo soggetto">
-            <OptionGroup options={SUBJECT_OPTIONS} value={subjectType} onChange={setSubjectType} />
-          </Field>
-          <Field label="Nome attivita o ragione sociale">
-            <ThemedTextInput value={legalName} onChangeText={setLegalName} placeholder="Es. Studio Performance SRL" />
-          </Field>
-          <Field label="Partita IVA">
-            <ThemedTextInput value={vatNumber} onChangeText={setVatNumber} placeholder="Es. 12345678901" keyboardType="number-pad" />
-          </Field>
-          <Field label="Codice fiscale">
-            <ThemedTextInput value={fiscalCode} onChangeText={(value) => setFiscalCode(value.toUpperCase())} placeholder="Codice fiscale" autoCapitalize="characters" />
-          </Field>
-          <Field label="Indirizzo">
-            <ThemedTextInput value={billingAddress} onChangeText={setBillingAddress} placeholder="Via e numero civico" />
-          </Field>
-          <View style={styles.inlineFields}>
-            <Field label="CAP" style={styles.inlineSmall}>
-              <ThemedTextInput value={postalCode} onChangeText={setPostalCode} placeholder="00100" keyboardType="number-pad" />
-            </Field>
-            <Field label="Comune" style={styles.inlineLarge}>
-              <ThemedTextInput value={city} onChangeText={setCity} placeholder="Roma" />
-            </Field>
+          <View style={styles.inlineLarge}>
+            <AppTextField label="Comune" value={city} onChangeText={setCity} placeholder="Roma" />
           </View>
-          <View style={styles.inlineFields}>
-            <Field label="Provincia" style={styles.inlineSmall}>
-              <ThemedTextInput value={province} onChangeText={(value) => setProvince(value.toUpperCase())} placeholder="RM" autoCapitalize="characters" />
-            </Field>
-            <Field label="Nazione" style={styles.inlineLarge}>
-              <ThemedTextInput value={country} onChangeText={setCountry} placeholder="Italia" />
-            </Field>
+        </View>
+        <View style={styles.inlineFields}>
+          <View style={styles.inlineSmall}>
+            <AppTextField
+              label="Provincia"
+              value={province}
+              onChangeText={(value) => setProvince(value.toUpperCase())}
+              placeholder="RM"
+              autoCapitalize="characters"
+            />
           </View>
-          <Field label="PEC">
-            <ThemedTextInput value={pec} onChangeText={setPec} placeholder="nome@pec.it" autoCapitalize="none" keyboardType="email-address" />
-          </Field>
-          <Field label="Codice SDI">
-            <ThemedTextInput value={sdiCode} onChangeText={(value) => setSdiCode(value.toUpperCase())} placeholder="0000000 se non comunicato" autoCapitalize="characters" maxLength={7} />
-          </Field>
-          <Field label="Email fatturazione">
-            <ThemedTextInput value={billingEmail} onChangeText={setBillingEmail} placeholder="fatture@email.it" autoCapitalize="none" keyboardType="email-address" />
-          </Field>
-          {error ? <ThemedText type="small" themeColor="statusExpired">{error}</ThemedText> : null}
-          <Pressable onPress={handleRegister} disabled={submitting} hitSlop={6}>
-            <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                {submitting ? 'Creazione account...' : 'Crea account coach'}
-              </ThemedText>
-            </View>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
-            <ThemedText type="smallBold" themeColor="primary" style={styles.centerText}>
-              Torna al login
-            </ThemedText>
-          </Pressable>
-        </Card>
-      </ScrollView>
-    </ScreenBackground>
+          <View style={styles.inlineLarge}>
+            <AppTextField label="Nazione" value={country} onChangeText={setCountry} placeholder="Italia" />
+          </View>
+        </View>
+        <AppTextField label="PEC" value={pec} onChangeText={setPec} placeholder="nome@pec.it" autoCapitalize="none" keyboardType="email-address" />
+        <AppTextField
+          label="Codice SDI"
+          value={sdiCode}
+          onChangeText={(value) => setSdiCode(value.toUpperCase())}
+          placeholder="0000000 se non comunicato"
+          autoCapitalize="characters"
+          maxLength={7}
+        />
+        <AppTextField
+          label="Email fatturazione"
+          value={billingEmail}
+          onChangeText={setBillingEmail}
+          placeholder="fatture@email.it"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+        <AppButton
+          label={submitting ? 'Creazione account...' : 'Crea account coach'}
+          onPress={handleRegister}
+          loading={submitting}
+          disabled={submitting}
+          fullWidth
+          size="lg"
+        />
+        <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
+          <Text style={[styles.link, { color: colors.moss }]}>Torna al login</Text>
+        </Pressable>
+      </AppCard>
+    </AppScreen>
   );
 }
 
 export function ClientRegistrationScreen() {
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const plans = useSuperadminStore((s) => s.plans);
   const findCoachByCode = useSuperadminStore((s) => s.findCoachByCode);
   const addCoachClient = useSuperadminStore((s) => s.addCoachClient);
@@ -483,78 +484,78 @@ export function ClientRegistrationScreen() {
 
   if (pendingEmailConfirmation) {
     return (
-      <ScreenBackground>
-        <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.six : insets.top + Spacing.five }]}>
-          <Card style={styles.form}>
-            <ThemedText type="title" style={styles.title}>
-              Controlla la tua email
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Registrazione completata. Controlla la tua email per confermare l&apos;account. Dopo la conferma potrai accedere normalmente.
-            </ThemedText>
-            <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
-              <View style={[styles.primaryButton, { backgroundColor: theme.primary }]}>
-                <ThemedText type="smallBold" themeColor="onPrimary">
-                  Torna al login
-                </ThemedText>
-              </View>
-            </Pressable>
-          </Card>
-        </ScrollView>
-      </ScreenBackground>
+      <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+        <AppCard style={styles.form}>
+          <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Controlla la tua email</Text>
+          <Text style={[styles.bodyText, { color: colors.inkSoft }]}>
+            Registrazione completata. Controlla la tua email per confermare l&apos;account. Dopo la conferma potrai accedere
+            normalmente.
+          </Text>
+          <AppButton label="Torna al login" onPress={() => router.replace('/' as Href)} fullWidth />
+        </AppCard>
+      </AppScreen>
     );
   }
 
   return (
-    <ScreenBackground>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three }]}>
-        <Card style={styles.form}>
-          <ThemedText type="title" style={styles.title}>
-            Registrati come cliente
-          </ThemedText>
-          <Field label="Codice coach">
-            <ThemedTextInput value={coachCode} onChangeText={(value) => setCoachCode(normalizeCoachCode(value))} placeholder="FC-8KQ4-MR2P" autoCapitalize="characters" />
-          </Field>
-          <Field label="Nome e cognome">
-            <ThemedTextInput value={fullName} onChangeText={setFullName} placeholder="Es. Anna Rossi" />
-          </Field>
-          <Field label="Email">
-            <ThemedTextInput value={email} onChangeText={setEmail} placeholder="cliente@email.it" autoCapitalize="none" keyboardType="email-address" />
-          </Field>
-          <Field label="Password">
-            <ThemedTextInput value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
-          </Field>
-          <Field label="Conferma password">
-            <ThemedTextInput value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Ripeti password" secureTextEntry />
-          </Field>
-          {error ? <ThemedText type="small" themeColor="statusExpired">{error}</ThemedText> : null}
-          <Pressable onPress={handleRegister} disabled={submitting} hitSlop={6}>
-            <View style={[styles.primaryButton, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                {submitting ? 'Creazione account...' : 'Crea account cliente'}
-              </ThemedText>
-            </View>
-          </Pressable>
-          <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
-            <ThemedText type="smallBold" themeColor="primary" style={styles.centerText}>
-              Torna al login
-            </ThemedText>
-          </Pressable>
-        </Card>
-      </ScrollView>
-    </ScreenBackground>
+    <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+      <AppCard style={styles.form}>
+        <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Registrati come cliente</Text>
+        <AppTextField
+          label="Codice coach"
+          value={coachCode}
+          onChangeText={(value) => setCoachCode(normalizeCoachCode(value))}
+          placeholder="FC-8KQ4-MR2P"
+          autoCapitalize="characters"
+        />
+        <AppTextField label="Nome e cognome" value={fullName} onChangeText={setFullName} placeholder="Es. Anna Rossi" />
+        <AppTextField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="cliente@email.it"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <AppTextField label="Password" value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
+        <AppTextField
+          label="Conferma password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Ripeti password"
+          secureTextEntry
+        />
+        {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+        <AppButton
+          label={submitting ? 'Creazione account...' : 'Crea account cliente'}
+          onPress={handleRegister}
+          loading={submitting}
+          disabled={submitting}
+          fullWidth
+          size="lg"
+        />
+        <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
+          <Text style={[styles.link, { color: colors.moss }]}>Torna al login</Text>
+        </Pressable>
+      </AppCard>
+    </AppScreen>
   );
 }
 
-function Field({ label, children, style }: { label: string; children: ReactNode; style?: object }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  const { colors } = useAppTheme();
   return (
-    <View style={[styles.field, style]}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+    <View style={styles.field}>
+      <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>{label}</Text>
       {children}
     </View>
   );
 }
 
+// Selettore a scelta singola (Tipo soggetto): non e' una CTA, quindi non usa
+// AppButton — stesso linguaggio del tab-selector "Da fare/Passati" nel mockup
+// (moss pieno se attivo, contorno moss se inattivo), coerente con AppButton
+// solo nei token di colore/radius, non nel componente.
 function OptionGroup<T extends string>({
   options,
   value,
@@ -564,7 +565,7 @@ function OptionGroup<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   return (
     <View style={styles.options}>
       {options.map((option) => {
@@ -574,13 +575,8 @@ function OptionGroup<T extends string>({
             key={option.value}
             onPress={() => onChange(option.value)}
             hitSlop={4}
-            style={[
-              styles.option,
-              { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement },
-            ]}>
-            <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
-              {option.label}
-            </ThemedText>
+            style={[styles.option, { borderColor: colors.moss, backgroundColor: active ? colors.moss : 'transparent' }]}>
+            <Text style={[styles.optionLabel, { color: active ? colors.onMoss : colors.moss }]}>{option.label}</Text>
           </Pressable>
         );
       })}
@@ -602,47 +598,51 @@ function isItaly(value: string) {
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    gap: Spacing.three,
     justifyContent: 'center',
-    paddingBottom: Spacing.six,
-    paddingHorizontal: Spacing.four,
   },
   form: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   title: {
     fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
+  },
+  bodyText: {
+    fontSize: AppFontSize.base,
+    fontWeight: '500',
+    lineHeight: AppFontSize.base * 1.4,
   },
   field: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+  },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   sectionHeader: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E7EB',
-    paddingTop: Spacing.three,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    lineHeight: 26,
+    paddingTop: AppSpacing[3],
   },
   options: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   option: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: AppRadius.md,
+    borderWidth: 1.5,
     minHeight: 40,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    paddingVertical: AppSpacing[2],
+    justifyContent: 'center',
+  },
+  optionLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   inlineFields: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   inlineSmall: {
     flexBasis: 104,
@@ -652,26 +652,30 @@ const styles = StyleSheet.create({
     flexBasis: 160,
     flexGrow: 2,
   },
-  primaryButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    justifyContent: 'center',
-    minHeight: 48,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
-  centerText: {
+  link: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  feedback: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
     textAlign: 'center',
   },
   codeBox: {
     alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: Spacing.three,
+    borderRadius: AppRadius.xl,
+    borderWidth: 1.5,
+    padding: AppSpacing[3],
   },
   codeText: {
     fontSize: 28,
     lineHeight: 34,
+    fontWeight: '800',
     textAlign: 'center',
   },
 });

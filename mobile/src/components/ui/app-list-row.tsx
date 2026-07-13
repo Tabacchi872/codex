@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -35,7 +36,7 @@ export function AppListRow({ icon, iconBackground, title, subtitle, trailing, on
           </Text>
         ) : null}
       </View>
-      {trailing ?? (showChevron && onPress ? <Text style={[styles.chevron, { color: colors.inkFaint }]}>›</Text> : null)}
+      {trailing ?? (showChevron && onPress ? <ChevronRight size={18} color={colors.inkFaint} /> : null)}
     </View>
   );
 
@@ -75,9 +76,5 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: AppFontSize.sm,
     marginTop: 1,
-  },
-  chevron: {
-    fontSize: 22,
-    fontWeight: '600',
   },
 });

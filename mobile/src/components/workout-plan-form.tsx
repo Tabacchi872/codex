@@ -5,16 +5,19 @@ import { Card } from './card';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
 import { WorkoutExerciseEditor } from './workout-exercise-editor';
+import { YMoveExercisePicker } from './ymove-exercise-picker';
 
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
-import { EXERCISE_LIBRARY, MUSCLE_GROUPS, exercisesByMuscleGroup, getExerciseById } from '@/data/exercise-library';
+import { EXERCISE_LIBRARY, MUSCLE_GROUPS, exercisesByMuscleGroup } from '@/data/exercise-library';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
+import { supabaseConfig } from '@/lib/supabase';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
-import type { WorkoutExercise, WorkoutPlan } from '@/types/training';
+import type { Exercise, WorkoutExercise, WorkoutPlan } from '@/types/training';
 
 function newWorkoutExercise(exerciseId: string, order: number): WorkoutExercise {
   return {
@@ -53,13 +56,25 @@ export function WorkoutPlanForm({
   const [subscriptionId, setSubscriptionId] = useState(initialPlan?.subscriptionId ?? '');
   const [exercises, setExercises] = useState<WorkoutExercise[]>(initialPlan?.exercises ?? []);
   const [showPicker, setShowPicker] = useState(false);
+  const [showYMovePicker, setShowYMovePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { resolve: resolveExercise, registerExercise } = useExerciseResolver();
 
   const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
 
   function addExercise(exerciseId: string) {
     setExercises((prev) => [...prev, newWorkoutExercise(exerciseId, prev.length)]);
     setShowPicker(false);
+  }
+
+  // Esercizio creato/riusato dalla Libreria YMove (mobile/src/components/
+  // ymove-exercise-picker.tsx): registrato subito nel resolver cosi' il
+  // render qui sotto lo trova immediatamente, senza aspettare il fetch di
+  // fallback che use-exercise-resolver.ts farebbe altrimenti.
+  function handleYMoveExerciseAdded(exercise: Exercise) {
+    registerExercise(exercise);
+    setExercises((prev) => [...prev, newWorkoutExercise(exercise.id, prev.length)]);
+    setShowYMovePicker(false);
   }
 
   function updateExercise(updated: WorkoutExercise) {
@@ -209,7 +224,7 @@ export function WorkoutPlanForm({
       )}
 
       {exercises.map((we, index) => {
-        const exercise = getExerciseById(we.exerciseId);
+        const exercise = resolveExercise(we.exerciseId);
         if (!exercise) return null;
         return (
           <WorkoutExerciseEditor
@@ -226,14 +241,27 @@ export function WorkoutPlanForm({
         );
       })}
 
-      {!showPicker ? (
-        <Pressable onPress={() => setShowPicker(true)}>
-          <View style={[styles.addButton, { borderColor: theme.primary }]}>
-            <ThemedText type="smallBold" style={{ color: theme.primary }}>
-              + Aggiungi esercizio
-            </ThemedText>
-          </View>
-        </Pressable>
+      {!showPicker && !showYMovePicker ? (
+        <View style={styles.addButtonsRow}>
+          <Pressable style={styles.addButtonFlex} onPress={() => setShowPicker(true)}>
+            <View style={[styles.addButton, { borderColor: theme.primary }]}>
+              <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                + Aggiungi esercizio
+              </ThemedText>
+            </View>
+          </Pressable>
+          {supabaseConfig.isConfigured ? (
+            <Pressable style={styles.addButtonFlex} onPress={() => setShowYMovePicker(true)}>
+              <View style={[styles.addButton, { borderColor: theme.primary }]}>
+                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                  Libreria YMove
+                </ThemedText>
+              </View>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : showYMovePicker ? (
+        <YMoveExercisePicker onExerciseAdded={handleYMoveExerciseAdded} onClose={() => setShowYMovePicker(false)} />
       ) : (
         <Card style={styles.pickerContainer}>
           <View style={styles.pickerHeader}>
@@ -318,6 +346,13 @@ const styles = StyleSheet.create({
   },
   exercisesLabel: {
     marginTop: Spacing.two,
+  },
+  addButtonsRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  addButtonFlex: {
+    flex: 1,
   },
   addButton: {
     borderRadius: Radius.md,

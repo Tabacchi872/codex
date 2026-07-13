@@ -1,4 +1,5 @@
 import { router, usePathname, type Href } from 'expo-router';
+import { Bell, Euro, House, LifeBuoy, Package, Ticket, Users, type LucideIcon } from 'lucide-react-native';
 import type React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,12 +11,13 @@ import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/sup
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 
 const NAV_ITEMS = [
-  { href: '/superadmin' as Href, label: 'Dashboard', icon: '⌂', activePrefix: '/superadmin' },
-  { href: '/superadmin/coaches' as Href, label: 'Coach', icon: '◎', activePrefix: '/superadmin/coaches' },
-  { href: '/superadmin/plans' as Href, label: 'Piani', icon: '▦', activePrefix: '/superadmin/plans' },
-  { href: '/superadmin/payment-events' as Href, label: 'Pagamenti', icon: '€', activePrefix: '/superadmin/payment-events' },
-  { href: '/superadmin/support' as Href, label: 'Supporto', icon: '?', activePrefix: '/superadmin/support' },
-] as const satisfies readonly { href: Href; label: string; icon: string; activePrefix?: string }[];
+  { href: '/superadmin' as Href, label: 'Dashboard', icon: House, activePrefix: '/superadmin' },
+  { href: '/superadmin/coaches' as Href, label: 'Coach', icon: Users, activePrefix: '/superadmin/coaches' },
+  { href: '/superadmin/plans' as Href, label: 'Piani', icon: Ticket, activePrefix: '/superadmin/plans' },
+  { href: '/superadmin/pacchetti' as Href, label: 'Pacchetti', icon: Package, activePrefix: '/superadmin/pacchetti' },
+  { href: '/superadmin/payment-events' as Href, label: 'Pagamenti', icon: Euro, activePrefix: '/superadmin/payment-events' },
+  { href: '/superadmin/support' as Href, label: 'Supporto', icon: LifeBuoy, activePrefix: '/superadmin/support' },
+] as const satisfies readonly { href: Href; label: string; icon: LucideIcon; activePrefix?: string }[];
 
 const SUPERADMIN_TAB_BAR_HEIGHT = 74;
 
@@ -67,7 +69,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           <View style={styles.headerActions}>
             <View>
               <AppIconButton
-                icon={<Text style={{ fontSize: 17 }}>🔔</Text>}
+                icon={<Bell size={18} color={colors.ink} />}
                 onPress={() => router.push('/superadmin/notifications' as Href)}
                 accessibilityLabel="Notifiche"
                 size={42}
@@ -101,10 +103,11 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
             ? pathname === '/superadmin'
             : pathname === activePrefix || pathname.startsWith(`${activePrefix}/`);
           const isSupport = href === '/superadmin/support';
+          const Icon = item.icon;
           return (
             <Pressable key={href} onPress={() => router.push(item.href)} hitSlop={4} style={styles.tabItem}>
               <View style={[styles.tabIconPill, active && { backgroundColor: colors.coralSoft }]}>
-                <Text style={[styles.tabIcon, { color: active ? colors.coral : colors.inkFaint }]}>{item.icon}</Text>
+                <Icon size={18} color={active ? colors.coral : colors.inkFaint} strokeWidth={2.2} />
                 {isSupport && unreadCoachSupport > 0 ? (
                   <View style={[styles.supportBadge, { backgroundColor: colors.coral }]}>
                     <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
@@ -196,11 +199,6 @@ const styles = StyleSheet.create({
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabIcon: {
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
   },
   tabLabel: {
     fontSize: 10,

@@ -1,25 +1,19 @@
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { CLIENT_STATUS_LABEL, type Client, type ClientStatus } from '@/types/client';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
 
 export default function NuovoClienteScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const addClient = useClientStore((s) => s.addClient);
 
@@ -34,11 +28,7 @@ export default function NuovoClienteScreen() {
   const [error, setError] = useState<string | null>(null);
 
   if (!isCoach) {
-    return (
-      <ScreenBackground>
-        <CoachOnlyNotice />
-      </ScreenBackground>
-    );
+    return <CoachOnlyNotice />;
   }
 
   function handleSave() {
@@ -64,133 +54,99 @@ export default function NuovoClienteScreen() {
   }
 
   return (
-    <ScreenBackground>
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
-      ]}>
-      <Card style={styles.form}>
-        <Field label="Nome">
-          <ThemedTextInput value={firstName} onChangeText={setFirstName} placeholder="Es. Anna" />
-        </Field>
-        <Field label="Cognome">
-          <ThemedTextInput value={lastName} onChangeText={setLastName} placeholder="Es. Rossi" />
-        </Field>
-        <Field label="Email">
-          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="anna.rossi@email.com" autoCapitalize="none" keyboardType="email-address" />
-        </Field>
-        <Field label="Telefono (opzionale)">
-          <ThemedTextInput value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
-        </Field>
-        <Field label="Data di nascita (opzionale, AAAA-MM-GG)">
-          <ThemedTextInput value={birthDate} onChangeText={setBirthDate} placeholder="1990-05-20" />
-        </Field>
-        <Field label="Obiettivo">
-          <ThemedTextInput value={goal} onChangeText={setGoal} placeholder="Es. Dimagrimento, forza, tonificazione" />
-        </Field>
-        <Field label="Note interne">
-          <ThemedTextInput value={notes} onChangeText={setNotes} placeholder="Visibili solo a te" multiline />
-        </Field>
-        <Field label="Stato cliente">
+    <AppScreen>
+      <AppCard style={styles.form}>
+        <AppTextField label="Nome" value={firstName} onChangeText={setFirstName} placeholder="Es. Anna" />
+        <AppTextField label="Cognome" value={lastName} onChangeText={setLastName} placeholder="Es. Rossi" />
+        <AppTextField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="anna.rossi@email.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <AppTextField label="Telefono (opzionale)" value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
+        <AppTextField
+          label="Data di nascita (opzionale, AAAA-MM-GG)"
+          value={birthDate}
+          onChangeText={setBirthDate}
+          placeholder="1990-05-20"
+        />
+        <AppTextField label="Obiettivo" value={goal} onChangeText={setGoal} placeholder="Es. Dimagrimento, forza, tonificazione" />
+        <AppTextField label="Note interne" value={notes} onChangeText={setNotes} placeholder="Visibili solo a te" multiline />
+        <View style={styles.field}>
+          <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>Stato cliente</Text>
           <View style={styles.chipsRow}>
             {STATUS_OPTIONS.map((option) => {
               const active = option === status;
               return (
-                <Pressable key={option} onPress={() => setStatus(option)}>
-                  <View
-                    style={[
-                      styles.chip,
-                      { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                    ]}>
-                    <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                      {CLIENT_STATUS_LABEL[option]}
-                    </ThemedText>
-                  </View>
+                <Pressable
+                  key={option}
+                  onPress={() => setStatus(option)}
+                  style={[styles.chip, { backgroundColor: active ? colors.moss : 'transparent', borderColor: colors.moss }]}>
+                  <Text style={[styles.chipLabel, { color: active ? colors.onMoss : colors.moss }]}>
+                    {CLIENT_STATUS_LABEL[option]}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
-        </Field>
-      </Card>
+        </View>
+      </AppCard>
 
-      {error && (
-        <ThemedText type="small" themeColor="statusExpired">
-          {error}
-        </ThemedText>
-      )}
+      {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
 
       <View style={styles.buttonsRow}>
-        <Pressable onPress={() => router.back()} style={styles.cancelButtonWrap}>
-          <View style={[styles.cancelButton, { borderColor: theme.border }]}>
-            <ThemedText type="smallBold">Annulla</ThemedText>
-          </View>
-        </Pressable>
-        <Pressable onPress={handleSave} style={styles.saveButtonWrap}>
-          <View style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              Salva cliente
-            </ThemedText>
-          </View>
-        </Pressable>
+        <View style={styles.cancelButtonWrap}>
+          <AppButton label="Annulla" onPress={() => router.back()} variant="outline" fullWidth />
+        </View>
+        <View style={styles.saveButtonWrap}>
+          <AppButton label="Salva cliente" onPress={handleSave} fullWidth />
+        </View>
       </View>
-    </ScrollView>
-    </ScreenBackground>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      {children}
-    </View>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
   form: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   field: {
     gap: 4,
   },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+  },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   chip: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
+    paddingHorizontal: AppSpacing[3],
     paddingVertical: 7,
+  },
+  chipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   buttonsRow: {
     flexDirection: 'row',
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   cancelButtonWrap: {
     flex: 1,
   },
   saveButtonWrap: {
     flex: 1.4,
-  },
-  cancelButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-  },
-  saveButton: {
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
   },
 });

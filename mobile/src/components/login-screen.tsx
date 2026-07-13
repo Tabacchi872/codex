@@ -46,7 +46,14 @@ export function LoginScreen() {
     // Se Supabase e' configurato, prova prima l'accesso reale. Se fallisce
     // (account demo locale non presente su Supabase, credenziali di un coach/
     // cliente creato solo in locale, ecc.) si ricade sui controlli locali
-    // sotto invece di bloccare l'utente — vedi docs/DECISIONS.md.
+    // sotto invece di bloccare l'utente — vedi docs/DECISIONS.md. Il messaggio
+    // reale di Supabase viene pero' salvato: se anche i controlli locali sotto
+    // falliscono, mostrarlo al posto del generico "Credenziali non valide" e'
+    // l'unico modo per l'utente (e per il debug) di sapere se Supabase ha
+    // davvero rifiutato quella password (es. dopo un reset password) invece di
+    // limitarsi a "non trovato da nessuna parte".
+    let supabaseErrorMessage: string | null = null;
+
     if (supabaseConfig.isConfigured) {
       setSubmitting(true);
       const result = await signInWithEmail(normalized, password);
@@ -85,7 +92,7 @@ export function LoginScreen() {
               updateCoach(localAccount.coachId, { coachCode: onboarding.data.coachCode, coachCodeActive: true });
             }
           }
-          loginAsCoach(normalized, localAccount?.coachId);
+          loginAsCoach(normalized, localAccount?.coachId, result.data.mustChangePassword);
           router.replace('/');
           return;
         }
@@ -98,7 +105,7 @@ export function LoginScreen() {
           // locale: quest'ultimo puo' non esistere se la registrazione e'
           // avvenuta su un altro device/browser (AsyncStorage web e Expo Go non
           // condividono lo storage) — vedi lib/auth-service.ts, loadClientProfile.
-          await ensureClientOnboarding(userId, metadata);
+          await ensureClientOnboarding(metadata);
           const profileResult = await loadClientProfile(userId, normalized);
           if (!profileResult.ok) {
             setError(profileResult.message);
@@ -126,7 +133,7 @@ export function LoginScreen() {
               createdAt: new Date().toISOString(),
             });
           }
-          loginAsClient(client.id, normalized);
+          loginAsClient(client.id, normalized, result.data.mustChangePassword);
           router.replace('/cliente-home');
           return;
         }
@@ -135,6 +142,8 @@ export function LoginScreen() {
           router.replace('/superadmin' as Href);
           return;
         }
+      } else {
+        supabaseErrorMessage = result.message;
       }
     }
 
@@ -172,7 +181,11 @@ export function LoginScreen() {
         a.temporaryPassword === password
     );
     if (!account) {
-      setError('Credenziali non valide. Controlla email e password.');
+      setError(
+        supabaseErrorMessage
+          ? `Accesso non riuscito: ${supabaseErrorMessage}`
+          : 'Credenziali non valide. Controlla email e password.',
+      );
       return;
     }
     setError(null);

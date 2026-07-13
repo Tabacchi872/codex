@@ -1,21 +1,18 @@
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppButton, AppCard, AppTextField } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { AppBillingStatus, AppPlanCode } from '@/types/superadmin';
 
 const STATUSES: AppBillingStatus[] = ['trial', 'active', 'past_due', 'canceled', 'blocked'];
 
 export default function NewSuperadminCoach() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const plans = useSuperadminStore((s) => s.plans);
   const createCoach = useSuperadminStore((s) => s.createCoach);
   const firstPlan = plans[0]?.code ?? 'free';
@@ -58,16 +55,10 @@ export default function NewSuperadminCoach() {
 
   return (
     <SuperadminShell title="Nuovo coach" description="Crea un coach e assegna piano, stato pagamento e periodo di validita'.">
-      <Card style={styles.card}>
-        <Field label="Nome">
-          <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Laura Bassi" />
-        </Field>
-        <Field label="Email">
-          <ThemedTextInput value={email} onChangeText={setEmail} placeholder="coach@email.it" autoCapitalize="none" keyboardType="email-address" />
-        </Field>
-        <Field label="Telefono opzionale">
-          <ThemedTextInput value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
-        </Field>
+      <AppCard style={styles.card}>
+        <AppTextField label="Nome" value={name} onChangeText={setName} placeholder="Es. Laura Bassi" />
+        <AppTextField label="Email" value={email} onChangeText={setEmail} placeholder="coach@email.it" autoCapitalize="none" keyboardType="email-address" />
+        <AppTextField label="Telefono opzionale" value={phone} onChangeText={setPhone} placeholder="+39 333 0000000" keyboardType="phone-pad" />
         <OptionGroup label="Piano" options={plans.map((plan) => ({ value: plan.code, label: plan.name }))} value={planCode} onChange={setPlanCode} />
         <OptionGroup
           label="Stato pagamento"
@@ -75,37 +66,20 @@ export default function NewSuperadminCoach() {
           value={billingStatus}
           onChange={setBillingStatus}
         />
-        <Field label="Limite clienti">
-          <ThemedTextInput value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite piano" keyboardType="number-pad" />
-        </Field>
-        <Field label="Clienti usati">
-          <ThemedTextInput value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" />
-        </Field>
+        <AppTextField label="Limite clienti" value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite piano" keyboardType="number-pad" />
+        <AppTextField label="Clienti usati" value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" />
         <View style={styles.row}>
-          <Field label="Inizio periodo" style={styles.half}>
-            <ThemedTextInput value={periodStartsAt} onChangeText={setPeriodStartsAt} placeholder="2026-07-08" />
-          </Field>
-          <Field label="Fine periodo" style={styles.half}>
-            <ThemedTextInput value={periodEndsAt} onChangeText={setPeriodEndsAt} placeholder="2026-08-08" />
-          </Field>
+          <View style={styles.half}>
+            <AppTextField label="Inizio periodo" value={periodStartsAt} onChangeText={setPeriodStartsAt} placeholder="2026-07-08" />
+          </View>
+          <View style={styles.half}>
+            <AppTextField label="Fine periodo" value={periodEndsAt} onChangeText={setPeriodEndsAt} placeholder="2026-08-08" />
+          </View>
         </View>
-        {error ? <ThemedText type="small" style={{ color: theme.statusExpired }}>{error}</ThemedText> : null}
-        <Pressable onPress={handleSave} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
-            Salva coach
-          </ThemedText>
-        </Pressable>
-      </Card>
+        {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+        <AppButton label="Salva coach" onPress={handleSave} fullWidth />
+      </AppCard>
     </SuperadminShell>
-  );
-}
-
-function Field({ label, children, style }: { label: string; children: ReactNode; style?: object }) {
-  return (
-    <View style={[styles.field, style]}>
-      <ThemedText type="smallBold">{label}</ThemedText>
-      {children}
-    </View>
   );
 }
 
@@ -120,10 +94,10 @@ function OptionGroup<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   return (
     <View style={styles.field}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>{label}</Text>
       <View style={styles.options}>
         {options.map((option) => {
           const active = option.value === value;
@@ -132,10 +106,8 @@ function OptionGroup<T extends string>({
               key={option.value}
               onPress={() => onChange(option.value)}
               hitSlop={4}
-              style={[styles.option, { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement }]}>
-              <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.textSecondary }}>
-                {option.label}
-              </ThemedText>
+              style={[styles.option, { borderColor: colors.moss, backgroundColor: active ? colors.moss : 'transparent' }]}>
+              <Text style={[styles.optionLabel, { color: active ? colors.onMoss : colors.moss }]}>{option.label}</Text>
             </Pressable>
           );
         })}
@@ -146,15 +118,19 @@ function OptionGroup<T extends string>({
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   field: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+  },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   half: {
     flexBasis: 140,
@@ -163,20 +139,21 @@ const styles = StyleSheet.create({
   options: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   option: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: AppRadius.md,
+    borderWidth: 1.5,
     minHeight: 40,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    justifyContent: 'center',
   },
-  saveButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    minHeight: 48,
-    paddingVertical: Spacing.three,
-    width: '100%',
+  optionLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
 });

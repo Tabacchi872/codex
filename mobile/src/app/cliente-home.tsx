@@ -1,9 +1,10 @@
 import { Redirect, useRouter } from 'expo-router';
+import { Apple, Calendar, ClipboardList, Dumbbell, Megaphone, MessageCircle, User } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppButton, AppCard, AppEmptyState, AppHeader, AppListRow, AppScreen, AppStatCard } from '@/components/ui';
+import { AppButton, AppCard, AppEmptyState, AppHeader, AppListRow, AppRingProgress, AppScreen } from '@/components/ui';
 import { getClientById } from '@/lib/client-helpers';
-import { formatDayMonth } from '@/lib/format-date';
+import { formatDayMonth, formatFullDateEyebrow } from '@/lib/format-date';
 import { getNextWorkoutPlan, getSessionDayLabel, getWorkoutCounter } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useBoardStore } from '@/store/board-store';
@@ -66,13 +67,14 @@ export default function ClienteHomeScreen() {
   return (
     <AppScreen>
       <AppHeader
+        eyebrow={formatFullDateEyebrow(new Date())}
         title={`Ciao${client ? `, ${client.firstName}` : ''}`}
         action={
           <AppButton
             label="Coach"
             variant="outline"
             size="sm"
-            icon={<Text style={{ fontSize: 13 }}>💬</Text>}
+            icon={<MessageCircle size={14} color={colors.moss} />}
             onPress={() => router.push('/chat')}
           />
         }
@@ -80,27 +82,29 @@ export default function ClienteHomeScreen() {
 
       {!client ? (
         <AppCard>
-          <AppEmptyState icon={<Text style={{ fontSize: 18 }}>👤</Text>} title="Nessun profilo cliente collegato a questo account." />
+          <AppEmptyState icon={<User size={20} color={colors.moss} strokeWidth={2} />} title="Nessun profilo cliente collegato a questo account." />
         </AppCard>
       ) : (
         <>
-          <AppStatCard size="lg" value={`${completedCount}/${purchasedTotal}`} label="workout completati" accentColor={colors.moss} />
+          <View style={styles.ringWrap}>
+            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" />
+          </View>
 
           <AppCard style={styles.listCard}>
             <AppListRow
-              icon={<Text style={{ fontSize: 17 }}>🏋️</Text>}
+              icon={<Dumbbell size={19} color={colors.coral} />}
               iconBackground={colors.coralSoft}
-              title="Allenamenti"
+              title={nextPlan ? nextPlan.name : 'Allenamenti'}
               subtitle={
                 nextPlan
-                  ? `${nextPlan.name} · Giorno ${getSessionDayLabel(nextPlan)} · ${nextPlan.exercises.length} esercizi`
+                  ? `${nextPlan.exercises.length} esercizi · Giorno ${getSessionDayLabel(nextPlan)}`
                   : 'Nessun allenamento assegnato'
               }
               onPress={() => (nextPlan ? router.push(`/schede/${nextPlan.id}`) : router.push('/workout'))}
             />
             <Divider />
             <AppListRow
-              icon={<Text style={{ fontSize: 17 }}>🍎</Text>}
+              icon={<Apple size={19} color={colors.moss} />}
               iconBackground={colors.mossSoft}
               title="Nutrizione"
               subtitle={nutritionPlan ? nutritionPlan.title : 'Nessun piano nutrizionale assegnato'}
@@ -108,7 +112,7 @@ export default function ClienteHomeScreen() {
             />
             <Divider />
             <AppListRow
-              icon={<Text style={{ fontSize: 17 }}>📋</Text>}
+              icon={<ClipboardList size={19} color={colors.ink} />}
               iconBackground={colors.surfaceSubtle}
               title="Check-in settimanale"
               subtitle={lastCheckin ? `Ultimo: ${formatDayMonth(lastCheckin.date)}` : 'Da compilare'}
@@ -117,7 +121,7 @@ export default function ClienteHomeScreen() {
             />
             <Divider />
             <AppListRow
-              icon={<Text style={{ fontSize: 17 }}>📅</Text>}
+              icon={<Calendar size={19} color={colors.ink} />}
               iconBackground={colors.surfaceSubtle}
               title="Le tue prenotazioni"
               subtitle={
@@ -130,7 +134,7 @@ export default function ClienteHomeScreen() {
             />
             <Divider />
             <AppListRow
-              icon={<Text style={{ fontSize: 17 }}>📣</Text>}
+              icon={<Megaphone size={19} color={colors.ink} />}
               iconBackground={colors.surfaceSubtle}
               title="Bacheca"
               subtitle={relevantPosts.length === 0 ? 'Nessun annuncio recente' : `${relevantPosts.length} ${relevantPosts.length === 1 ? 'annuncio' : 'annunci'}`}
@@ -167,6 +171,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  ringWrap: {
+    alignItems: 'center',
+    paddingVertical: AppSpacing[2],
   },
   listCard: {
     paddingVertical: AppSpacing[1],

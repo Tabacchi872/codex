@@ -15,17 +15,40 @@ export type MuscleGroup =
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 export type VideoStatus = 'available' | 'missing';
 
+// Origine di un Exercise (2026-07-12): 'local'/assente = uno dei 44 esercizi
+// storici in data/exercise-library.ts (invariati). 'custom' = creato da un
+// coach su Supabase (public.exercises). 'ymove' = importato dal catalogo
+// YMove (public.exercises, condiviso tra coach, video sempre richiesto live
+// — mai salvato — tramite l'Edge Function ymove-exercises). Vedi
+// hooks/use-exercise-resolver.ts per come i tre casi vengono unificati nella
+// UI esistente senza duplicare i componenti.
+export type ExerciseSource = 'local' | 'custom' | 'ymove';
+
 // Esercizio base: descrive il movimento, non come va eseguito da un cliente specifico.
 export type Exercise = {
   id: string;
   name: string;
-  muscleGroup: MuscleGroup;
+  // Larga a stringa libera (oltre ai valori noti) perche' muscolo/difficolta'
+  // di un esercizio YMove non sono garantiti combaciare con i valori usati
+  // dai 44 esercizi storici.
+  muscleGroup: MuscleGroup | (string & {});
   description: string;
   technicalNotes: string;
-  difficulty: Difficulty;
+  difficulty: Difficulty | (string & {});
   equipment: string;
   videoFile: string;
   videoStatus: VideoStatus;
+  // Video guida remoto (fase 1, 2026-07-11): URL pubblico, mai un file nel
+  // repo. Opzionale e prioritario su videoFile (locale, sistema precedente
+  // mai popolato — vedi video-registry.ts): se presente, ExerciseVideoPlayer
+  // lo riproduce direttamente via URI, nessun require() statico necessario.
+  // Fase 2 (upload coach) non ancora implementata: questo campo oggi va
+  // valorizzato solo a mano nei dati seed (vedi data/exercise-library.ts).
+  // Ignorato per source==='ymove' (il video e' sempre live, mai salvato qui).
+  videoUrl?: string;
+  source?: ExerciseSource;
+  ymoveExerciseId?: string;
+  ymoveSlug?: string;
 };
 
 // Tecnica speciale di esecuzione. 'normal' (o campo assente) = esercizio singolo.

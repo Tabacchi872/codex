@@ -1,18 +1,15 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, View } from 'react-native';
 
-import { ScreenBackground } from '@/components/screen-background';
+import { AppScreen } from '@/components/ui';
 import { SubscriptionForm } from '@/components/subscription-form';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useSubscriptionStore } from '@/store/subscription-store';
+import { useAppTheme } from '@/theme';
 import type { SubscriptionPackage } from '@/types/subscription';
 
 export default function AggiornaAbbonamentoScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const { subscriptionId } = useLocalSearchParams<{ subscriptionId: string }>();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const updateSubscription = useSubscriptionStore((s) => s.updateSubscription);
@@ -21,11 +18,11 @@ export default function AggiornaAbbonamentoScreen() {
 
   if (!subscription) {
     return (
-      <ScreenBackground>
-        <ThemedView style={styles.notFound}>
-          <ThemedText type="default">Abbonamento non trovato.</ThemedText>
-        </ThemedView>
-      </ScreenBackground>
+      <AppScreen scroll={false}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.ink }}>Abbonamento non trovato.</Text>
+        </View>
+      </AppScreen>
     );
   }
 
@@ -35,35 +32,9 @@ export default function AggiornaAbbonamentoScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <AppScreen>
       <Stack.Screen options={{ title: 'Aggiorna abbonamento' }} />
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
-            paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
-          },
-        ]}>
-        <SubscriptionForm
-          initialSubscription={subscription}
-          clientId={subscription.clientId}
-          onSave={handleSave}
-          saveLabel="Salva abbonamento"
-        />
-      </ScrollView>
-    </ScreenBackground>
+      <SubscriptionForm initialSubscription={subscription} clientId={subscription.clientId} onSave={handleSave} saveLabel="Salva abbonamento" />
+    </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
-  notFound: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

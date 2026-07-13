@@ -3,13 +3,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppCard, AppStatCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
+import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
 export default function SuperadminDashboard() {
   const { colors } = useAppTheme();
-  const coaches = useSuperadminStore((s) => s.coaches);
+  const { coaches } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
 
   const totalCoaches = coaches.length;

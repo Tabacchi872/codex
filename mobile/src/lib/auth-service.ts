@@ -1,4 +1,4 @@
-import type { Session } from '@supabase/supabase-js';
+import { FunctionsHttpError, type Session } from '@supabase/supabase-js';
 
 import { generateCoachCode, normalizeCoachCode } from './coach-code';
 import { getWebRedirectUrl } from './redirect-url';
@@ -22,6 +22,8 @@ export type AuthServiceErrorCode =
   | 'email_not_confirmed'
   | 'invalid_coach_code'
   | 'coach_not_accepting_clients'
+  | 'subscription_required'
+  | 'client_limit_reached'
   | 'no_client_profile'
   | 'no_coach_link'
   | 'db_error';
@@ -66,6 +68,11 @@ export type SignInData = {
   session: Session;
   role: 'superadmin' | 'coach' | 'cliente';
   fullName: string | null;
+  // Impostato dalla Edge Function send-temporary-credentials dopo un invio
+  // credenziali provvisorie. Se true, login-screen.tsx deve bloccare
+  // l'accesso normale e AuthGate deve mostrare SupabaseChangePasswordScreen
+  // prima di lasciar entrare l'utente.
+  mustChangePassword: boolean;
 };
 
 export type ClientProfileData = {
@@ -335,6 +342,36 @@ export async function signUpClientWithCoachCode(
     };
   }
 
+  // Pre-check PRIMA di signUp: la RPC can_coach_accept_client (docs/
+  // SUPABASE_SCHEMA.sql, sezione "Limite clienti coach") legge l'abbonamento
+  // coach attivo (subscription_packages/user_subscriptions) e il conteggio
+  // reale di coach_clients, rifiutando qui se manca un abbonamento attivo o
+  // se il limite max_clients e' gia' raggiunto — cosi' non si crea un account
+  // Supabase Auth destinato a restare non collegato al coach. Il controllo
+  // atomico e definitivo (contro race condition) resta comunque lato server
+  // in _link_client_to_coach, chiamato dopo signUp (vedi completeClientOnboarding
+  // sotto): questo e' solo un rifiuto anticipato per una UX onesta.
+  const capacityCheck = await supabase
+    .rpc('can_coach_accept_client', { p_coach_id: codeRow.coach_id })
+    .maybeSingle<{ allowed: boolean; reason: string | null }>();
+  if (capacityCheck.error) {
+    return { ok: false, code: 'db_error', message: `Errore verifica disponibilita' coach: ${capacityCheck.error.message}` };
+  }
+  if (capacityCheck.data && !capacityCheck.data.allowed) {
+    if (capacityCheck.data.reason === 'subscription_required') {
+      return {
+        ok: false,
+        code: 'subscription_required',
+        message: 'Abbonamento necessario: il coach deve avere un pacchetto attivo prima di poter accettare nuovi clienti.',
+      };
+    }
+    return {
+      ok: false,
+      code: 'client_limit_reached',
+      message: 'Il coach ha raggiunto il limite massimo di clienti previsto dal proprio pacchetto.',
+    };
+  }
+
   const email = input.email.trim().toLowerCase();
   // coach_id/coach_code in user_metadata: se "Confirm email" e' attivo, gli
   // insert sotto non possono avvenire subito (nessuna sessione => RLS blocca
@@ -360,99 +397,69 @@ export async function signUpClientWithCoachCode(
     return { ok: true, data: { userId, coachId: codeRow.coach_id, session: null } };
   }
 
-  const onboarding = await completeClientOnboarding(userId, codeRow.coach_id, normalizedCode);
+  const onboarding = await completeClientOnboarding(normalizedCode);
   if (!onboarding.ok) return onboarding;
 
   return { ok: true, data: { userId, coachId: codeRow.coach_id, session: signUpData.session } };
 }
 
-// Crea (se mancano) client_profiles/coach_clients per un cliente gia'
-// autenticato, incrementando used_count solo la prima volta che il
-// collegamento coach_clients viene effettivamente creato (idempotente: non
-// duplica righe ne' incrementa due volte se eseguita piu' volte). Usata sia
-// da signUpClientWithCoachCode quando la sessione esiste subito, sia da
-// ensureClientOnboarding al primo login reale (Confirm email attivo).
-async function completeClientOnboarding(
-  userId: string,
-  coachId: string,
-  linkedByCode: string,
-): Promise<AuthServiceResult<null>> {
+// Collega il cliente gia' autenticato al proprio coach tramite la RPC atomica
+// register_client_with_code (docs/SUPABASE_SCHEMA.sql, sezione "Limite
+// clienti coach"): verifica codice + abbonamento coach attivo + limite
+// max_clients TUTTO lato server, con lock per-coach contro race condition —
+// non piu' insert separati lato app (che non potevano garantire atomicita').
+// Idempotente: se il trigger handle_new_user() ha gia' collegato il cliente
+// (caso normale quando la sessione esiste subito), la RPC e' un no-op.
+// Usata sia da signUpClientWithCoachCode quando la sessione esiste subito,
+// sia da ensureClientOnboarding al primo login reale (Confirm email attivo).
+async function completeClientOnboarding(linkedByCode: string): Promise<AuthServiceResult<null>> {
   if (!supabase) return notConfigured();
-
-  const { data: existingClientProfile, error: clientProfileReadError } = await supabase
-    .from('client_profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (clientProfileReadError) {
-    return { ok: false, code: 'db_error', message: `Errore verifica dati cliente: ${clientProfileReadError.message}` };
-  }
-  if (!existingClientProfile) {
-    const { error: clientProfileError } = await supabase.from('client_profiles').insert({ user_id: userId });
-    if (clientProfileError) {
-      return { ok: false, code: 'db_error', message: `Errore creazione dati cliente: ${clientProfileError.message}` };
-    }
+  if (!linkedByCode) {
+    return { ok: false, code: 'no_coach_link', message: 'Codice coach mancante: impossibile completare il collegamento.' };
   }
 
-  const { data: existingCoachClient, error: coachClientReadError } = await supabase
-    .from('coach_clients')
-    .select('id')
-    .eq('client_id', userId)
-    .maybeSingle();
-  if (coachClientReadError) {
-    return { ok: false, code: 'db_error', message: `Errore verifica collegamento coach: ${coachClientReadError.message}` };
-  }
-  if (existingCoachClient) {
-    return { ok: true, data: null };
-  }
-
-  const { error: coachClientError } = await supabase.from('coach_clients').insert({
-    coach_id: coachId,
-    client_id: userId,
-    status: 'active',
-    linked_by_code: linkedByCode || null,
-  });
-  if (coachClientError) {
-    return { ok: false, code: 'db_error', message: `Errore collegamento al coach: ${coachClientError.message}` };
-  }
-
-  // Update diretto invece della RPC increment_registration_code_usage: piu'
-  // semplice da far funzionare su un progetto Supabase reale senza dipendere
-  // da una funzione SQL aggiuntiva gia' eseguita/con permessi corretti. Richiede
-  // la policy registration_codes_increment_usage (docs/SUPABASE_SCHEMA.sql).
-  // Best-effort: se il codice non si trova piu' (es. disattivato nel
-  // frattempo) non blocchiamo l'onboarding gia' completato sopra.
-  if (linkedByCode) {
-    const { data: codeRow } = await supabase
-      .from('registration_codes')
-      .select('id,used_count')
-      .eq('code', linkedByCode)
-      .maybeSingle();
-    if (codeRow) {
-      await supabase.from('registration_codes').update({ used_count: codeRow.used_count + 1 }).eq('id', codeRow.id);
-    }
+  const { error } = await supabase.rpc('register_client_with_code', { p_code: linkedByCode });
+  if (error) {
+    return { ok: false, code: mapRegisterClientError(error.message), message: humanizeRegisterClientError(error.message) };
   }
 
   return { ok: true, data: null };
+}
+
+function mapRegisterClientError(message: string): AuthServiceErrorCode {
+  const normalized = message.toUpperCase();
+  if (normalized.includes('SUBSCRIPTION_REQUIRED')) return 'subscription_required';
+  if (normalized.includes('CLIENT_LIMIT_REACHED')) return 'client_limit_reached';
+  if (normalized.includes('INVALID_CODE')) return 'invalid_coach_code';
+  return 'db_error';
+}
+
+function humanizeRegisterClientError(message: string): string {
+  if (message.includes('SUBSCRIPTION_REQUIRED')) {
+    return 'Abbonamento necessario: il coach deve avere un pacchetto attivo prima di poter accettare nuovi clienti.';
+  }
+  if (message.includes('CLIENT_LIMIT_REACHED')) {
+    return 'Il coach ha raggiunto il limite massimo di clienti previsto dal proprio pacchetto.';
+  }
+  if (message.includes('INVALID_CODE')) {
+    return 'Codice coach non valido, scaduto o esaurito.';
+  }
+  return `Errore collegamento al coach: ${message}`;
 }
 
 // Fallback chiamato dopo login (login-screen.tsx) se il cliente si era
 // registrato con "Confirm email" attivo: coach_id/coach_code vengono riletti
 // da user_metadata (salvati li' da signUpClientWithCoachCode), non richiesti
 // di nuovo all'utente (che a questo punto non li ha piu' sottomano).
-export async function ensureClientOnboarding(
-  userId: string,
-  metadata: Record<string, unknown>,
-): Promise<AuthServiceResult<null>> {
+export async function ensureClientOnboarding(metadata: Record<string, unknown>): Promise<AuthServiceResult<null>> {
   if (!isReady() || !supabase) return notConfigured();
 
-  const coachId = metadata.coach_id as string | undefined;
-  if (!coachId) {
-    return { ok: false, code: 'no_coach_link', message: 'Nessun coach collegato trovato per questo account.' };
-  }
   const linkedByCode = (metadata.coach_code as string | undefined) ?? '';
+  if (!linkedByCode) {
+    return { ok: false, code: 'no_coach_link', message: 'Nessun codice coach trovato per completare la registrazione.' };
+  }
 
-  return completeClientOnboarding(userId, coachId, linkedByCode);
+  return completeClientOnboarding(linkedByCode);
 }
 
 // Ricostruisce il "profilo cliente" (Client locale + collegamento coach) da
@@ -550,16 +557,38 @@ export async function signInWithEmail(email: string, password: string): Promise<
   }
 
   const userId = data.session.user.id;
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', userId)
-    .maybeSingle();
+  let profile: { role: 'superadmin' | 'coach' | 'cliente'; full_name: string | null; must_change_password?: boolean } | null = null;
+  let profileError: { message: string } | null = null;
+
+  const fullSelect = await supabase.from('profiles').select('role, full_name, must_change_password').eq('id', userId).maybeSingle();
+  if (fullSelect.error && isMissingMustChangePasswordColumn(fullSelect.error.message)) {
+    // La colonna must_change_password (docs/SUPABASE_SCHEMA.sql) non esiste
+    // ancora sul progetto reale — SQL non eseguito, o PostgREST non ha
+    // ricaricato lo schema dopo averla aggiunta. Il login non deve restare
+    // bloccato per TUTTI gli utenti finche' non viene sistemato: si riprova
+    // senza quella colonna, trattando must_change_password come false (nessun
+    // blocco cambio password forzato) finche' la colonna non e' disponibile.
+    const basicSelect = await supabase.from('profiles').select('role, full_name').eq('id', userId).maybeSingle();
+    profile = basicSelect.data ? { ...basicSelect.data, must_change_password: false } : null;
+    profileError = basicSelect.error;
+  } else {
+    profile = fullSelect.data;
+    profileError = fullSelect.error;
+  }
+
   if (profileError) {
     return { ok: false, code: 'db_error', message: `Accesso riuscito ma errore lettura profilo: ${profileError.message}` };
   }
   if (profile) {
-    return { ok: true, data: { session: data.session, role: profile.role, fullName: profile.full_name } };
+    return {
+      ok: true,
+      data: {
+        session: data.session,
+        role: profile.role,
+        fullName: profile.full_name,
+        mustChangePassword: profile.must_change_password ?? false,
+      },
+    };
   }
 
   // Riga profiles mancante: il trigger public.handle_new_user (docs/
@@ -571,7 +600,12 @@ export async function signInWithEmail(email: string, password: string): Promise<
   const created = await ensureProfileRow(userId, data.session.user.email ?? email, data.session.user.user_metadata ?? {});
   if (!created.ok) return created;
 
-  return { ok: true, data: { session: data.session, role: created.data.role, fullName: created.data.fullName } };
+  // Riga appena creata qui: must_change_password e' sempre false di default
+  // (colonna con default false), non serve rileggerla.
+  return {
+    ok: true,
+    data: { session: data.session, role: created.data.role, fullName: created.data.fullName, mustChangePassword: false },
+  };
 }
 
 type EnsuredProfile = { role: 'superadmin' | 'coach' | 'cliente'; fullName: string | null };
@@ -678,6 +712,113 @@ export async function updatePassword(newPassword: string): Promise<AuthServiceRe
     return { ok: false, code: 'auth_error', message: error.message };
   }
   return { ok: true, data: null };
+}
+
+// Genera e invia credenziali provvisorie (password random + email) per un
+// utente Supabase gia' esistente, chiamando la Edge Function
+// send-temporary-credentials (supabase/functions/send-temporary-credentials).
+// La password NON viene mai generata qui ne' restituita da questa funzione:
+// il client mobile non la vede mai, coerente con la regola di sicurezza della
+// feature (vedi docs/SUPABASE_TEMP_CREDENTIALS.md). supabase.functions.invoke
+// allega automaticamente l'Authorization: Bearer della sessione corrente
+// (fetchWithAuth in @supabase/supabase-js), quindi la Edge Function sa sempre
+// chi sta chiamando senza bisogno di passare token espliciti qui.
+export async function sendTemporaryCredentials(
+  userId: string,
+  email: string,
+  role: 'coach' | 'cliente',
+): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { data, error } = await supabase.functions.invoke<{ ok: boolean }>('send-temporary-credentials', {
+    body: { userId, email, role },
+  });
+
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = (await error.context.json()) as { code?: string; message?: string };
+        return {
+          ok: false,
+          code: 'db_error',
+          message: body.message ?? 'Invio credenziali non riuscito.',
+        };
+      } catch {
+        return { ok: false, code: 'db_error', message: 'Invio credenziali non riuscito: risposta del server non leggibile.' };
+      }
+    }
+    return { ok: false, code: 'db_error', message: `Invio credenziali non riuscito: ${error.message}` };
+  }
+  if (!data?.ok) {
+    return { ok: false, code: 'db_error', message: 'Invio credenziali non riuscito.' };
+  }
+
+  return { ok: true, data: null };
+}
+
+// Completa il cambio password obbligatorio per un utente Supabase reale
+// (must_change_password=true): imposta la nuova password scelta dall'utente
+// (updatePassword, gia' esistente) e poi azzera il flag su profiles. Se il
+// secondo passo fallisce, la password e' comunque cambiata (l'utente puo'
+// continuare ad usarla): il flag rimasto a true fara' solo ripresentare
+// questa schermata al prossimo giro, senza bloccare l'accesso in modo
+// permanente ne' richiedere di nuovo la password provvisoria.
+export async function completePasswordChange(newPassword: string): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const updateResult = await updatePassword(newPassword);
+  if (!updateResult.ok) return updateResult;
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    return { ok: false, code: 'auth_error', message: 'Password aggiornata ma utente non trovato per completare il cambio.' };
+  }
+
+  const { error: flagError } = await supabase
+    .from('profiles')
+    .update({ must_change_password: false })
+    .eq('id', userData.user.id);
+  if (flagError) {
+    return { ok: false, code: 'db_error', message: `Password aggiornata ma stato account non aggiornato: ${flagError.message}` };
+  }
+
+  return { ok: true, data: null };
+}
+
+// Legge il codice coach REALE da public.registration_codes (mai dal mirror
+// locale useSuperadminStore.coaches, che puo' restare disallineato: il
+// codice viene generato/aggiornato in vari punti — trigger DB al signUp,
+// completeCoachOnboarding al primo login — e se anche uno solo di questi
+// passaggi lato mirror locale non va a buon fine o non viene eseguito, il
+// codice mostrato in app puo' non corrispondere piu' a quello davvero
+// registrato su Supabase, l'unico che un cliente puo' usare per registrarsi.
+// Vedi BUG-013 in docs/BUGS.md. coachId deve essere l'id reale della sessione
+// Supabase (getCurrentSession().data.user.id), MAI useAuthStore().currentCoachId
+// (id del mirror locale demo, non coincide con auth.uid() — stesso errore gia'
+// documentato per l'upload video, docs/DECISIONS.md).
+export async function getCoachActiveRegistrationCode(
+  coachId: string,
+): Promise<AuthServiceResult<{ code: string; active: boolean } | null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { data, error } = await supabase
+    .from('registration_codes')
+    .select('code,status,created_at')
+    .eq('coach_id', coachId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore lettura codice coach: ${error.message}` };
+  }
+  if (!data || data.length === 0) {
+    return { ok: true, data: null };
+  }
+  const preferred = data.find((row) => row.status === 'active') ?? data[0];
+  return { ok: true, data: { code: preferred.code, active: preferred.status === 'active' } };
+}
+
+function isMissingMustChangePasswordColumn(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized.includes('must_change_password') && normalized.includes('does not exist');
 }
 
 function isBlockedBillingStatus(status: string) {

@@ -1,22 +1,20 @@
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LogOut } from 'lucide-react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppCard, AppHeader, AppScreen, AppSectionTitle } from '@/components/ui';
 import { DeveloperInfoSection } from '@/components/developer-info-section';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
 import { ThemeSettings } from '@/components/theme-settings';
-import { Spacing } from '@/constants/theme';
-import { CLIENT_STATUS_LABEL } from '@/types/client';
-import { getClientById } from '@/lib/client-helpers';
 import { signOut } from '@/lib/auth-service';
+import { getClientById } from '@/lib/client-helpers';
 import { getCompletedWorkoutsCount, getNextWorkoutPlan, getPurchasedWorkoutsTotal } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
+import { CLIENT_STATUS_LABEL } from '@/types/client';
 
 export default function ClienteProfiloScreen() {
-  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const logout = useAuthStore((s) => s.logout);
 
@@ -33,104 +31,75 @@ export default function ClienteProfiloScreen() {
 
   if (!client) {
     return (
-      <ScreenBackground>
+      <AppScreen scroll={false}>
         <View style={styles.loading}>
-          <ThemedText type="default" themeColor="textSecondary">
-            Nessun profilo collegato a questo account.
-          </ThemedText>
+          <Text style={{ color: colors.inkSoft }}>Nessun profilo collegato a questo account.</Text>
         </View>
-      </ScreenBackground>
+      </AppScreen>
     );
   }
 
   return (
-    <ScreenBackground>
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three, paddingBottom: Spacing.six },
-      ]}>
-      <View style={styles.titleBlock}>
-        <ThemedText type="title" style={styles.title}>
-          Profilo
-        </ThemedText>
-      </View>
+    <AppScreen>
+      <AppHeader title="Profilo" />
 
-      <Card style={styles.section}>
-        <ThemedText type="smallBold">
+      <AppCard style={styles.section}>
+        <Text style={[styles.name, { color: colors.ink }]}>
           {client.firstName} {client.lastName}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {client.email}
-        </ThemedText>
-        {client.phone && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {client.phone}
-          </ThemedText>
-        )}
-        <ThemedText type="small" themeColor="textSecondary">
-          Obiettivo: {client.goal || 'non specificato'}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Stato: {CLIENT_STATUS_LABEL[client.status]}
-        </ThemedText>
-      </Card>
+        </Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{client.email}</Text>
+        {client.phone ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>{client.phone}</Text> : null}
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Obiettivo: {client.goal || 'non specificato'}</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Stato: {CLIENT_STATUS_LABEL[client.status]}</Text>
+      </AppCard>
 
-      <ThemedText type="smallBold" style={styles.sectionLabel}>
-        IL TUO PIANO
-      </ThemedText>
-      <Card style={styles.section}>
-        <ThemedText type="small" themeColor="textSecondary">
-          Piano attivo: <ThemedText type="small">{nextPlan ? nextPlan.name : 'Nessuno in programma'}</ThemedText>
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Allenamenti acquistati: <ThemedText type="small">{purchasedTotal}</ThemedText>
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Allenamenti completati: <ThemedText type="small">{completedCount}</ThemedText>
-        </ThemedText>
-      </Card>
+      <AppSectionTitle>IL TUO PIANO</AppSectionTitle>
+      <AppCard style={styles.section}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Piano attivo: <Text style={{ color: colors.ink, fontWeight: '600' }}>{nextPlan ? nextPlan.name : 'Nessuno in programma'}</Text>
+        </Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Allenamenti acquistati: <Text style={{ color: colors.ink, fontWeight: '600' }}>{purchasedTotal}</Text>
+        </Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Allenamenti completati: <Text style={{ color: colors.ink, fontWeight: '600' }}>{completedCount}</Text>
+        </Text>
+      </AppCard>
 
-      <ThemedText type="smallBold" style={styles.sectionLabel}>
-        TEMA
-      </ThemedText>
+      <AppSectionTitle>TEMA</AppSectionTitle>
       <ThemeSettings />
 
       <DeveloperInfoSection />
 
-      <Pressable onPress={handleLogout}>
-        <ThemedText type="small" themeColor="statusExpired" style={styles.logout}>
-          Esci
-        </ThemedText>
+      <Pressable onPress={handleLogout} style={styles.logout} hitSlop={6}>
+        <LogOut size={15} color={colors.rust} />
+        <Text style={[styles.logoutText, { color: colors.rust }]}>Esci</Text>
       </Pressable>
-    </ScrollView>
-    </ScreenBackground>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
-  titleBlock: {
+  section: {
     gap: 4,
   },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
+  name: {
+    fontSize: AppFontSize.base,
     fontWeight: '700',
   },
-  section: {
-    gap: 2,
-  },
-  sectionLabel: {
-    marginTop: Spacing.two,
-    letterSpacing: 0.4,
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   logout: {
-    textAlign: 'center',
-    marginTop: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: AppSpacing[2],
+  },
+  logoutText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   loading: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -23,7 +24,7 @@ export function AppHeader({ title, eyebrow, action, onBack }: AppHeaderProps) {
     <View style={styles.row}>
       <View style={styles.left}>
         {onBack ? (
-          <AppIconButton icon={<Text style={{ color: colors.ink, fontSize: 18 }}>‹</Text>} onPress={onBack} accessibilityLabel="Indietro" />
+          <AppIconButton icon={<ChevronLeft size={20} color={colors.ink} strokeWidth={2.4} />} onPress={onBack} accessibilityLabel="Indietro" />
         ) : null}
         <View style={styles.titleBlock}>
           {eyebrow ? <Text style={[AppTextStyle.eyebrow, { color: colors.moss }]}>{eyebrow}</Text> : null}

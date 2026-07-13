@@ -8,6 +8,7 @@ export { AppErrorState } from './app-error-state';
 export { AppHeader } from './app-header';
 export { AppIconButton } from './app-icon-button';
 export { AppListRow } from './app-list-row';
+export { AppRingProgress } from './app-ring-progress';
 export { AppScreen } from './app-screen';
 export { AppSectionTitle } from './app-section-title';
 export { AppStatCard } from './app-stat-card';

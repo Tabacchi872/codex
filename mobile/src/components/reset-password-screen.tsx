@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,44 +23,74 @@ type Status = 'checking' | 'ready' | 'invalid' | 'success';
 export function ResetPasswordScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ token_hash?: string; type?: string }>();
   const [status, setStatus] = useState<Status>('checking');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Il link email di Supabase puo' arrivare in due formati diversi, a
+  // seconda di come e' scritto il template "Reset password" sul progetto:
+  // (1) {{ .ConfirmationURL }} -> passa da /auth/v1/verify, che reindirizza
+  // qui con #access_token=...&type=recovery nel FRAMMENTO — gestito in modo
+  // automatico da detectSessionInUrl (lib/supabase.ts) prima ancora che
+  // questo componente monti, quindi basta aspettare che la sessione compaia
+  // (sotto). (2) {{ .TokenHash }} (pattern piu' recente consigliato da
+  // Supabase per redirect diretti nell'app, senza passare dal dominio
+  // Supabase) -> arriva qui con ?token_hash=...&type=recovery nella QUERY
+  // STRING — questo formato NON viene MAI gestito automaticamente dal
+  // client: senza una chiamata esplicita a verifyOtp nessuna sessione si
+  // stabilisce mai, e prima di questo fix l'utente restava bloccato senza
+  // capire perche'. Vedi docs/EMAIL_SETUP.md.
+  const tokenHash = typeof params.token_hash === 'string' ? params.token_hash : undefined;
+  const recoveryType = typeof params.type === 'string' ? params.type : undefined;
+
   useEffect(() => {
     if (!supabaseConfig.isConfigured || !supabase) {
       setStatus('invalid');
       return;
     }
+    const client = supabase;
 
     let active = true;
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
       if (!active) return;
       if (event === 'PASSWORD_RECOVERY' && session) {
         setStatus('ready');
       }
     });
 
-    getCurrentSession().then((result) => {
+    async function establishSession() {
+      if (tokenHash && recoveryType === 'recovery') {
+        const { error: verifyError } = await client.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+        if (!active) return;
+        if (!verifyError) {
+          setStatus('ready');
+          return;
+        }
+      }
+
+      const result = await getCurrentSession();
       if (!active) return;
       if (result.ok && result.data) {
         setStatus('ready');
         return;
       }
       // Da' il tempo a detectSessionInUrl di elaborare il frammento dell'URL
-      // prima di dichiarare il link non valido.
+      // (formato 1 sopra) prima di dichiarare il link non valido.
       setTimeout(() => {
         if (active) setStatus((current) => (current === 'checking' ? 'invalid' : current));
       }, 1500);
-    });
+    }
+
+    establishSession();
 
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [tokenHash, recoveryType]);
 
   async function handleSubmit() {
     if (newPassword.length < 6) {

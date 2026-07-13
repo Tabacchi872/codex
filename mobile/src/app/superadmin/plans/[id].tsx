@@ -1,15 +1,12 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppButton, AppCard, AppTextField } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import type { CoachFeatureKey } from '@/lib/coach-gating';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 const KNOWN_FEATURES: CoachFeatureKey[] = [
   'clients',
@@ -23,7 +20,7 @@ const KNOWN_FEATURES: CoachFeatureKey[] = [
 export default function SuperadminPlanDetail() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const planId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const plans = useSuperadminStore((s) => s.plans);
   const updatePlan = useSuperadminStore((s) => s.updatePlan);
   const plan = plans.find((item) => item.code === planId);
@@ -50,16 +47,10 @@ export default function SuperadminPlanDetail() {
   if (!plan) {
     return (
       <SuperadminShell title="Piano non trovato">
-        <Card style={styles.card}>
-          <ThemedText type="small" themeColor="textSecondary">
-            Il piano richiesto non e' disponibile.
-          </ThemedText>
-          <Pressable onPress={() => router.replace('/superadmin/plans' as Href)} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
-              Torna ai piani
-            </ThemedText>
-          </Pressable>
-        </Card>
+        <AppCard style={styles.card}>
+          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Il piano richiesto non e' disponibile.</Text>
+          <AppButton label="Torna ai piani" onPress={() => router.replace('/superadmin/plans' as Href)} fullWidth />
+        </AppCard>
       </SuperadminShell>
     );
   }
@@ -97,27 +88,21 @@ export default function SuperadminPlanDetail() {
 
   return (
     <SuperadminShell title={plan.name} description="Modifica manuale del piano.">
-      <Card style={styles.card}>
-        <Field label="Nome piano">
-          <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Pro" />
-        </Field>
-        <Field label="Codice">
-          <ThemedTextInput value={code} onChangeText={setCode} placeholder="pro" autoCapitalize="none" />
-        </Field>
+      <AppCard style={styles.card}>
+        <AppTextField label="Nome piano" value={name} onChangeText={setName} placeholder="Es. Pro" />
+        <AppTextField label="Codice" value={code} onChangeText={setCode} placeholder="pro" autoCapitalize="none" />
         <View style={styles.row}>
-          <Field label="Prezzo mensile" style={styles.half}>
-            <ThemedTextInput value={monthlyPrice} onChangeText={setMonthlyPrice} placeholder="49" keyboardType="decimal-pad" />
-          </Field>
-          <Field label="Prezzo annuale" style={styles.half}>
-            <ThemedTextInput value={annualPrice} onChangeText={setAnnualPrice} placeholder="490" keyboardType="decimal-pad" />
-          </Field>
+          <View style={styles.half}>
+            <AppTextField label="Prezzo mensile" value={monthlyPrice} onChangeText={setMonthlyPrice} placeholder="49" keyboardType="decimal-pad" />
+          </View>
+          <View style={styles.half}>
+            <AppTextField label="Prezzo annuale" value={annualPrice} onChangeText={setAnnualPrice} placeholder="490" keyboardType="decimal-pad" />
+          </View>
         </View>
-        <Field label="Limite clienti">
-          <ThemedTextInput value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = illimitato" keyboardType="number-pad" />
-        </Field>
+        <AppTextField label="Limite clienti" value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = illimitato" keyboardType="number-pad" />
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Funzionalita'</ThemedText>
+          <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>Funzionalita&apos;</Text>
           <View style={styles.options}>
             {KNOWN_FEATURES.map((feature) => {
               const selected = features.includes(feature);
@@ -126,16 +111,8 @@ export default function SuperadminPlanDetail() {
                   key={feature}
                   onPress={() => toggleFeature(feature)}
                   hitSlop={4}
-                  style={[
-                    styles.option,
-                    {
-                      borderColor: selected ? theme.primary : theme.border,
-                      backgroundColor: selected ? theme.softRed : theme.backgroundElement,
-                    },
-                  ]}>
-                  <ThemedText type="smallBold" style={{ color: selected ? theme.primary : theme.textSecondary }}>
-                    {getFeatureLabel(feature)}
-                  </ThemedText>
+                  style={[styles.option, { borderColor: colors.moss, backgroundColor: selected ? colors.moss : 'transparent' }]}>
+                  <Text style={[styles.optionLabel, { color: selected ? colors.onMoss : colors.moss }]}>{getFeatureLabel(feature)}</Text>
                 </Pressable>
               );
             })}
@@ -145,20 +122,16 @@ export default function SuperadminPlanDetail() {
         <Pressable
           onPress={() => setActive((current) => !current)}
           hitSlop={6}
-          style={[styles.toggleButton, { borderColor: active ? theme.statusActive : theme.disabled }]}>
-          <ThemedText type="smallBold" style={{ color: active ? theme.statusActive : theme.disabled }}>
+          style={[styles.toggleButton, { borderColor: active ? colors.moss : colors.inkFaint }]}>
+          <Text style={[styles.toggleLabel, { color: active ? colors.moss : colors.inkFaint }]}>
             {active ? 'Piano attivo' : 'Piano non attivo'}
-          </ThemedText>
+          </Text>
         </Pressable>
 
-        {error ? <ThemedText type="small" style={{ color: theme.statusExpired }}>{error}</ThemedText> : null}
+        {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
 
-        <Pressable onPress={handleSave} hitSlop={6} style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
-            Salva piano
-          </ThemedText>
-        </Pressable>
-      </Card>
+        <AppButton label="Salva piano" onPress={handleSave} fullWidth />
+      </AppCard>
     </SuperadminShell>
   );
 }
@@ -175,26 +148,21 @@ function getFeatureLabel(feature: CoachFeatureKey) {
   return labels[feature];
 }
 
-function Field({ label, children, style }: { label: string; children: ReactNode; style?: object }) {
-  return (
-    <View style={[styles.field, style]}>
-      <ThemedText type="smallBold">{label}</ThemedText>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   field: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+  },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   half: {
     flexBasis: 140,
@@ -203,28 +171,33 @@ const styles = StyleSheet.create({
   options: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   option: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: AppRadius.md,
+    borderWidth: 1.5,
     minHeight: 40,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    justifyContent: 'center',
+  },
+  optionLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   toggleButton: {
     alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    borderRadius: AppRadius.lg,
+    borderWidth: 1.5,
     minHeight: 48,
-    paddingVertical: Spacing.three,
     width: '100%',
   },
-  saveButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    minHeight: 48,
-    paddingVertical: Spacing.three,
-    width: '100%',
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
 });

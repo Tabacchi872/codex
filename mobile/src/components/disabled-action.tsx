@@ -1,36 +1,33 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 // Azione non ancora collegata a nessuna logica: resa visivamente disabilitata
 // invece di essere un bottone silenziosamente rotto (CLAUDE.md, regola 3).
 export function DisabledAction({ label, note }: { label: string; note: string }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <ThemedView
-      style={[styles.container, { borderColor: theme.border }]}
-      accessibilityState={{ disabled: true }}>
-      <ThemedText type="smallBold" themeColor="disabled">
-        {label}
-      </ThemedText>
-      <ThemedText type="small" themeColor="disabled">
-        {note}
-      </ThemedText>
-    </ThemedView>
+    <View style={[styles.container, { borderColor: colors.border }]} accessibilityState={{ disabled: true }}>
+      <Text style={[styles.label, { color: colors.inkFaint }]}>{label}</Text>
+      <Text style={[styles.note, { color: colors.inkFaint }]}>{note}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingVertical: AppSpacing[2],
+    paddingHorizontal: AppSpacing[3],
     alignItems: 'center',
+  },
+  label: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  note: {
+    fontSize: AppFontSize.sm,
   },
 });

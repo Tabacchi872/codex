@@ -39,12 +39,20 @@ type AuthState = {
   currentClientId: string | null;
   currentCoachId: string | null;
   coachAccounts: CoachAuthAccount[];
+  // Flag letto da public.profiles.must_change_password (Supabase reale) dopo
+  // signInWithEmail, distinto da ClientAccount.mustChangePassword (demo
+  // locale in client-store.ts): quest'ultimo riguarda solo l'account cliente
+  // locale generato dal coach, questo riguarda un utente Supabase autenticato
+  // reale (coach o cliente) a cui e' stata inviata una password provvisoria
+  // via Edge Function send-temporary-credentials. Vedi auth-gate.tsx.
+  mustChangePasswordSupabase: boolean;
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   addCoachAccount: (account: CoachAuthAccount) => void;
-  loginAsCoach: (email?: string, coachId?: string) => void;
-  loginAsClient: (clientId: string, email?: string) => void;
+  loginAsCoach: (email?: string, coachId?: string, mustChangePassword?: boolean) => void;
+  loginAsClient: (clientId: string, email?: string, mustChangePassword?: boolean) => void;
   loginAsSuperadmin: (email?: string) => void;
+  setMustChangePasswordSupabase: (value: boolean) => void;
   logout: () => void;
 };
 
@@ -57,16 +65,47 @@ export const useAuthStore = create<AuthState>()(
       currentClientId: null,
       currentCoachId: null,
       coachAccounts: [],
+      mustChangePasswordSupabase: false,
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
       addCoachAccount: (account) => set((s) => ({ coachAccounts: [...s.coachAccounts, account] })),
-      loginAsCoach: (email, coachId) =>
-        set({ isAuthenticated: true, currentRole: 'coach', currentUserEmail: email ?? null, currentClientId: null, currentCoachId: coachId ?? null }),
-      loginAsClient: (clientId, email) =>
-        set({ isAuthenticated: true, currentRole: 'cliente', currentUserEmail: email ?? null, currentClientId: clientId, currentCoachId: null }),
+      loginAsCoach: (email, coachId, mustChangePassword) =>
+        set({
+          isAuthenticated: true,
+          currentRole: 'coach',
+          currentUserEmail: email ?? null,
+          currentClientId: null,
+          currentCoachId: coachId ?? null,
+          mustChangePasswordSupabase: mustChangePassword ?? false,
+        }),
+      loginAsClient: (clientId, email, mustChangePassword) =>
+        set({
+          isAuthenticated: true,
+          currentRole: 'cliente',
+          currentUserEmail: email ?? null,
+          currentClientId: clientId,
+          currentCoachId: null,
+          mustChangePasswordSupabase: mustChangePassword ?? false,
+        }),
       loginAsSuperadmin: (email) =>
-        set({ isAuthenticated: true, currentRole: 'superadmin', currentUserEmail: email ?? null, currentClientId: null, currentCoachId: null }),
-      logout: () => set({ isAuthenticated: false, currentRole: null, currentUserEmail: null, currentClientId: null, currentCoachId: null }),
+        set({
+          isAuthenticated: true,
+          currentRole: 'superadmin',
+          currentUserEmail: email ?? null,
+          currentClientId: null,
+          currentCoachId: null,
+          mustChangePasswordSupabase: false,
+        }),
+      setMustChangePasswordSupabase: (value) => set({ mustChangePasswordSupabase: value }),
+      logout: () =>
+        set({
+          isAuthenticated: false,
+          currentRole: null,
+          currentUserEmail: null,
+          currentClientId: null,
+          currentCoachId: null,
+          mustChangePasswordSupabase: false,
+        }),
     }),
     {
       name: 'coachdesk-auth-store',
