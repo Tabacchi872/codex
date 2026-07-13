@@ -18,6 +18,34 @@ type CacheEntry = { status: 'loading'; promise: Promise<string | null> } | { sta
 
 const cache = new Map<string, CacheEntry>();
 
+// Limite di concorrenza globale (2, richiesto esplicitamente) per le
+// richieste di dettaglio usate SOLO per ottenere thumbnailUrl: una lista di
+// risultati YMove con molte card non deve sparare N chiamate a getDetail in
+// parallelo, ne' consumare piu' del necessario del limite mensile YMove.
+const MAX_CONCURRENT_THUMBNAIL_FETCHES = 2;
+let activeThumbnailFetches = 0;
+const thumbnailFetchQueue: Array<() => void> = [];
+
+function acquireThumbnailFetchSlot(): Promise<void> {
+  return new Promise((resolve) => {
+    const tryAcquire = () => {
+      if (activeThumbnailFetches < MAX_CONCURRENT_THUMBNAIL_FETCHES) {
+        activeThumbnailFetches += 1;
+        resolve();
+      } else {
+        thumbnailFetchQueue.push(tryAcquire);
+      }
+    };
+    tryAcquire();
+  });
+}
+
+function releaseThumbnailFetchSlot(): void {
+  activeThumbnailFetches -= 1;
+  const next = thumbnailFetchQueue.shift();
+  if (next) next();
+}
+
 // Lettura sincrona: `undefined` = non ancora richiesta/risolta (il chiamante
 // deve mostrare il fallback lettera e avviare fetchYmoveThumbnail), `null` =
 // gia' richiesta ma YMove non ha una thumbnail per questo esercizio.
@@ -32,7 +60,8 @@ export function fetchYmoveThumbnail(ymoveExerciseId: string): Promise<string | n
     return existing.status === 'done' ? Promise.resolve(existing.value) : existing.promise;
   }
 
-  const promise = getYmoveExerciseDetail(ymoveExerciseId)
+  const promise = acquireThumbnailFetchSlot()
+    .then(() => getYmoveExerciseDetail(ymoveExerciseId))
     .then((result) => {
       const value = result.ok ? result.data.thumbnailUrl : null;
       cache.set(ymoveExerciseId, { status: 'done', value });
@@ -41,7 +70,8 @@ export function fetchYmoveThumbnail(ymoveExerciseId: string): Promise<string | n
     .catch(() => {
       cache.set(ymoveExerciseId, { status: 'done', value: null });
       return null;
-    });
+    })
+    .finally(() => releaseThumbnailFetchSlot());
 
   cache.set(ymoveExerciseId, { status: 'loading', promise });
   return promise;

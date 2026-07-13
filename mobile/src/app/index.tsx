@@ -1,5 +1,6 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type DimensionValue, type LayoutChangeEvent } from 'react-native';
 
 import { AppCard, AppHeader, AppScreen, AppSectionTitle, AppStatCard } from '@/components/ui';
 import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
@@ -12,9 +13,43 @@ import { useSubscriptionStore } from '@/store/subscription-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
+// Larghezza colonna calcolata dalla larghezza REALE del contenitore misurata
+// con onLayout (non percentuali fisse combinate con minWidth/flexGrow, la
+// combinazione che causava la sovrapposizione dei pulsanti su Android; e
+// nemmeno useWindowDimensions, che su web misurava l'intera finestra del
+// browser invece della cornice iPhone di WebPhoneFrame — 360/390/430px — e
+// faceva traboccare i pulsanti dalla cornice). Sotto MIN_COLUMN_WIDTH per
+// colonna si passa a una sola colonna, mai a un valore che farebbe
+// traboccare la riga. Prima della prima misurazione (containerWidth 0) si
+// usa '100%' (una colonna, mai overflow): la misura arriva al primo frame.
+const GRID_GAP = AppSpacing[2];
+const MIN_COLUMN_WIDTH = 130;
+
+function computeColumnWidth(containerWidth: number): DimensionValue {
+  if (containerWidth <= 0) return '100%';
+  const twoColumnWidth = Math.floor((containerWidth - GRID_GAP) / 2);
+  return twoColumnWidth >= MIN_COLUMN_WIDTH ? twoColumnWidth : containerWidth;
+}
+
+// AppStatCard applica internamente flex:1 al proprio wrapper (per il caso
+// d'uso normale, riempire lo spazio disponibile): senza azzerare qui
+// flexGrow/flexShrink, il flex:1 interno vincerebbe sulla width fissa
+// calcolata sopra (flexBasis:0% di "flex:1" ha priorita' sulla width in
+// Yoga), riproducendo la stessa sovrapposizione che si vuole eliminare.
+function gridItemStyle(width: DimensionValue) {
+  return { width, flexGrow: 0, flexShrink: 0, flexBasis: width };
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const [gridContainerWidth, setGridContainerWidth] = useState(0);
+  const gridItemWidth = computeColumnWidth(gridContainerWidth);
+
+  function handleGridLayout(event: LayoutChangeEvent) {
+    const measured = Math.round(event.nativeEvent.layout.width);
+    if (measured !== gridContainerWidth) setGridContainerWidth(measured);
+  }
   const currentRole = useAuthStore((s) => s.currentRole);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
@@ -53,14 +88,14 @@ export default function DashboardScreen() {
 
       <YmoveAutoLinkBanner />
 
-      <View style={styles.statsGrid}>
+      <View style={styles.statsGrid} onLayout={handleGridLayout}>
         <AppStatCard
           size="lg"
           label="Attivi"
           value={String(attivi)}
           accentColor={colors.moss}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle(gridItemWidth)}
         />
         <AppStatCard
           size="lg"
@@ -68,7 +103,7 @@ export default function DashboardScreen() {
           value={String(inScadenza)}
           accentColor={colors.amber}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle(gridItemWidth)}
         />
         <AppStatCard
           size="lg"
@@ -76,9 +111,9 @@ export default function DashboardScreen() {
           value={String(scaduti)}
           accentColor={colors.rust}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle(gridItemWidth)}
         />
-        <View style={styles.statCardWrap}>
+        <View style={gridItemStyle(gridItemWidth)}>
           <AppCard onPress={() => router.push('/appuntamenti')} style={styles.appointmentCard}>
             <Text style={[styles.statLabel, { color: colors.inkSoft }]}>Prossimo appuntamento</Text>
             <Text style={[styles.appointmentTitle, { color: colors.ink }]} numberOfLines={2}>
@@ -93,25 +128,25 @@ export default function DashboardScreen() {
 
       <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
       <View style={styles.quickActions}>
-        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={styles.quickActionWrap}>
+        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={gridItemStyle(gridItemWidth)}>
           <View style={[styles.quickAction, { backgroundColor: colors.coral }]}>
             <Text style={[styles.quickActionLabel, { color: colors.onCoral }]}>Nuovo cliente</Text>
           </View>
         </Pressable>
-        <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
-        <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
-        <QuickAction label="Supporto" onPress={() => router.push('/supporto')} />
-        <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
+        <QuickAction label="Nuovo appuntamento" width={gridItemWidth} onPress={() => router.push('/appuntamenti/new')} />
+        <QuickAction label="Assegna scheda" width={gridItemWidth} onPress={() => router.push('/schede/new')} />
+        <QuickAction label="Supporto" width={gridItemWidth} onPress={() => router.push('/supporto')} />
+        <QuickAction label="Impostazioni" width={gridItemWidth} onPress={() => router.push('/impostazioni')} />
       </View>
     </AppScreen>
   );
 }
 
-function QuickAction({ label, onPress }: { label: string; onPress: () => void }) {
+function QuickAction({ label, width, onPress }: { label: string; width: DimensionValue; onPress: () => void }) {
   const { colors } = useAppTheme();
 
   return (
-    <Pressable onPress={onPress} hitSlop={4} style={styles.quickActionWrap}>
+    <Pressable onPress={onPress} hitSlop={4} style={gridItemStyle(width)}>
       <View style={[styles.quickAction, { borderColor: colors.border, backgroundColor: colors.surface }]}>
         <Text style={[styles.quickActionLabel, { color: colors.ink }]}>{label}</Text>
       </View>
@@ -131,11 +166,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: AppSpacing[2],
   },
-  statCardWrap: {
-    width: '48.5%',
-    minWidth: 136,
-    flexGrow: 1,
-  },
   appointmentCard: {
     minHeight: 104,
     justifyContent: 'center',
@@ -153,11 +183,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: AppSpacing[2],
-  },
-  quickActionWrap: {
-    width: '48.5%',
-    minWidth: 136,
-    flexGrow: 1,
   },
   quickAction: {
     minHeight: 52,

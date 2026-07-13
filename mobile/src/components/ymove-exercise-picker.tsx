@@ -1,7 +1,7 @@
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { RefreshCw } from 'lucide-react-native';
-import { useState } from 'react';
+import { Dumbbell, Play, RefreshCw } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from './card';
@@ -13,6 +13,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { createOrReuseExerciseFromYmove } from '@/lib/fitcoach-exercises-service';
 import { getYmoveExerciseDetail, searchYmoveExercises, type YmoveExerciseDetail, type YmoveExerciseSummary } from '@/lib/ymove-service';
+import { fetchYmoveThumbnail, getCachedYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
 import type { Exercise } from '@/types/training';
 
 export type YmoveVideoLinkSelection = { ymoveExerciseId: string; ymoveSlug: string | null };
@@ -59,9 +60,18 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
   const [type, setType] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [results, setResults] = useState<YmoveExerciseSummary[]>([]);
-  const [loading, setLoading] = useState(false);
+  // true dal primo render: la ricerca iniziale senza filtri parte subito
+  // (vedi effect sotto), quindi la card mostra "Caricamento" e non "Cerca".
+  const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+  // Protegge la ricerca iniziale da doppie chiamate causate da React Strict
+  // Mode (mount/unmount/remount in sviluppo) o da un rimontaggio del
+  // componente: uno state booleano non basta perche' un secondo render
+  // synchronous prima del completamento della prima fetch lo leggerebbe
+  // ancora false — un ref persiste attraverso i render senza causarne uno
+  // nuovo.
+  const didInitialSearchRef = useRef(false);
 
   async function handleSearch() {
     setLoading(true);
@@ -71,11 +81,20 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
     setSearched(true);
     if (!result.ok) {
       setError(result.message);
-      setResults([]);
+      // Non azzerare risultati gia' caricati in precedenza: una ricerca
+      // fallita non deve far sparire cio' che era gia' visibile, l'errore
+      // si mostra sopra la lista esistente.
       return;
     }
     setResults(result.data);
   }
+
+  useEffect(() => {
+    if (didInitialSearchRef.current) return;
+    didInitialSearchRef.current = true;
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Card style={styles.container}>
@@ -112,10 +131,25 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
         </View>
       </Pressable>
 
+      {loading && results.length === 0 && !error ? (
+        <View style={styles.initialLoading}>
+          <ActivityIndicator />
+          <ThemedText type="small" themeColor="textSecondary">
+            Caricamento esercizi YMove...
+          </ThemedText>
+        </View>
+      ) : null}
+
       {error ? (
-        <ThemedText type="small" themeColor="statusExpired">
-          {error}
-        </ThemedText>
+        <View style={styles.errorBlock}>
+          <ThemedText type="small" themeColor="statusExpired">
+            {error}
+          </ThemedText>
+          <Pressable onPress={handleSearch} hitSlop={6} style={[styles.retryButton, { borderColor: theme.border }]}>
+            <RefreshCw size={14} color={theme.text} />
+            <ThemedText type="small">Riprova</ThemedText>
+          </Pressable>
+        </View>
       ) : null}
 
       {!loading && searched && results.length === 0 && !error ? (
@@ -140,6 +174,53 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
           />
         ))}
     </Card>
+  );
+}
+
+// Miniatura lazy per una card di risultato ricerca (non l'anteprima completa
+// nel dettaglio, ne' l'immagine di ExerciseThumbnail che serve invece per gli
+// esercizi gia' assegnati a una scheda): richiede il dettaglio SOLO se non
+// gia' in cache (fetchYmoveThumbnail/ymove-thumbnail-cache.ts gia' deduplica
+// e limita a 2 richieste concorrenti globali), mai per tutti i risultati
+// contemporaneamente al primo render della lista. Se l'immagine fallisce a
+// caricare (URL scaduto, rete), richiede il dettaglio una sola volta e poi
+// resta sul placeholder (mai un loop di retry).
+function YMoveResultThumbnail({ item }: { item: YmoveExerciseSummary }) {
+  const theme = useTheme();
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null | undefined>(() => getCachedYmoveThumbnail(item.id));
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    if (thumbnailUrl !== undefined) return;
+    let cancelled = false;
+    fetchYmoveThumbnail(item.id).then((url) => {
+      if (!cancelled) setThumbnailUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id, thumbnailUrl]);
+
+  const showImage = Boolean(thumbnailUrl) && !imageFailed;
+
+  return (
+    <View style={[styles.resultThumbnail, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+      {showImage ? (
+        <Image
+          source={{ uri: thumbnailUrl as string }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <Dumbbell size={20} color={theme.textSecondary} />
+      )}
+      {item.hasVideo ? (
+        <View style={styles.resultPlayBadge} pointerEvents="none">
+          <Play size={11} color="#fff" fill="#fff" />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -216,12 +297,19 @@ function YMoveResultRow({
 
   return (
     <Card style={styles.resultCard}>
-      <ThemedText type="smallBold">{item.title}</ThemedText>
-      <View style={styles.chipsRow}>
-        {safeText(item.muscleGroup) ? <Pill label={safeText(item.muscleGroup)} /> : null}
-        {safeText(item.equipment) ? <Pill label={safeText(item.equipment)} /> : null}
-        {safeText(item.difficulty) ? <Pill label={safeText(item.difficulty)} /> : null}
-        {safeStringArray(item.exerciseType).length > 0 ? <Pill label={safeStringArray(item.exerciseType).join(', ')} /> : null}
+      <View style={styles.resultHeader}>
+        <Pressable onPress={togglePreview} hitSlop={4}>
+          <YMoveResultThumbnail item={item} />
+        </Pressable>
+        <View style={styles.resultHeaderText}>
+          <ThemedText type="smallBold">{item.title}</ThemedText>
+          <View style={styles.chipsRow}>
+            {safeText(item.muscleGroup) ? <Pill label={safeText(item.muscleGroup)} /> : null}
+            {safeText(item.equipment) ? <Pill label={safeText(item.equipment)} /> : null}
+            {safeText(item.difficulty) ? <Pill label={safeText(item.difficulty)} /> : null}
+            {safeStringArray(item.exerciseType).length > 0 ? <Pill label={safeStringArray(item.exerciseType).join(', ')} /> : null}
+          </View>
+        </View>
       </View>
 
       <View style={styles.actionsRow}>
@@ -362,8 +450,43 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     alignItems: 'center',
   },
+  initialLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  errorBlock: {
+    gap: Spacing.two,
+    alignItems: 'flex-start',
+  },
   resultCard: {
     gap: Spacing.two,
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  resultHeaderText: {
+    flex: 1,
+    gap: Spacing.two,
+    justifyContent: 'center',
+  },
+  resultThumbnail: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  resultPlayBadge: {
+    position: 'absolute',
+    bottom: 3,
+    right: 3,
+    backgroundColor: '#00000099',
+    borderRadius: 999,
+    padding: 3,
   },
   chipsRow: {
     flexDirection: 'row',
