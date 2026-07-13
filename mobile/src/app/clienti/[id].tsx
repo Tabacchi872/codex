@@ -1,25 +1,24 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppButton, AppCard, AppScreen, type AppBadgeTone } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { sendTemporaryCredentials } from '@/lib/auth-service';
 import { buildCredentialsMessage, generateTemporaryPassword, generateUsername } from '@/lib/credentials';
 import { clientFullName } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
+import { supabaseConfig } from '@/lib/supabase';
 import { getClientPlans, getSessionDayLabel, getSessionWeekLabel } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { APPOINTMENT_TYPE_LABEL } from '@/types/appointment';
 import { CLIENT_STATUS_LABEL, type Client, type ClientAccount, type ClientStatus } from '@/types/client';
 import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
@@ -27,6 +26,7 @@ import {
   COMPUTED_SUBSCRIPTION_STATUS_LABEL,
   computeSubscriptionStatus,
   getCurrentSubscription,
+  type ComputedSubscriptionStatus,
 } from '@/types/subscription';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
@@ -34,8 +34,7 @@ const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
 export default function ClienteDettaglioScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const clients = useClientStore((s) => s.clients);
@@ -47,20 +46,16 @@ export default function ClienteDettaglioScreen() {
   const cliente = clients.find((c) => c.id === id);
 
   if (!isCoach) {
-    return (
-      <ScreenBackground>
-        <CoachOnlyNotice />
-      </ScreenBackground>
-    );
+    return <CoachOnlyNotice />;
   }
 
   if (!cliente) {
     return (
-      <ScreenBackground>
+      <AppScreen scroll={false}>
         <View style={styles.notFound}>
-          <ThemedText type="default">Cliente non trovato.</ThemedText>
+          <Text style={{ color: colors.ink }}>Cliente non trovato.</Text>
         </View>
-      </ScreenBackground>
+      </AppScreen>
     );
   }
 
@@ -94,192 +89,140 @@ export default function ClienteDettaglioScreen() {
   }
 
   return (
-    <ScreenBackground>
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.two, paddingBottom: insets.bottom + BottomTabInset + Spacing.four },
-      ]}>
+    <AppScreen contentStyle={styles.content}>
       <Stack.Screen options={{ title: clientFullName(cliente) }} />
 
       <View style={styles.statusChipsRow}>
         {STATUS_OPTIONS.map((option) => {
           const active = option === cliente.status;
           return (
-            <Pressable key={option} onPress={() => setClientStatus(option)} hitSlop={6}>
-              <View
-                style={[
-                  styles.statusChip,
-                  { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.softRed : theme.backgroundElement },
-                ]}>
-                <ThemedText type="small" themeColor={active ? 'primary' : 'textSecondary'}>
-                  {CLIENT_STATUS_LABEL[option]}
-                </ThemedText>
-              </View>
+            <Pressable
+              key={option}
+              onPress={() => setClientStatus(option)}
+              hitSlop={6}
+              style={[styles.statusChip, { borderColor: colors.moss, backgroundColor: active ? colors.moss : 'transparent' }]}>
+              <Text style={[styles.statusChipLabel, { color: active ? colors.onMoss : colors.moss }]}>
+                {CLIENT_STATUS_LABEL[option]}
+              </Text>
             </Pressable>
           );
         })}
       </View>
 
-      <Card>
-        <ThemedText type="smallBold">Contatti</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {cliente.email}
-        </ThemedText>
-        {cliente.phone && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {cliente.phone}
-          </ThemedText>
-        )}
-        {cliente.birthDate && (
-          <ThemedText type="small" themeColor="textSecondary">
-            Nato/a il {cliente.birthDate}
-          </ThemedText>
-        )}
-      </Card>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Contatti</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.email}</Text>
+        {cliente.phone ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.phone}</Text> : null}
+        {cliente.birthDate ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nato/a il {cliente.birthDate}</Text> : null}
+      </AppCard>
 
-      <Card>
-        <ThemedText type="smallBold">Obiettivo</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {cliente.goal || 'Non specificato'}
-        </ThemedText>
-      </Card>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Obiettivo</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.goal || 'Non specificato'}</Text>
+      </AppCard>
 
-      <Card>
-        <ThemedText type="smallBold">Abbonamento</ThemedText>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Abbonamento</Text>
         {displaySubscription ? (
           <>
-            <ThemedText type="default" style={styles.planName}>
-              {displaySubscription.packageName}
-            </ThemedText>
-            <ThemedText type="title" style={styles.counterText}>
+            <Text style={[styles.planName, { color: colors.ink }]}>{displaySubscription.packageName}</Text>
+            <Text style={[styles.counterText, { color: colors.ink }]}>
               {displaySubscription.completedWorkouts}/{displaySubscription.totalWorkoutsPurchased}
-            </ThemedText>
+            </Text>
             <View style={styles.sectionHeaderRow}>
-              <ThemedText
-                type="smallBold"
-                themeColor={
-                  displaySubscriptionStatus === 'active'
-                    ? 'statusActive'
-                    : displaySubscriptionStatus === 'expiring'
-                      ? 'statusWarning'
-                      : 'statusExpired'
-                }>
-                {COMPUTED_SUBSCRIPTION_STATUS_LABEL[displaySubscriptionStatus]}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+              <AppBadge label={COMPUTED_SUBSCRIPTION_STATUS_LABEL[displaySubscriptionStatus]} tone={subscriptionTone(displaySubscriptionStatus)} />
+              <Text style={[styles.smallText, { color: colors.inkSoft }]}>
                 Inizio {formatDayMonth(displaySubscription.startDate)}
                 {displaySubscription.endDate ? ` · Fine ${formatDayMonth(displaySubscription.endDate)}` : ''}
-              </ThemedText>
+              </Text>
             </View>
           </>
         ) : (
-          <ThemedText type="default" style={styles.planName}>
-            Nessun abbonamento
-          </ThemedText>
+          <Text style={[styles.planName, { color: colors.ink }]}>Nessun abbonamento</Text>
         )}
-        <Pressable
-          hitSlop={6}
+        <AppButton
+          label={displaySubscription ? 'Aggiorna abbonamento' : 'Crea abbonamento'}
           onPress={() =>
             displaySubscription
-              ? router.push({
-                  pathname: '/clienti/abbonamento-modifica',
-                  params: { subscriptionId: displaySubscription.id },
-                })
+              ? router.push({ pathname: '/clienti/abbonamento-modifica', params: { subscriptionId: displaySubscription.id } })
               : router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })
-          }>
-          <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              {displaySubscription ? 'Aggiorna abbonamento' : 'Crea abbonamento'}
-            </ThemedText>
-          </View>
-        </Pressable>
-        {displaySubscription && (
-          <Pressable onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })} hitSlop={6}>
-            <ThemedText type="small" themeColor="primary" style={styles.secondaryLink}>
-              + Crea un nuovo abbonamento
-            </ThemedText>
+          }
+          fullWidth
+        />
+        {displaySubscription ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })}
+            hitSlop={6}>
+            <Text style={[styles.secondaryLink, { color: colors.moss }]}>+ Crea un nuovo abbonamento</Text>
           </Pressable>
-        )}
-      </Card>
+        ) : null}
+      </AppCard>
 
-      <Card>
-        <ThemedText type="smallBold">Schede assegnate ({sessions.length})</ThemedText>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Schede assegnate ({sessions.length})</Text>
         {sessions.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Nessuna scheda assegnata.
-          </ThemedText>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessuna scheda assegnata.</Text>
         ) : (
-          sessions.map((session) => <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => router.push(`/schede/${session.id}`)} />)
+          sessions.map((session) => (
+            <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => router.push(`/schede/${session.id}`)} />
+          ))
         )}
-        <Pressable onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })} hitSlop={6}>
-          <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              + Nuova scheda
-            </ThemedText>
-          </View>
-        </Pressable>
-      </Card>
+        <AppButton label="+ Nuova scheda" onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })} fullWidth />
+      </AppCard>
 
-      <Card>
-        <ThemedText type="smallBold">Appuntamenti</ThemedText>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Appuntamenti</Text>
         {clientAppointments.length > 0 ? (
           clientAppointments.map((a) => (
-            <ThemedText key={a.id} type="small" themeColor="textSecondary">
+            <Text key={a.id} style={[styles.smallText, { color: colors.inkSoft }]}>
               {formatDayMonth(a.date)} · {a.startTime}–{a.endTime} — {APPOINTMENT_TYPE_LABEL[a.type]}
-            </ThemedText>
+            </Text>
           ))
         ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            Nessun appuntamento in programma.
-          </ThemedText>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun appuntamento in programma.</Text>
         )}
-        <Pressable onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })} hitSlop={6}>
-          <View style={[styles.planButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              + Nuovo appuntamento
-            </ThemedText>
-          </View>
-        </Pressable>
-      </Card>
+        <AppButton
+          label="+ Nuovo appuntamento"
+          onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })}
+          fullWidth
+        />
+      </AppCard>
 
-      <Card style={styles.notesCard}>
-        <ThemedText type="smallBold">Note interne</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {cliente.notes || 'Nessuna nota.'}
-        </ThemedText>
+      <AppCard style={styles.notesCard}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Note interne</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.notes || 'Nessuna nota.'}</Text>
         <DisabledAction label="Modifica nota" note="Presto disponibile" />
-      </Card>
+      </AppCard>
 
       <CredentialsSection client={cliente} account={account} onGenerate={handleGenerateAccount} />
-    </ScrollView>
-    </ScreenBackground>
+    </AppScreen>
   );
 }
 
+function subscriptionTone(status: ComputedSubscriptionStatus): AppBadgeTone {
+  if (status === 'active') return 'moss';
+  if (status === 'expiring') return 'amber';
+  return 'rust';
+}
+
 function SessionRow({ session, sessions, onPress }: { session: WorkoutPlan; sessions: WorkoutPlan[]; onPress: () => void }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const status = session.sessionStatus ?? 'todo';
   return (
-    <Pressable onPress={onPress} hitSlop={4}>
-      <View style={[styles.sessionRow, { borderColor: theme.border }]}>
-        <View style={styles.sessionRowLeft}>
-          <ThemedText type="default" style={styles.sessionName}>
-            {session.name}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Giorno {getSessionDayLabel(session)} · Settimana {getSessionWeekLabel(sessions, session)} ·{' '}
-            {formatDayMonth(session.startDate)}
-            {session.scheduledTime ? ` · ${session.scheduledTime}` : ''} · {session.exercises.length} esercizi
-          </ThemedText>
-          {status !== 'todo' && (
-            <ThemedText type="small" themeColor={status === 'completed' ? 'statusActive' : 'textSecondary'}>
-              {SESSION_STATUS_LABEL[status]}
-            </ThemedText>
-          )}
-        </View>
-        <ThemedText style={[styles.arrow, { color: theme.primary }]}>→</ThemedText>
+    <Pressable onPress={onPress} hitSlop={4} style={[styles.sessionRow, { borderColor: colors.border }]}>
+      <View style={styles.sessionRowLeft}>
+        <Text style={[styles.sessionName, { color: colors.ink }]}>{session.name}</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Giorno {getSessionDayLabel(session)} · Settimana {getSessionWeekLabel(sessions, session)} · {formatDayMonth(session.startDate)}
+          {session.scheduledTime ? ` · ${session.scheduledTime}` : ''} · {session.exercises.length} esercizi
+        </Text>
+        {status !== 'todo' ? (
+          <Text style={[styles.smallText, { color: status === 'completed' ? colors.moss : colors.inkSoft, fontWeight: '700' }]}>
+            {SESSION_STATUS_LABEL[status]}
+          </Text>
+        ) : null}
       </View>
+      <ChevronRight size={20} color={colors.inkFaint} />
     </Pressable>
   );
 }
@@ -293,8 +236,10 @@ function CredentialsSection({
   account: ClientAccount | undefined;
   onGenerate: () => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   async function handleCopy() {
     if (!account) return;
@@ -322,189 +267,179 @@ function CredentialsSection({
     }
   }
 
+  // Invia via email: usa un vero account Supabase (auth.admin.updateUserById
+  // dentro la Edge Function send-temporary-credentials), non l'account demo
+  // locale sopra — un cliente aggiunto manualmente dal coach senza mai
+  // essersi registrato su Supabase non ha una riga auth.users, quindi la
+  // function risponde con un errore chiaro ("Nessun account Supabase reale
+  // trovato...") invece di far finta di aver inviato qualcosa.
+  async function handleSendEmail() {
+    setEmailStatus(null);
+    setSendingEmail(true);
+    const result = await sendTemporaryCredentials(client.id, client.email, 'cliente');
+    setSendingEmail(false);
+    if (!result.ok) {
+      setEmailStatus({ type: 'error', message: result.message });
+      return;
+    }
+    setEmailStatus({ type: 'success', message: 'Credenziali inviate via email.' });
+  }
+
   return (
-    <Card style={styles.credentialsCard}>
-      <ThemedText type="smallBold">Credenziali cliente</ThemedText>
+    <AppCard style={styles.credentialsCard}>
+      <Text style={[styles.cardTitle, { color: colors.ink }]}>Credenziali cliente</Text>
 
       {!account ? (
-        <Pressable onPress={onGenerate} hitSlop={6}>
-          <View style={[styles.generateButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              Genera credenziali di accesso
-            </ThemedText>
-          </View>
-        </Pressable>
+        <AppButton label="Genera credenziali di accesso" onPress={onGenerate} fullWidth />
       ) : (
         <>
-          <View style={[styles.credentialsBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+          <View style={[styles.credentialsBox, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
             <CredentialRow label="Username" value={account.username} />
             <CredentialRow label="Email" value={account.email} />
             <CredentialRow label="Password temporanea" value={account.temporaryPassword} />
-            <ThemedText type="small" themeColor="textSecondary">
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>
               {account.mustChangePassword
                 ? 'Questa è una password temporanea. Il cliente dovrà cambiarla al primo accesso.'
                 : 'Il cliente ha già cambiato la password.'}
-            </ThemedText>
+            </Text>
           </View>
 
           <View style={styles.credentialsActions}>
-            <Pressable onPress={handleCopy} hitSlop={4} style={styles.credentialActionWrap}>
-              <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
-                  Copia credenziali
-                </ThemedText>
-              </View>
-            </Pressable>
-            <Pressable onPress={handleShare} hitSlop={4} style={styles.credentialActionWrap}>
-              <View style={[styles.actionButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={[styles.actionButtonText, { color: theme.primary }]}>
-                  Condividi credenziali
-                </ThemedText>
-              </View>
-            </Pressable>
+            <AppButton label="Copia credenziali" onPress={handleCopy} variant="outline" fullWidth />
+            <AppButton label="Condividi credenziali" onPress={handleShare} variant="outline" fullWidth />
           </View>
 
-          {copyFeedback && (
-            <ThemedText type="small" themeColor="statusActive">
-              {copyFeedback}
-            </ThemedText>
-          )}
+          {copyFeedback ? <Text style={[styles.smallText, { color: colors.moss, fontWeight: '600' }]}>{copyFeedback}</Text> : null}
 
-          <DisabledAction label="Invia via email" note="Disponibile prossimamente" />
+          {supabaseConfig.isConfigured ? (
+            <>
+              <AppButton
+                label={sendingEmail ? 'Invio...' : 'Invia via email'}
+                onPress={handleSendEmail}
+                variant="outline"
+                loading={sendingEmail}
+                fullWidth
+              />
+              {emailStatus ? (
+                <Text
+                  style={[
+                    styles.smallText,
+                    { color: emailStatus.type === 'success' ? colors.moss : colors.rust, fontWeight: '600' },
+                  ]}>
+                  {emailStatus.message}
+                </Text>
+              ) : null}
+            </>
+          ) : (
+            <DisabledAction label="Invia via email" note="Richiede Supabase configurato" />
+          )}
         </>
       )}
-    </Card>
+    </AppCard>
   );
 }
 
 function CredentialRow({ label, value }: { label: string; value: string }) {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.credentialRow}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{label}</Text>
+      <Text style={[styles.smallText, { color: colors.ink, fontWeight: '700' }]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   statusChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   statusChip: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
     minHeight: 40,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 7,
+    paddingHorizontal: AppSpacing[3],
+    justifyContent: 'center',
+  },
+  statusChipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+  },
+  cardTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   planName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '600',
     marginTop: 2,
-  },
-  planMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  planButton: {
-    borderRadius: Radius.sm,
-    minHeight: 44,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.two,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: AppSpacing[1],
   },
   counterText: {
     fontSize: 28,
     lineHeight: 32,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   secondaryLink: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
     textAlign: 'center',
-    marginTop: Spacing.two,
+    marginTop: AppSpacing[1],
   },
   sessionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: Radius.sm,
-    padding: Spacing.three,
-    marginBottom: Spacing.two,
+    borderRadius: AppRadius.md,
+    padding: AppSpacing[3],
+    marginBottom: AppSpacing[2],
     minWidth: 0,
   },
   sessionRowLeft: {
     gap: 2,
     flex: 1,
     minWidth: 0,
-    marginRight: Spacing.two,
+    marginRight: AppSpacing[2],
   },
   sessionName: {
-    fontWeight: '700',
-  },
-  arrow: {
-    fontSize: 20,
+    fontSize: AppFontSize.base,
     fontWeight: '700',
   },
   notesCard: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   credentialsCard: {
-    gap: Spacing.two,
-  },
-  generateButton: {
-    borderRadius: Radius.md,
-    minHeight: 48,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.one,
+    gap: AppSpacing[2],
   },
   credentialsBox: {
-    borderRadius: Radius.sm,
+    borderRadius: AppRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: Spacing.three,
-    gap: Spacing.one,
+    padding: AppSpacing[3],
+    gap: AppSpacing[1],
   },
   credentialRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   credentialsActions: {
-    gap: Spacing.two,
-  },
-  credentialActionWrap: {
-    width: '100%',
-  },
-  actionButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButtonText: {
-    textAlign: 'center',
+    gap: AppSpacing[2],
   },
   notFound: {
     flex: 1,

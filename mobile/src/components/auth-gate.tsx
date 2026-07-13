@@ -4,8 +4,11 @@ import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
 import ClientTabs from './client-tabs';
+import { ForgotPasswordScreen } from './forgot-password-screen';
 import { LoginScreen } from './login-screen';
 import { ClientRegistrationScreen, CoachRegistrationScreen } from './registration-screens';
+import { ResetPasswordScreen } from './reset-password-screen';
+import { SupabaseChangePasswordScreen } from './supabase-change-password-screen';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -27,9 +30,10 @@ const CLIENT_ONLY_ROUTES = [
   '/bacheca',
   '/prenotazioni',
   '/questionario',
+  '/pacchetti-cliente',
 ];
 
-const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto'];
+const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto', '/abbonamento-coach'];
 const COACH_ONLY_PREFIXES = ['/clienti/', '/appuntamenti/', '/schede/new', '/schede/modelli'];
 const SUPERADMIN_ONLY_PREFIXES = ['/superadmin'];
 
@@ -48,6 +52,7 @@ export function AuthGate() {
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
   const currentClientId = useAuthStore((s) => s.currentClientId);
+  const mustChangePasswordSupabase = useAuthStore((s) => s.mustChangePasswordSupabase);
   const accounts = useClientStore((s) => s.accounts);
 
   const targetPath = getRoleRedirectTarget(currentRole, pathname);
@@ -61,6 +66,18 @@ export function AuthGate() {
     return <LoadingGate />;
   }
 
+  // Il link email di reset password deve funzionare SEMPRE, indipendentemente
+  // da un'eventuale sessione locale gia' autenticata in questo browser (es.
+  // si e' rimasti loggati come coach/cliente e si segue comunque il link
+  // "password dimenticata" per lo stesso account, oppure si sta testando il
+  // flusso in una scheda gia' loggata): non deve mai passare dal gate di
+  // autenticazione normale sotto, altrimenti porterebbe alla dashboard/login
+  // invece che al form di reset. ResetPasswordScreen gestisce da sola
+  // l'attesa della sessione di recovery Supabase e il caso "link non valido".
+  if (pathname === '/reimposta-password') {
+    return <ResetPasswordScreen />;
+  }
+
   if (!isAuthenticated) {
     if (pathname === '/registrazione-coach') {
       return <CoachRegistrationScreen />;
@@ -68,10 +85,19 @@ export function AuthGate() {
     if (pathname === '/registrazione-cliente') {
       return <ClientRegistrationScreen />;
     }
+    if (pathname === '/password-dimenticata') {
+      return <ForgotPasswordScreen />;
+    }
     return <LoginScreen />;
   }
 
   if (currentRole === 'cliente') {
+    // Il flag Supabase (utente reale, password provvisoria via Edge Function
+    // send-temporary-credentials) ha priorita' sul flag locale demo: riguarda
+    // un vero account Supabase Auth, non il mirror locale ClientAccount.
+    if (mustChangePasswordSupabase) {
+      return <SupabaseChangePasswordScreen />;
+    }
     const normalizedEmail = currentUserEmail?.toLowerCase() ?? null;
     const account = normalizedEmail
       ? accounts.find((a) => a.email.toLowerCase() === normalizedEmail || a.username.toLowerCase() === normalizedEmail)
@@ -90,6 +116,13 @@ export function AuthGate() {
       return <LoadingGate />;
     }
     return <Slot />;
+  }
+
+  // currentRole === 'coach' da qui in poi: nessun account demo locale con
+  // mustChangePassword esiste per i coach (solo per i clienti, vedi sopra),
+  // quindi qui serve controllare solo il flag Supabase.
+  if (mustChangePasswordSupabase) {
+    return <SupabaseChangePasswordScreen />;
   }
 
   if (targetPath) {

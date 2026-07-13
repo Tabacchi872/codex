@@ -1,26 +1,25 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import type { CoachFeatureKey } from '@/lib/coach-gating';
 import { demoPlanBillingRule, useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { DemoAppPlan } from '@/types/superadmin';
 
 export default function SuperadminPlans() {
   const plans = useSuperadminStore((s) => s.plans);
+  const { colors } = useAppTheme();
   return (
     <SuperadminShell title="Piani" description="Catalogo piani dell'app coach con prezzi, limiti e funzionalita'.">
-      <Card style={styles.ruleCard}>
-        <ThemedText type="smallBold">Regola prezzi</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+      <AppCard style={styles.ruleCard}>
+        <Text style={[styles.ruleTitle, { color: colors.ink }]}>Regola prezzi</Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
           EUR {demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = EUR{' '}
           {demoPlanBillingRule.extraMonthlyPricePerStep}/mese.
-        </ThemedText>
-      </Card>
+        </Text>
+      </AppCard>
       {plans.map((plan) => (
         <PlanCard key={plan.code} plan={plan} />
       ))}
@@ -29,61 +28,41 @@ export default function SuperadminPlans() {
 }
 
 function PlanCard({ plan }: { plan: DemoAppPlan }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <Card style={styles.card}>
+    <AppCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.nameBlock}>
-          <ThemedText type="smallBold">{plan.name}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            €{plan.monthlyPrice}/mese
-          </ThemedText>
+          <Text style={[styles.planName, { color: colors.ink }]}>{plan.name}</Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>€{plan.monthlyPrice}/mese</Text>
         </View>
-        <ThemedText
-          type="smallBold"
-          style={[
-            styles.badge,
-            {
-              borderColor: plan.active ? theme.statusActive : theme.disabled,
-              color: plan.active ? theme.statusActive : theme.disabled,
-            },
-          ]}>
-          {plan.active ? 'Attivo' : 'Non attivo'}
-        </ThemedText>
+        <AppBadge label={plan.active ? 'Attivo' : 'Non attivo'} tone={plan.active ? 'moss' : 'neutral'} />
       </View>
 
       <View style={styles.row}>
-        <ThemedText type="small" themeColor="textSecondary">
-          Prezzo annuale
-        </ThemedText>
-        <ThemedText type="smallBold">€{plan.annualPrice}/anno</ThemedText>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Prezzo annuale</Text>
+        <Text style={[styles.rowValue, { color: colors.ink }]}>€{plan.annualPrice}/anno</Text>
       </View>
 
       <View style={styles.row}>
-        <ThemedText type="small" themeColor="textSecondary">
-          Limite clienti
-        </ThemedText>
-        <ThemedText type="smallBold">{plan.clientLimit === null ? 'Illimitato' : String(plan.clientLimit)}</ThemedText>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Limite clienti</Text>
+        <Text style={[styles.rowValue, { color: colors.ink }]}>{plan.clientLimit === null ? 'Illimitato' : String(plan.clientLimit)}</Text>
       </View>
 
       <View style={styles.features}>
         {plan.features.map((feature) => (
-          <ThemedText key={feature} type="small" themeColor="textSecondary" style={[styles.feature, { borderColor: theme.border }]}>
-            {getFeatureLabel(feature)}
-          </ThemedText>
+          <AppBadge key={feature} label={getFeatureLabel(feature)} tone="neutral" />
         ))}
       </View>
 
-      <Pressable
+      <AppButton
+        label="Modifica piano"
         onPress={() => router.push({ pathname: '/superadmin/plans/[id]', params: { id: plan.code } })}
-        hitSlop={6}
-        style={[styles.editButton, { borderColor: theme.primary }]}>
-        <ThemedText type="smallBold" style={{ color: theme.primary }}>
-          Modifica piano
-        </ThemedText>
-      </Pressable>
-    </Card>
+        variant="outline"
+        fullWidth
+      />
+    </AppCard>
   );
 }
 
@@ -101,52 +80,45 @@ function getFeatureLabel(feature: CoachFeatureKey) {
 
 const styles = StyleSheet.create({
   ruleCard: {
-    gap: Spacing.one,
+    gap: 4,
+  },
+  ruleTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   card: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   header: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   nameBlock: {
     flex: 1,
     minWidth: 0,
   },
-  badge: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
+  planName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
   row: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+  },
+  rowValue: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   features: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  editButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 48,
-    paddingVertical: Spacing.three,
-    width: '100%',
-  },
-  feature: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
+    gap: AppSpacing[2],
   },
 });

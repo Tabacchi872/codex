@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,16 +8,20 @@ import { ExerciseAttachments } from '@/components/exercise-attachments';
 import { ExerciseHistory } from '@/components/exercise-history';
 import { ExerciseSetLogger } from '@/components/exercise-set-logger';
 import { ExerciseVideoPlayer } from '@/components/exercise-video-player';
+import { ExerciseVideoUploadControl } from '@/components/exercise-video-upload';
 import { Pill } from '@/components/pill';
 import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { RestTimer } from '@/components/rest-timer';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { YMoveVideoPlayer } from '@/components/ymove-video-player';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { getExerciseById } from '@/data/exercise-library';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
+import { getExerciseVideo } from '@/lib/exercise-video-service';
+import { supabaseConfig } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
@@ -42,8 +46,28 @@ export default function EsercizioDettaglioScreen() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [infoTab, setInfoTab] = useState<InfoTab>('esecuzione');
   const [restToken, setRestToken] = useState<number>();
+  // Video reale caricato su Supabase Storage (fase 2026-07-11): null finche'
+  // non risolto o se nessun video esiste per il visualizzatore corrente (RLS
+  // decide cosa e' visibile — coach vede il proprio, cliente quello del
+  // proprio coach). Ha sempre priorita' sul videoUrl demo statico di
+  // exercise-library.ts una volta noto, ma finche' e' null si ricade su
+  // quest'ultimo (mai un player vuoto se esiste un fallback dimostrativo).
+  const [remoteVideoUrl, setRemoteVideoUrl] = useState<string | null>(null);
 
-  const exercise = getExerciseById(id);
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured) return;
+    let cancelled = false;
+    getExerciseVideo(id).then((result) => {
+      if (cancelled) return;
+      if (result.ok) setRemoteVideoUrl(result.data?.videoUrl ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const { resolve: resolveExercise } = useExerciseResolver();
+  const exercise = resolveExercise(id);
 
   if (!exercise) {
     return (
@@ -90,10 +114,25 @@ export default function EsercizioDettaglioScreen() {
       <View style={styles.badgeRow}>
         <Pill label={exercise.muscleGroup} />
         <Pill label={exercise.equipment} />
-        <Pill label={DIFFICULTY_LABEL[exercise.difficulty]} />
+        <Pill label={DIFFICULTY_LABEL[exercise.difficulty] ?? exercise.difficulty} />
       </View>
 
-      <ExerciseVideoPlayer videoFile={exercise.videoFile} />
+      {exercise.source === 'ymove' && exercise.ymoveExerciseId ? (
+        // Video sempre live dal catalogo YMove: mai un URL salvato, mai un
+        // upload coach (non ha senso per un esercizio del catalogo esterno).
+        <YMoveVideoPlayer ymoveExerciseId={exercise.ymoveExerciseId} />
+      ) : (
+        <>
+          <ExerciseVideoPlayer videoUrl={remoteVideoUrl ?? exercise.videoUrl} videoFile={exercise.videoFile} />
+          {currentRole === 'coach' && supabaseConfig.isConfigured ? (
+            <ExerciseVideoUploadControl
+              exerciseId={exercise.id}
+              hasExistingVideo={Boolean(remoteVideoUrl)}
+              onUploaded={setRemoteVideoUrl}
+            />
+          ) : null}
+        </>
+      )}
 
       <View style={styles.infoTabsRow}>
         <InfoTabButton label="Esecuzione" active={infoTab === 'esecuzione'} onPress={() => setInfoTab('esecuzione')} />

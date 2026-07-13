@@ -1,16 +1,16 @@
-import { Slot, usePathname, useRouter } from 'expo-router';
+import { Slot, usePathname, useRouter, type Href } from 'expo-router';
+import { Apple, Dumbbell, House, Menu, MessageCircle, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { WebTabBarHeight } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
-const TABS = [
-  { path: '/cliente-home', label: 'Home', icon: '🏠' },
-  { path: '/workout', label: 'Workout', icon: '💪' },
-  { path: '/nutrizione', label: 'Nutrizione', icon: '🍎' },
-  { path: '/chat', label: 'Chat', icon: '💬' },
-  { path: '/altro', label: 'Altro', icon: '☰' },
-] as const;
+const TABS: { path: Href; label: string; icon: LucideIcon }[] = [
+  { path: '/cliente-home', label: 'Home', icon: House },
+  { path: '/workout', label: 'Workout', icon: Dumbbell },
+  { path: '/nutrizione', label: 'Nutrizione', icon: Apple },
+  { path: '/chat', label: 'Chat', icon: MessageCircle },
+  { path: '/altro', label: 'Altro', icon: Menu },
+];
 
 // BUG CORRETTO (2026-07-05): la versione precedente usava le Tabs "headless" di
 // expo-router/ui (<Tabs><TabSlot/><TabList>...). Quel componente registra come
@@ -23,29 +23,35 @@ const TABS = [
 // corrente, qualunque essa sia, senza una lista chiusa di schermi ammessi. La
 // tab bar sotto è un semplice router.push + confronto con usePathname(): nessun
 // meccanismo di navigazione "nascosto" che possa disallinearsi.
+//
+// File .web.tsx: Metro lo usa al posto di client-tabs.tsx SOLO sul bundle web
+// (le NativeTabs di expo-router non hanno un rendering web soddisfacente).
+// Migrato al nuovo design system (2026-07-11): stesso linguaggio della tab bar
+// del mockup (pillola coralSoft dietro l'icona attiva, icone lucide-react-native
+// reali al posto delle emoji, stesso comportamento di navigazione invariato).
 export default function ClientTabs() {
   const pathname = usePathname();
   const router = useRouter();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
     <View style={styles.container}>
       <View style={styles.slot}>
         <Slot screenOptions={{ headerShown: false }} />
       </View>
-      <View style={[styles.tabBar, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}>
+      <View style={[styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         {TABS.map((tab) => {
-          const isActive = pathname === tab.path;
+          const pathStr = tab.path.toString();
+          const isActive = pathname === pathStr;
+          const Icon = tab.icon;
           return (
-            <Pressable key={tab.path} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
-              <Text style={[styles.tabIcon, { opacity: isActive ? 1 : 0.6 }]}>{tab.icon}</Text>
+            <Pressable key={pathStr} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
+              <View style={[styles.iconPill, isActive && { backgroundColor: colors.coralSoft }]}>
+                <Icon size={19} color={isActive ? colors.coral : colors.inkFaint} strokeWidth={2} />
+              </View>
               <Text
                 numberOfLines={1}
-                style={[
-                  styles.tabLabel,
-                  { color: isActive ? theme.primary : theme.textSecondary },
-                  isActive && styles.tabLabelActive,
-                ]}>
+                style={[styles.tabLabel, { color: isActive ? colors.ink : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -64,11 +70,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    height: WebTabBarHeight,
+    height: 66,
     flexDirection: 'row',
+    alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingBottom: 6,
-    paddingTop: 6,
+    paddingTop: AppSpacing[1],
+    paddingBottom: AppSpacing[2],
     zIndex: 20,
     elevation: 20,
   },
@@ -76,23 +83,22 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 2,
+    gap: 3,
     minHeight: 44,
     minWidth: 0,
     paddingHorizontal: 2,
   },
-  tabIcon: {
-    fontSize: 18,
-    lineHeight: 22,
+  iconPill: {
+    width: 40,
+    height: 26,
+    borderRadius: AppRadius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '500',
     lineHeight: 13,
     maxWidth: '100%',
     textAlign: 'center',
-  },
-  tabLabelActive: {
-    fontWeight: '700',
   },
 });

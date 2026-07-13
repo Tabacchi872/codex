@@ -1,19 +1,18 @@
 import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { BottomTabInset } from '@/constants/theme';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import type { WorkoutSessionStatus } from '@/types/training';
 
 type Tab = 'todo' | 'past';
@@ -21,7 +20,7 @@ type Tab = 'todo' | 'past';
 export default function SchedeListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const clients = useClientStore((s) => s.clients);
@@ -36,185 +35,140 @@ export default function SchedeListScreen() {
   }, [workoutPlans, tab]);
 
   if (!isCoach) {
-    return (
-      <ScreenBackground>
-        <CoachOnlyNotice />
-      </ScreenBackground>
-    );
+    return <CoachOnlyNotice />;
   }
 
   if (!hasHydrated) {
     return (
-      <ScreenBackground>
-        <View style={styles.loading}>
-          <ThemedText type="default" themeColor="textSecondary">
-            Caricamento schede…
-          </ThemedText>
-        </View>
-      </ScreenBackground>
+      <View style={[styles.loading, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.inkSoft }}>Caricamento schede…</Text>
+      </View>
     );
   }
 
   return (
-    <ScreenBackground>
-    <FlatList
-      data={filtered}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Platform.OS === 'web' ? Spacing.five : insets.top + Spacing.three,
-          paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
-        },
-      ]}
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <View style={styles.titleBlock}>
-            <ThemedText type="title" style={styles.title}>
-              Allenamenti
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {workoutPlans.length} workout tra i tuoi clienti
-            </ThemedText>
-          </View>
-          <View style={styles.tabRow}>
-            <TabButton label="Da fare" active={tab === 'todo'} onPress={() => setTab('todo')} />
-            <TabButton label="Passati" active={tab === 'past'} onPress={() => setTab('past')} />
-          </View>
-
-          <View style={styles.actionsRow}>
-            <Pressable onPress={() => router.push('/schede/new')} hitSlop={4} style={styles.actionButtonWrap}>
-              <View style={[styles.newButton, { backgroundColor: theme.primary }]}>
-                <ThemedText type="smallBold" themeColor="onPrimary">
-                  + Nuova scheda
-                </ThemedText>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: Platform.OS === 'web' ? AppSpacing[5] : insets.top + AppSpacing[3],
+            paddingBottom: insets.bottom + BottomTabInset + AppSpacing[4],
+          },
+        ]}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <View style={styles.titleBlock}>
+              <Text style={[AppTextStyle.title, { color: colors.ink }]}>Allenamenti</Text>
+              <Text style={[styles.subtitle, { color: colors.inkSoft }]}>{workoutPlans.length} workout tra i tuoi clienti</Text>
+            </View>
+            <View style={styles.tabRow}>
+              <TabButton label="Da fare" active={tab === 'todo'} onPress={() => setTab('todo')} />
+              <TabButton label="Passati" active={tab === 'past'} onPress={() => setTab('past')} />
+            </View>
+            <View style={styles.actionsRow}>
+              <View style={styles.actionButtonWrap}>
+                <AppButton label="+ Nuova scheda" onPress={() => router.push('/schede/new')} fullWidth />
               </View>
-            </Pressable>
-            <Pressable onPress={() => router.push('/schede/modelli')} hitSlop={4} style={styles.actionButtonWrap}>
-              <View style={[styles.newButtonOutline, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                  Modelli allenamento
-                </ThemedText>
+              <View style={styles.actionButtonWrap}>
+                <AppButton label="Modelli allenamento" onPress={() => router.push('/schede/modelli')} variant="outline" fullWidth />
               </View>
-            </Pressable>
+            </View>
           </View>
-        </View>
-      }
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-      ListEmptyComponent={
-        <ThemedText type="small" themeColor="textSecondary">
-          {tab === 'todo' ? 'Nessun workout da fare al momento.' : 'Nessun workout passato ancora.'}
-        </ThemedText>
-      }
-      renderItem={({ item }) => {
-        const client = getClientById(clients, item.clientId);
-        const status: WorkoutSessionStatus = item.sessionStatus ?? 'todo';
-        return (
-          <Pressable onPress={() => router.push(`/schede/${item.id}`)} hitSlop={4}>
-            <Card style={styles.row}>
+        }
+        ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
+        ListEmptyComponent={
+          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+            {tab === 'todo' ? 'Nessun workout da fare al momento.' : 'Nessun workout passato ancora.'}
+          </Text>
+        }
+        renderItem={({ item }) => {
+          const client = getClientById(clients, item.clientId);
+          const status: WorkoutSessionStatus = item.sessionStatus ?? 'todo';
+          return (
+            <AppCard onPress={() => router.push(`/schede/${item.id}`)} style={styles.row}>
               <View style={styles.rowLeft}>
-                <ThemedText type="small" themeColor="textSecondary">
+                <Text style={[styles.smallText, { color: colors.inkSoft }]}>
                   {formatWeekday(item.startDate)} · {formatDayMonth(item.startDate)}
-                </ThemedText>
-                <ThemedText type="default" style={styles.planName}>
+                </Text>
+                <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={1}>
                   {item.name}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
+                </Text>
+                <Text style={[styles.smallText, { color: colors.inkSoft }]} numberOfLines={1}>
                   {client ? clientFullName(client) : 'Cliente non trovato'} · {item.exercises.length} esercizi
-                </ThemedText>
-                {status !== 'todo' && <SessionStatusPill status={status} />}
+                </Text>
+                {status !== 'todo' ? (
+                  <View style={styles.statusPillWrap}>
+                    <AppBadge label={status === 'skipped' ? 'Saltato' : 'Completato'} tone={status === 'skipped' ? 'rust' : 'moss'} />
+                  </View>
+                ) : null}
               </View>
-              <ThemedText style={[styles.arrow, { color: theme.primary }]}>→</ThemedText>
-            </Card>
-          </Pressable>
-        );
-      }}
-    />
-    </ScreenBackground>
-  );
-}
-
-function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable onPress={onPress} hitSlop={8} style={styles.tabButton}>
-      <ThemedText type="smallBold" themeColor={active ? 'primary' : 'textSecondary'}>
-        {label}
-      </ThemedText>
-      <View style={[styles.tabIndicator, active && { backgroundColor: theme.primary }]} />
-    </Pressable>
-  );
-}
-
-function SessionStatusPill({ status }: { status: WorkoutSessionStatus }) {
-  const theme = useTheme();
-  const isSkipped = status === 'skipped';
-  return (
-    <View
-      style={[
-        styles.statusPill,
-        { backgroundColor: isSkipped ? theme.dangerSoft : theme.backgroundSelected },
-      ]}>
-      <ThemedText type="small" themeColor={isSkipped ? 'text' : 'statusActive'} style={styles.statusPillLabel}>
-        {isSkipped ? 'Saltato' : 'Completato'}
-      </ThemedText>
+              <ChevronRight size={20} color={colors.inkFaint} />
+            </AppCard>
+          );
+        }}
+      />
     </View>
   );
 }
 
+function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={4}
+      style={[styles.tabButton, { backgroundColor: active ? colors.moss : 'transparent', borderColor: colors.moss }]}>
+      <Text style={[styles.tabButtonLabel, { color: active ? colors.onMoss : colors.moss }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
+    paddingHorizontal: AppSpacing[5],
   },
   header: {
-    gap: Spacing.three,
-    marginBottom: Spacing.two,
+    gap: AppSpacing[3],
+    marginBottom: AppSpacing[2],
   },
   titleBlock: {
     gap: 4,
   },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: '700',
+  subtitle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
   tabRow: {
     flexDirection: 'row',
-    gap: Spacing.four,
+    gap: AppSpacing[2],
   },
   tabButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: AppRadius.lg,
+    borderWidth: 1.5,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
   },
-  tabIndicator: {
-    height: 3,
-    width: 28,
-    borderRadius: 2,
-    backgroundColor: 'transparent',
+  tabButtonLabel: {
+    fontSize: AppFontSize.sm + 1,
+    fontWeight: '700',
   },
   actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   actionButtonWrap: {
     flexBasis: 140,
     flexGrow: 1,
     minWidth: 0,
-  },
-  newButton: {
-    borderRadius: Radius.md,
-    minHeight: 48,
-    padding: Spacing.three,
-    alignItems: 'center',
-  },
-  newButtonOutline: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 48,
-    padding: Spacing.three,
-    alignItems: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -224,28 +178,18 @@ const styles = StyleSheet.create({
   rowLeft: {
     gap: 2,
     flex: 1,
-    marginRight: Spacing.two,
+    minWidth: 0,
+    marginRight: AppSpacing[2],
   },
   planName: {
-    fontWeight: '700',
     fontSize: 17,
-  },
-  arrow: {
-    fontSize: 20,
     fontWeight: '700',
   },
-  statusPill: {
-    alignSelf: 'flex-start',
-    borderRadius: Radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
+  smallText: {
+    fontSize: AppFontSize.sm,
+  },
+  statusPillWrap: {
     marginTop: 2,
-  },
-  statusPillLabel: {
-    fontWeight: '600',
-  },
-  separator: {
-    height: Spacing.two,
   },
   loading: {
     flex: 1,

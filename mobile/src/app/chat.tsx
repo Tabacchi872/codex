@@ -1,16 +1,15 @@
+import { MessageCircle, Plus, Send } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppButton, AppCard, AppEmptyState, AppIconButton, AppTextField } from '@/components/ui';
+import { BottomTabInset } from '@/constants/theme';
 import { clientFullName } from '@/lib/client-helpers';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore } from '@/store/chat-store';
 import { useClientStore } from '@/store/client-store';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import type { ChatMessage } from '@/types/chat';
 import type { Client } from '@/types/client';
 
@@ -41,9 +40,13 @@ function sortByCreatedAt(a: ChatMessage, b: ChatMessage) {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 }
 
+// Schermata condivisa coach/cliente: il ruolo determina se si vede la lista
+// conversazioni (coach, multi-cliente) o direttamente il thread con il coach
+// (cliente, un solo thread). Migrata al nuovo design system per entrambi i
+// ruoli in un colpo solo.
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const clients = useClientStore((s) => s.clients);
@@ -165,35 +168,36 @@ export default function ChatScreen() {
   const sendDisabled = !draft.trim() || !selectedClientId;
 
   return (
-    <ScreenBackground>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
           data={threadMessages}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={[
-            styles.list,
-            { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three },
-          ]}
+          contentContainerStyle={[styles.list, { paddingTop: Platform.OS === 'web' ? AppSpacing[4] : insets.top + AppSpacing[3] }]}
           ListHeaderComponent={
             <View style={styles.header}>
-              {isCoach && (
+              {isCoach ? (
                 <Pressable onPress={() => setSelectedCoachClientId(null)} hitSlop={8} style={styles.backButton}>
-                  <ThemedText type="smallBold" themeColor="textSecondary">
-                    Indietro
-                  </ThemedText>
+                  <Text style={[styles.backLabel, { color: colors.inkSoft }]}>Indietro</Text>
                 </Pressable>
-              )}
-              <ThemedText type="title" style={styles.title}>
+              ) : null}
+              <Text style={[AppTextStyle.title, { color: colors.ink }]}>
                 {isCoach && selectedClient ? clientFullName(selectedClient) : 'Chat con il coach'}
-              </ThemedText>
+              </Text>
             </View>
           }
           ListEmptyComponent={
-            <ThemedText type="small" themeColor="textSecondary">
-              {isCoach
-                ? 'Nessun messaggio con questo cliente. Scrivi il primo messaggio qui sotto.'
-                : 'Nessun messaggio ancora. Scrivi al tuo coach qui sotto.'}
-            </ThemedText>
+            <AppCard>
+              <AppEmptyState
+                icon={<MessageCircle size={20} color={colors.moss} strokeWidth={2} />}
+                title="Nessun messaggio ancora"
+                subtitle={
+                  isCoach
+                    ? 'Nessun messaggio con questo cliente. Scrivi il primo messaggio qui sotto.'
+                    : 'Scrivi al tuo coach qui sotto per iniziare la conversazione.'
+                }
+              />
+            </AppCard>
           }
           renderItem={({ item }) => <MessageBubble message={item} isCoach={isCoach} />}
         />
@@ -201,27 +205,30 @@ export default function ChatScreen() {
           style={[
             styles.inputRow,
             {
-              borderTopColor: theme.border,
-              paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + Spacing.two : Spacing.two),
+              borderTopColor: colors.border,
+              paddingBottom: insets.bottom + (Platform.OS === 'web' ? BottomTabInset + AppSpacing[2] : AppSpacing[2]),
             },
           ]}>
-          <ThemedTextInput
-            style={styles.input}
-            placeholder={isCoach && selectedClient ? `Scrivi a ${clientFullName(selectedClient)}` : 'Scrivi un messaggio...'}
-            value={draft}
-            onChangeText={setDraft}
-            multiline
+          <View style={styles.inputWrap}>
+            <AppTextField
+              placeholder={isCoach && selectedClient ? `Scrivi a ${clientFullName(selectedClient)}` : 'Scrivi un messaggio...'}
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+              style={styles.input}
+            />
+          </View>
+          <AppIconButton
+            icon={<Send size={17} color={colors.onCoral} />}
+            onPress={handleSend}
+            disabled={sendDisabled}
+            tone="coral"
+            bordered={false}
+            accessibilityLabel="Invia messaggio"
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
-            <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.sendButtonDisabled]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                Invia
-              </ThemedText>
-            </View>
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </ScreenBackground>
+    </View>
   );
 }
 
@@ -238,64 +245,62 @@ function CoachConversationList({
   onNewConversation: () => void;
   onSelect: (clientId: string) => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <ScreenBackground>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
         data={conversations}
         keyExtractor={(item) => item.client.id}
         contentContainerStyle={[
           styles.list,
           {
-            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
-            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+            paddingTop: Platform.OS === 'web' ? AppSpacing[4] : insetsTop + AppSpacing[3],
+            paddingBottom: insetsBottom + BottomTabInset + AppSpacing[4],
           },
         ]}
         ListHeaderComponent={
           <View style={styles.listHeader}>
-            <ThemedText type="title" style={styles.title}>
-              Messaggi
-            </ThemedText>
-            <Pressable onPress={onNewConversation} hitSlop={8} accessibilityLabel="Nuova conversazione">
-              <View style={[styles.addButton, { backgroundColor: theme.primary }]}>
-                <ThemedText type="title" themeColor="onPrimary" style={styles.addButtonText}>
-                  +
-                </ThemedText>
-              </View>
-            </Pressable>
+            <Text style={[AppTextStyle.title, { color: colors.ink }]}>Messaggi</Text>
+            <AppIconButton
+              icon={<Plus size={20} color={colors.onCoral} />}
+              onPress={onNewConversation}
+              tone="coral"
+              bordered={false}
+              accessibilityLabel="Nuova conversazione"
+            />
           </View>
         }
         ListEmptyComponent={
-          <View style={[styles.emptyBox, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-            <ThemedText type="subtitle">Nessun messaggio</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Quando un cliente ti scrive, la conversazione comparira qui. Usa + per iniziare tu.
-            </ThemedText>
-          </View>
+          <AppCard>
+            <AppEmptyState
+              icon={<MessageCircle size={20} color={colors.moss} strokeWidth={2} />}
+              title="Nessun messaggio"
+              subtitle="Quando un cliente ti scrive, la conversazione comparira qui. Usa + per iniziare tu."
+            />
+          </AppCard>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => onSelect(item.client.id)} hitSlop={4}>
-            <View style={[styles.conversationRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <AppCard onPress={() => onSelect(item.client.id)} style={styles.conversationCard}>
+            <View style={styles.conversationRow}>
               <View style={styles.conversationMain}>
                 <View style={styles.conversationTitleRow}>
-                  <ThemedText type="smallBold" numberOfLines={1} style={styles.conversationName}>
+                  <Text style={[styles.conversationName, { color: colors.ink }]} numberOfLines={1}>
                     {clientFullName(item.client)}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {formatConversationTime(item.lastMessage.createdAt)}
-                  </ThemedText>
+                  </Text>
+                  <Text style={[styles.metaText, { color: colors.inkSoft }]}>{formatConversationTime(item.lastMessage.createdAt)}</Text>
                 </View>
-                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                <Text style={[styles.metaText, { color: colors.inkSoft }]} numberOfLines={1}>
                   {item.lastMessage.text}
-                </ThemedText>
+                </Text>
               </View>
-              {item.unreadCount > 0 && <UnreadBadge count={item.unreadCount} />}
+              {item.unreadCount > 0 ? <UnreadBadge count={item.unreadCount} /> : null}
             </View>
-          </Pressable>
+          </AppCard>
         )}
+        ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
       />
-    </ScreenBackground>
+    </View>
   );
 }
 
@@ -312,168 +317,150 @@ function CoachClientSelector({
   onCancel: () => void;
   onSelect: (clientId: string) => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <ScreenBackground>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
         data={clients}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.list,
           {
-            paddingTop: Platform.OS === 'web' ? Spacing.four : insetsTop + Spacing.three,
-            paddingBottom: insetsBottom + BottomTabInset + Spacing.four,
+            paddingTop: Platform.OS === 'web' ? AppSpacing[4] : insetsTop + AppSpacing[3],
+            paddingBottom: insetsBottom + BottomTabInset + AppSpacing[4],
           },
         ]}
         ListHeaderComponent={
           <View style={styles.header}>
             <Pressable onPress={onCancel} hitSlop={8} style={styles.backButton}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Annulla
-              </ThemedText>
+              <Text style={[styles.backLabel, { color: colors.inkSoft }]}>Annulla</Text>
             </Pressable>
-            <ThemedText type="title" style={styles.title}>
-              Nuovo messaggio
-            </ThemedText>
+            <Text style={[AppTextStyle.title, { color: colors.ink }]}>Nuovo messaggio</Text>
           </View>
         }
         ListEmptyComponent={
-          <View style={[styles.emptyBox, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-            <ThemedText type="subtitle">Tutti i clienti sono gia in lista</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Apri una conversazione esistente per continuare a scrivere.
-            </ThemedText>
-          </View>
+          <AppCard>
+            <AppEmptyState
+              icon={<MessageCircle size={20} color={colors.moss} strokeWidth={2} />}
+              title="Tutti i clienti sono gia in lista"
+              subtitle="Apri una conversazione esistente per continuare a scrivere."
+            />
+          </AppCard>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => onSelect(item.id)} hitSlop={4}>
-            <View style={[styles.clientRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-              <ThemedText type="smallBold">{clientFullName(item)}</ThemedText>
-            </View>
-          </Pressable>
+          <AppCard onPress={() => onSelect(item.id)} style={styles.clientCard}>
+            <Text style={[styles.conversationName, { color: colors.ink }]}>{clientFullName(item)}</Text>
+          </AppCard>
         )}
+        ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
       />
-    </ScreenBackground>
+    </View>
   );
 }
 
 function MessageBubble({ message, isCoach }: { message: ChatMessage; isCoach: boolean }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const isMine = isCoach ? message.sender === 'coach' : message.sender === 'client';
   return (
     <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       <View
         style={[
           styles.bubble,
-          { backgroundColor: isMine ? theme.primary : theme.backgroundElement, borderColor: theme.border },
+          isMine
+            ? { backgroundColor: colors.coral, borderColor: colors.coral }
+            : { backgroundColor: colors.surface, borderColor: colors.border },
         ]}>
-        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'}>
-          {message.text}
-        </ThemedText>
+        <Text style={[styles.bubbleText, { color: isMine ? colors.onCoral : colors.ink }]}>{message.text}</Text>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.bubbleTime}>
-        {formatTime(message.createdAt)}
-      </ThemedText>
+      <Text style={[styles.bubbleTime, { color: colors.inkFaint }]}>{formatTime(message.createdAt)}</Text>
     </View>
   );
 }
 
 function UnreadBadge({ count }: { count: number }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   return (
-    <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
-      <ThemedText type="smallBold" themeColor="onPrimary" style={styles.unreadBadgeText}>
-        {count > 99 ? '99+' : String(count)}
-      </ThemedText>
+    <View style={[styles.unreadBadge, { backgroundColor: colors.coral }]}>
+      <Text style={[styles.unreadBadgeText, { color: colors.onCoral }]}>{count > 99 ? '99+' : String(count)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   flex: {
     flex: 1,
   },
   list: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
+    paddingHorizontal: AppSpacing[5],
+    gap: AppSpacing[2],
     flexGrow: 1,
   },
   header: {
-    gap: Spacing.two,
-    marginBottom: Spacing.two,
+    gap: AppSpacing[2],
+    marginBottom: AppSpacing[2],
   },
   listHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: Spacing.two,
-  },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: '700',
+    marginBottom: AppSpacing[2],
   },
   backButton: {
     alignSelf: 'flex-start',
     minHeight: 40,
-    paddingVertical: Spacing.one,
+    paddingVertical: AppSpacing[1],
   },
-  addButton: {
-    alignItems: 'center',
-    borderRadius: Radius.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
+  backLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
-  addButtonText: {
-    fontSize: 28,
-    lineHeight: 30,
-  },
-  emptyBox: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.one,
-    padding: Spacing.three,
+  conversationCard: {
+    padding: AppSpacing[3],
   },
   conversationRow: {
     alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.two,
-    padding: Spacing.three,
+    gap: AppSpacing[2],
   },
   conversationMain: {
     flex: 1,
-    gap: Spacing.one,
+    gap: 2,
     minWidth: 0,
   },
   conversationTitleRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
     minWidth: 0,
   },
   conversationName: {
     flex: 1,
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
-  clientRow: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+  metaText: {
+    fontSize: AppFontSize.sm,
+  },
+  clientCard: {
+    padding: AppSpacing[3],
     minHeight: 48,
-    padding: Spacing.three,
+    justifyContent: 'center',
   },
   unreadBadge: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
     minWidth: 22,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
   unreadBadgeText: {
     fontSize: 11,
+    fontWeight: '700',
     lineHeight: 14,
   },
   bubbleRow: {
@@ -489,34 +476,29 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   bubble: {
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    paddingVertical: AppSpacing[2],
+  },
+  bubbleText: {
+    fontSize: AppFontSize.sm,
   },
   bubbleTime: {
     fontSize: 11,
   },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    alignItems: 'center',
+    gap: AppSpacing[2],
+    paddingHorizontal: AppSpacing[5],
+    paddingTop: AppSpacing[2],
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  input: {
+  inputWrap: {
     flex: 1,
+  },
+  input: {
     maxHeight: 100,
-  },
-  sendButton: {
-    borderRadius: Radius.md,
-    minHeight: 44,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
   },
 });

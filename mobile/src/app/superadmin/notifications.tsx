@@ -1,48 +1,39 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { SuperadminNotification, SuperadminNotificationType } from '@/types/superadmin';
 
 export default function SuperadminNotifications() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const notifications = useSuperadminStore((s) => s.notifications);
   const markAllNotificationsRead = useSuperadminStore((s) => s.markAllNotificationsRead);
   const unreadCount = notifications.filter((notification) => !notification.read).length;
 
   return (
     <SuperadminShell title="Notifiche" description="Registro interno degli eventi amministrativi importanti.">
-      <Card style={styles.summaryCard}>
+      <AppCard style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <View style={styles.summaryText}>
-            <ThemedText type="smallBold">Non lette</ThemedText>
-            <ThemedText type="subtitle" style={{ color: unreadCount > 0 ? theme.primary : theme.text }}>
-              {unreadCount}
-            </ThemedText>
+            <Text style={[styles.summaryLabel, { color: colors.ink }]}>Non lette</Text>
+            <Text style={[styles.summaryValue, { color: unreadCount > 0 ? colors.coral : colors.ink }]}>{unreadCount}</Text>
           </View>
-          <Pressable
+          <AppButton
+            label="Segna tutte come lette"
             onPress={markAllNotificationsRead}
             disabled={unreadCount === 0}
-            hitSlop={6}
-            style={[styles.outlineButton, { borderColor: unreadCount > 0 ? theme.primary : theme.border, opacity: unreadCount > 0 ? 1 : 0.55 }]}>
-            <ThemedText type="smallBold" style={{ color: unreadCount > 0 ? theme.primary : theme.textSecondary }}>
-              Segna tutte come lette
-            </ThemedText>
-          </Pressable>
+            variant="outline"
+          />
         </View>
-      </Card>
+      </AppCard>
 
       {notifications.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <ThemedText type="smallBold">Nessuna notifica</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Gli eventi amministrativi verranno mostrati qui.
-          </ThemedText>
-        </Card>
+        <AppCard style={styles.emptyCard}>
+          <Text style={[styles.emptyTitle, { color: colors.ink }]}>Nessuna notifica</Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Gli eventi amministrativi verranno mostrati qui.</Text>
+        </AppCard>
       ) : (
         notifications.map((notification) => <NotificationCard key={notification.id} notification={notification} />)
       )}
@@ -51,43 +42,32 @@ export default function SuperadminNotifications() {
 }
 
 function NotificationCard({ notification }: { notification: SuperadminNotification }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const markNotificationRead = useSuperadminStore((s) => s.markNotificationRead);
-  const tone = notification.read ? theme.textSecondary : theme.primary;
 
   return (
-    <Card style={[styles.notificationCard, { borderColor: notification.read ? theme.border : theme.primary }]}>
+    <AppCard style={[styles.notificationCard, { borderColor: notification.read ? colors.border : colors.coral }]}>
       <View style={styles.notificationHeader}>
         <View style={styles.notificationTitle}>
-          <View style={[styles.readDot, { backgroundColor: notification.read ? theme.disabled : theme.primary }]} />
-          <ThemedText type="smallBold">{notification.title}</ThemedText>
+          <View style={[styles.readDot, { backgroundColor: notification.read ? colors.inkFaint : colors.coral }]} />
+          <Text style={[styles.notificationTitleText, { color: colors.ink }]}>{notification.title}</Text>
         </View>
-        <ThemedText type="smallBold" style={[styles.typeBadge, { borderColor: tone, color: tone }]}>
-          {getNotificationTypeLabel(notification.type)}
-        </ThemedText>
+        <AppBadge label={getNotificationTypeLabel(notification.type)} tone={notification.read ? 'neutral' : 'coral'} />
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        {notification.description}
-      </ThemedText>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{notification.description}</Text>
 
       <View style={styles.notificationFooter}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatNotificationDate(notification.createdAt)}
-        </ThemedText>
-        <ThemedText type="smallBold" style={{ color: notification.read ? theme.textSecondary : theme.primary }}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{formatNotificationDate(notification.createdAt)}</Text>
+        <Text style={[styles.statusText, { color: notification.read ? colors.inkSoft : colors.coral }]}>
           {notification.read ? 'Letta' : 'Non letta'}
-        </ThemedText>
+        </Text>
       </View>
 
       {!notification.read ? (
-        <Pressable onPress={() => markNotificationRead(notification.id)} hitSlop={6} style={[styles.readButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
-            Segna come letta
-          </ThemedText>
-        </Pressable>
+        <AppButton label="Segna come letta" onPress={() => markNotificationRead(notification.id)} fullWidth />
       ) : null}
-    </Card>
+    </AppCard>
   );
 }
 
@@ -118,67 +98,69 @@ function formatNotificationDate(value: string) {
 
 const styles = StyleSheet.create({
   summaryCard: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   summaryRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   summaryText: {
     flex: 1,
   },
-  outlineButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 44,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+  summaryLabel: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  summaryValue: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   emptyCard: {
-    gap: Spacing.one,
+    gap: 4,
+  },
+  emptyTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
   notificationCard: {
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
+    borderWidth: 1.5,
+    gap: AppSpacing[2],
   },
   notificationHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   notificationTitle: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: Spacing.one,
+    gap: AppSpacing[1],
+  },
+  notificationTitleText: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+    flexShrink: 1,
   },
   readDot: {
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
     height: 9,
     width: 9,
-  },
-  typeBadge: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
   },
   notificationFooter: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
-  readButton: {
-    alignItems: 'center',
-    borderRadius: Radius.md,
-    minHeight: 44,
-    paddingVertical: Spacing.two,
-    width: '100%',
+  statusText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
 });

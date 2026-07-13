@@ -1,14 +1,11 @@
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ThemedText } from './themed-text';
-import { ThemedTextInput } from './themed-text-input';
+import { AppButton, AppCard, AppTextField } from './ui';
 
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { formatDateForDisplay, parseDateFromDisplay } from '@/lib/format-date';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { SUBSCRIPTION_STATUS_LABEL, type SubscriptionPackage, type SubscriptionStatus } from '@/types/subscription';
 
 const STATUS_OPTIONS: SubscriptionStatus[] = ['active', 'paused', 'completed', 'expired', 'cancelled'];
@@ -28,7 +25,7 @@ export function SubscriptionForm({
   onSave: (subscription: SubscriptionPackage) => void;
   saveLabel: string;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const [packageName, setPackageName] = useState(initialSubscription?.packageName ?? '');
   const [totalWorkoutsPurchased, setTotalWorkoutsPurchased] = useState(
     String(initialSubscription?.totalWorkoutsPurchased ?? 12)
@@ -87,117 +84,86 @@ export function SubscriptionForm({
 
   return (
     <View style={styles.container}>
-      <Card style={styles.card}>
-        <Field label="Nome pacchetto">
-          <ThemedTextInput value={packageName} onChangeText={setPackageName} placeholder="Es. 12 allenamenti" />
-        </Field>
+      <AppCard style={styles.card}>
+        <AppTextField label="Nome pacchetto" value={packageName} onChangeText={setPackageName} placeholder="Es. 12 allenamenti" />
+        <AppTextField
+          label="Totale acquistati"
+          value={totalWorkoutsPurchased}
+          onChangeText={setTotalWorkoutsPurchased}
+          placeholder="12"
+          keyboardType="number-pad"
+        />
+        <AppTextField
+          label="Completati"
+          value={completedWorkouts}
+          onChangeText={setCompletedWorkouts}
+          placeholder="0"
+          keyboardType="number-pad"
+        />
+        <AppTextField label="Data inizio" value={startDate} onChangeText={setStartDate} placeholder="gg/mm/aaaa" />
+        <AppTextField label="Data fine (opzionale)" value={endDate} onChangeText={setEndDate} placeholder="gg/mm/aaaa" />
 
-        <Field label="Totale acquistati">
-          <ThemedTextInput
-            value={totalWorkoutsPurchased}
-            onChangeText={setTotalWorkoutsPurchased}
-            placeholder="12"
-            keyboardType="number-pad"
-          />
-        </Field>
-
-        <Field label="Completati">
-          <ThemedTextInput
-            value={completedWorkouts}
-            onChangeText={setCompletedWorkouts}
-            placeholder="0"
-            keyboardType="number-pad"
-          />
-        </Field>
-
-        <Field label="Data inizio">
-          <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="gg/mm/aaaa" />
-        </Field>
-
-        <Field label="Data fine (opzionale)">
-          <ThemedTextInput value={endDate} onChangeText={setEndDate} placeholder="gg/mm/aaaa" />
-        </Field>
-
-        <Field label="Stato">
+        <View style={styles.field}>
+          <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>Stato</Text>
           <View style={styles.chipsRow}>
             {STATUS_OPTIONS.map((option) => {
               const active = option === status;
               return (
-                <Pressable key={option} onPress={() => setStatus(option)}>
-                  <View
-                    style={[
-                      styles.chip,
-                      { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                    ]}>
-                    <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                      {SUBSCRIPTION_STATUS_LABEL[option]}
-                    </ThemedText>
-                  </View>
+                <Pressable
+                  key={option}
+                  onPress={() => setStatus(option)}
+                  style={[styles.chip, { backgroundColor: active ? colors.moss : 'transparent', borderColor: colors.moss }]}>
+                  <Text style={[styles.chipLabel, { color: active ? colors.onMoss : colors.moss }]}>
+                    {SUBSCRIPTION_STATUS_LABEL[option]}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
-        </Field>
-
-        <Field label="Note (opzionale)">
-          <ThemedTextInput value={notes} onChangeText={setNotes} placeholder="Note interne" multiline />
-        </Field>
-      </Card>
-
-      {error && (
-        <ThemedText type="small" themeColor="statusExpired">
-          {error}
-        </ThemedText>
-      )}
-
-      <Pressable onPress={handleSave}>
-        <View style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            {saveLabel}
-          </ThemedText>
         </View>
-      </Pressable>
-    </View>
-  );
-}
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      {children}
+        <AppTextField label="Note (opzionale)" value={notes} onChangeText={setNotes} placeholder="Note interne" multiline />
+      </AppCard>
+
+      {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+
+      <AppButton label={saveLabel} onPress={handleSave} fullWidth size="lg" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   card: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   field: {
     gap: 4,
     width: '100%',
   },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+  },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   chip: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
+    paddingHorizontal: AppSpacing[3],
     paddingVertical: 7,
   },
-  saveButton: {
-    borderRadius: Radius.md,
-    padding: Spacing.three,
-    alignItems: 'center',
-    marginTop: Spacing.one,
+  chipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
 });

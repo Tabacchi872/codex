@@ -1,20 +1,18 @@
 import { useAudioPlayer } from 'expo-audio';
-import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ThemedText } from './themed-text';
+import { AppCard } from './ui';
 
-import { Radius, Spacing } from '@/constants/theme';
 import { SOUND_LABELS, SOUND_REGISTRY } from '@/data/sound-registry';
-import { useTheme } from '@/hooks/use-theme';
 import { useTrainingStore } from '@/store/training-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { SelectedSound } from '@/types/training';
 
 const SOUND_OPTIONS: SelectedSound[] = ['beep', 'double-beep', 'chime', 'sirena'];
 const VOLUME_STEP = 0.1;
 
 export function SoundSettings() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const settings = useTrainingStore((s) => s.soundSettings);
   const updateSoundSettings = useTrainingStore((s) => s.updateSoundSettings);
   const previewPlayer = useAudioPlayer(SOUND_REGISTRY[settings.selectedSound]);
@@ -28,7 +26,7 @@ export function SoundSettings() {
 
   return (
     <View style={styles.container}>
-      <Card padded={false}>
+      <AppCard padded={false}>
         <ToggleRow
           label="Suoni di recupero"
           value={settings.restSoundEnabled}
@@ -49,73 +47,60 @@ export function SoundSettings() {
           disabled={!settings.restSoundEnabled}
         />
         <Divider />
-        <ToggleRow
-          label="Vibrazione"
-          value={settings.vibrationEnabled}
-          onChange={(v) => updateSoundSettings({ vibrationEnabled: v })}
-        />
-      </Card>
+        <ToggleRow label="Vibrazione" value={settings.vibrationEnabled} onChange={(v) => updateSoundSettings({ vibrationEnabled: v })} />
+      </AppCard>
 
       <SectionLabel>Volume</SectionLabel>
-      <Card style={styles.volumeRow}>
+      <AppCard style={styles.volumeRow}>
         <StepperButton
           label="−"
           onPress={() => updateSoundSettings({ restSoundVolume: Math.max(0, +(settings.restSoundVolume - VOLUME_STEP).toFixed(2)) })}
           disabled={!settings.restSoundEnabled || settings.restSoundVolume <= 0}
         />
-        <ThemedText type="default" style={styles.volumeValue}>
-          {Math.round(settings.restSoundVolume * 100)}%
-        </ThemedText>
+        <Text style={[styles.volumeValue, { color: colors.ink }]}>{Math.round(settings.restSoundVolume * 100)}%</Text>
         <StepperButton
           label="+"
           onPress={() => updateSoundSettings({ restSoundVolume: Math.min(1, +(settings.restSoundVolume + VOLUME_STEP).toFixed(2)) })}
           disabled={!settings.restSoundEnabled || settings.restSoundVolume >= 1}
         />
-      </Card>
+      </AppCard>
 
       <SectionLabel>Suono selezionato</SectionLabel>
-      <Card padded={false}>
+      <AppCard padded={false}>
         {SOUND_OPTIONS.map((sound, index) => (
           <View key={sound}>
             <Pressable onPress={() => updateSoundSettings({ selectedSound: sound })} style={styles.soundOptionRow}>
-              <View style={styles.radio}>
-                {settings.selectedSound === sound && <View style={[styles.radioDot, { backgroundColor: theme.primary }]} />}
+              <View style={[styles.radio, { borderColor: colors.moss }]}>
+                {settings.selectedSound === sound ? <View style={[styles.radioDot, { backgroundColor: colors.moss }]} /> : null}
               </View>
-              <ThemedText type="default" style={styles.soundOptionLabel}>
-                {SOUND_LABELS[sound]}
-              </ThemedText>
+              <Text style={[styles.soundOptionLabel, { color: colors.ink }]}>{SOUND_LABELS[sound]}</Text>
               <Pressable onPress={() => playPreview(sound)} hitSlop={8}>
-                <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
-                  Prova
-                </ThemedText>
+                <Text style={[styles.previewLink, { color: colors.moss }]}>Prova</Text>
               </Pressable>
             </Pressable>
-            {index < SOUND_OPTIONS.length - 1 && <Divider />}
+            {index < SOUND_OPTIONS.length - 1 ? <Divider /> : null}
           </View>
         ))}
-      </Card>
+      </AppCard>
 
-      {Platform.OS === 'web' && (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.webNote}>
-          Nella preview web la vibrazione non è disponibile (limite del browser): sarà attiva su iPhone/Android
-          reali. Il suono invece funziona anche qui.
-        </ThemedText>
-      )}
+      {Platform.OS === 'web' ? (
+        <Text style={[styles.webNote, { color: colors.inkSoft }]}>
+          Nella preview web la vibrazione non è disponibile (limite del browser): sarà attiva su iPhone/Android reali. Il suono
+          invece funziona anche qui.
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 function SectionLabel({ children }: { children: string }) {
-  return (
-    <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
-      {children.toUpperCase()}
-    </ThemedText>
-  );
+  const { colors } = useAppTheme();
+  return <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>{children.toUpperCase()}</Text>;
 }
 
 function Divider() {
-  const theme = useTheme();
-  return <View style={[styles.divider, { backgroundColor: theme.border }]} />;
+  const { colors } = useAppTheme();
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 function ToggleRow({
@@ -129,37 +114,23 @@ function ToggleRow({
   onChange: (v: boolean) => void;
   disabled?: boolean;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
     <View style={styles.toggleRow}>
-      <ThemedText type="default" themeColor={disabled ? 'disabled' : 'text'} style={styles.toggleLabel}>
-        {label}
-      </ThemedText>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        disabled={disabled}
-        trackColor={{ true: theme.primary }}
-      />
+      <Text style={[styles.toggleLabel, { color: disabled ? colors.inkFaint : colors.ink }]}>{label}</Text>
+      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: colors.moss }} />
     </View>
   );
 }
 
 function StepperButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
     <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => pressed && !disabled && styles.pressed}>
-      <View
-        style={[
-          styles.stepperButton,
-          { backgroundColor: theme.backgroundSelected },
-          disabled && styles.stepperDisabled,
-        ]}>
-        <ThemedText type="smallBold" themeColor={disabled ? 'disabled' : 'text'}>
-          {label}
-        </ThemedText>
+      <View style={[styles.stepperButton, { backgroundColor: colors.surfaceSubtle }, disabled && styles.stepperDisabled]}>
+        <Text style={[styles.stepperLabel, { color: disabled ? colors.inkFaint : colors.ink }]}>{label}</Text>
       </View>
     </Pressable>
   );
@@ -167,37 +138,41 @@ function StepperButton({ label, onPress, disabled }: { label: string; onPress: (
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   sectionLabel: {
-    marginBottom: -Spacing.one,
-    letterSpacing: 0.4,
+    fontSize: AppFontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginBottom: -AppSpacing[1],
   },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
+    paddingVertical: AppSpacing[3],
+    paddingHorizontal: AppSpacing[3],
   },
   toggleLabel: {
     flex: 1,
-    marginRight: Spacing.two,
+    marginRight: AppSpacing[2],
+    fontSize: AppFontSize.md,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: Spacing.three,
+    marginLeft: AppSpacing[3],
   },
   volumeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.four,
+    gap: AppSpacing[4],
   },
   volumeValue: {
     minWidth: 48,
     textAlign: 'center',
     fontWeight: '600',
+    fontSize: AppFontSize.md,
   },
   stepperButton: {
     width: 36,
@@ -205,6 +180,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  stepperLabel: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
   stepperDisabled: {
     opacity: 0.5,
@@ -215,28 +194,33 @@ const styles = StyleSheet.create({
   soundOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
+    gap: AppSpacing[2],
+    paddingVertical: AppSpacing[3],
+    paddingHorizontal: AppSpacing[3],
   },
   radio: {
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: '#9BA0A6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioDot: {
     width: 9,
     height: 9,
-    borderRadius: Radius.pill,
+    borderRadius: AppRadius.pill,
   },
   soundOptionLabel: {
     flex: 1,
+    fontSize: AppFontSize.md,
+  },
+  previewLink: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   webNote: {
+    fontSize: AppFontSize.sm,
     lineHeight: 18,
   },
 });

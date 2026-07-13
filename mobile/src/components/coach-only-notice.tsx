@@ -1,21 +1,17 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Spacing } from '@/constants/theme';
+import { AppSpacing, useAppTheme } from '@/theme';
 
 // Guardia di contenuto (non un redirect di navigazione): se un account cliente
 // finisse su una schermata riservata al coach (es. digitando l'URL nella
 // preview web), mostra questo messaggio invece del contenuto reale. Demo
 // locale: non è un controllo di sicurezza, è una barriera onesta lato UI.
 export function CoachOnlyNotice() {
+  const { colors } = useAppTheme();
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="default" themeColor="textSecondary" style={styles.text}>
-        Sezione riservata al coach.
-      </ThemedText>
-    </ThemedView>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.text, { color: colors.inkSoft }]}>Sezione riservata al coach.</Text>
+    </View>
   );
 }
 
@@ -24,9 +20,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.four,
+    padding: AppSpacing[4],
   },
   text: {
+    fontSize: 15,
+    fontWeight: '600',
     textAlign: 'center',
   },
 });

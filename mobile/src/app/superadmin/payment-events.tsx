@@ -1,11 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppCard, type AppBadgeTone } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { DemoPaymentEvent } from '@/types/superadmin';
 
 export default function SuperadminPaymentEvents() {
@@ -26,21 +24,17 @@ export default function SuperadminPaymentEvents() {
 }
 
 function PaymentEventCard({ event, coachName }: { event: DemoPaymentEvent; coachName: string }) {
-  const theme = useTheme();
-  const color = event.status === 'succeeded' ? theme.statusActive : event.status === 'failed' ? theme.statusExpired : theme.statusWarning;
+  const { colors } = useAppTheme();
+  const tone: AppBadgeTone = event.status === 'succeeded' ? 'moss' : event.status === 'failed' ? 'rust' : 'amber';
 
   return (
-    <Card style={styles.card}>
+    <AppCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleBlock}>
-          <ThemedText type="smallBold">{coachName}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {getPaymentEventLabel(event.eventType)}
-          </ThemedText>
+          <Text style={[styles.coachName, { color: colors.ink }]}>{coachName}</Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>{getPaymentEventLabel(event.eventType)}</Text>
         </View>
-        <ThemedText type="smallBold" style={[styles.badge, { borderColor: color, color }]}>
-          {getPaymentStatusLabel(event.status)}
-        </ThemedText>
+        <AppBadge label={getPaymentStatusLabel(event.status)} tone={tone} />
       </View>
 
       <View style={styles.grid}>
@@ -48,7 +42,7 @@ function PaymentEventCard({ event, coachName }: { event: DemoPaymentEvent; coach
         <Field label="Data" value={event.createdAt} />
         <Field label="Importo" value={event.amount === undefined ? '-' : `EUR ${event.amount}`} />
       </View>
-    </Card>
+    </AppCard>
   );
 }
 
@@ -82,44 +76,47 @@ function getPaymentProviderLabel(provider: DemoPaymentEvent['provider']) {
 }
 
 function Field({ label, value }: { label: string; value: string }) {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{label}</Text>
+      <Text style={[styles.fieldValue, { color: colors.ink }]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   header: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   titleBlock: {
     flex: 1,
   },
-  badge: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
+  coachName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   field: {
     flexBasis: 130,
     flexGrow: 1,
-    gap: Spacing.half,
+    gap: 2,
+  },
+  fieldValue: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
 });

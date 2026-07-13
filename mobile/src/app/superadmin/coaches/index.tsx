@@ -1,14 +1,14 @@
-import { Link, router, type Href, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { router, type Href, useLocalSearchParams } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppBadge, AppButton, AppCard, type AppBadgeTone } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
-import type { AppBillingStatus, DemoCoachAccount } from '@/types/superadmin';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
+import type { AppBillingStatus, SuperadminCoach } from '@/types/superadmin';
 
 type CoachFilterStatus = 'all' | AppBillingStatus;
 
@@ -16,14 +16,14 @@ const FILTERS: { value: CoachFilterStatus; label: string }[] = [
   { value: 'all', label: 'Tutti' },
   { value: 'active', label: 'Attivi' },
   { value: 'trial', label: 'In prova' },
-  { value: 'past_due', label: 'Pagamento scaduto' },
+  { value: 'past_due', label: 'Scaduti' },
   { value: 'blocked', label: 'Bloccati' },
   { value: 'canceled', label: 'Annullati' },
 ];
 
 export default function SuperadminCoaches() {
   const params = useLocalSearchParams<{ status?: string | string[] }>();
-  const coaches = useSuperadminStore((s) => s.coaches);
+  const { coaches, loading } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
   const selectedStatus = getSelectedFilter(params.status);
   const filteredCoaches = selectedStatus === 'all' ? coaches : coaches.filter((coach) => coach.billingStatus === selectedStatus);
@@ -36,56 +36,54 @@ export default function SuperadminCoaches() {
         ))}
       </View>
 
-      <Link href="/superadmin/coaches/new" asChild>
-        <Pressable hitSlop={6} style={styles.primaryButton}>
-          <ThemedText type="smallBold" style={styles.primaryButtonText}>
-            + Aggiungi coach
-          </ThemedText>
-        </Pressable>
-      </Link>
+      <AppButton label="+ Aggiungi coach" onPress={() => router.push('/superadmin/coaches/new')} fullWidth size="lg" />
 
       {filteredCoaches.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <ThemedText type="smallBold">Nessun coach trovato</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Cambia filtro per vedere altri coach.
-          </ThemedText>
-        </Card>
+        <AppCard style={styles.emptyCard}>
+          {loading ? <EmptyText loading /> : <EmptyText />}
+        </AppCard>
       ) : null}
 
       {filteredCoaches.map((coach) => {
         const plan = plans.find((item) => item.code === coach.planCode);
         const clientLimit = coach.clientLimitOverride ?? plan?.clientLimit ?? null;
         return (
-          <Pressable
+          <CoachCard
             key={coach.id}
-            hitSlop={4}
-            style={styles.coachLink}
-            onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}>
-            <CoachCard coach={coach} planName={plan?.name ?? coach.planCode} clientLimit={clientLimit} />
-          </Pressable>
+            coach={coach}
+            planName={plan?.name ?? coach.planCode}
+            clientLimit={clientLimit}
+            onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}
+          />
         );
       })}
     </SuperadminShell>
   );
 }
 
+function EmptyText({ loading = false }: { loading?: boolean }) {
+  const { colors } = useAppTheme();
+  if (loading) {
+    return <Text style={[styles.emptyTitle, { color: colors.ink }]}>Caricamento coach da Supabase...</Text>;
+  }
+  return (
+    <>
+      <Text style={[styles.emptyTitle, { color: colors.ink }]}>Nessun coach trovato</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.inkSoft }]}>Cambia filtro per vedere altri coach.</Text>
+    </>
+  );
+}
+
 function FilterChip({ filter, active }: { filter: { value: CoachFilterStatus; label: string }; active: boolean }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   return (
     <Pressable
       onPress={() => router.push(`/superadmin/coaches?status=${filter.value}` as Href)}
       hitSlop={4}
-      style={[
-        styles.filterChip,
-        {
-          backgroundColor: active ? theme.softRed : theme.backgroundElement,
-          borderColor: active ? theme.primary : theme.border,
-        },
-      ]}>
-      <ThemedText type="smallBold" numberOfLines={1} style={{ color: active ? theme.primary : theme.textSecondary }}>
+      style={[styles.filterChip, { backgroundColor: active ? colors.coral : 'transparent', borderColor: colors.coral }]}>
+      <Text style={[styles.filterChipLabel, { color: active ? colors.onCoral : colors.coral }]} numberOfLines={1}>
         {filter.label}
-      </ThemedText>
+      </Text>
     </Pressable>
   );
 }
@@ -99,140 +97,161 @@ function CoachCard({
   coach,
   planName,
   clientLimit,
+  onPress,
 }: {
-  coach: DemoCoachAccount;
+  coach: SuperadminCoach;
   planName: string;
   clientLimit: number | null;
+  onPress: () => void;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <Card style={styles.card}>
+    <AppCard onPress={onPress} style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.coachIdentity}>
-          <ThemedText type="smallBold">{coach.name}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {coach.email}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Codice {coach.coachCode}
-          </ThemedText>
+          <Text style={[styles.coachName, { color: colors.ink }]}>{coach.name}</Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>{coach.email}</Text>
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Codice {coach.coachCode || 'nessuno'}</Text>
         </View>
-        <StatusBadge status={coach.billingStatus} />
+        <View style={styles.badgeStack}>
+          <AppBadge label={getBillingStatusLabel(coach.billingStatus)} tone={statusTone(coach.billingStatus)} />
+          {coach.source === 'local' ? <AppBadge label="Solo locale" tone="neutral" /> : null}
+        </View>
       </View>
 
       <View style={styles.dataGrid}>
-        <Field label="Piano attivo" value={planName} />
-        <Field label="Clienti usati" value={String(coach.clientsUsed)} />
-        <Field label="Limite clienti" value={clientLimit === null ? 'Illimitato' : String(clientLimit)} />
-        <Field label="Scadenza periodo" value={coach.periodEndsAt} />
+        <Field label="Piano app" value={planName} />
         <Field label="Codice coach" value={coach.coachCodeActive ? 'Attivo' : 'Disattivato'} />
       </View>
 
-      <View style={[styles.footer, { borderColor: theme.border }]}>
-        <ThemedText type="smallBold" style={{ color: theme.primary }}>
-          Apri dettaglio e modifica
-        </ThemedText>
+      <View style={[styles.dataGrid, styles.packageGrid, { borderColor: colors.border }]}>
+        <Field label="Pacchetto acquistato" value={coach.activePackageName ?? 'Nessuno'} />
+        <Field
+          label="Clienti utilizzati"
+          value={coach.hasActivePackageSubscription ? `${coach.clientsUsed} su ${coach.activePackageMaxClients ?? '∞'}` : '-'}
+        />
+        <Field
+          label="Posti disponibili"
+          value={coach.hasActivePackageSubscription ? String(coach.activePackageAvailableSlots ?? '∞') : '-'}
+        />
+        <Field label="Scadenza abbonamento" value={coach.activePackageExpiresAt ? formatDate(coach.activePackageExpiresAt) : '-'} />
       </View>
-    </Card>
+
+      <View style={[styles.footer, { borderColor: colors.border }]}>
+        <Text style={[styles.footerText, { color: colors.moss }]}>Apri dettaglio e modifica</Text>
+        <ChevronRight size={16} color={colors.moss} />
+      </View>
+    </AppCard>
   );
 }
 
+function statusTone(status: AppBillingStatus): AppBadgeTone {
+  if (status === 'active') return 'moss';
+  if (status === 'trial') return 'amber';
+  if (status === 'canceled') return 'neutral';
+  return 'rust';
+}
+
+function formatDate(value: string) {
+  try {
+    return new Date(value).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return value;
+  }
+}
+
 function Field({ label, value }: { label: string; value: string }) {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{label}</Text>
+      <Text style={[styles.fieldValue, { color: colors.ink }]}>{value}</Text>
     </View>
   );
 }
 
-function StatusBadge({ status }: { status: AppBillingStatus }) {
-  const theme = useTheme();
-  const color =
-    status === 'active'
-      ? theme.statusActive
-      : status === 'trial'
-        ? theme.statusWarning
-        : status === 'canceled'
-          ? theme.disabled
-          : theme.statusExpired;
-
-  return (
-    <ThemedText type="smallBold" style={[styles.badge, { borderColor: color, color }]}>
-      {getBillingStatusLabel(status)}
-    </ThemedText>
-  );
-}
-
 const styles = StyleSheet.create({
-  coachLink: {
-    width: '100%',
-  },
   filters: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   filterChip: {
     alignItems: 'center',
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 40,
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    minHeight: 32,
     maxWidth: '100%',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[2],
+    paddingVertical: AppSpacing[1],
+  },
+  filterChipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   emptyCard: {
-    gap: Spacing.one,
+    gap: AppSpacing[1],
   },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#C90018',
-    borderRadius: Radius.md,
-    minHeight: 48,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    width: '100%',
+  emptyTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
   },
-  primaryButtonText: {
-    color: '#FFFFFF',
+  emptySubtitle: {
+    fontSize: AppFontSize.sm,
   },
   card: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   cardHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   coachIdentity: {
     flex: 1,
     minWidth: 0,
   },
+  badgeStack: {
+    alignItems: 'flex-end',
+    gap: AppSpacing[1],
+  },
+  coachName: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  smallText: {
+    fontSize: AppFontSize.sm,
+  },
   dataGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
+  },
+  packageGrid: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: AppSpacing[2],
   },
   field: {
     flexBasis: 130,
     flexGrow: 1,
-    gap: Spacing.half,
+    gap: 2,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
+  fieldValue: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: Spacing.two,
+    paddingTop: AppSpacing[2],
+  },
+  footerText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
 });

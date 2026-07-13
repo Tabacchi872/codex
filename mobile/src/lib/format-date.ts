@@ -1,4 +1,16 @@
 const WEEKDAYS_IT = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const MONTHS_IT = [
+  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
+];
+
+// Eyebrow data completa ("MERCOLEDÌ 9 LUGLIO", stile mockup Home): calcolata
+// dalla data reale passata (di norma `new Date()`), mai un valore fisso.
+export function formatFullDateEyebrow(date: Date): string {
+  const weekday = WEEKDAYS_IT[date.getDay()].toUpperCase();
+  const month = MONTHS_IT[date.getMonth()].toUpperCase();
+  return `${weekday} ${date.getDate()} ${month}`;
+}
 // Formattazione data in italiano senza dipendenze esterne (Intl/date-fns), per
 // coerenza con lo stile numerico "AAAA-MM-GG" già usato altrove nell'app.
 export function formatDayMonth(dateStr: string): string {

@@ -1,15 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
-import { ScreenBackground } from '@/components/screen-background';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
+import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { findOverlappingAppointment, isValidTimeRange } from '@/lib/appointment-overlap';
 import { clientFullName } from '@/lib/client-helpers';
 import { formatDateForDisplay, parseDateFromDisplay } from '@/lib/format-date';
@@ -17,14 +11,14 @@ import { getClientPlans } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { APPOINTMENT_TYPE_LABEL, type Appointment, type AppointmentType } from '@/types/appointment';
 
 const APPOINTMENT_TYPES: AppointmentType[] = ['workout', 'extra_session', 'consultation', 'checkin'];
 
 export default function NuovoAppuntamentoScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const { clientId: initialClientId, workoutSessionId: initialSessionId } = useLocalSearchParams<{
     clientId?: string;
     workoutSessionId?: string;
@@ -93,165 +87,120 @@ export default function NuovoAppuntamentoScreen() {
   }
 
   return (
-    <ScreenBackground>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
-        ]}>
-        <Card style={styles.card}>
-          <Field label="Cliente">
-            <View style={styles.chipsRow}>
-              {clients.map((client) => {
-                const active = client.id === clientId;
-                return (
-                  <Pressable key={client.id} onPress={() => setClientId(client.id)}>
-                    <View
-                      style={[
-                        styles.chip,
-                        { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                      ]}>
-                      <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                        {clientFullName(client)}
-                      </ThemedText>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Field>
-
-          <Field label="Titolo">
-            <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Es. Sessione Pull+Gambe" />
-          </Field>
-
-          <Field label="Data appuntamento">
-            <ThemedTextInput value={date} onChangeText={setDate} placeholder="gg/mm/aaaa" />
-          </Field>
-          <View style={styles.fieldsRow}>
-            <Field label="Ora inizio (HH:mm)">
-              <ThemedTextInput value={startTime} onChangeText={setStartTime} placeholder="17:30" />
-            </Field>
-            <Field label="Ora fine (HH:mm)">
-              <ThemedTextInput value={endTime} onChangeText={setEndTime} placeholder="18:30" />
-            </Field>
+    <AppScreen>
+      <AppCard style={styles.card}>
+        <Field label="Cliente">
+          <View style={styles.chipsRow}>
+            {clients.map((client) => (
+              <Chip key={client.id} label={clientFullName(client)} active={client.id === clientId} onPress={() => setClientId(client.id)} />
+            ))}
           </View>
+        </Field>
 
-          <Field label="Tipo appuntamento">
-            <View style={styles.chipsRow}>
-              {APPOINTMENT_TYPES.map((option) => {
-                const active = option === type;
-                return (
-                  <Pressable key={option} onPress={() => setType(option)}>
-                    <View
-                      style={[
-                        styles.chip,
-                        { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                      ]}>
-                      <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                        {APPOINTMENT_TYPE_LABEL[option]}
-                      </ThemedText>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Field>
-
-          <Field label="Scheda collegata (opzionale)">
-            {clientSessions.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Questo cliente non ha ancora schede da collegare.
-              </ThemedText>
-            ) : (
-              <View style={styles.chipsRow}>
-                {clientSessions.map((session) => {
-                  const active = session.id === workoutSessionId;
-                  return (
-                    <Pressable key={session.id} onPress={() => setWorkoutSessionId(active ? '' : session.id)}>
-                      <View
-                        style={[
-                          styles.chip,
-                          { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                        ]}>
-                        <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                          {session.name}
-                        </ThemedText>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-          </Field>
-
-          <Field label="Note (opzionale)">
-            <ThemedTextInput value={notes} onChangeText={setNotes} placeholder="Note interne" multiline />
-          </Field>
-        </Card>
-
-        {error && (
-          <ThemedText type="small" themeColor="statusExpired" style={styles.error}>
-            {error}
-          </ThemedText>
-        )}
-
-        <Pressable onPress={handleSave}>
-          <View style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              Crea appuntamento
-            </ThemedText>
+        <AppTextField label="Titolo" value={title} onChangeText={setTitle} placeholder="Es. Sessione Pull+Gambe" />
+        <AppTextField label="Data appuntamento" value={date} onChangeText={setDate} placeholder="gg/mm/aaaa" />
+        <View style={styles.fieldsRow}>
+          <View style={styles.fieldHalf}>
+            <AppTextField label="Ora inizio (HH:mm)" value={startTime} onChangeText={setStartTime} placeholder="17:30" />
           </View>
-        </Pressable>
-      </ScrollView>
-    </ScreenBackground>
+          <View style={styles.fieldHalf}>
+            <AppTextField label="Ora fine (HH:mm)" value={endTime} onChangeText={setEndTime} placeholder="18:30" />
+          </View>
+        </View>
+
+        <Field label="Tipo appuntamento">
+          <View style={styles.chipsRow}>
+            {APPOINTMENT_TYPES.map((option) => (
+              <Chip key={option} label={APPOINTMENT_TYPE_LABEL[option]} active={option === type} onPress={() => setType(option)} />
+            ))}
+          </View>
+        </Field>
+
+        <Field label="Scheda collegata (opzionale)">
+          {clientSessions.length === 0 ? (
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>Questo cliente non ha ancora schede da collegare.</Text>
+          ) : (
+            <View style={styles.chipsRow}>
+              {clientSessions.map((session) => (
+                <Chip
+                  key={session.id}
+                  label={session.name}
+                  active={session.id === workoutSessionId}
+                  onPress={() => setWorkoutSessionId(session.id === workoutSessionId ? '' : session.id)}
+                />
+              ))}
+            </View>
+          )}
+        </Field>
+
+        <AppTextField label="Note (opzionale)" value={notes} onChangeText={setNotes} placeholder="Note interne" multiline />
+      </AppCard>
+
+      {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+
+      <AppButton label="Crea appuntamento" onPress={handleSave} fullWidth size="lg" />
+    </AppScreen>
   );
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
+      <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>{label}</Text>
       {children}
     </View>
   );
 }
 
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable onPress={onPress} style={[styles.chip, { backgroundColor: active ? colors.moss : 'transparent', borderColor: colors.moss }]}>
+      <Text style={[styles.chipLabel, { color: active ? colors.onMoss : colors.moss }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
   card: {
-    gap: Spacing.three,
+    gap: AppSpacing[3],
   },
   field: {
     gap: 4,
   },
+  fieldLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+  },
   fieldsRow: {
     flexDirection: 'row',
-    gap: Spacing.three,
+    gap: AppSpacing[3],
+  },
+  fieldHalf: {
+    flex: 1,
   },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   chip: {
-    borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
+    paddingHorizontal: AppSpacing[3],
     paddingVertical: 7,
   },
-  error: {
-    marginTop: -Spacing.two,
+  chipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
-  saveButton: {
-    borderRadius: Radius.md,
-    padding: Spacing.three,
-    alignItems: 'center',
-    marginTop: Spacing.two,
+  smallText: {
+    fontSize: AppFontSize.sm,
+  },
+  errorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
+    marginTop: -AppSpacing[2],
   },
 });

@@ -1,18 +1,16 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { Send } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/card';
+import { AppCard, AppIconButton, AppTextField } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useSuperadminStore } from '@/store/superadmin-store';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { CoachSupportMessage } from '@/types/superadmin';
 
 export default function SuperadminCoachSupportDetail() {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ coachId?: string }>();
   const coachId = Array.isArray(params.coachId) ? params.coachId[0] : params.coachId;
   const coaches = useSuperadminStore((s) => s.coaches);
@@ -44,14 +42,12 @@ export default function SuperadminCoachSupportDetail() {
   if (!coach || !coachId) {
     return (
       <SuperadminShell title="Chat coach" description="Conversazione non trovata." contentStyle={styles.shellContent}>
-        <Card style={styles.card}>
-          <ThemedText type="smallBold">Coach non trovato</ThemedText>
+        <AppCard style={styles.card}>
+          <Text style={[styles.notFoundTitle, { color: colors.ink }]}>Coach non trovato</Text>
           <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8}>
-            <ThemedText type="smallBold" style={{ color: theme.primary }}>
-              Torna al supporto
-            </ThemedText>
+            <Text style={[styles.backLink, { color: colors.moss }]}>Torna al supporto</Text>
           </Pressable>
-        </Card>
+        </AppCard>
       </SuperadminShell>
     );
   }
@@ -62,36 +58,29 @@ export default function SuperadminCoachSupportDetail() {
     <SuperadminShell title={coach.name} description={coach.email} contentStyle={styles.shellContent}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
         <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8} style={styles.backButton}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            Indietro
-          </ThemedText>
+          <Text style={[styles.backLink, { color: colors.inkSoft }]}>Indietro</Text>
         </Pressable>
 
-        <Card style={styles.messagesCard}>
+        <AppCard style={styles.messagesCard}>
           {conversationMessages.length === 0 ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Nessun messaggio in questa conversazione.
-            </ThemedText>
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun messaggio in questa conversazione.</Text>
           ) : (
             conversationMessages.map((message) => <MessageBubble key={message.id} message={message} />)
           )}
-        </Card>
+        </AppCard>
 
-        <View style={[styles.inputRow, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-          <ThemedTextInput
-            style={styles.input}
-            placeholder={`Rispondi a ${coach.name}`}
-            value={draft}
-            onChangeText={setDraft}
-            multiline
+        <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <View style={styles.inputWrap}>
+            <AppTextField placeholder={`Rispondi a ${coach.name}`} value={draft} onChangeText={setDraft} multiline style={styles.input} />
+          </View>
+          <AppIconButton
+            icon={<Send size={17} color={colors.onCoral} />}
+            onPress={handleSend}
+            disabled={sendDisabled}
+            tone="coral"
+            bordered={false}
+            accessibilityLabel="Invia messaggio"
           />
-          <Pressable onPress={handleSend} disabled={sendDisabled} hitSlop={6}>
-            <View style={[styles.sendButton, { backgroundColor: theme.primary }, sendDisabled && styles.disabled]}>
-              <ThemedText type="smallBold" themeColor="onPrimary">
-                Invia
-              </ThemedText>
-            </View>
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SuperadminShell>
@@ -99,22 +88,18 @@ export default function SuperadminCoachSupportDetail() {
 }
 
 function MessageBubble({ message }: { message: CoachSupportMessage }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const isMine = message.sender === 'superadmin';
   return (
     <View style={[styles.bubbleRow, isMine ? styles.bubbleRight : styles.bubbleLeft]}>
       <View
         style={[
           styles.bubble,
-          { backgroundColor: isMine ? theme.primary : theme.background, borderColor: theme.border },
+          isMine ? { backgroundColor: colors.coral, borderColor: colors.coral } : { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
         ]}>
-        <ThemedText type="small" themeColor={isMine ? 'onPrimary' : 'text'} style={styles.messageText}>
-          {message.text}
-        </ThemedText>
+        <Text style={[styles.messageText, { color: isMine ? colors.onCoral : colors.ink }]}>{message.text}</Text>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.timeText}>
-        {formatTime(message.createdAt)}
-      </ThemedText>
+      <Text style={[styles.timeText, { color: colors.inkFaint }]}>{formatTime(message.createdAt)}</Text>
     </View>
   );
 }
@@ -129,29 +114,40 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   keyboard: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     maxWidth: '100%',
     width: '100%',
   },
   card: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     maxWidth: '100%',
     width: '100%',
+  },
+  notFoundTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+  },
+  backLink: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   backButton: {
     alignSelf: 'flex-start',
     minHeight: 40,
-    paddingVertical: Spacing.one,
+    paddingVertical: AppSpacing[1],
   },
   messagesCard: {
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     maxWidth: '100%',
     overflow: 'hidden',
     width: '100%',
   },
+  smallText: {
+    fontSize: AppFontSize.sm,
+  },
   bubbleRow: {
     maxWidth: '84%',
-    gap: Spacing.half,
+    gap: 2,
     minWidth: 0,
   },
   bubbleLeft: {
@@ -163,43 +159,36 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   bubble: {
-    borderRadius: Radius.md,
+    borderRadius: AppRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     maxWidth: '100%',
     minWidth: 0,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: AppSpacing[3],
+    paddingVertical: AppSpacing[2],
   },
   messageText: {
+    fontSize: AppFontSize.sm,
     flexShrink: 1,
     minWidth: 0,
   },
   timeText: {
     fontSize: 11,
-    lineHeight: 14,
   },
   inputRow: {
-    alignItems: 'flex-end',
-    borderRadius: Radius.md,
+    alignItems: 'center',
+    borderRadius: AppRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: AppSpacing[2],
     maxWidth: '100%',
-    padding: Spacing.two,
+    padding: AppSpacing[2],
     width: '100%',
   },
-  input: {
+  inputWrap: {
     flex: 1,
-    maxHeight: 100,
     minWidth: 0,
   },
-  sendButton: {
-    borderRadius: Radius.md,
-    minHeight: 44,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  disabled: {
-    opacity: 0.5,
+  input: {
+    maxHeight: 100,
   },
 });

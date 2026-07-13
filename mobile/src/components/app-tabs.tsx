@@ -1,12 +1,18 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { Colors } from '@/constants/theme';
 import { useEffectiveColorScheme } from '@/hooks/use-effective-color-scheme';
 import { useChatStore } from '@/store/chat-store';
+import { AppColors } from '@/theme';
 
+// Colori della tab bar nativa (expo-router NativeTabs, iOS/Android renderano
+// una tab bar di sistema, non un componente React Native custom): non
+// replica esattamente la pillola/blur del mockup (fuori portata delle prop
+// esposte da NativeTabs), ma applica gli stessi ruoli semantici — sfondo
+// cream/dark, pillola coralSoft dietro l'icona attiva, coral per l'icona/
+// badge attivi, inkFaint per le voci inattive — vedi docs/DECISIONS.md.
 export default function AppTabs() {
   const scheme = useEffectiveColorScheme();
-  const colors = Colors[scheme];
+  const colors = AppColors[scheme];
   const unreadMessagesCount = useChatStore(
     (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
   );
@@ -14,9 +20,10 @@ export default function AppTabs() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
-      badgeBackgroundColor={colors.primary}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      tintColor={colors.coral}
+      badgeBackgroundColor={colors.coral}
+      indicatorColor={colors.coralSoft}
+      labelStyle={{ selected: { color: colors.ink }, default: { color: colors.inkFaint } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'gauge', selected: 'gauge.with.needle.fill' }} md="dashboard" />

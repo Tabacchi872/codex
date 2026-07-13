@@ -85,9 +85,19 @@ const SEED_EXERCISES: SeedExercise[] = [
   seed('cardio-jumping-jack', 'Jumping jack', 'Cardio/Funzionale', 'Saltelli con apertura simultanea di gambe e braccia.', 'Atterraggio morbido sulle punte, ritmo costante.', 'beginner', 'Corpo libero', 'jumping-jack.mp4'),
 ];
 
+// Video demo (fase 1, 2026-07-11): un solo esercizio con un URL pubblico di
+// esempio (Google Cloud Storage, sample video standard usato per test),
+// per verificare davvero la riproduzione remota end-to-end (Web + Expo Go)
+// prima che la fase 2 (upload coach) esista. Da sostituire/rimuovere quando
+// arriveranno video reali — vedi docs/TODO_NEXT.md.
+const DEMO_VIDEO_URLS: Partial<Record<string, string>> = {
+  'petto-panca-piana': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+};
+
 export const EXERCISE_LIBRARY: Exercise[] = SEED_EXERCISES.map((e) => ({
   ...e,
   videoStatus: videoStatusFor(e.videoFile),
+  videoUrl: DEMO_VIDEO_URLS[e.id],
 }));
 
 export const MUSCLE_GROUPS: MuscleGroup[] = [
