@@ -139,13 +139,19 @@ export async function setCoachRegistrationCodeActive(coachId: string, active: bo
 // abbonamento attivo precedente: nessun accumulo di slot, il pacchetto
 // assegnato ora e' sempre quello che conta. payment_provider='superadmin_manual'
 // per distinguere sempre queste righe da un futuro pagamento reale automatico.
-export async function assignCoachPackage(coachId: string, packageId: string): Promise<CoachAdminServiceResult<null>> {
+export type AssignCoachPackageInput = {
+  packageId: string;
+  startsAt: string;
+  expiresAt: string | null;
+};
+
+export async function assignCoachPackage(coachId: string, input: AssignCoachPackageInput): Promise<CoachAdminServiceResult<null>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
 
   const { data: pkg, error: pkgError } = await supabase
     .from('subscription_packages')
     .select('duration_value,duration_unit,target_role')
-    .eq('id', packageId)
+    .eq('id', input.packageId)
     .maybeSingle();
   if (pkgError) {
     return { ok: false, code: 'db_error', message: `Errore lettura pacchetto: ${pkgError.message}` };
@@ -154,20 +160,33 @@ export async function assignCoachPackage(coachId: string, packageId: string): Pr
     return { ok: false, code: 'db_error', message: 'Pacchetto non valido per un coach.' };
   }
 
-  const startsAt = new Date();
-  const expiresAt = new Date(startsAt);
-  if (pkg.duration_unit === 'days') {
-    expiresAt.setDate(expiresAt.getDate() + pkg.duration_value);
-  } else {
-    expiresAt.setMonth(expiresAt.getMonth() + pkg.duration_value);
+  const startsAt = new Date(input.startsAt);
+  if (Number.isNaN(startsAt.getTime())) {
+    return { ok: false, code: 'db_error', message: 'Data inizio non valida.' };
+  }
+  const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
+  if (input.expiresAt && (!expiresAt || Number.isNaN(expiresAt.getTime()))) {
+    return { ok: false, code: 'db_error', message: 'Data scadenza non valida.' };
+  }
+  if (expiresAt && expiresAt.getTime() <= startsAt.getTime()) {
+    return { ok: false, code: 'db_error', message: 'La scadenza deve essere successiva alla data inizio.' };
+  }
+
+  const { error: closeError } = await supabase
+    .from('user_subscriptions')
+    .update({ status: 'canceled' })
+    .eq('user_id', coachId)
+    .eq('status', 'active');
+  if (closeError) {
+    return { ok: false, code: 'db_error', message: `Errore chiusura abbonamento precedente: ${closeError.message}` };
   }
 
   const { error } = await supabase.from('user_subscriptions').insert({
     user_id: coachId,
-    package_id: packageId,
+    package_id: input.packageId,
     status: 'active',
     starts_at: startsAt.toISOString(),
-    expires_at: expiresAt.toISOString(),
+    expires_at: expiresAt ? expiresAt.toISOString() : null,
     payment_provider: 'superadmin_manual',
   });
   if (error) {

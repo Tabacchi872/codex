@@ -2,14 +2,15 @@ import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import { Apple, Dumbbell, House, Menu, MessageCircle, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { logClientNavPress } from '@/lib/client-navigation';
 import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
-const TABS: { path: Href; label: string; icon: LucideIcon }[] = [
-  { path: '/cliente-home', label: 'Home', icon: House },
-  { path: '/workout', label: 'Workout', icon: Dumbbell },
-  { path: '/nutrizione', label: 'Nutrizione', icon: Apple },
-  { path: '/chat', label: 'Chat', icon: MessageCircle },
-  { path: '/altro', label: 'Altro', icon: Menu },
+const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
+  { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
+  { path: '/workout', label: 'Workout', icon: Dumbbell, source: 'client-tab-workout' },
+  { path: '/nutrizione', label: 'Nutrizione', icon: Apple, source: 'client-tab-nutrizione' },
+  { path: '/chat', label: 'Chat', icon: MessageCircle, source: 'client-tab-chat' },
+  { path: '/altro', label: 'Altro', icon: Menu, source: 'client-tab-altro' },
 ];
 
 // BUG CORRETTO (2026-07-05): la versione precedente usava le Tabs "headless" di
@@ -45,7 +46,14 @@ export default function ClientTabs() {
           const isActive = pathname === pathStr;
           const Icon = tab.icon;
           return (
-            <Pressable key={pathStr} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
+            <Pressable
+              key={pathStr}
+              onPress={() => {
+                logClientNavPress(tab.source, pathStr);
+                router.push(tab.path);
+              }}
+              hitSlop={4}
+              style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.coralSoft }]}>
                 <Icon size={19} color={isActive ? colors.coral : colors.inkFaint} strokeWidth={2} />
               </View>

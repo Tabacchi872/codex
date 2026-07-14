@@ -3,6 +3,7 @@ import { Calendar, ChartColumn, Megaphone, Package, Settings, Ticket, TrendingUp
 import { StyleSheet, View } from 'react-native';
 
 import { AppCard, AppHeader, AppListRow, AppScreen } from '@/components/ui';
+import { logClientNavPress } from '@/lib/client-navigation';
 import { useAppTheme } from '@/theme';
 
 type MenuItem = {
@@ -36,6 +37,11 @@ export default function AltroScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
 
+  function navigate(source: string, target: MenuItem['href']) {
+    logClientNavPress(source, target);
+    router.push(target);
+  }
+
   return (
     <AppScreen>
       <AppHeader title="Altro" />
@@ -49,7 +55,7 @@ export default function AltroScreen() {
                 icon={<Icon size={19} color={colors.moss} />}
                 iconBackground={colors.mossSoft}
                 title={item.title}
-                onPress={() => router.push(item.href)}
+                onPress={() => navigate(`altro-${item.key}`, item.href)}
               />
             </View>
           );

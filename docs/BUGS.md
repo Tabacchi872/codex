@@ -260,3 +260,33 @@ Formato per ogni voce:
 - **Causa:** `AppScreen` è una ScrollView semplice senza gestione tastiera; con Expo SDK 57 Android è edge-to-edge di default e `adjustResize` NON ridimensiona più automaticamente il contenuto — la tastiera copriva i campi finali del form (20+ campi) senza possibilità di scorrere fino in fondo; nessun `keyboardShouldPersistTaps`, quindi il primo tocco su un bottone con tastiera aperta serviva solo a chiuderla.
 - **Fix applicato:** (1) `AppScreen`: `keyboardShouldPersistTaps="handled"` (un tocco su un bottone agisce subito; un tocco su area vuota chiude la tastiera) e `keyboardDismissMode="on-drag"` su OGNI schermata scrollabile; nuova prop opt-in `keyboardAvoiding` che avvolge il contenuto in `KeyboardAvoidingView behavior="padding"` (attivata su registrazione coach e cliente; no-op su web). (2) `AppTextField`: ora `forwardRef` verso il TextInput nativo e `returnKeyType="done"` di default (ogni campo può chiudere la tastiera con "Fine"). (3) `registration-screens.tsx`: chaining "Avanti" sui campi credenziali (coach: nome→email→password→conferma; cliente: codice→nome→email→password→conferma) con `returnKeyType="next"`/`submitBehavior="submit"`/focus del campo successivo.
 - **Verifica:** `tsc`/`expo-doctor`/`expo export android` puliti. **Non verificato**: nessuna tastiera Android reale in questa sessione.
+
+## BUG-027 - APK Android cliente: tab bar funziona, ma card e righe interne non aprono le route
+- **Stato:** risolto (da verificare su un nuovo APK)
+- **Severita:** bloccante
+- **Data apertura:** 2026-07-14
+- **Data chiusura:** 2026-07-14
+- **Descrizione:** nel lato cliente Android la tab bar principale Home/Workout/Nutrizione/Chat/Altro rispondeva, ma le press interne non portavano a nessuna schermata visibile: Home Check-in/Prenota/Bacheca, voci di Altro, e card Workout Da fare/Passati.
+- **Causa:** verificata nel codice. `AppCard` e `AppListRow` erano gia' Pressable quando ricevevano `onPress`, e le route target esistevano. Il blocco era `mobile/src/components/client-tabs.tsx`: su Android usava `expo-router/unstable-native-tabs` con soli 5 `NativeTabs.Trigger` (`cliente-home`, `workout`, `nutrizione`, `chat`, `altro`). L'implementazione installata di `expo-router` passa al navigator solo i trigger (`children: triggerChildren`) e le route `hidden` non sono navigabili; quindi le route interne (`/questionario`, `/prenotazioni`, `/bacheca`, `/cliente-profilo`, `/progressi`, `/pacchetti-cliente`, `/schede/[id]`) restavano fuori dal navigator nativo. La variante web era gia' corretta per lo stesso problema storico: usava `Slot`, che costruisce gli screen dall'intero albero route.
+- **Fix applicato:** `client-tabs.tsx` riscritto con `Slot` + tab bar React Native custom mantenendo 5 tab visibili, cosi' le route interne cliente restano renderizzabili anche su Android. Aggiunto helper `logClientNavPress` e log dev `CLIENT_NAV_PRESS { source, target }` su tab cliente, Home, Altro e Workout. Nessuna modifica a Supabase, YMove, schede dati, billing, appuntamenti, chat o notifiche push.
+- **Verifica:** `npx.cmd tsc --noEmit` pulito; `npx.cmd expo-doctor` 20/20; `npx.cmd expo export --platform android` completato. Il primo `expo-doctor` e il primo export sono falliti rispettivamente per cache npm e `spawn EPERM` Hermes in sandbox; entrambi sono stati rieseguiti con escalation e completati.
+
+## BUG-028 - APK Android coach: route interne fuori da NativeTabs e lista clienti ancora locale
+- **Stato:** risolto (da verificare su un nuovo APK)
+- **Severita:** alta
+- **Data apertura:** 2026-07-14
+- **Data chiusura:** 2026-07-14
+- **Descrizione:** il lato coach aveva lo stesso rischio strutturale del cliente: tab principali funzionanti ma route interne aperte da dashboard/lista/dettaglio potenzialmente non renderizzabili su Android. Inoltre la lista clienti coach leggeva ancora `useClientStore`, quindi poteva mostrare solo dati locali/demo invece dei clienti realmente collegati su Supabase.
+- **Causa:** `mobile/src/components/app-tabs.tsx` usava `NativeTabs` con soli 5 trigger (`index`, `clienti`, `schede`, `appuntamenti`, `chat`), mentre le route interne (`/clienti/[id]`, `/clienti/new`, `/schede/new`, `/appuntamenti/new`, `/supporto`, `/abbonamento-coach`) non erano trigger. La lista `clienti/index.tsx` usava `useClientStore` come sorgente primaria.
+- **Fix applicato:** `app-tabs.tsx` riscritto con `Slot` + tab bar React Native, come cliente/web. Aggiunti log dev `COACH_NAV_PRESS { source, target }`. Nuovi `coach-clients-service.ts` e `use-coach-clients.ts`: query su `coach_clients` con `coach_id=auth.uid()` e `status='active'`, dedup per `client_id`, arricchimento da `profiles` e `client_profiles`, sync nello store per il dettaglio. Demo solo se `EXPO_PUBLIC_ENABLE_DEMO_DATA=true`, con badge Demo gia' esistente. Dashboard/lista/dettaglio clienti usano il nuovo hook.
+- **Verifica:** `npx.cmd tsc --noEmit` pulito durante lo sviluppo.
+
+## BUG-029 - Superadmin: log navigazione mancanti e assegnazione pacchetto senza date esplicite
+- **Stato:** risolto (da verificare su un nuovo APK e con sessione superadmin reale)
+- **Severita:** media
+- **Data apertura:** 2026-07-14
+- **Data chiusura:** 2026-07-14
+- **Descrizione:** il superadmin non aveva il problema NativeTabs (usa gia' una shell React Native custom), ma mancavano log di navigazione e l'azione "Assegna/Cambia pacchetto" nel dettaglio coach non permetteva di impostare manualmente data inizio/scadenza.
+- **Causa:** `superadmin-shell.tsx` e le card interne usavano `router.push` diretto senza logging. `assignCoachPackage` calcolava data inizio/scadenza automaticamente.
+- **Fix applicato:** aggiunti log dev `SUPERADMIN_NAV_PRESS { source, target }` su bottom bar, notifiche, dashboard, lista/detail coach, piani, pacchetti e supporto. `assignCoachPackage` ora riceve `packageId`, `startsAt`, `expiresAt`, valida le date, marca `canceled` gli abbonamenti active precedenti dello stesso coach e inserisce una nuova riga active in `user_subscriptions` con `payment_provider='superadmin_manual'`; il dettaglio coach rilegge Supabase con `reload()`.
+- **Verifica:** `npx.cmd tsc --noEmit` pulito durante lo sviluppo. Nessuna service role key aggiunta; nessuna modifica remota Supabase eseguita.

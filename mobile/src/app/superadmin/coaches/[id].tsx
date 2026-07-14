@@ -56,6 +56,8 @@ export default function SuperadminCoachDetail() {
   const [packagesLoading, setPackagesLoading] = useState(false);
   const [packagesError, setPackagesError] = useState('');
   const [packageBusy, setPackageBusy] = useState(false);
+  const [packageStartsAt, setPackageStartsAt] = useState('');
+  const [packageExpiresAt, setPackageExpiresAt] = useState('');
 
   useEffect(() => {
     if (!coach) return;
@@ -214,6 +216,11 @@ export default function SuperadminCoachDetail() {
   async function togglePackagePicker() {
     const next = !showPackagePicker;
     setShowPackagePicker(next);
+    if (next) {
+      const defaults = getDefaultPackageDates();
+      setPackageStartsAt(defaults.startsAt);
+      setPackageExpiresAt(defaults.expiresAt);
+    }
     if (next && availablePackages.length === 0) {
       setPackagesLoading(true);
       setPackagesError('');
@@ -230,7 +237,7 @@ export default function SuperadminCoachDetail() {
   async function handleAssignPackage(packageId: string) {
     setPackageBusy(true);
     setPackagesError('');
-    const result = await assignCoachPackage(coachId, packageId);
+    const result = await assignCoachPackage(coachId, { packageId, startsAt: packageStartsAt, expiresAt: packageExpiresAt || null });
     setPackageBusy(false);
     if (!result.ok) {
       setPackagesError(result.message);
@@ -308,6 +315,14 @@ export default function SuperadminCoachDetail() {
             </View>
             {showPackagePicker ? (
               <View style={styles.packageList}>
+                <View style={styles.row}>
+                  <View style={styles.half}>
+                    <AppTextField label="Data inizio" value={packageStartsAt} onChangeText={setPackageStartsAt} placeholder="2026-07-14" />
+                  </View>
+                  <View style={styles.half}>
+                    <AppTextField label="Scadenza" value={packageExpiresAt} onChangeText={setPackageExpiresAt} placeholder="2026-08-14" />
+                  </View>
+                </View>
                 {packagesLoading ? (
                   <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento pacchetti coach...</Text>
                 ) : availablePackages.length === 0 ? (
@@ -453,6 +468,16 @@ function formatDate(value: string) {
   } catch {
     return value;
   }
+}
+
+function getDefaultPackageDates() {
+  const starts = new Date();
+  const expires = new Date(starts);
+  expires.setMonth(expires.getMonth() + 1);
+  return {
+    startsAt: starts.toISOString().slice(0, 10),
+    expiresAt: expires.toISOString().slice(0, 10),
+  };
 }
 
 function statusTone(status: AppBillingStatus): AppBadgeTone {

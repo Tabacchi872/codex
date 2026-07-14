@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton, AppIconButton } from '@/components/ui';
 import { signOut } from '@/lib/auth-service';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
@@ -55,6 +56,11 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
     logout();
   }
 
+  function navigate(source: string, target: Href) {
+    logSuperadminNavPress(source, target.toString());
+    router.push(target);
+  }
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -76,7 +82,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
             <View>
               <AppIconButton
                 icon={<Bell size={18} color={colors.ink} />}
-                onPress={() => router.push('/superadmin/notifications' as Href)}
+                onPress={() => navigate('superadmin-header-notifiche', '/superadmin/notifications' as Href)}
                 accessibilityLabel="Notifiche"
                 size={42}
               />
@@ -111,7 +117,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           const isSupport = href === '/superadmin/support';
           const Icon = item.icon;
           return (
-            <Pressable key={href} onPress={() => router.push(item.href)} hitSlop={4} style={styles.tabItem}>
+            <Pressable key={href} onPress={() => navigate(`superadmin-tab-${item.label.toLowerCase()}`, item.href)} hitSlop={4} style={styles.tabItem}>
               <View style={[styles.tabIconPill, active && { backgroundColor: colors.coralSoft }]}>
                 <Icon size={18} color={active ? colors.coral : colors.inkFaint} strokeWidth={2.2} />
                 {isSupport && unreadCoachSupport > 0 ? (

@@ -2,15 +2,16 @@ import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 import { Calendar, ClipboardList, House, MessageCircle, Users, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { logCoachNavPress } from '@/lib/coach-navigation';
 import { useChatStore } from '@/store/chat-store';
 import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
-const TABS: { path: Href; label: string; icon: LucideIcon }[] = [
-  { path: '/', label: 'Home', icon: House },
-  { path: '/clienti', label: 'Clienti', icon: Users },
-  { path: '/schede', label: 'Schede', icon: ClipboardList },
-  { path: '/appuntamenti', label: 'Agenda', icon: Calendar },
-  { path: '/chat', label: 'Messaggi', icon: MessageCircle },
+const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
+  { path: '/', label: 'Home', icon: House, source: 'coach-tab-home' },
+  { path: '/clienti', label: 'Clienti', icon: Users, source: 'coach-tab-clienti' },
+  { path: '/schede', label: 'Schede', icon: ClipboardList, source: 'coach-tab-schede' },
+  { path: '/appuntamenti', label: 'Agenda', icon: Calendar, source: 'coach-tab-appuntamenti' },
+  { path: '/chat', label: 'Messaggi', icon: MessageCircle, source: 'coach-tab-chat' },
 ];
 
 // File .web.tsx: Metro lo usa al posto di app-tabs.tsx SOLO sul bundle web (le
@@ -37,11 +38,18 @@ export default function AppTabs() {
           const isActive = pathname === pathStr || (pathStr !== '/' && pathname.startsWith(`${pathStr}/`));
           const Icon = tab.icon;
           return (
-            <Pressable key={pathStr} onPress={() => router.push(tab.path)} hitSlop={4} style={styles.tabItem}>
+            <Pressable
+              key={pathStr}
+              onPress={() => {
+                logCoachNavPress(tab.source, pathStr);
+                router.push(tab.path);
+              }}
+              hitSlop={4}
+              style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.coralSoft }]}>
                 <Icon size={19} color={isActive ? colors.coral : colors.inkFaint} strokeWidth={2} />
                 {tab.path === '/chat' && unreadMessagesCount > 0 ? (
-                  <View style={[styles.badge, { backgroundColor: colors.coral }]}>
+                  <View style={[styles.badge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}</Text>
                   </View>
                 ) : null}

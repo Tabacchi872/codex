@@ -6,6 +6,7 @@ import { SuperadminShell } from '@/components/superadmin-shell';
 import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
@@ -29,6 +30,11 @@ export default function SuperadminDashboard() {
   }, 0);
   const paymentAlerts = coaches.filter((coach) => coach.billingStatus === 'past_due');
 
+  function navigate(source: string, target: Href) {
+    logSuperadminNavPress(source, target.toString());
+    router.push(target);
+  }
+
   return (
     <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
       <View style={styles.grid} onLayout={handleGridLayout}>
@@ -36,7 +42,7 @@ export default function SuperadminDashboard() {
           size="sm"
           label="Coach totali"
           value={String(totalCoaches)}
-          onPress={() => router.push('/superadmin/coaches?status=all' as Href)}
+          onPress={() => navigate('superadmin-stat-coach-totali', '/superadmin/coaches?status=all' as Href)}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -44,7 +50,7 @@ export default function SuperadminDashboard() {
           label="Coach attivi"
           value={String(activeCoaches)}
           accentColor={colors.moss}
-          onPress={() => router.push('/superadmin/coaches?status=active' as Href)}
+          onPress={() => navigate('superadmin-stat-coach-attivi', '/superadmin/coaches?status=active' as Href)}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -52,7 +58,7 @@ export default function SuperadminDashboard() {
           label="In prova"
           value={String(trialCoaches)}
           accentColor={colors.amber}
-          onPress={() => router.push('/superadmin/coaches?status=trial' as Href)}
+          onPress={() => navigate('superadmin-stat-coach-trial', '/superadmin/coaches?status=trial' as Href)}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -60,7 +66,7 @@ export default function SuperadminDashboard() {
           label="Pagamento scaduto"
           value={String(pastDueCoaches)}
           accentColor={colors.rust}
-          onPress={() => router.push('/superadmin/coaches?status=past_due' as Href)}
+          onPress={() => navigate('superadmin-stat-coach-scaduti', '/superadmin/coaches?status=past_due' as Href)}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -68,14 +74,14 @@ export default function SuperadminDashboard() {
           label="Bloccati"
           value={String(blockedCoaches)}
           accentColor={colors.rust}
-          onPress={() => router.push('/superadmin/coaches?status=blocked' as Href)}
+          onPress={() => navigate('superadmin-stat-coach-bloccati', '/superadmin/coaches?status=blocked' as Href)}
           style={gridItemStyle}
         />
         <AppStatCard
           size="sm"
           label="Ricavi mensili stimati"
           value={`EUR ${monthlyRecurringRevenue}`}
-          onPress={() => router.push('/superadmin/payment-events' as Href)}
+          onPress={() => navigate('superadmin-stat-pagamenti', '/superadmin/payment-events' as Href)}
           style={gridItemStyle}
         />
       </View>
@@ -83,7 +89,7 @@ export default function SuperadminDashboard() {
       <AppCard style={styles.card}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.ink }]}>Alert pagamento scaduto</Text>
-          <Pressable onPress={() => router.push('/superadmin/coaches' as Href)} hitSlop={6}>
+          <Pressable onPress={() => navigate('superadmin-vedi-coach', '/superadmin/coaches' as Href)} hitSlop={6}>
             <Text style={[styles.sectionLink, { color: colors.moss }]}>Vedi coach</Text>
           </Pressable>
         </View>

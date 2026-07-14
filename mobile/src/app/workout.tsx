@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { Calendar, ChevronRight, Dumbbell } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
+import { logClientNavPress } from '@/lib/client-navigation';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
 import { getClientPlans, getSessionDayLabel, getSessionWeekLabel } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
@@ -30,6 +31,12 @@ export default function WorkoutClienteScreen() {
   const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const [tab, setTab] = useState<Tab>('todo');
   const { loading: remoteLoading, error: remoteError, refresh } = useWorkoutPlansSync();
+
+  function navigateToPlan(planId: string) {
+    const target = `/schede/${planId}`;
+    logClientNavPress(`workout-${tab}`, target);
+    router.push(target as Href);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -108,7 +115,7 @@ export default function WorkoutClienteScreen() {
             {tab === 'todo' ? 'Nessun allenamento da fare al momento.' : 'Nessun allenamento passato ancora.'}
           </Text>
         }
-        renderItem={({ item }) => <WorkoutRow plan={item} myPlans={myPlans} onPress={() => router.push(`/schede/${item.id}`)} />}
+        renderItem={({ item }) => <WorkoutRow plan={item} myPlans={myPlans} onPress={() => navigateToPlan(item.id)} />}
       />
     </View>
   );

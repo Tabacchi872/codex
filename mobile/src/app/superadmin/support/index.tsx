@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { AppCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { SuperadminSupportConversation } from '@/types/superadmin';
@@ -30,7 +31,10 @@ export default function SuperadminSupport() {
           <ConversationCard
             key={conversation.coach.id}
             conversation={conversation}
-            onPress={() => router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } })}
+            onPress={() => {
+              logSuperadminNavPress('superadmin-support-card', `/superadmin/support/${conversation.coach.id}`);
+              router.push({ pathname: '/superadmin/support/[coachId]', params: { coachId: conversation.coach.id } });
+            }}
           />
         ))
       )}

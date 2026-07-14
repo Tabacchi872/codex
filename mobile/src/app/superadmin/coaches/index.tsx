@@ -6,6 +6,7 @@ import { AppBadge, AppButton, AppCard, type AppBadgeTone } from '@/components/ui
 import { SuperadminShell } from '@/components/superadmin-shell';
 import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { AppBillingStatus, SuperadminCoach } from '@/types/superadmin';
@@ -29,6 +30,11 @@ export default function SuperadminCoaches() {
   const selectedStatus = getSelectedFilter(params.status);
   const filteredCoaches = selectedStatus === 'all' ? coaches : coaches.filter((coach) => coach.billingStatus === selectedStatus);
 
+  function navigate(source: string, target: Href) {
+    logSuperadminNavPress(source, target.toString());
+    router.push(target);
+  }
+
   return (
     <SuperadminShell title="Coach" description="Gestione amministrativa di coach, stato pagamento e abbonamento app.">
       <View style={styles.filters}>
@@ -38,7 +44,7 @@ export default function SuperadminCoaches() {
       </View>
 
       <View style={styles.topActions}>
-        <AppButton label="+ Aggiungi coach" onPress={() => router.push('/superadmin/coaches/new')} fullWidth size="lg" />
+        <AppButton label="+ Aggiungi coach" onPress={() => navigate('superadmin-coaches-new', '/superadmin/coaches/new' as Href)} fullWidth size="lg" />
         <AppButton label="Aggiorna" onPress={reload} variant="outline" fullWidth loading={loading} />
       </View>
 
@@ -64,7 +70,10 @@ export default function SuperadminCoaches() {
             coach={coach}
             planName={plan?.name ?? coach.planCode}
             clientLimit={clientLimit}
-            onPress={() => router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } })}
+            onPress={() => {
+              logSuperadminNavPress('superadmin-coaches-card', `/superadmin/coaches/${coach.id}`);
+              router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } });
+            }}
           />
         );
       })}
@@ -92,7 +101,10 @@ function FilterChip({ filter, active }: { filter: { value: CoachFilterStatus; la
   const { colors } = useAppTheme();
   return (
     <Pressable
-      onPress={() => router.push(`/superadmin/coaches?status=${filter.value}` as Href)}
+      onPress={() => {
+        logSuperadminNavPress('superadmin-coaches-filter', `/superadmin/coaches?status=${filter.value}`);
+        router.push(`/superadmin/coaches?status=${filter.value}` as Href);
+      }}
       hitSlop={4}
       style={[styles.filterChip, { backgroundColor: active ? colors.coral : 'transparent', borderColor: colors.coral }]}>
       <Text style={[styles.filterChipLabel, { color: active ? colors.onCoral : colors.coral }]} numberOfLines={1}>

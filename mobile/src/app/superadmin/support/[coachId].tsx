@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } fro
 
 import { AppCard, AppIconButton, AppTextField } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { CoachSupportMessage } from '@/types/superadmin';
@@ -44,7 +45,12 @@ export default function SuperadminCoachSupportDetail() {
       <SuperadminShell title="Chat coach" description="Conversazione non trovata." contentStyle={styles.shellContent}>
         <AppCard style={styles.card}>
           <Text style={[styles.notFoundTitle, { color: colors.ink }]}>Coach non trovato</Text>
-          <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8}>
+          <Pressable
+            onPress={() => {
+              logSuperadminNavPress('superadmin-support-back-missing', '/superadmin/support');
+              router.push('/superadmin/support' as Href);
+            }}
+            hitSlop={8}>
             <Text style={[styles.backLink, { color: colors.moss }]}>Torna al supporto</Text>
           </Pressable>
         </AppCard>
@@ -57,7 +63,13 @@ export default function SuperadminCoachSupportDetail() {
   return (
     <SuperadminShell title={coach.name} description={coach.email} contentStyle={styles.shellContent}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
-        <Pressable onPress={() => router.push('/superadmin/support' as Href)} hitSlop={8} style={styles.backButton}>
+        <Pressable
+          onPress={() => {
+            logSuperadminNavPress('superadmin-support-back', '/superadmin/support');
+            router.push('/superadmin/support' as Href);
+          }}
+          hitSlop={8}
+          style={styles.backButton}>
           <Text style={[styles.backLink, { color: colors.inkSoft }]}>Indietro</Text>
         </Pressable>
 

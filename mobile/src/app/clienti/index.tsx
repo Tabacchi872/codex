@@ -1,16 +1,17 @@
-import { router, useRouter } from 'expo-router';
+import { router, useRouter, type Href } from 'expo-router';
 import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBadge, AppButton, AppCard, AppErrorState, type AppBadgeTone } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
+import { useCoachClients } from '@/hooks/use-coach-clients';
 import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
 import { clientFullName } from '@/lib/client-helpers';
+import { logCoachNavPress } from '@/lib/coach-navigation';
 import { isSeedClientId } from '@/lib/demo-data';
 import { supabaseConfig } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { AppFontSize, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import {
@@ -24,8 +25,7 @@ export default function ClientiListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const clients = useClientStore((s) => s.clients);
-  const clientsHydrated = useClientStore((s) => s.hasHydrated);
+  const { clients, loading: clientsLoading, error: clientsError, reload: reloadClients } = useCoachClients();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
 
@@ -33,7 +33,12 @@ export default function ClientiListScreen() {
     return <CoachOnlyNotice />;
   }
 
-  if (!clientsHydrated) {
+  function navigate(source: string, target: string) {
+    logCoachNavPress(source, target);
+    router.push(target as Href);
+  }
+
+  if (clientsLoading && clients.length === 0) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <Text style={{ color: colors.inkSoft }}>Caricamento clienti...</Text>
@@ -60,8 +65,14 @@ export default function ClientiListScreen() {
                 <Text style={[AppTextStyle.title, { color: colors.ink }]}>Clienti</Text>
                 <Text style={[styles.subtitle, { color: colors.inkSoft }]}>{clients.length} clienti in gestione</Text>
               </View>
-              <AppButton label="+ Nuovo cliente" onPress={() => router.push('/clienti/new')} size="lg" />
+              <AppButton label="+ Nuovo cliente" onPress={() => navigate('clienti-new', '/clienti/new')} size="lg" />
             </View>
+            {clientsError ? (
+              <AppCard>
+                <AppErrorState message={clientsError} onRetry={reloadClients} />
+              </AppCard>
+            ) : null}
+            <AppButton label="Aggiorna clienti" onPress={reloadClients} variant="outline" loading={clientsLoading} />
             {supabaseConfig.isConfigured ? <ClientCapacityCard /> : null}
           </View>
         }
@@ -70,7 +81,7 @@ export default function ClientiListScreen() {
           const subscription = getCurrentSubscription(subscriptions, item.id);
           const status = computeSubscriptionStatus(subscription);
           return (
-            <AppCard onPress={() => router.push(`/clienti/${item.id}`)} style={styles.row}>
+            <AppCard onPress={() => navigate('clienti-card', `/clienti/${item.id}`)} style={styles.row}>
               <View style={styles.rowHeader}>
                 <View style={styles.rowText}>
                   <Text style={[styles.name, { color: colors.ink }]} numberOfLines={1}>
@@ -134,7 +145,15 @@ function ClientCapacityCard() {
           Nessun pacchetto coach attivo: le nuove registrazioni cliente con il tuo codice restano bloccate finche' non attivi un
           pacchetto.
         </Text>
-        <AppButton label="Vai ad Abbonamento" onPress={() => router.push('/abbonamento-coach')} variant="outline" size="sm" />
+        <AppButton
+          label="Vai ad Abbonamento"
+          onPress={() => {
+            logCoachNavPress('clienti-vai-abbonamento', '/abbonamento-coach');
+            router.push('/abbonamento-coach');
+          }}
+          variant="outline"
+          size="sm"
+        />
       </AppCard>
     );
   }

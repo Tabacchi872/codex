@@ -15,6 +15,7 @@ type ClientState = {
   accounts: ClientAccount[];
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
+  setClients: (clients: Client[]) => void;
   addClient: (client: Client) => void;
   updateClient: (client: Client) => void;
   addAccount: (account: ClientAccount) => void;
@@ -31,6 +32,7 @@ export const useClientStore = create<ClientState>()(
       accounts: DEMO_DATA_ENABLED ? SEED_CLIENT_ACCOUNTS : [],
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
+      setClients: (clients) => set({ clients }),
 
       addClient: (client) => set((s) => ({ clients: [...s.clients, client] })),
 

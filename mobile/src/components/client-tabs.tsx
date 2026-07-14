@@ -1,49 +1,99 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Slot, usePathname, useRouter, type Href } from 'expo-router';
+import { Apple, Dumbbell, House, Menu, MessageCircle, type LucideIcon } from 'lucide-react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useEffectiveColorScheme } from '@/hooks/use-effective-color-scheme';
-import { AppColors } from '@/theme';
+import { logClientNavPress } from '@/lib/client-navigation';
+import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
-// Tab bar lato cliente: 5 voci (Home/Workout/Nutrizione/Chat/Altro). Le altre
-// schermate cliente (Profilo, Prenotazioni, Bacheca, Questionario, Progressi...)
-// restano raggiungibili da dentro Altro/Home, non come tab dirette — 5 è il
-// numero massimo ragionevole per una tab bar mobile leggibile.
-// Stessi ruoli colore della tab bar coach (app-tabs.tsx): NativeTabs è una
-// tab bar nativa OS, non replica la pillola/blur custom del mockup — vedi
-// docs/DECISIONS.md.
+const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
+  { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
+  { path: '/workout', label: 'Workout', icon: Dumbbell, source: 'client-tab-workout' },
+  { path: '/nutrizione', label: 'Nutrizione', icon: Apple, source: 'client-tab-nutrizione' },
+  { path: '/chat', label: 'Chat', icon: MessageCircle, source: 'client-tab-chat' },
+  { path: '/altro', label: 'Altro', icon: Menu, source: 'client-tab-altro' },
+];
+
+// Tab bar lato cliente: 5 voci visibili, ma il contenuto usa Slot. Su Android
+// NativeTabs registra solo i Trigger dichiarati e lascia fuori le route interne
+// aperte da Home/Altro/Workout (/questionario, /bacheca, /schede/[id]...).
 export default function ClientTabs() {
-  const scheme = useEffectiveColorScheme();
-  const colors = AppColors[scheme];
+  const pathname = usePathname();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
 
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.coralSoft}
-      tintColor={colors.coral}
-      labelStyle={{ selected: { color: colors.ink }, default: { color: colors.inkFaint } }}>
-      <NativeTabs.Trigger name="cliente-home">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="workout">
-        <NativeTabs.Trigger.Label>Workout</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'dumbbell', selected: 'dumbbell.fill' }} md="fitness_center" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="nutrizione">
-        <NativeTabs.Trigger.Label>Nutrizione</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="fork.knife" md="restaurant" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="chat">
-        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="chat" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="altro">
-        <NativeTabs.Trigger.Label>Altro</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="line.3.horizontal" md="menu" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <View style={styles.container}>
+      <View style={styles.slot}>
+        <Slot screenOptions={{ headerShown: false }} />
+      </View>
+      <View style={[styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + AppSpacing[2] }]}>
+        {TABS.map((tab) => {
+          const pathStr = tab.path.toString();
+          const isActive = pathname === pathStr;
+          const Icon = tab.icon;
+          return (
+            <Pressable
+              key={pathStr}
+              onPress={() => {
+                logClientNavPress(tab.source, pathStr);
+                router.push(tab.path);
+              }}
+              hitSlop={4}
+              style={styles.tabItem}>
+              <View style={[styles.iconPill, isActive && { backgroundColor: colors.coralSoft }]}>
+                <Icon size={19} color={isActive ? colors.coral : colors.inkFaint} strokeWidth={2} />
+              </View>
+              <Text
+                numberOfLines={1}
+                style={[styles.tabLabel, { color: isActive ? colors.ink : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  slot: {
+    flex: 1,
+  },
+  tabBar: {
+    minHeight: 66,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: AppSpacing[1],
+    zIndex: 20,
+    elevation: 20,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 3,
+    minHeight: 44,
+    minWidth: 0,
+    paddingHorizontal: 2,
+  },
+  iconPill: {
+    width: 40,
+    height: 26,
+    borderRadius: AppRadius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 10,
+    lineHeight: 13,
+    maxWidth: '100%',
+    textAlign: 'center',
+  },
+});

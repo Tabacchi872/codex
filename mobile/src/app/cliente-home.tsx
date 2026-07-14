@@ -1,8 +1,9 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useRouter, type Href } from 'expo-router';
 import { Apple, Calendar, ClipboardList, Dumbbell, Megaphone, MessageCircle, User } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, AppCard, AppEmptyState, AppHeader, AppListRow, AppRingProgress, AppScreen } from '@/components/ui';
+import { logClientNavPress } from '@/lib/client-navigation';
 import { getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatFullDateEyebrow } from '@/lib/format-date';
 import { getNextWorkoutPlan, getSessionDayLabel, getWorkoutCounter } from '@/lib/workout-progress';
@@ -33,6 +34,11 @@ export default function ClienteHomeScreen() {
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
 
   const client = getClientById(clients, currentClientId);
+
+  function navigate(source: string, target: string) {
+    logClientNavPress(source, target);
+    router.push(target as Href);
+  }
 
   if (currentRole === 'coach') {
     return <Redirect href="/" />;
@@ -75,7 +81,7 @@ export default function ClienteHomeScreen() {
             variant="outline"
             size="sm"
             icon={<MessageCircle size={14} color={colors.moss} />}
-            onPress={() => router.push('/chat')}
+            onPress={() => navigate('cliente-home-coach', '/chat')}
           />
         }
       />
@@ -100,7 +106,7 @@ export default function ClienteHomeScreen() {
                   ? `${nextPlan.exercises.length} esercizi · Giorno ${getSessionDayLabel(nextPlan)}`
                   : 'Nessun allenamento assegnato'
               }
-              onPress={() => (nextPlan ? router.push(`/schede/${nextPlan.id}`) : router.push('/workout'))}
+              onPress={() => navigate('cliente-home-workout', nextPlan ? `/schede/${nextPlan.id}` : '/workout')}
             />
             <Divider />
             <AppListRow
@@ -108,7 +114,7 @@ export default function ClienteHomeScreen() {
               iconBackground={colors.mossSoft}
               title="Nutrizione"
               subtitle={nutritionPlan ? nutritionPlan.title : 'Nessun piano nutrizionale assegnato'}
-              onPress={() => router.push('/nutrizione')}
+              onPress={() => navigate('cliente-home-nutrizione', '/nutrizione')}
             />
             <Divider />
             <AppListRow
@@ -116,7 +122,7 @@ export default function ClienteHomeScreen() {
               iconBackground={colors.surfaceSubtle}
               title="Check-in settimanale"
               subtitle={lastCheckin ? `Ultimo: ${formatDayMonth(lastCheckin.date)}` : 'Da compilare'}
-              onPress={() => router.push('/questionario')}
+              onPress={() => navigate('cliente-home-checkin', '/questionario')}
               trailing={<TrailingPill label="Check In" />}
             />
             <Divider />
@@ -129,7 +135,7 @@ export default function ClienteHomeScreen() {
                   ? `Prossima: ${formatDayMonth(nextBooking.date)} alle ${nextBooking.time}`
                   : 'Nessuna prenotazione attiva'
               }
-              onPress={() => router.push('/prenotazioni')}
+              onPress={() => navigate('cliente-home-prenota', '/prenotazioni')}
               trailing={nextBooking ? undefined : <TrailingPill label="Prenota" />}
             />
             <Divider />
@@ -138,7 +144,7 @@ export default function ClienteHomeScreen() {
               iconBackground={colors.surfaceSubtle}
               title="Bacheca"
               subtitle={relevantPosts.length === 0 ? 'Nessun annuncio recente' : `${relevantPosts.length} ${relevantPosts.length === 1 ? 'annuncio' : 'annunci'}`}
-              onPress={() => router.push('/bacheca')}
+              onPress={() => navigate('cliente-home-bacheca', '/bacheca')}
             />
           </AppCard>
         </>

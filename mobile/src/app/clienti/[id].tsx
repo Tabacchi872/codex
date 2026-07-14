@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
@@ -7,7 +7,9 @@ import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native
 import { AppBadge, AppButton, AppCard, AppScreen, type AppBadgeTone } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
+import { useCoachClients } from '@/hooks/use-coach-clients';
 import { sendTemporaryCredentials } from '@/lib/auth-service';
+import { logCoachNavPress } from '@/lib/coach-navigation';
 import { buildCredentialsMessage, generateTemporaryPassword, generateUsername } from '@/lib/credentials';
 import { clientFullName } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
@@ -37,7 +39,7 @@ export default function ClienteDettaglioScreen() {
   const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
-  const clients = useClientStore((s) => s.clients);
+  const { clients, loading: clientsLoading, error: clientsError, reload: reloadClients } = useCoachClients();
   const accounts = useClientStore((s) => s.accounts);
   const updateClient = useClientStore((s) => s.updateClient);
   const addAccount = useClientStore((s) => s.addAccount);
@@ -53,7 +55,10 @@ export default function ClienteDettaglioScreen() {
     return (
       <AppScreen scroll={false}>
         <View style={styles.notFound}>
-          <Text style={{ color: colors.ink }}>Cliente non trovato.</Text>
+          <Text style={{ color: clientsError ? colors.rust : colors.ink }}>
+            {clientsLoading ? 'Caricamento cliente...' : clientsError ? clientsError : 'Cliente non trovato.'}
+          </Text>
+          {clientsError ? <AppButton label="Riprova" onPress={reloadClients} variant="outline" /> : null}
         </View>
       </AppScreen>
     );
@@ -68,6 +73,11 @@ export default function ClienteDettaglioScreen() {
     .filter((a) => a.clientId === cliente.id && a.status !== 'cancelled')
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
   const account = accounts.find((a) => a.clientId === cliente.id);
+
+  function navigate(source: string, target: string) {
+    logCoachNavPress(source, target);
+    router.push(target as Href);
+  }
 
   function setClientStatus(status: ClientStatus) {
     updateClient({ ...cliente!, status });
@@ -144,14 +154,19 @@ export default function ClienteDettaglioScreen() {
           label={displaySubscription ? 'Aggiorna abbonamento' : 'Crea abbonamento'}
           onPress={() =>
             displaySubscription
-              ? router.push({ pathname: '/clienti/abbonamento-modifica', params: { subscriptionId: displaySubscription.id } })
-              : router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })
+              ? (logCoachNavPress('clienti-detail-abbonamento-modifica', `/clienti/abbonamento-modifica?subscriptionId=${displaySubscription.id}`),
+                router.push({ pathname: '/clienti/abbonamento-modifica', params: { subscriptionId: displaySubscription.id } }))
+              : (logCoachNavPress('clienti-detail-abbonamento-nuovo', `/clienti/abbonamento-nuovo?clientId=${cliente.id}`),
+                router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } }))
           }
           fullWidth
         />
         {displaySubscription ? (
           <Pressable
-            onPress={() => router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } })}
+            onPress={() => {
+              logCoachNavPress('clienti-detail-abbonamento-nuovo-link', `/clienti/abbonamento-nuovo?clientId=${cliente.id}`);
+              router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } });
+            }}
             hitSlop={6}>
             <Text style={[styles.secondaryLink, { color: colors.moss }]}>+ Crea un nuovo abbonamento</Text>
           </Pressable>
@@ -164,10 +179,17 @@ export default function ClienteDettaglioScreen() {
           <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessuna scheda assegnata.</Text>
         ) : (
           sessions.map((session) => (
-            <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => router.push(`/schede/${session.id}`)} />
+            <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => navigate('clienti-detail-scheda-row', `/schede/${session.id}`)} />
           ))
         )}
-        <AppButton label="+ Nuova scheda" onPress={() => router.push({ pathname: '/schede/new', params: { clientId: cliente.id } })} fullWidth />
+        <AppButton
+          label="+ Nuova scheda"
+          onPress={() => {
+            logCoachNavPress('clienti-detail-scheda-new', `/schede/new?clientId=${cliente.id}`);
+            router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
+          }}
+          fullWidth
+        />
       </AppCard>
 
       <AppCard>
@@ -183,7 +205,10 @@ export default function ClienteDettaglioScreen() {
         )}
         <AppButton
           label="+ Nuovo appuntamento"
-          onPress={() => router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } })}
+          onPress={() => {
+            logCoachNavPress('clienti-detail-appuntamento-new', `/appuntamenti/new?clientId=${cliente.id}`);
+            router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } });
+          }}
           fullWidth
         />
       </AppCard>

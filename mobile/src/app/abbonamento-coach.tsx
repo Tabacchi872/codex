@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, AppHeader, AppScreen } from '@/components/ui';
+import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
 import { useMySubscription } from '@/hooks/use-my-subscription';
 import { useSubscriptionPackages } from '@/hooks/use-subscription-packages';
 import { startPackageCheckout } from '@/lib/package-checkout-service';
@@ -19,6 +20,7 @@ export default function AbbonamentoCoachScreen() {
   const { colors } = useAppTheme();
   const { packages, loading: loadingPackages, error: packagesError, reload: reloadPackages } = useSubscriptionPackages('coach');
   const { current, history, loading: loadingSubscription, error: subscriptionError, reload: reloadSubscription } = useMySubscription();
+  const { capacity, loading: loadingCapacity, error: capacityError, reload: reloadCapacity } = useCoachClientCapacity();
 
   if (!supabaseConfig.isConfigured) {
     return (
@@ -45,10 +47,18 @@ export default function AbbonamentoCoachScreen() {
         ) : subscriptionError ? (
           <AppErrorState message={subscriptionError} onRetry={reloadSubscription} />
         ) : current ? (
-          <CurrentSubscriptionSummary status={current.status} packageName={current.package?.name ?? 'Pacchetto'} expiresAt={current.expiresAt} />
+          <CurrentSubscriptionSummary
+            status={current.status}
+            packageName={current.package?.name ?? 'Pacchetto'}
+            expiresAt={current.expiresAt}
+            maxClients={current.package?.maxClients ?? null}
+            usedClients={capacity?.usedClients ?? null}
+          />
         ) : (
           <AppEmptyState title="Nessun abbonamento attivo" subtitle="Scegli un pacchetto qui sotto per iniziare." />
         )}
+        {loadingCapacity ? <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento utilizzo clienti...</Text> : null}
+        {capacityError ? <AppErrorState message={capacityError} onRetry={reloadCapacity} /> : null}
       </AppCard>
 
       <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>PACCHETTI DISPONIBILI</Text>
@@ -94,10 +104,14 @@ function CurrentSubscriptionSummary({
   status,
   packageName,
   expiresAt,
+  maxClients,
+  usedClients,
 }: {
   status: UserSubscriptionStatus;
   packageName: string;
   expiresAt: string | null;
+  maxClients: number | null;
+  usedClients: number | null;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -106,6 +120,10 @@ function CurrentSubscriptionSummary({
         <Text style={[styles.currentPackageName, { color: colors.ink }]}>{packageName}</Text>
         <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
           {expiresAt ? `Scadenza: ${formatDate(expiresAt)}` : 'Nessuna scadenza registrata'}
+        </Text>
+        <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+          Limite clienti: {maxClients === null ? 'Illimitato' : maxClients}
+          {usedClients !== null ? ` · Utilizzati: ${usedClients}` : ''}
         </Text>
       </View>
       <AppBadge label={getStatusLabel(status)} tone={getStatusTone(status)} />

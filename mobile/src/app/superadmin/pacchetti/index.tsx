@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { deletePackage, listAllPackages, setPackageActive } from '@/lib/subscription-packages-service';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { SubscriptionPackage, SubscriptionPackageTargetRole } from '@/types/subscription-packages';
@@ -52,7 +53,10 @@ export default function SuperadminPackages() {
 
       <AppButton
         label={tab === 'coach' ? 'Nuovo pacchetto coach' : 'Nuovo pacchetto cliente'}
-        onPress={() => router.push({ pathname: '/superadmin/pacchetti/new', params: { role: tab } })}
+        onPress={() => {
+          logSuperadminNavPress('superadmin-pacchetti-new', `/superadmin/pacchetti/new?role=${tab}`);
+          router.push({ pathname: '/superadmin/pacchetti/new', params: { role: tab } });
+        }}
         fullWidth
       />
 
@@ -161,7 +165,10 @@ function PackageCard({ item, onChanged }: { item: SubscriptionPackage; onChanged
       <View style={styles.actions}>
         <AppButton
           label="Modifica"
-          onPress={() => router.push({ pathname: '/superadmin/pacchetti/[id]', params: { id: item.id } } as unknown as Href)}
+          onPress={() => {
+            logSuperadminNavPress('superadmin-pacchetti-card', `/superadmin/pacchetti/${item.id}`);
+            router.push({ pathname: '/superadmin/pacchetti/[id]', params: { id: item.id } } as unknown as Href);
+          }}
           variant="outline"
           size="sm"
         />

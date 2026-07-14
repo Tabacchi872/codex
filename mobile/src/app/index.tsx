@@ -1,14 +1,15 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useRouter, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { AppCard, AppHeader, AppScreen, AppSectionTitle, AppStatCard } from '@/components/ui';
 import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
+import { useCoachClients } from '@/hooks/use-coach-clients';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
+import { logCoachNavPress } from '@/lib/coach-navigation';
 import { formatDayMonth } from '@/lib/format-date';
 import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
-import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
@@ -22,8 +23,7 @@ export default function DashboardScreen() {
   const { colors } = useAppTheme();
   const { onLayout: handleGridLayout, itemStyle: gridItemStyle } = useTwoColumnGrid(GRID_GAP);
   const currentRole = useAuthStore((s) => s.currentRole);
-  const clients = useClientStore((s) => s.clients);
-  const clientsHydrated = useClientStore((s) => s.hasHydrated);
+  const { clients, loading: clientsLoading } = useCoachClients();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const subscriptionsHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const appointments = useAppointmentStore((s) => s.appointments);
@@ -38,11 +38,16 @@ export default function DashboardScreen() {
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
   const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
 
+  function navigate(source: string, target: string) {
+    logCoachNavPress(source, target);
+    router.push(target as Href);
+  }
+
   if (currentRole === 'cliente') {
     return <Redirect href="/cliente-home" />;
   }
 
-  if (!clientsHydrated || !subscriptionsHydrated) {
+  if (clientsLoading || !subscriptionsHydrated) {
     return (
       <AppScreen scroll={false}>
         <View style={styles.loading}>
@@ -65,7 +70,7 @@ export default function DashboardScreen() {
           label="Attivi"
           value={String(attivi)}
           accentColor={colors.moss}
-          onPress={() => router.push('/clienti')}
+          onPress={() => navigate('dashboard-stat-attivi', '/clienti')}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -73,7 +78,7 @@ export default function DashboardScreen() {
           label="In scadenza"
           value={String(inScadenza)}
           accentColor={colors.amber}
-          onPress={() => router.push('/clienti')}
+          onPress={() => navigate('dashboard-stat-in-scadenza', '/clienti')}
           style={gridItemStyle}
         />
         <AppStatCard
@@ -81,11 +86,11 @@ export default function DashboardScreen() {
           label="Scaduti"
           value={String(scaduti)}
           accentColor={colors.rust}
-          onPress={() => router.push('/clienti')}
+          onPress={() => navigate('dashboard-stat-scaduti', '/clienti')}
           style={gridItemStyle}
         />
         <View style={gridItemStyle}>
-          <AppCard onPress={() => router.push('/appuntamenti')} style={styles.appointmentCard}>
+          <AppCard onPress={() => navigate('dashboard-prossimo-appuntamento', '/appuntamenti')} style={styles.appointmentCard}>
             <Text style={[styles.statLabel, { color: colors.inkSoft }]}>Prossimo appuntamento</Text>
             <Text style={[styles.appointmentTitle, { color: colors.ink }]} numberOfLines={2}>
               {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Nessun appuntamento'}
@@ -99,15 +104,15 @@ export default function DashboardScreen() {
 
       <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
       <View style={styles.quickActions}>
-        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={gridItemStyle}>
+        <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} hitSlop={4} style={gridItemStyle}>
           <View style={[styles.quickAction, { backgroundColor: colors.coral }]}>
             <Text style={[styles.quickActionLabel, { color: colors.onCoral }]}>Nuovo cliente</Text>
           </View>
         </Pressable>
-        <QuickAction label="Nuovo appuntamento" style={gridItemStyle} onPress={() => router.push('/appuntamenti/new')} />
-        <QuickAction label="Assegna scheda" style={gridItemStyle} onPress={() => router.push('/schede/new')} />
-        <QuickAction label="Supporto" style={gridItemStyle} onPress={() => router.push('/supporto')} />
-        <QuickAction label="Impostazioni" style={gridItemStyle} onPress={() => router.push('/impostazioni')} />
+        <QuickAction label="Nuovo appuntamento" style={gridItemStyle} onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
+        <QuickAction label="Assegna scheda" style={gridItemStyle} onPress={() => navigate('dashboard-assegna-scheda', '/schede/new')} />
+        <QuickAction label="Supporto" style={gridItemStyle} onPress={() => navigate('dashboard-supporto', '/supporto')} />
+        <QuickAction label="Impostazioni" style={gridItemStyle} onPress={() => navigate('dashboard-impostazioni', '/impostazioni')} />
       </View>
     </AppScreen>
   );

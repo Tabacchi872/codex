@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
 import type { CoachFeatureKey } from '@/lib/coach-gating';
+import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { demoPlanBillingRule, useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { DemoAppPlan } from '@/types/superadmin';
@@ -58,7 +59,10 @@ function PlanCard({ plan }: { plan: DemoAppPlan }) {
 
       <AppButton
         label="Modifica piano"
-        onPress={() => router.push({ pathname: '/superadmin/plans/[id]', params: { id: plan.code } })}
+        onPress={() => {
+          logSuperadminNavPress('superadmin-plans-card', `/superadmin/plans/${plan.code}`);
+          router.push({ pathname: '/superadmin/plans/[id]', params: { id: plan.code } });
+        }}
         variant="outline"
         fullWidth
       />
