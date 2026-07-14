@@ -23,6 +23,10 @@ export default function SuperadminNewPackage() {
   const [durationUnit, setDurationUnit] = useState<SubscriptionPackageDurationUnit>('months');
   const [maxClients, setMaxClients] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
+  const [revenuecatEntitlementId, setRevenuecatEntitlementId] = useState('');
+  const [revenuecatOfferingId, setRevenuecatOfferingId] = useState('');
+  const [androidProductId, setAndroidProductId] = useState('');
+  const [iosProductId, setIosProductId] = useState('');
   const [sortOrder, setSortOrder] = useState('0');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,6 +66,10 @@ export default function SuperadminNewPackage() {
       durationUnit,
       maxClients: targetRole === 'coach' ? parsedMaxClients : null,
       features,
+      revenuecatEntitlementId,
+      revenuecatOfferingId,
+      androidProductId,
+      iosProductId,
       isActive: true,
       sortOrder: parsedSortOrder,
     });
@@ -89,7 +97,7 @@ export default function SuperadminNewPackage() {
 
         <View style={styles.row}>
           <View style={styles.half}>
-            <AppTextField label="Prezzo" value={price} onChangeText={setPrice} placeholder="49.90" keyboardType="decimal-pad" />
+            <AppTextField label="Prezzo di riferimento" value={price} onChangeText={setPrice} placeholder="49.90" keyboardType="decimal-pad" />
           </View>
           <View style={styles.third}>
             <AppTextField label="Valuta" value={currency} onChangeText={setCurrency} placeholder="EUR" autoCapitalize="characters" />
@@ -133,6 +141,41 @@ export default function SuperadminNewPackage() {
 
         <FeaturesEditor features={features} onChange={setFeatures} />
 
+        <View style={styles.storeBlock}>
+          <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>RevenueCat / Store</Text>
+          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+            Il prezzo addebitato viene gestito da Apple/Google nello store. Il prezzo qui sopra resta solo un riferimento interno.
+          </Text>
+          <AppTextField
+            label="Entitlement RevenueCat"
+            value={revenuecatEntitlementId}
+            onChangeText={setRevenuecatEntitlementId}
+            placeholder="Es. coach_pro"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Offering RevenueCat"
+            value={revenuecatOfferingId}
+            onChangeText={setRevenuecatOfferingId}
+            placeholder="Es. default"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Product ID Android"
+            value={androidProductId}
+            onChangeText={setAndroidProductId}
+            placeholder="Es. fitcoach_coach_pro_monthly"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Product ID iOS"
+            value={iosProductId}
+            onChangeText={setIosProductId}
+            placeholder="Es. fitcoach_coach_pro_monthly"
+            autoCapitalize="none"
+          />
+        </View>
+
         {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
 
         <AppButton label="Crea pacchetto" onPress={handleSave} loading={saving} fullWidth />
@@ -162,6 +205,9 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.sm,
     fontWeight: '600',
     marginBottom: 6,
+  },
+  storeBlock: {
+    gap: AppSpacing[2],
   },
   errorText: {
     fontSize: AppFontSize.sm,

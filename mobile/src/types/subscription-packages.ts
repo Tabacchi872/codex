@@ -26,6 +26,10 @@ export type SubscriptionPackage = {
   // gestire un coach con questo pacchetto attivo.
   maxClients: number | null;
   features: string[];
+  revenuecatEntitlementId: string | null;
+  revenuecatOfferingId: string | null;
+  androidProductId: string | null;
+  iosProductId: string | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -42,6 +46,10 @@ export type SubscriptionPackageInput = {
   durationUnit: SubscriptionPackageDurationUnit;
   maxClients: number | null;
   features: string[];
+  revenuecatEntitlementId: string;
+  revenuecatOfferingId: string;
+  androidProductId: string;
+  iosProductId: string;
   isActive: boolean;
   sortOrder: number;
 };

@@ -7,7 +7,6 @@ import { SuperadminShell } from '@/components/superadmin-shell';
 import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
-import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { AppBillingStatus, SuperadminCoach } from '@/types/superadmin';
 
@@ -26,7 +25,6 @@ export default function SuperadminCoaches() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ status?: string | string[] }>();
   const { coaches, loading, error, reload } = useSuperadminCoaches();
-  const plans = useSuperadminStore((s) => s.plans);
   const selectedStatus = getSelectedFilter(params.status);
   const filteredCoaches = selectedStatus === 'all' ? coaches : coaches.filter((coach) => coach.billingStatus === selectedStatus);
 
@@ -61,22 +59,16 @@ export default function SuperadminCoaches() {
         </AppCard>
       ) : null}
 
-      {filteredCoaches.map((coach) => {
-        const plan = plans.find((item) => item.code === coach.planCode);
-        const clientLimit = coach.clientLimitOverride ?? plan?.clientLimit ?? null;
-        return (
-          <CoachCard
-            key={coach.id}
-            coach={coach}
-            planName={plan?.name ?? coach.planCode}
-            clientLimit={clientLimit}
-            onPress={() => {
-              logSuperadminNavPress('superadmin-coaches-card', `/superadmin/coaches/${coach.id}`);
-              router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } });
-            }}
-          />
-        );
-      })}
+      {filteredCoaches.map((coach) => (
+        <CoachCard
+          key={coach.id}
+          coach={coach}
+          onPress={() => {
+            logSuperadminNavPress('superadmin-coaches-card', `/superadmin/coaches/${coach.id}`);
+            router.push({ pathname: '/superadmin/coaches/[id]', params: { id: coach.id } });
+          }}
+        />
+      ))}
     </SuperadminShell>
   );
 }
@@ -121,13 +113,9 @@ function getSelectedFilter(statusParam: string | string[] | undefined): CoachFil
 
 function CoachCard({
   coach,
-  planName,
-  clientLimit,
   onPress,
 }: {
   coach: SuperadminCoach;
-  planName: string;
-  clientLimit: number | null;
   onPress: () => void;
 }) {
   const { colors } = useAppTheme();
@@ -146,22 +134,30 @@ function CoachCard({
         </View>
       </View>
 
-      <View style={styles.dataGrid}>
-        <Field label="Piano app" value={planName} />
-        <Field label="Codice coach" value={coach.coachCodeActive ? 'Attivo' : 'Disattivato'} />
-      </View>
-
       <View style={[styles.dataGrid, styles.packageGrid, { borderColor: colors.border }]}>
-        <Field label="Pacchetto acquistato" value={coach.activePackageName ?? 'Nessuno'} />
         <Field
-          label="Clienti utilizzati"
-          value={coach.hasActivePackageSubscription ? `${coach.clientsUsed} su ${coach.activePackageMaxClients ?? '∞'}` : '-'}
+          label="Pacchetto attivo"
+          value={coach.hasActivePackageSubscription ? (coach.activePackageName ?? 'Pacchetto') : 'Nessun pacchetto attivo'}
+        />
+        <Field label="Stato" value={coach.hasActivePackageSubscription ? 'Attivo' : '-'} />
+        <Field
+          label="Clienti utilizzati / limite"
+          value={coach.hasActivePackageSubscription ? formatUsage(coach.clientsUsed, coach.activePackageMaxClients) : '-'}
         />
         <Field
           label="Posti disponibili"
-          value={coach.hasActivePackageSubscription ? String(coach.activePackageAvailableSlots ?? '∞') : '-'}
+          value={coach.hasActivePackageSubscription ? formatAvailableSlots(coach.activePackageMaxClients, coach.activePackageAvailableSlots) : '-'}
         />
-        <Field label="Scadenza abbonamento" value={coach.activePackageExpiresAt ? formatDate(coach.activePackageExpiresAt) : '-'} />
+        <Field
+          label="Data di scadenza"
+          value={
+            coach.hasActivePackageSubscription
+              ? coach.activePackageExpiresAt
+                ? formatDate(coach.activePackageExpiresAt)
+                : 'Nessuna scadenza'
+              : '-'
+          }
+        />
       </View>
 
       <View style={[styles.footer, { borderColor: colors.border }]}>
@@ -185,6 +181,15 @@ function formatDate(value: string) {
   } catch {
     return value;
   }
+}
+
+function formatUsage(used: number, limit: number | null | undefined) {
+  return `${used} / ${limit == null ? 'Illimitato' : limit}`;
+}
+
+function formatAvailableSlots(limit: number | null | undefined, available: number | null | undefined) {
+  if (limit == null) return 'Illimitati';
+  return String(available ?? 0);
 }
 
 function Field({ label, value }: { label: string; value: string }) {

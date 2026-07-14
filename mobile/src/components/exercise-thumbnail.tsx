@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Play } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
@@ -10,7 +10,7 @@ import { resolveImageSource } from '@/data/image-registry';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchExerciseVideoInfoCached } from '@/lib/exercise-video-info-cache';
 import { supabaseConfig } from '@/lib/supabase';
-import { fetchYmoveThumbnail, getCachedYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
+import { fetchYmoveThumbnail, getCachedYmoveThumbnail, refreshYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
 import type { Exercise } from '@/types/training';
 
 // Thumbnail dell'esercizio nelle card di scheda (coach/cliente, superserie e
@@ -46,14 +46,34 @@ export function ExerciseThumbnail({
   // Caso 1: l'id YMove e' gia' noto direttamente sull'esercizio, nessuna
   // query a exercise_videos necessaria.
   const directYmoveId = exercise.source === 'ymove' ? (exercise.ymoveExerciseId ?? null) : null;
+  const imageFile = exercise.videoFile.replace(/\.mp4$/i, '.jpg');
+  const localImageSource = resolveImageSource(imageFile);
+  const containerStyle = { width: size, height: size, borderRadius: size >= 64 ? Radius.md : Radius.sm };
+  const mountedRef = useRef(true);
+  const activeRequestKeyRef = useRef('');
 
   const [remoteThumbnailUrl, setRemoteThumbnailUrl] = useState<string | null>(null);
+  const [linkedYmoveId, setLinkedYmoveId] = useState<string | null>(null);
+  const [hasUploadVideo, setHasUploadVideo] = useState(Boolean(exercise.videoUrl));
   const [loadingRemote, setLoadingRemote] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [ymoveRetryAttempted, setYmoveRetryAttempted] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+    activeRequestKeyRef.current = `${id}:${directYmoveId ?? ''}:${imageFile}:${exercise.videoUrl ?? ''}`;
     setRemoteThumbnailUrl(null);
+    setLinkedYmoveId(null);
+    setHasUploadVideo(Boolean(exercise.videoUrl));
     setLoadingRemote(false);
+    setImageFailed(false);
+    setYmoveRetryAttempted(false);
 
     function loadFromCacheOrFetch(ymoveExerciseId: string) {
       const cached = getCachedYmoveThumbnail(ymoveExerciseId);
@@ -84,27 +104,68 @@ export function ExerciseThumbnail({
     fetchExerciseVideoInfoCached(id).then((result) => {
       if (cancelled || !result.ok || !result.data) return;
       if (result.data.source === 'ymove') {
+        setLinkedYmoveId(result.data.ymoveExerciseId);
         loadFromCacheOrFetch(result.data.ymoveExerciseId);
+        return;
       }
       // source === 'upload': nessun poster salvato oggi, resta il
       // placeholder (vedi commento del componente sopra).
+      setHasUploadVideo(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [id, directYmoveId]);
+  }, [id, directYmoveId, exercise.source, exercise.videoUrl, imageFile]);
 
-  const imageFile = exercise.videoFile.replace(/\.mp4$/i, '.jpg');
-  const localImageSource = resolveImageSource(imageFile);
-  const containerStyle = { width: size, height: size, borderRadius: size >= 64 ? Radius.md : Radius.sm };
+  const effectiveYmoveId = directYmoveId ?? linkedYmoveId;
+  const remoteSourceType = directYmoveId ? 'ymove' : linkedYmoveId ? 'ymove-linked' : null;
+  const imageSource = !imageFailed ? (remoteThumbnailUrl ? { uri: remoteThumbnailUrl } : localImageSource) : null;
+  const showUploadVideoBadge = hasUploadVideo && !imageSource;
 
-  const imageSource = remoteThumbnailUrl ? { uri: remoteThumbnailUrl } : localImageSource;
+  function logThumbnailError(sourceType: string, attemptedSource: string) {
+    if (__DEV__) {
+      console.warn('EXERCISE_THUMBNAIL_ERROR', {
+        exerciseId: id,
+        exerciseName: exercise.name,
+        sourceType,
+        attemptedSource,
+      });
+    }
+  }
+
+  function handleImageError() {
+    setLoadingRemote(false);
+
+    if (remoteThumbnailUrl && effectiveYmoveId) {
+      logThumbnailError(remoteSourceType ?? 'ymove', `ymove:${effectiveYmoveId}`);
+      setRemoteThumbnailUrl(null);
+      if (!ymoveRetryAttempted) {
+        setYmoveRetryAttempted(true);
+        setImageFailed(false);
+        const retryRequestKey = activeRequestKeyRef.current;
+        refreshYmoveThumbnail(effectiveYmoveId).then((url) => {
+          if (!mountedRef.current || activeRequestKeyRef.current !== retryRequestKey) return;
+          setRemoteThumbnailUrl(url);
+          setLoadingRemote(false);
+          if (!url) setImageFailed(true);
+        });
+        return;
+      }
+      setImageFailed(true);
+      return;
+    }
+
+    if (localImageSource) {
+      logThumbnailError('local-image', `local:${imageFile}`);
+    }
+    setImageFailed(true);
+  }
 
   if (imageSource) {
     return (
       <View style={[containerStyle, styles.imageWrapper]}>
-        <Image source={imageSource} style={[StyleSheet.absoluteFill, styles.image]} contentFit="cover" />
+        <Image source={imageSource} style={[StyleSheet.absoluteFill, styles.image]} contentFit="cover" onError={handleImageError} />
         <View style={styles.playBadge} pointerEvents="none">
           <Play size={Math.max(10, size * 0.28)} color="#fff" fill="#fff" />
         </View>
@@ -121,6 +182,11 @@ export function ExerciseThumbnail({
           {exercise.name.charAt(0).toUpperCase()}
         </ThemedText>
       )}
+      {showUploadVideoBadge ? (
+        <View style={styles.placeholderVideoBadge} pointerEvents="none">
+          <Play size={Math.max(9, size * 0.24)} color={theme.textSecondary} fill={theme.textSecondary} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -139,6 +205,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#00000099',
     borderRadius: 999,
     padding: 3,
+  },
+  placeholderVideoBadge: {
+    position: 'absolute',
+    bottom: 3,
+    right: 3,
+    borderRadius: 999,
   },
   placeholder: {
     alignItems: 'center',

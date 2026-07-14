@@ -290,3 +290,12 @@ Formato per ogni voce:
 - **Causa:** `superadmin-shell.tsx` e le card interne usavano `router.push` diretto senza logging. `assignCoachPackage` calcolava data inizio/scadenza automaticamente.
 - **Fix applicato:** aggiunti log dev `SUPERADMIN_NAV_PRESS { source, target }` su bottom bar, notifiche, dashboard, lista/detail coach, piani, pacchetti e supporto. `assignCoachPackage` ora riceve `packageId`, `startsAt`, `expiresAt`, valida le date, marca `canceled` gli abbonamenti active precedenti dello stesso coach e inserisce una nuova riga active in `user_subscriptions` con `payment_provider='superadmin_manual'`; il dettaglio coach rilegge Supabase con `reload()`.
 - **Verifica:** `npx.cmd tsc --noEmit` pulito durante lo sviluppo. Nessuna service role key aggiunta; nessuna modifica remota Supabase eseguita.
+## BUG-030 - Pacchetti coach: checkout non reale e nessuna sincronizzazione RevenueCat/Supabase
+- **Stato:** risolto lato codice, da verificare con store reali e webhook deployato
+- **Severita:** alta
+- **Data apertura:** 2026-07-14
+- **Data chiusura codice:** 2026-07-14
+- **Descrizione:** il pulsante acquisto pacchetto coach mostrava un messaggio onesto ma non avviava un pagamento reale. Mancavano mapping product id store, prezzo localizzato da store, restore acquisti e webhook che aggiornasse `user_subscriptions`.
+- **Causa:** `mobile/src/lib/package-checkout-service.ts` era ancora lo stub progettato nella fase precedente: non usava RevenueCat, Apple IAP o Google Play Billing e non esisteva una Edge Function sicura per scrivere gli abbonamenti dopo ricevuta verificata.
+- **Fix applicato:** installato `react-native-purchases`; nuovo `revenuecat-service.ts` con configure una sola volta, public keys Android/iOS, login RevenueCat con UUID Supabase, logout su cambio account, offerings/prodotti/prezzo store, purchase, pending/cancel/error, restore e CustomerInfo listener deduplicato. `abbonamento-coach.tsx` mostra prezzo store e non usa `price_cents`/prezzo Supabase come prezzo finale. Nuova Edge Function `revenuecat-webhook` con secret, service role solo server-side, ledger idempotente `revenuecat_webhook_events`, risoluzione pacchetto da product id/entitlement e upsert di `user_subscriptions` con `payment_provider='revenuecat'`. Manuale superadmin preservato con `payment_provider='superadmin_manual'`.
+- **Verifica:** `npx.cmd tsc --noEmit` pulito durante lo sviluppo. Non verificabile end-to-end senza prodotti RevenueCat/Google/Apple configurati, migrazione SQL applicata, function deployata e build nativa reale.

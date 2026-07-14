@@ -58,15 +58,11 @@ export async function loadSupabaseCoaches(): Promise<LoadSupabaseCoachesResult> 
     // coerente con la definizione usata da _coach_capacity (docs/
     // SUPABASE_SCHEMA.sql) e dalla schermata Clienti del coach.
     supabase.from('coach_clients').select('coach_id').in('coach_id', coachIds).eq('status', 'active'),
-    // Pacchetto coach attivo per la capacita' clienti (2026-07-12), distinto
-    // dal vecchio "piano app" cosmetico sotto: subscription_packages con
-    // target_role='coach' collegato tramite user_subscriptions.status='active'.
-    // created_at qui serve solo per scegliere la piu' recente se per qualche
-    // motivo ce ne fosse piu' di una (il trigger user_subscriptions_single_active
-    // dovrebbe gia' impedirlo, ma la lettura resta difensiva).
+    // Pacchetto coach effettivo: override manuale superadmin active e non
+    // scaduto prima; altrimenti RevenueCat active e non scaduto.
     supabase
       .from('user_subscriptions')
-      .select('id,user_id,status,expires_at,created_at,package:subscription_packages(name,max_clients,target_role)')
+      .select('id,user_id,status,expires_at,created_at,payment_provider,package:subscription_packages(name,max_clients,target_role)')
       .in('user_id', coachIds)
       .eq('status', 'active'),
   ]);
@@ -81,6 +77,7 @@ export async function loadSupabaseCoaches(): Promise<LoadSupabaseCoachesResult> 
     status: string;
     expires_at: string | null;
     created_at: string;
+    payment_provider: string | null;
     package: { name: string; max_clients: number | null; target_role: string } | null;
   }>;
 
@@ -91,10 +88,13 @@ export async function loadSupabaseCoaches(): Promise<LoadSupabaseCoachesResult> 
     const activeCode = codesForCoach.find((item) => item.status === 'active') ?? codesForCoach[0];
     const clientsUsed = coachClientsRows.filter((item) => item.coach_id === profile.id).length;
 
-    const activePackageSubscription = packageSubscriptionRows
+    const validPackageSubscriptions = packageSubscriptionRows
       .filter((row) => row.user_id === profile.id && row.package?.target_role === 'coach')
       .filter((row) => !row.expires_at || new Date(row.expires_at).getTime() > Date.now())
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const activePackageSubscription =
+      validPackageSubscriptions.find((row) => row.payment_provider === 'superadmin_manual') ??
+      validPackageSubscriptions.find((row) => row.payment_provider === 'revenuecat');
     const activePackageMaxClients = activePackageSubscription?.package?.max_clients ?? null;
 
     const billingProfile: CoachBillingProfile | undefined = billingProfileRow
@@ -125,8 +125,9 @@ export async function loadSupabaseCoaches(): Promise<LoadSupabaseCoachesResult> 
       billingProfile,
       coachCode: activeCode?.code ?? '',
       coachCodeActive: activeCode?.status === 'active',
-      // Nessun piano app reale collegato per i coach Supabase in questa fase
-      // (nessuna integrazione Stripe/RevenueCat, vedi docs/DECISIONS.md):
+      // Nessun "piano app" legacy reale collegato per i coach Supabase:
+      // il vero pacchetto vive in user_subscriptions/subscription_packages
+      // (manuale superadmin o RevenueCat via webhook, vedi docs/DECISIONS.md).
       // 'free' e' un valore cosmetico di default per riusare la UI esistente,
       // non un piano davvero attivo/fatturato.
       planCode: 'free',

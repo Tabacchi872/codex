@@ -266,3 +266,11 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
 19. Provare un development build EAS al posto di Expo Go per il test su device reale (vedi nota Expo Go sopra e in `docs/BUGS.md`).
 
 **Prossimo intervento consigliato: verifica reale del collegamento Supabase Fase 1** (checklist dedicata sopra, mai eseguita contro un progetto reale) prima di migrare altro. In alternativa: lato coach per Nutrizione/Bacheca personale, caricamento video/immagini reali, o le checklist di clic reali ereditate sopra (Superadmin/registrazione, abbonamenti/agenda, lato cliente).
+- [ ] **RevenueCat pacchetti coach - configurazione e verifica reale (priorita alta):**
+  1. Eseguire manualmente la migrazione SQL idempotente aggiornata in `docs/SUPABASE_SCHEMA.sql` (campi RevenueCat su `subscription_packages` + tabella `revenuecat_webhook_events`).
+  2. Configurare in RevenueCat entitlement/offering e collegare i prodotti Google Play/App Store; poi salvare in Superadmin -> Pacchetti i campi `revenuecat_entitlement_id`, `revenuecat_offering_id`, `android_product_id`, `ios_product_id`.
+  3. Impostare l'unico secret manuale della Edge Function: `REVENUECAT_WEBHOOK_SECRET` (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` sono forniti dal runtime Supabase).
+  4. Deployare `revenuecat-webhook` e configurare il webhook RevenueCat con lo stesso secret.
+  5. Impostare in EAS le public keys `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` e `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`.
+  6. Creare una development/preview build reale Android/iOS (non Expo Go) e verificare acquisto, restore, cambio pacchetto, rinnovo, cancellazione, scadenza, billing issue e logout/cambio coach.
+  7. Verificare in Table editor che gli acquisti RevenueCat scrivano `payment_provider='revenuecat'` e che le assegnazioni manuali superadmin restino `payment_provider='superadmin_manual'`.

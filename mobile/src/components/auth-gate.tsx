@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Slot, usePathname, useRouter, type Href } from 'expo-router';
 
 import AppTabs from './app-tabs';
@@ -16,6 +16,7 @@ import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
 import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
+import { identifyRevenueCatUser, logoutRevenueCat } from '@/lib/revenuecat-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
@@ -72,6 +73,7 @@ export function AuthGate() {
   // anche quando chat.tsx/appuntamenti monta lo stesso hook.
   const { refresh: refreshAppointments } = useAppointmentsRealtime();
   const { refresh: refreshMessages } = useMessagesRealtime();
+  const revenueCatUserIdRef = useRef<string | null>(null);
 
   const targetPath = getRoleRedirectTarget(currentRole, pathname);
 
@@ -101,6 +103,41 @@ export function AuthGate() {
     const detach = attachNotificationResponseListener();
     return detach;
   }, [currentRole]);
+
+  // RevenueCat usa lo stesso UUID Supabase Auth del coach. Su logout/cambio
+  // account si chiude l'identita' RevenueCat per evitare contaminazioni tra
+  // acquisti di store diversi sullo stesso device.
+  useEffect(() => {
+    if (currentRole !== 'coach' || !isAuthenticated || !supabaseConfig.isConfigured) {
+      if (revenueCatUserIdRef.current) {
+        revenueCatUserIdRef.current = null;
+        logoutRevenueCat();
+      }
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { getCurrentSession } = await import('@/lib/auth-service');
+      const sessionResult = await getCurrentSession();
+      if (!active) return;
+      const userId = sessionResult.ok ? sessionResult.data?.user.id ?? null : null;
+      if (!userId) {
+        if (revenueCatUserIdRef.current) {
+          revenueCatUserIdRef.current = null;
+          await logoutRevenueCat();
+        }
+        return;
+      }
+      if (revenueCatUserIdRef.current && revenueCatUserIdRef.current !== userId) {
+        await logoutRevenueCat();
+      }
+      revenueCatUserIdRef.current = userId;
+      await identifyRevenueCatUser(userId);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [currentRole, isAuthenticated]);
 
   // Associazione automatica video YMove (2026-07-13): avviata UNA sola volta
   // per sessione app quando il ruolo diventa 'coach' (non ad ogni render/

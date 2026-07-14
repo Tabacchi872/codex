@@ -18,7 +18,7 @@ import { getBillingStatusLabel, isAppBillingStatus } from '@/lib/superadmin-bill
 import { listActivePackages } from '@/lib/subscription-packages-service';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
-import type { AppBillingStatus, AppPlanCode, CoachBillingProfile, CoachBillingSubjectType, DemoCoachClient } from '@/types/superadmin';
+import type { AppBillingStatus, CoachBillingProfile, CoachBillingSubjectType, DemoCoachClient } from '@/types/superadmin';
 import type { SubscriptionPackage } from '@/types/subscription-packages';
 
 const STATUSES: AppBillingStatus[] = ['trial', 'active', 'past_due', 'canceled', 'blocked'];
@@ -28,19 +28,16 @@ export default function SuperadminCoachDetail() {
   const coachIdParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const { colors } = useAppTheme();
   const { coaches, loading, error: loadError, reload } = useSuperadminCoaches();
-  const plans = useSuperadminStore((s) => s.plans);
   const clients = useSuperadminStore((s) => s.coachClients);
   const updateCoach = useSuperadminStore((s) => s.updateCoach);
   const localRegenerateCoachCode = useSuperadminStore((s) => s.regenerateCoachCode);
   const localSetCoachCodeActive = useSuperadminStore((s) => s.setCoachCodeActive);
   const coach = coaches.find((item) => item.id === coachIdParam);
-  const plan = plans.find((item) => item.code === coach?.planCode);
   const coachClients = clients.filter((client) => client.coachId === coachIdParam);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [phone, setPhone] = useState('');
-  const [planCode, setPlanCode] = useState<AppPlanCode>('free');
   const [billingStatus, setBillingStatus] = useState<AppBillingStatus>('trial');
   const [clientLimit, setClientLimit] = useState('');
   const [clientsUsed, setClientsUsed] = useState('');
@@ -65,7 +62,6 @@ export default function SuperadminCoachDetail() {
     setEmail(coach.email);
     setBusinessName(coach.businessName ?? '');
     setPhone(coach.phone ?? '');
-    setPlanCode(coach.planCode);
     setBillingStatus(coach.billingStatus);
     setClientLimit(coach.clientLimitOverride === undefined || coach.clientLimitOverride === null ? '' : String(coach.clientLimitOverride));
     setClientsUsed(String(coach.clientsUsed));
@@ -95,13 +91,12 @@ export default function SuperadminCoachDetail() {
 
   const coachId = coach.id;
   const isSupabaseCoach = coach.source === 'supabase';
-  const effectiveClientLimit = clientLimit.trim() === '' ? plan?.clientLimit ?? null : Number(clientLimit);
 
   // Scrittura reale su Supabase per un coach registrato (2026-07-12, prima
   // disabilitata: vedi docs/DECISIONS.md, voce BUG-011 e voce "Modifica
   // coach"). Nome/nome attivita'/telefono/stato pagamento hanno un
-  // equivalente reale diretto (profiles/coach_profiles); email, "Piano"
-  // legacy, limite clienti/periodo app restano fuori scope (vedi commenti nel
+  // equivalente reale diretto (profiles/coach_profiles); email,
+  // limite clienti/periodo app restano fuori scope (vedi commenti nel
   // servizio superadmin-coach-admin-service.ts) per un coach locale/demo
   // resta tutto invariato (store locale, nessuna chiamata Supabase).
   async function handleSave() {
@@ -142,7 +137,6 @@ export default function SuperadminCoachDetail() {
       email: email.trim(),
       businessName: businessName.trim() || undefined,
       phone: phone.trim() || undefined,
-      planCode,
       billingStatus,
       clientLimitOverride: parsedLimit,
       clientsUsed: parsedClientsUsed,
@@ -272,30 +266,24 @@ export default function SuperadminCoachDetail() {
           </View>
           <AppBadge label={getBillingStatusLabel(coach.billingStatus)} tone={statusTone(coach.billingStatus)} />
         </View>
-        <View style={styles.dataGrid}>
-          <Info label="Piano app" value={plan?.name ?? coach.planCode} />
-          <Info label="Stato pagamento" value={getBillingStatusLabel(coach.billingStatus)} />
-          <Info label="Limite clienti piano" value={effectiveClientLimit === null ? 'Illimitato' : String(effectiveClientLimit)} />
-          <Info label="Scadenza app" value={coach.periodEndsAt} />
-        </View>
       </AppCard>
 
       <AppCard style={styles.card}>
-        <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Pacchetto acquistato</Text>
+        <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Abbonamento coach</Text>
         {!coach.hasActivePackageSubscription ? (
           <Text style={{ color: colors.rust, fontSize: AppFontSize.sm, fontWeight: '600' }}>
-            Nessun abbonamento coach attivo: le nuove registrazioni cliente con il codice di questo coach restano bloccate.
+            Nessun pacchetto attivo: le nuove registrazioni cliente con il codice di questo coach restano bloccate.
           </Text>
         ) : (
           <View style={styles.dataGrid}>
-            <Info label="Pacchetto attivo" value={coach.activePackageName ?? '-'} />
-            <Info label="Clienti utilizzati" value={String(coach.clientsUsed)} />
-            <Info label="Limite massimo" value={coach.activePackageMaxClients === null ? 'Illimitato' : String(coach.activePackageMaxClients)} />
+            <Info label="Pacchetto attivo" value={coach.activePackageName ?? 'Pacchetto'} />
+            <Info label="Stato" value="Attivo" />
+            <Info label="Clienti utilizzati / limite" value={formatUsage(coach.clientsUsed, coach.activePackageMaxClients)} />
             <Info
               label="Posti disponibili"
-              value={coach.activePackageMaxClients === null ? 'Illimitati' : String(coach.activePackageAvailableSlots ?? 0)}
+              value={formatAvailableSlots(coach.activePackageMaxClients, coach.activePackageAvailableSlots)}
             />
-            <Info label="Scadenza abbonamento" value={coach.activePackageExpiresAt ? formatDate(coach.activePackageExpiresAt) : 'Nessuna scadenza'} />
+            <Info label="Data di scadenza" value={coach.activePackageExpiresAt ? formatDate(coach.activePackageExpiresAt) : 'Nessuna scadenza'} />
           </View>
         )}
 
@@ -387,9 +375,8 @@ export default function SuperadminCoachDetail() {
         <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Modifica coach</Text>
         {isSupabaseCoach ? (
           <Text style={[styles.smallText, { color: colors.inkFaint }]}>
-            Coach registrato su Supabase: nome/nome attivita'/telefono e stato pagamento si salvano davvero sul database. "Piano"
-            legacy, limite clienti e periodo app restano solo locali/dimostrativi (usa "Pacchetto acquistato" sopra per il vero
-            abbonamento). L'email non e' modificabile da qui.
+            Coach registrato su Supabase: nome/nome attivita'/telefono e stato pagamento si salvano davvero sul database.
+            L'abbonamento reale si gestisce nella sezione Abbonamento coach. L'email non e' modificabile da qui.
           </Text>
         ) : null}
         <AppTextField label="Nome" value={name} onChangeText={setName} placeholder="Nome coach" />
@@ -404,29 +391,26 @@ export default function SuperadminCoachDetail() {
         />
         <AppTextField label="Nome attivita'" value={businessName} onChangeText={setBusinessName} placeholder="Es. Studio FitCoach" />
         <AppTextField label="Telefono" value={phone} onChangeText={setPhone} placeholder="Es. 333 1234567" keyboardType="phone-pad" />
-        <OptionGroup label="Piano" options={plans.map((item) => ({ value: item.code, label: item.name }))} value={planCode} onChange={setPlanCode} disabled={isSupabaseCoach} />
-        {isSupabaseCoach ? (
-          <Text style={[styles.smallText, { color: colors.inkFaint }]}>
-            Il "Piano" legacy non e' modificabile per un coach registrato: l'abbonamento reale e' il "Pacchetto acquistato" in alto,
-            che determina anche il limite clienti.
-          </Text>
-        ) : null}
         <OptionGroup
           label="Stato pagamento"
           options={STATUSES.map((status) => ({ value: status, label: getBillingStatusLabel(status) }))}
           value={billingStatus}
           onChange={setBillingStatus}
         />
-        <AppTextField label="Limite clienti" value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite piano" keyboardType="number-pad" editable={!isSupabaseCoach} />
-        <AppTextField label="Clienti usati" value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" editable={!isSupabaseCoach} />
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <AppTextField label="Inizio periodo" value={periodStartsAt} onChangeText={setPeriodStartsAt} placeholder="2026-07-08" editable={!isSupabaseCoach} />
-          </View>
-          <View style={styles.half}>
-            <AppTextField label="Fine periodo" value={periodEndsAt} onChangeText={setPeriodEndsAt} placeholder="2026-08-08" editable={!isSupabaseCoach} />
-          </View>
-        </View>
+        {!isSupabaseCoach ? (
+          <>
+            <AppTextField label="Limite clienti" value={clientLimit} onChangeText={setClientLimit} placeholder="Vuoto = limite locale" keyboardType="number-pad" />
+            <AppTextField label="Clienti usati" value={clientsUsed} onChangeText={setClientsUsed} placeholder="0" keyboardType="number-pad" />
+            <View style={styles.row}>
+              <View style={styles.half}>
+                <AppTextField label="Inizio periodo" value={periodStartsAt} onChangeText={setPeriodStartsAt} placeholder="2026-07-08" />
+              </View>
+              <View style={styles.half}>
+                <AppTextField label="Fine periodo" value={periodEndsAt} onChangeText={setPeriodEndsAt} placeholder="2026-08-08" />
+              </View>
+            </View>
+          </>
+        ) : null}
         {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
         {saveFeedback && !error ? <Text style={[styles.errorText, { color: colors.moss }]}>{saveFeedback}</Text> : null}
         <View style={styles.actions}>
@@ -468,6 +452,15 @@ function formatDate(value: string) {
   } catch {
     return value;
   }
+}
+
+function formatUsage(used: number, limit: number | null | undefined) {
+  return `${used} / ${limit == null ? 'Illimitato' : limit}`;
+}
+
+function formatAvailableSlots(limit: number | null | undefined, available: number | null | undefined) {
+  if (limit == null) return 'Illimitati';
+  return String(available ?? 0);
 }
 
 function getDefaultPackageDates() {

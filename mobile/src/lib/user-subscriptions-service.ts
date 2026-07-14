@@ -30,6 +30,10 @@ type PackageRow = {
   duration_unit: 'days' | 'months';
   max_clients: number | null;
   features: string[] | null;
+  revenuecat_entitlement_id: string | null;
+  revenuecat_offering_id: string | null;
+  android_product_id: string | null;
+  ios_product_id: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -62,6 +66,10 @@ function mapPackageRow(row: PackageRow): SubscriptionPackage {
     durationUnit: row.duration_unit,
     maxClients: row.max_clients,
     features: row.features ?? [],
+    revenuecatEntitlementId: row.revenuecat_entitlement_id,
+    revenuecatOfferingId: row.revenuecat_offering_id,
+    androidProductId: row.android_product_id,
+    iosProductId: row.ios_product_id,
     isActive: row.is_active,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
@@ -86,11 +94,12 @@ function mapSubscriptionRow(row: SubscriptionRow): UserSubscription {
 }
 
 const SELECT_WITH_PACKAGE =
-  'id,user_id,package_id,status,starts_at,expires_at,payment_provider,external_subscription_id,created_at,updated_at,package:subscription_packages(id,target_role,name,description,price,currency,duration_value,duration_unit,max_clients,features,is_active,sort_order,created_at,updated_at)';
+  'id,user_id,package_id,status,starts_at,expires_at,payment_provider,external_subscription_id,created_at,updated_at,package:subscription_packages(id,target_role,name,description,price,currency,duration_value,duration_unit,max_clients,features,revenuecat_entitlement_id,revenuecat_offering_id,android_product_id,ios_product_id,is_active,sort_order,created_at,updated_at)';
 
 // Storico completo (piu' recente prima), incluso l'eventuale abbonamento
-// attivo/in attesa corrente: la UI distingue "corrente" prendendo la prima
-// riga con status 'active' o 'pending' (vedi getCurrentUserSubscription sotto).
+// attivo corrente: la UI distingue "corrente" prendendo solo la prima riga
+// con status 'active'. Le righe pending restano nello storico, non diventano
+// un pacchetto attivo.
 export async function listUserSubscriptions(userId: string): Promise<UserSubscriptionsServiceResult<UserSubscription[]>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
 
@@ -108,5 +117,49 @@ export async function listUserSubscriptions(userId: string): Promise<UserSubscri
 }
 
 export function pickCurrentSubscription(subscriptions: UserSubscription[]): UserSubscription | null {
-  return subscriptions.find((item) => item.status === 'active') ?? subscriptions.find((item) => item.status === 'pending') ?? null;
+  const active = subscriptions.filter(isActiveAndValid);
+  return (
+    active.find((item) => item.paymentProvider === 'superadmin_manual') ??
+    active.find((item) => item.paymentProvider === 'revenuecat') ??
+    null
+  );
+}
+
+function isActiveAndValid(item: UserSubscription) {
+  return item.status === 'active' && (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now());
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function waitForPackageSubscriptionSync(
+  userId: string,
+  packageId: string,
+  attempts = 6,
+  delayMs = 1500,
+): Promise<UserSubscriptionsServiceResult<UserSubscription | null>> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const result = await listUserSubscriptions(userId);
+    if (!result.ok) return result;
+    const synced = result.data.find((item) => isActiveAndValid(item) && item.packageId === packageId);
+    if (synced) return { ok: true, data: synced };
+    if (attempt < attempts - 1) await wait(delayMs);
+  }
+  return { ok: true, data: null };
+}
+
+export async function waitForAnySubscriptionSync(
+  userId: string,
+  attempts = 6,
+  delayMs = 1500,
+): Promise<UserSubscriptionsServiceResult<UserSubscription | null>> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const result = await listUserSubscriptions(userId);
+    if (!result.ok) return result;
+    const current = pickCurrentSubscription(result.data);
+    if (current) return { ok: true, data: current };
+    if (attempt < attempts - 1) await wait(delayMs);
+  }
+  return { ok: true, data: null };
 }

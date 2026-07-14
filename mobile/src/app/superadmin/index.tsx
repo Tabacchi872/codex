@@ -7,13 +7,11 @@ import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
-import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
 export default function SuperadminDashboard() {
   const { colors } = useAppTheme();
   const { coaches } = useSuperadminCoaches();
-  const plans = useSuperadminStore((s) => s.plans);
   // Stessa griglia misurata della dashboard coach (fix BUG-020): niente
   // percentuali+minWidth+flexGrow, che a 320-412px causavano righe piu'
   // larghe del contenitore e la sovrapposizione con la card alert sotto.
@@ -24,10 +22,7 @@ export default function SuperadminDashboard() {
   const trialCoaches = coaches.filter((coach) => coach.billingStatus === 'trial').length;
   const pastDueCoaches = coaches.filter((coach) => coach.billingStatus === 'past_due').length;
   const blockedCoaches = coaches.filter((coach) => coach.billingStatus === 'blocked').length;
-  const monthlyRecurringRevenue = coaches.reduce((total, coach) => {
-    if (coach.billingStatus !== 'active') return total;
-    return total + (plans.find((plan) => plan.code === coach.planCode)?.monthlyPrice ?? 0);
-  }, 0);
+  const coachesWithActivePackage = coaches.filter((coach) => coach.hasActivePackageSubscription).length;
   const paymentAlerts = coaches.filter((coach) => coach.billingStatus === 'past_due');
 
   function navigate(source: string, target: Href) {
@@ -79,9 +74,9 @@ export default function SuperadminDashboard() {
         />
         <AppStatCard
           size="sm"
-          label="Ricavi mensili stimati"
-          value={`EUR ${monthlyRecurringRevenue}`}
-          onPress={() => navigate('superadmin-stat-pagamenti', '/superadmin/payment-events' as Href)}
+          label="Coach con pacchetto"
+          value={String(coachesWithActivePackage)}
+          onPress={() => navigate('superadmin-stat-pacchetti-attivi', '/superadmin/coaches?status=all' as Href)}
           style={gridItemStyle}
         />
       </View>

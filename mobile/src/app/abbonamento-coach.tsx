@@ -1,26 +1,73 @@
 import { CheckCircle2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, AppHeader, AppScreen } from '@/components/ui';
 import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
 import { useMySubscription } from '@/hooks/use-my-subscription';
 import { useSubscriptionPackages } from '@/hooks/use-subscription-packages';
-import { startPackageCheckout } from '@/lib/package-checkout-service';
+import { loadStoreProductsForPackages, restorePackagePurchases, startPackageCheckout } from '@/lib/package-checkout-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
+import type { RevenueCatProductState } from '@/lib/revenuecat-service';
 import type { SubscriptionPackage, UserSubscriptionStatus } from '@/types/subscription-packages';
 
-// Sezione "Abbonamento" del coach: pacchetti coach attivi (letti sempre da
-// Supabase, mai hardcodati), pacchetto/stato/scadenza correnti, acquisto o
-// cambio pacchetto. Nessun pagamento reale collegato in questa fase (vedi
-// lib/package-checkout-service.ts): il bottone avvia solo il flusso
-// predisposto, mostrando un messaggio onesto invece di un finto successo.
+// Sezione "Abbonamento" del coach: pacchetti coach attivi letti da Supabase,
+// prezzo finale letto dallo store tramite RevenueCat, stato corrente letto da
+// user_subscriptions. Il client mobile non attiva mai un abbonamento: dopo il
+// purchase aspetta solo che il webhook Supabase sincronizzi la riga reale.
 export default function AbbonamentoCoachScreen() {
   const { colors } = useAppTheme();
   const { packages, loading: loadingPackages, error: packagesError, reload: reloadPackages } = useSubscriptionPackages('coach');
   const { current, history, loading: loadingSubscription, error: subscriptionError, reload: reloadSubscription } = useMySubscription();
   const { capacity, loading: loadingCapacity, error: capacityError, reload: reloadCapacity } = useCoachClientCapacity();
+  const [storeProducts, setStoreProducts] = useState<Record<string, RevenueCatProductState>>({});
+  const [storeLoading, setStoreLoading] = useState(false);
+  const [storeError, setStoreError] = useState('');
+  const [restoreMessage, setRestoreMessage] = useState('');
+  const [restoring, setRestoring] = useState(false);
+
+  const reloadAll = useCallback(() => {
+    reloadSubscription();
+    reloadCapacity();
+    reloadPackages();
+  }, [reloadCapacity, reloadPackages, reloadSubscription]);
+
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured || packages.length === 0) {
+      setStoreProducts({});
+      setStoreLoading(false);
+      setStoreError('');
+      return;
+    }
+    let active = true;
+    setStoreLoading(true);
+    setStoreError('');
+    (async () => {
+      try {
+        const result = await loadStoreProductsForPackages(packages);
+        if (!active) return;
+        setStoreProducts(result);
+      } catch (err) {
+        if (!active) return;
+        setStoreError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (active) setStoreLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [packages]);
+
+  async function handleRestorePurchases() {
+    setRestoring(true);
+    setRestoreMessage('');
+    const result = await restorePackagePurchases();
+    setRestoring(false);
+    setRestoreMessage(result.message);
+    if (result.ok) reloadAll();
+  }
 
   if (!supabaseConfig.isConfigured) {
     return (
@@ -55,13 +102,18 @@ export default function AbbonamentoCoachScreen() {
             usedClients={capacity?.usedClients ?? null}
           />
         ) : (
-          <AppEmptyState title="Nessun abbonamento attivo" subtitle="Scegli un pacchetto qui sotto per iniziare." />
+          <AppEmptyState title="Nessun pacchetto attivo" subtitle="Scegli un pacchetto qui sotto per iniziare." />
         )}
         {loadingCapacity ? <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento utilizzo clienti...</Text> : null}
         {capacityError ? <AppErrorState message={capacityError} onRetry={reloadCapacity} /> : null}
       </AppCard>
 
-      <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>PACCHETTI DISPONIBILI</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>PACCHETTI DISPONIBILI</Text>
+        <AppButton label="Ripristina acquisti" onPress={handleRestorePurchases} variant="outline" size="sm" loading={restoring} />
+      </View>
+      {restoreMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{restoreMessage}</Text> : null}
+      {storeError ? <Text style={[styles.checkoutMessage, { color: colors.rust }]}>{storeError}</Text> : null}
 
       {loadingPackages ? (
         <AppCard>
@@ -77,7 +129,15 @@ export default function AbbonamentoCoachScreen() {
         </AppCard>
       ) : (
         packages.map((item) => (
-          <PackageOfferCard key={item.id} item={item} isCurrent={current?.package?.id === item.id && current.status === 'active'} />
+          <PackageOfferCard
+            key={item.id}
+            item={item}
+            isCurrent={current?.package?.id === item.id && current.status === 'active'}
+            storeProduct={storeProducts[item.id]}
+            storeLoading={storeLoading}
+            disabled={restoring}
+            onSynced={reloadAll}
+          />
         ))
       )}
 
@@ -123,7 +183,7 @@ function CurrentSubscriptionSummary({
         </Text>
         <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
           Limite clienti: {maxClients === null ? 'Illimitato' : maxClients}
-          {usedClients !== null ? ` · Utilizzati: ${usedClients}` : ''}
+          {usedClients !== null ? ` - Utilizzati: ${usedClients}` : ''}
         </Text>
       </View>
       <AppBadge label={getStatusLabel(status)} tone={getStatusTone(status)} />
@@ -131,17 +191,34 @@ function CurrentSubscriptionSummary({
   );
 }
 
-function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCurrent: boolean }) {
+function PackageOfferCard({
+  item,
+  isCurrent,
+  storeProduct,
+  storeLoading,
+  disabled,
+  onSynced,
+}: {
+  item: SubscriptionPackage;
+  isCurrent: boolean;
+  storeProduct?: RevenueCatProductState;
+  storeLoading: boolean;
+  disabled: boolean;
+  onSynced: () => void;
+}) {
   const { colors } = useAppTheme();
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [starting, setStarting] = useState(false);
+  const canPurchase = !disabled && !storeLoading && storeProduct?.status === 'available';
 
   async function handlePurchase() {
+    if (!canPurchase) return;
     setStarting(true);
     setCheckoutMessage('');
     const result = await startPackageCheckout(item);
     setStarting(false);
     setCheckoutMessage(result.message);
+    if (result.ok) onSynced();
   }
 
   return (
@@ -149,8 +226,8 @@ function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCu
       <View style={styles.header}>
         <View style={styles.nameBlock}>
           <Text style={[styles.name, { color: colors.ink }]}>{item.name}</Text>
-          <Text style={[styles.price, { color: colors.inkSoft }]}>
-            {formatPrice(item.price, item.currency)} / {formatDuration(item.durationValue, item.durationUnit)}
+          <Text style={[styles.price, { color: storeProduct?.status === 'available' || storeLoading ? colors.inkSoft : colors.rust }]}>
+            {formatStorePrice(storeProduct, storeLoading)}
           </Text>
         </View>
         {isCurrent ? (
@@ -182,19 +259,20 @@ function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCu
         label={isCurrent ? 'Rinnova pacchetto' : 'Acquista o cambia pacchetto'}
         onPress={handlePurchase}
         loading={starting}
+        disabled={!canPurchase}
         fullWidth
       />
     </AppCard>
   );
 }
 
-function formatPrice(price: number, currency: string) {
-  return `${currency === 'EUR' ? '€' : currency + ' '}${price.toFixed(2)}`;
-}
-
-function formatDuration(value: number, unit: 'days' | 'months') {
-  const label = unit === 'days' ? (value === 1 ? 'giorno' : 'giorni') : value === 1 ? 'mese' : 'mesi';
-  return `${value} ${label}`;
+function formatStorePrice(storeProduct: RevenueCatProductState | undefined, loading: boolean) {
+  if (loading) return 'Prezzo store in caricamento...';
+  if (!storeProduct) return 'Prodotto non configurato nello store';
+  if (storeProduct.status === 'available') {
+    return storeProduct.periodLabel ? `${storeProduct.priceString} / ${storeProduct.periodLabel}` : storeProduct.priceString;
+  }
+  return storeProduct.message;
 }
 
 function formatDate(value: string) {
@@ -234,6 +312,14 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.xs,
     fontWeight: '700',
     letterSpacing: 0.4,
+    marginTop: AppSpacing[1],
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
+    justifyContent: 'space-between',
     marginTop: AppSpacing[1],
   },
   currentRow: {

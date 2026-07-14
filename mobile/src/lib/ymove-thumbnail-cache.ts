@@ -54,6 +54,17 @@ export function getCachedYmoveThumbnail(ymoveExerciseId: string): string | null 
   return entry?.status === 'done' ? entry.value : undefined;
 }
 
+export function invalidateYmoveThumbnail(ymoveExerciseId: string): void {
+  cache.delete(ymoveExerciseId);
+}
+
+export function refreshYmoveThumbnail(ymoveExerciseId: string): Promise<string | null> {
+  const existing = cache.get(ymoveExerciseId);
+  if (existing?.status === 'loading') return existing.promise;
+  invalidateYmoveThumbnail(ymoveExerciseId);
+  return fetchYmoveThumbnail(ymoveExerciseId);
+}
+
 export function fetchYmoveThumbnail(ymoveExerciseId: string): Promise<string | null> {
   const existing = cache.get(ymoveExerciseId);
   if (existing) {

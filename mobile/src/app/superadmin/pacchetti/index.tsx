@@ -137,11 +137,15 @@ function PackageCard({ item, onChanged }: { item: SubscriptionPackage; onChanged
         <View style={styles.nameBlock}>
           <Text style={[styles.name, { color: colors.ink }]}>{item.name}</Text>
           <Text style={[styles.price, { color: colors.inkSoft }]}>
-            {formatPrice(item.price, item.currency)} / {formatDuration(item.durationValue, item.durationUnit)}
+            Riferimento: {formatPrice(item.price, item.currency)} / {formatDuration(item.durationValue, item.durationUnit)}
           </Text>
         </View>
         <AppBadge label={item.isActive ? 'Attivo' : 'Non attivo'} tone={item.isActive ? 'moss' : 'neutral'} />
       </View>
+
+      <Text style={[styles.description, { color: colors.inkSoft }]}>
+        Il prezzo addebitato viene gestito da Apple/Google nello store tramite RevenueCat.
+      </Text>
 
       {item.description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{item.description}</Text> : null}
 
@@ -159,6 +163,13 @@ function PackageCard({ item, onChanged }: { item: SubscriptionPackage; onChanged
           ))}
         </View>
       ) : null}
+
+      <View style={styles.storeRows}>
+        <StoreIdRow label="Entitlement" value={item.revenuecatEntitlementId} />
+        <StoreIdRow label="Offering" value={item.revenuecatOfferingId} />
+        <StoreIdRow label="Android" value={item.androidProductId} />
+        <StoreIdRow label="iOS" value={item.iosProductId} />
+      </View>
 
       {actionError ? <Text style={[styles.errorText, { color: colors.rust }]}>{actionError}</Text> : null}
 
@@ -188,6 +199,18 @@ function PackageCard({ item, onChanged }: { item: SubscriptionPackage; onChanged
         />
       </View>
     </AppCard>
+  );
+}
+
+function StoreIdRow({ label, value }: { label: string; value: string | null }) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.row}>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{label}</Text>
+      <Text style={[styles.rowValue, { color: value ? colors.ink : colors.inkFaint }]} numberOfLines={1}>
+        {value || 'Non configurato'}
+      </Text>
+    </View>
   );
 }
 
@@ -260,6 +283,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: AppSpacing[2],
+  },
+  storeRows: {
+    gap: AppSpacing[1],
   },
   errorText: {
     fontSize: AppFontSize.sm,

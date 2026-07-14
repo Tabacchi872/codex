@@ -852,11 +852,11 @@ notify pgrst, 'reload schema';
 --     qui e' un pacchetto acquistabile creato dal superadmin, uguale per
 --     tutti i coach.
 -- user_subscriptions traccia l'abbonamento di un utente (coach o cliente) a
--- un subscription_packages. Nessun pagamento reale e' collegato qui: la UI
--- (mobile/src/lib/package-checkout-service.ts) prepara solo il flusso senza
--- simulare un acquisto completato - righe "vere" in user_subscriptions
--- vengono scritte solo dal superadmin o da un futuro backend/webhook con
--- service role, stesso pattern gia' usato per payment_events.
+-- un subscription_packages. I pacchetti coach possono essere acquistati via
+-- RevenueCat/Google Play/App Store: il client mobile NON scrive mai righe
+-- active, il webhook revenuecat-webhook usa service role dopo ricevuta
+-- verificata. L'assegnazione manuale superadmin resta distinta con
+-- payment_provider='superadmin_manual'.
 create table if not exists public.subscription_packages (
   id uuid primary key default gen_random_uuid(),
   target_role text not null check (target_role in ('coach', 'client')),
@@ -868,6 +868,10 @@ create table if not exists public.subscription_packages (
   duration_unit text not null check (duration_unit in ('days', 'months')),
   max_clients integer,
   features jsonb not null default '[]'::jsonb,
+  revenuecat_entitlement_id text,
+  revenuecat_offering_id text,
+  android_product_id text,
+  ios_product_id text,
   is_active boolean not null default true,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -878,6 +882,37 @@ create table if not exists public.subscription_packages (
 
 create index if not exists subscription_packages_target_role_idx
   on public.subscription_packages(target_role, is_active, sort_order);
+
+alter table public.subscription_packages
+  add column if not exists revenuecat_entitlement_id text,
+  add column if not exists revenuecat_offering_id text,
+  add column if not exists android_product_id text,
+  add column if not exists ios_product_id text;
+
+-- Controlli manuali da eseguire PRIMA di creare gli unique index: se
+-- restituiscono righe, correggere i duplicati a mano. La migrazione non
+-- cancella/modifica pacchetti automaticamente.
+select android_product_id, count(*)
+from public.subscription_packages
+where android_product_id is not null
+group by android_product_id
+having count(*) > 1;
+
+select ios_product_id, count(*)
+from public.subscription_packages
+where ios_product_id is not null
+group by ios_product_id
+having count(*) > 1;
+
+create unique index if not exists subscription_packages_android_product_id_unique_idx
+  on public.subscription_packages(android_product_id)
+  where android_product_id is not null;
+create unique index if not exists subscription_packages_ios_product_id_unique_idx
+  on public.subscription_packages(ios_product_id)
+  where ios_product_id is not null;
+create index if not exists subscription_packages_revenuecat_entitlement_id_idx
+  on public.subscription_packages(revenuecat_entitlement_id)
+  where revenuecat_entitlement_id is not null;
 
 drop trigger if exists subscription_packages_set_updated_at on public.subscription_packages;
 create trigger subscription_packages_set_updated_at before update on public.subscription_packages
@@ -926,6 +961,9 @@ create table if not exists public.user_subscriptions (
 
 create index if not exists user_subscriptions_user_id_idx on public.user_subscriptions(user_id);
 create index if not exists user_subscriptions_package_id_idx on public.user_subscriptions(package_id);
+create index if not exists user_subscriptions_external_subscription_id_idx
+  on public.user_subscriptions(external_subscription_id)
+  where external_subscription_id is not null;
 
 drop trigger if exists user_subscriptions_set_updated_at on public.user_subscriptions;
 create trigger user_subscriptions_set_updated_at before update on public.user_subscriptions
@@ -964,6 +1002,32 @@ create policy subscription_packages_read_via_own_subscription on public.subscrip
     )
   );
 
+create table if not exists public.revenuecat_webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null unique,
+  event_type text not null,
+  app_user_id uuid,
+  product_id text,
+  entitlement_id text,
+  payload jsonb not null,
+  processed boolean not null default false,
+  processing_error text,
+  received_at timestamptz not null default now(),
+  processed_at timestamptz
+);
+
+create index if not exists revenuecat_webhook_events_app_user_id_idx
+  on public.revenuecat_webhook_events(app_user_id);
+create index if not exists revenuecat_webhook_events_processed_idx
+  on public.revenuecat_webhook_events(processed, received_at);
+
+alter table public.revenuecat_webhook_events enable row level security;
+
+-- Nessuna policy per utenti normali: questi eventi contengono payload di
+-- pagamento e sono scritti/letti solo dalla Edge Function con service role.
+-- Google Play: android_product_id puo' essere il semplice subscription id
+-- oppure il formato RevenueCat/Google "subscription_id:base_plan_id".
+
 notify pgrst, 'reload schema';
 
 -- ============================================================================
@@ -993,7 +1057,8 @@ begin
     set status = 'canceled'
     where user_id = new.user_id
       and status = 'active'
-      and id <> new.id;
+      and id <> new.id
+      and coalesce(payment_provider, '') = coalesce(new.payment_provider, '');
   end if;
   return new;
 end;
@@ -1004,7 +1069,52 @@ create trigger user_subscriptions_single_active
   after insert or update of status on public.user_subscriptions
   for each row execute function public.enforce_single_active_user_subscription();
 
--- Capacita' clienti corrente di un coach: pacchetto attivo (target_role
+-- Pacchetto coach EFFETTIVO: priorita' unica usata da registrazione cliente,
+-- capacita' coach e tutte le RPC derivate.
+-- 1) override manuale superadmin active e non scaduto;
+-- 2) altrimenti RevenueCat active e non scaduto;
+-- 3) altrimenti nessun pacchetto attivo.
+create or replace function public._effective_coach_subscription(p_coach_id uuid)
+returns table(
+  subscription_id uuid,
+  package_id uuid,
+  package_name text,
+  max_clients integer,
+  expires_at timestamptz,
+  payment_provider text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    us.id,
+    us.package_id,
+    sp.name,
+    sp.max_clients,
+    us.expires_at,
+    us.payment_provider
+  from public.user_subscriptions us
+  join public.subscription_packages sp on sp.id = us.package_id
+  where us.user_id = p_coach_id
+    and us.status = 'active'
+    and sp.target_role = 'coach'
+    and (us.expires_at is null or us.expires_at > now())
+    and us.payment_provider in ('superadmin_manual', 'revenuecat')
+  order by
+    case us.payment_provider
+      when 'superadmin_manual' then 0
+      when 'revenuecat' then 1
+      else 2
+    end,
+    us.created_at desc
+  limit 1;
+$$;
+
+revoke all on function public._effective_coach_subscription(uuid) from public, anon, authenticated;
+
+-- Capacita' clienti corrente di un coach: pacchetto effettivo (target_role
 -- 'coach', status 'active', non scaduto), quanti clienti reali sono
 -- collegati (coach_clients.status='active'), quanti ne mancano. Funzione
 -- interna (prefisso _, EXECUTE revocato da anon/authenticated sotto): usata
@@ -1027,22 +1137,25 @@ as $$
 declare
   v_sub record;
 begin
-  select us.package_id as package_id, sp.name as name, sp.max_clients as max_clients, us.expires_at as expires_at
-  into v_sub
-  from public.user_subscriptions us
-  join public.subscription_packages sp on sp.id = us.package_id
-  where us.user_id = p_coach_id
-    and us.status = 'active'
-    and sp.target_role = 'coach'
-    and (us.expires_at is null or us.expires_at > now())
-  order by us.created_at desc
-  limit 1;
+  select * into v_sub from public._effective_coach_subscription(p_coach_id);
+
+  if not found then
+    return query
+    select
+      false,
+      null::uuid,
+      null::text,
+      null::integer,
+      (select count(*)::integer from public.coach_clients where coach_id = p_coach_id and status = 'active'),
+      null::timestamptz;
+    return;
+  end if;
 
   return query
   select
     v_sub.package_id is not null,
     v_sub.package_id,
-    v_sub.name,
+    v_sub.package_name,
     v_sub.max_clients,
     (select count(*)::integer from public.coach_clients where coach_id = p_coach_id and status = 'active'),
     v_sub.expires_at;

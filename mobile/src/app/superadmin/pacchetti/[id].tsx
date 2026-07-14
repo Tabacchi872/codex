@@ -23,6 +23,10 @@ export default function SuperadminPackageDetail() {
   const [durationUnit, setDurationUnit] = useState<SubscriptionPackageDurationUnit>('months');
   const [maxClients, setMaxClients] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
+  const [revenuecatEntitlementId, setRevenuecatEntitlementId] = useState('');
+  const [revenuecatOfferingId, setRevenuecatOfferingId] = useState('');
+  const [androidProductId, setAndroidProductId] = useState('');
+  const [iosProductId, setIosProductId] = useState('');
   const [sortOrder, setSortOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState('');
@@ -55,6 +59,10 @@ export default function SuperadminPackageDetail() {
         setDurationUnit(result.data.durationUnit);
         setMaxClients(result.data.maxClients === null ? '' : String(result.data.maxClients));
         setFeatures(result.data.features);
+        setRevenuecatEntitlementId(result.data.revenuecatEntitlementId ?? '');
+        setRevenuecatOfferingId(result.data.revenuecatOfferingId ?? '');
+        setAndroidProductId(result.data.androidProductId ?? '');
+        setIosProductId(result.data.iosProductId ?? '');
         setSortOrder(String(result.data.sortOrder));
         setIsActive(result.data.isActive);
       }
@@ -121,6 +129,10 @@ export default function SuperadminPackageDetail() {
       durationUnit,
       maxClients: pkg.targetRole === 'coach' ? parsedMaxClients : null,
       features,
+      revenuecatEntitlementId,
+      revenuecatOfferingId,
+      androidProductId,
+      iosProductId,
       isActive,
       sortOrder: parsedSortOrder,
     });
@@ -158,7 +170,7 @@ export default function SuperadminPackageDetail() {
 
         <View style={styles.row}>
           <View style={styles.half}>
-            <AppTextField label="Prezzo" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
+            <AppTextField label="Prezzo di riferimento" value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
           </View>
           <View style={styles.third}>
             <AppTextField label="Valuta" value={currency} onChangeText={setCurrency} autoCapitalize="characters" />
@@ -189,6 +201,41 @@ export default function SuperadminPackageDetail() {
         <AppTextField label="Ordine di visualizzazione" value={sortOrder} onChangeText={setSortOrder} keyboardType="number-pad" />
 
         <FeaturesEditor features={features} onChange={setFeatures} />
+
+        <View style={styles.storeBlock}>
+          <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>RevenueCat / Store</Text>
+          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+            Il prezzo addebitato viene gestito da Apple/Google nello store. Salvare questi campi non cambia i prezzi App Store o Google Play.
+          </Text>
+          <AppTextField
+            label="Entitlement RevenueCat"
+            value={revenuecatEntitlementId}
+            onChangeText={setRevenuecatEntitlementId}
+            placeholder="Es. coach_pro"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Offering RevenueCat"
+            value={revenuecatOfferingId}
+            onChangeText={setRevenuecatOfferingId}
+            placeholder="Es. default"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Product ID Android"
+            value={androidProductId}
+            onChangeText={setAndroidProductId}
+            placeholder="Es. fitcoach_coach_pro_monthly"
+            autoCapitalize="none"
+          />
+          <AppTextField
+            label="Product ID iOS"
+            value={iosProductId}
+            onChangeText={setIosProductId}
+            placeholder="Es. fitcoach_coach_pro_monthly"
+            autoCapitalize="none"
+          />
+        </View>
 
         <SegmentedChoice
           options={[
@@ -243,6 +290,9 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.sm,
     fontWeight: '600',
     marginBottom: 6,
+  },
+  storeBlock: {
+    gap: AppSpacing[2],
   },
   errorText: {
     fontSize: AppFontSize.sm,

@@ -38,6 +38,10 @@ type PackageRow = {
   duration_unit: 'days' | 'months';
   max_clients: number | null;
   features: string[] | null;
+  revenuecat_entitlement_id: string | null;
+  revenuecat_offering_id: string | null;
+  android_product_id: string | null;
+  ios_product_id: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -56,6 +60,10 @@ function mapRow(row: PackageRow): SubscriptionPackage {
     durationUnit: row.duration_unit,
     maxClients: row.max_clients,
     features: row.features ?? [],
+    revenuecatEntitlementId: row.revenuecat_entitlement_id,
+    revenuecatOfferingId: row.revenuecat_offering_id,
+    androidProductId: row.android_product_id,
+    iosProductId: row.ios_product_id,
     isActive: row.is_active,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
@@ -64,7 +72,7 @@ function mapRow(row: PackageRow): SubscriptionPackage {
 }
 
 const SELECT_COLUMNS =
-  'id,target_role,name,description,price,currency,duration_value,duration_unit,max_clients,features,is_active,sort_order,created_at,updated_at';
+  'id,target_role,name,description,price,currency,duration_value,duration_unit,max_clients,features,revenuecat_entitlement_id,revenuecat_offering_id,android_product_id,ios_product_id,is_active,sort_order,created_at,updated_at';
 
 // Usata da coach/cliente: solo pacchetti attivi del proprio ruolo. Il filtro
 // target_role qui e' difesa in profondita' (auto-documentante) accanto alla
@@ -128,6 +136,10 @@ function toInsertPayload(input: SubscriptionPackageInput) {
     duration_unit: input.durationUnit,
     max_clients: input.targetRole === 'coach' ? input.maxClients : null,
     features: input.features,
+    revenuecat_entitlement_id: input.revenuecatEntitlementId.trim() || null,
+    revenuecat_offering_id: input.revenuecatOfferingId.trim() || null,
+    android_product_id: input.androidProductId.trim() || null,
+    ios_product_id: input.iosProductId.trim() || null,
     is_active: input.isActive,
     sort_order: input.sortOrder,
   };
