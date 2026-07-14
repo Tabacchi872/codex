@@ -1,11 +1,17 @@
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { MessageCircle, Plus, Send } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton, AppCard, AppEmptyState, AppIconButton, AppTextField } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
+import { getCurrentSession } from '@/lib/auth-service';
 import { clientFullName } from '@/lib/client-helpers';
+import { getLinkedCoachIdForCurrentClient, markThreadReadRemote, sendMessageRemote } from '@/lib/message-service';
+import { notifyMessagePush } from '@/lib/push-notification-service';
+import { supabaseConfig } from '@/lib/supabase';
+import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore } from '@/store/chat-store';
 import { useClientStore } from '@/store/client-store';
@@ -47,18 +53,54 @@ function sortByCreatedAt(a: ChatMessage, b: ChatMessage) {
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
+  // Parametro dal tap su una notifica push (push-notification-service.ts):
+  // apre direttamente il thread del cliente indicato invece della lista.
+  const { clientId: pushClientId } = useLocalSearchParams<{ clientId?: string | string[] }>();
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const clients = useClientStore((s) => s.clients);
   const messages = useChatStore((s) => s.messages);
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const replaceMessage = useChatStore((s) => s.replaceMessage);
+  const removeMessage = useChatStore((s) => s.removeMessage);
   const markClientThreadReadByCoach = useChatStore((s) => s.markClientThreadReadByCoach);
   const markClientThreadReadByClient = useChatStore((s) => s.markClientThreadReadByClient);
+  const { loading: remoteLoading, error: remoteError, refresh } = useMessagesRealtime();
   const [draft, setDraft] = useState('');
-  const [selectedCoachClientId, setSelectedCoachClientId] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [selectedCoachClientId, setSelectedCoachClientId] = useState<string | null>(
+    typeof pushClientId === 'string' && pushClientId ? pushClientId : null,
+  );
   const [isSelectingClient, setIsSelectingClient] = useState(false);
+  // Id della sessione Supabase reale (coach: e' il coach_id delle righe;
+  // cliente: serve invece il coach COLLEGATO, risolto una volta sola).
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [linkedCoachId, setLinkedCoachId] = useState<string | null>(null);
 
   const isCoach = currentRole === 'coach';
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured) return;
+    let cancelled = false;
+    getCurrentSession().then((session) => {
+      if (cancelled || !session.ok || !session.data) return;
+      setSessionUserId(session.data.user.id);
+    });
+    if (!isCoach) {
+      getLinkedCoachIdForCurrentClient().then((result) => {
+        if (!cancelled && result.ok) setLinkedCoachId(result.data);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isCoach]);
   const selectedClientId = isCoach ? selectedCoachClientId ?? '' : currentClientId ?? '';
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === selectedClientId),
@@ -106,17 +148,27 @@ export default function ChatScreen() {
     ).length;
   }, [currentClientId, messages]);
 
+  // Entrando nel thread si marcano letti SOLO i messaggi RICEVUTI: in locale
+  // (mirror, badge immediato) e su Supabase (RPC mark_messages_read, che
+  // server-side tocca solo read_at dei messaggi con sender diverso dal
+  // chiamante — mai i propri, mai il corpo).
   useEffect(() => {
     if (isCoach && selectedCoachClientId && selectedCoachUnreadCount > 0) {
       markClientThreadReadByCoach(selectedCoachClientId);
+      if (supabaseConfig.isConfigured && sessionUserId) {
+        markThreadReadRemote(sessionUserId, selectedCoachClientId);
+      }
     }
-  }, [isCoach, markClientThreadReadByCoach, selectedCoachClientId, selectedCoachUnreadCount]);
+  }, [isCoach, markClientThreadReadByCoach, selectedCoachClientId, selectedCoachUnreadCount, sessionUserId]);
 
   useEffect(() => {
     if (!isCoach && currentClientId && selectedClientUnreadCount > 0) {
       markClientThreadReadByClient(currentClientId);
+      if (supabaseConfig.isConfigured && linkedCoachId) {
+        markThreadReadRemote(linkedCoachId, currentClientId);
+      }
     }
-  }, [currentClientId, isCoach, markClientThreadReadByClient, selectedClientUnreadCount]);
+  }, [currentClientId, isCoach, linkedCoachId, markClientThreadReadByClient, selectedClientUnreadCount]);
 
   function handleOpenConversation(clientId: string) {
     setIsSelectingClient(false);
@@ -124,7 +176,7 @@ export default function ChatScreen() {
     markClientThreadReadByCoach(clientId);
   }
 
-  function handleSend() {
+  async function handleSend() {
     const text = draft.trim();
     if (!text || !selectedClientId) return;
 
@@ -137,8 +189,35 @@ export default function ChatScreen() {
       createdAt: now,
       ...(isCoach ? { readByCoachAt: now } : { readByClientAt: now }),
     };
+
+    if (!supabaseConfig.isConfigured) {
+      sendMessage(message);
+      setDraft('');
+      return;
+    }
+
+    // Invio ottimistico: il messaggio compare subito con un id temporaneo
+    // 'chat-*'; alla conferma viene sostituito con la riga reale (stesso
+    // contenuto, id UUID) — se il Realtime/refresh arriva prima, setMessages
+    // rimpiazza comunque l'intero mirror, mai un doppione. In caso di errore
+    // il messaggio temporaneo viene rimosso e l'errore mostrato.
+    const coachId = isCoach ? sessionUserId : linkedCoachId;
+    if (!coachId) {
+      setSendError('Collegamento col coach non ancora caricato. Riprova tra un istante.');
+      return;
+    }
+    setSendError(null);
     sendMessage(message);
     setDraft('');
+    const result = await sendMessageRemote({ coachId, clientId: selectedClientId, body: text });
+    if (!result.ok) {
+      removeMessage(message.id);
+      setSendError(result.message);
+      return;
+    }
+    replaceMessage(message.id, result.data);
+    // Push al destinatario (best-effort, mai bloccante).
+    notifyMessagePush(selectedClientId, text);
   }
 
   if (isCoach && isSelectingClient) {
@@ -159,6 +238,9 @@ export default function ChatScreen() {
         conversations={conversations}
         insetsTop={insets.top}
         insetsBottom={insets.bottom}
+        loading={remoteLoading}
+        error={remoteError}
+        onRetry={refresh}
         onNewConversation={() => setIsSelectingClient(true)}
         onSelect={handleOpenConversation}
       />
@@ -184,6 +266,13 @@ export default function ChatScreen() {
               <Text style={[AppTextStyle.title, { color: colors.ink }]}>
                 {isCoach && selectedClient ? clientFullName(selectedClient) : 'Chat con il coach'}
               </Text>
+              {remoteError ? (
+                <View style={styles.inlineErrorRow}>
+                  <Text style={[styles.inlineErrorText, { color: colors.rust }]}>{remoteError}</Text>
+                  <AppButton label="Riprova" onPress={refresh} variant="outline" size="sm" />
+                </View>
+              ) : null}
+              {sendError ? <Text style={[styles.inlineErrorText, { color: colors.rust }]}>{sendError}</Text> : null}
             </View>
           }
           ListEmptyComponent={
@@ -236,12 +325,18 @@ function CoachConversationList({
   conversations,
   insetsTop,
   insetsBottom,
+  loading,
+  error,
+  onRetry,
   onNewConversation,
   onSelect,
 }: {
   conversations: CoachConversation[];
   insetsTop: number;
   insetsBottom: number;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onNewConversation: () => void;
   onSelect: (clientId: string) => void;
 }) {
@@ -260,25 +355,35 @@ function CoachConversationList({
           },
         ]}
         ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={[AppTextStyle.title, { color: colors.ink }]}>Messaggi</Text>
-            <AppIconButton
-              icon={<Plus size={20} color={colors.onCoral} />}
-              onPress={onNewConversation}
-              tone="coral"
-              bordered={false}
-              accessibilityLabel="Nuova conversazione"
-            />
+          <View>
+            <View style={styles.listHeader}>
+              <Text style={[AppTextStyle.title, { color: colors.ink }]}>Messaggi</Text>
+              <AppIconButton
+                icon={<Plus size={20} color={colors.onCoral} />}
+                onPress={onNewConversation}
+                tone="coral"
+                bordered={false}
+                accessibilityLabel="Nuova conversazione"
+              />
+            </View>
+            {error ? (
+              <View style={styles.inlineErrorRow}>
+                <Text style={[styles.inlineErrorText, { color: colors.rust }]}>{error}</Text>
+                <AppButton label="Riprova" onPress={onRetry} variant="outline" size="sm" />
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
-          <AppCard>
-            <AppEmptyState
-              icon={<MessageCircle size={20} color={colors.moss} strokeWidth={2} />}
-              title="Nessun messaggio"
-              subtitle="Quando un cliente ti scrive, la conversazione comparira qui. Usa + per iniziare tu."
-            />
-          </AppCard>
+          error ? null : (
+            <AppCard>
+              <AppEmptyState
+                icon={<MessageCircle size={20} color={colors.moss} strokeWidth={2} />}
+                title={loading ? 'Caricamento messaggi...' : 'Nessun messaggio'}
+                subtitle={loading ? undefined : 'Quando un cliente ti scrive, la conversazione comparira qui. Usa + per iniziare tu.'}
+              />
+            </AppCard>
+          )
         }
         renderItem={({ item }) => (
           <AppCard onPress={() => onSelect(item.client.id)} style={styles.conversationCard}>
@@ -500,5 +605,13 @@ const styles = StyleSheet.create({
   },
   input: {
     maxHeight: 100,
+  },
+  inlineErrorRow: {
+    gap: AppSpacing[2],
+    marginBottom: AppSpacing[2],
+  },
+  inlineErrorText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '600',
   },
 });

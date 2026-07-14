@@ -17,6 +17,10 @@ type AppointmentState = {
   addAppointment: (appointment: Appointment) => void;
   updateAppointment: (appointment: Appointment) => void;
   cancelAppointment: (id: string) => void;
+  // Sostituisce l'intero elenco con quello remoto (fase 5, Supabase come
+  // fonte principale): usata SOLO da use-appointments-realtime.ts dopo una
+  // lettura riuscita — lo store diventa mirror/cache, mai piu' la fonte.
+  setAppointments: (appointments: Appointment[]) => void;
 };
 
 export const useAppointmentStore = create<AppointmentState>()(
@@ -37,6 +41,8 @@ export const useAppointmentStore = create<AppointmentState>()(
         set((s) => ({
           appointments: s.appointments.map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a)),
         })),
+
+      setAppointments: (appointments) => set({ appointments }),
     }),
     {
       name: 'fitcoach-appointment-store',

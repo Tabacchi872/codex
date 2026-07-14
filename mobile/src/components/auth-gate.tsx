@@ -12,6 +12,10 @@ import { SupabaseChangePasswordScreen } from './supabase-change-password-screen'
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
+import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
+import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
+import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
+import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
@@ -59,8 +63,44 @@ export function AuthGate() {
   const accounts = useClientStore((s) => s.accounts);
   const setAutoLinkRunning = useYmoveAutoLinkStore((s) => s.setRunning);
   const setAutoLinkDone = useYmoveAutoLinkStore((s) => s.setDone);
+  const { refresh: refreshWorkoutPlans } = useWorkoutPlansSync();
+  // Fasi 5-6: montare gli hook QUI (radice autenticata) tiene attivi i canali
+  // Realtime di appuntamenti e messaggi per tutta la sessione — il badge
+  // "non letti" della tab Messaggi del coach si aggiorna anche senza aprire
+  // la chat, e il cliente riceve un nuovo appuntamento senza riavviare.
+  // I singleton nei rispettivi hook garantiscono UN solo canale per tabella
+  // anche quando chat.tsx/appuntamenti monta lo stesso hook.
+  const { refresh: refreshAppointments } = useAppointmentsRealtime();
+  const { refresh: refreshMessages } = useMessagesRealtime();
 
   const targetPath = getRoleRedirectTarget(currentRole, pathname);
+
+  // Prima sincronizzazione schede/allenamenti con Supabase (2026-07-14):
+  // avviata quando il ruolo diventa coach/cliente, cosi' la dashboard e le
+  // altre schermate che leggono workoutPlans (cliente-home.tsx,
+  // cliente-profilo.tsx, ecc.) vedono dati gia' aggiornati al primo render,
+  // senza dover per forza visitare prima la lista schede/allenamenti (che fa
+  // comunque il proprio refresh-on-focus, vedi schede/index.tsx/workout.tsx).
+  // useWorkoutPlansSync gestisce da sola dedup/cooldown della migrazione e
+  // il canale Realtime — qui ci si limita ad avviare refresh().
+  useEffect(() => {
+    if (currentRole !== 'coach' && currentRole !== 'cliente') return;
+    refreshWorkoutPlans();
+    refreshAppointments();
+    refreshMessages();
+  }, [currentRole, refreshWorkoutPlans, refreshAppointments, refreshMessages]);
+
+  // Fase 7 — push: registra il token del device (permesso + canale Android +
+  // upsert in push_tokens) e aggancia il listener del tap sulle notifiche
+  // (apre chat/agenda corretti). Una volta per sessione autenticata; il
+  // listener viene staccato al cleanup (logout/cambio ruolo), mai duplicato.
+  useEffect(() => {
+    if (currentRole !== 'coach' && currentRole !== 'cliente') return;
+    if (!supabaseConfig.isConfigured) return;
+    registerPushTokenForCurrentUser();
+    const detach = attachNotificationResponseListener();
+    return detach;
+  }, [currentRole]);
 
   // Associazione automatica video YMove (2026-07-13): avviata UNA sola volta
   // per sessione app quando il ruolo diventa 'coach' (non ad ogni render/

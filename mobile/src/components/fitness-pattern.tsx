@@ -17,7 +17,11 @@ const CIRCLES = [
 
 export function FitnessPattern({ color }: { color: string }) {
   return (
-    <View style={StyleSheet.absoluteFill}>
+    // pointerEvents="none" anche qui, non solo nel wrapper di ScreenBackground:
+    // questo componente e' PURAMENTE decorativo e copre l'intero schermo
+    // (absoluteFill) — non deve mai poter intercettare un tocco, nemmeno se
+    // in futuro venisse montato senza il wrapper protetto.
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {DUMBBELLS.map((d, index) => (
         <Dumbbell key={`dumbbell-${index}`} color={color} {...d} />
       ))}

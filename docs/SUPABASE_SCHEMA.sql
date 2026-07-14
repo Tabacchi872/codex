@@ -1452,3 +1452,507 @@ create unique index if not exists exercise_videos_coach_ymove_unique
   on public.exercise_videos(coach_id, ymove_exercise_id) where ymove_exercise_id is not null;
 
 notify pgrst, 'reload schema';
+
+-- ============================================================================
+-- Migrazione schede e allenamenti a Supabase (2026-07-14). Sposta la fonte di
+-- verita' di schede/allenamenti da Zustand/AsyncStorage
+-- (mobile/src/store/training-store.ts) a Supabase, in modo progressivo — vedi
+-- docs/WORKLOG.md per la strategia lato app (AsyncStorage resta cache
+-- offline, mai piu' fonte definitiva). Quattro tabelle NUOVE, nessuna
+-- esistente duplicata (verificato: nessuna workout_* era mai stata creata
+-- prima d'ora — la sezione "workout_templates/workout_plans/workout_days/
+-- workout_day_exercises" in docs/SUPABASE_SCHEMA.md e' una bozza di
+-- pianificazione del 2026-07-08 mai implementata, con una forma diversa
+-- (es. exercises come FK rigida) superata da questa implementazione reale).
+--
+-- Nota di modellazione IMPORTANTE: il modello TypeScript odierno
+-- (WorkoutPlan, mobile/src/types/training.ts) e' FLAT — un piano e' una
+-- singola sessione con un elenco piatto di esercizi, nessun concetto di
+-- "giorno". Lo schema qui sotto introduce pero' workout_days come livello
+-- intermedio tra workout_plans e workout_day_exercises (pronto per un futuro
+-- multi-giorno). Per non riscrivere il modello TS/UI esistente in ~15 file
+-- (fuori scope, alto rischio), il servizio mobile
+-- (mobile/src/lib/workout-plan-service.ts) crea/gestisce SEMPRE E SOLO UN
+-- workout_days implicito per ogni workout_plans (day_order=1), in modo
+-- trasparente per l'app: chi legge/scrive vede sempre un WorkoutPlan con un
+-- array piatto di esercizi, esattamente come oggi.
+create table if not exists public.workout_templates (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  description text,
+  goal text,
+  level text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists workout_templates_coach_id_idx on public.workout_templates(coach_id);
+
+drop trigger if exists workout_templates_set_updated_at on public.workout_templates;
+create trigger workout_templates_set_updated_at before update on public.workout_templates
+for each row execute function public.set_updated_at();
+
+create table if not exists public.workout_plans (
+  id uuid primary key default gen_random_uuid(),
+  coach_id uuid not null references public.profiles(id) on delete cascade,
+  client_id uuid not null references public.profiles(id) on delete cascade,
+  template_id uuid references public.workout_templates(id) on delete set null,
+  name text not null,
+  -- Stato di validita' derivato dalla scadenza ('active'/'expiring'/'expired',
+  -- vedi computeWorkoutPlanStatus in mobile/src/types/training.ts). Colonna
+  -- di comodo, ricalcolata dal servizio ad ogni salvataggio strutturale:
+  -- l'app NON si fida MAI solo di questo valore per la UI (lo ricalcola
+  -- sempre anche lato client dalla data di scadenza) — utile solo per
+  -- eventuali filtri/ricerche lato server in futuro.
+  status text not null default 'active' check (status in ('active', 'expiring', 'expired')),
+  start_date date not null,
+  expiry_date date not null,
+  scheduled_time text,
+  -- Stato "sessione" (l'ha eseguita o no) — WorkoutSessionStatus lato TS.
+  session_status text not null default 'todo' check (session_status in ('todo', 'completed', 'skipped', 'cancelled')),
+  started_at timestamptz,
+  completed_at timestamptz,
+  duration_seconds integer,
+  day_label text,
+  week_label text,
+  -- Abbonamento locale collegato (subscription-store.ts, demo per-cliente,
+  -- fuori scope di questa migrazione): resta un id testuale libero, MAI una
+  -- foreign key verso una tabella che non esiste ancora su Supabase.
+  subscription_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (expiry_date >= start_date)
+);
+create index if not exists workout_plans_coach_id_idx on public.workout_plans(coach_id);
+create index if not exists workout_plans_client_id_idx on public.workout_plans(client_id);
+create index if not exists workout_plans_template_id_idx on public.workout_plans(template_id);
+
+drop trigger if exists workout_plans_set_updated_at on public.workout_plans;
+create trigger workout_plans_set_updated_at before update on public.workout_plans
+for each row execute function public.set_updated_at();
+
+create table if not exists public.workout_days (
+  id uuid primary key default gen_random_uuid(),
+  workout_plan_id uuid not null references public.workout_plans(id) on delete cascade,
+  name text,
+  day_order integer not null default 1,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (workout_plan_id, day_order)
+);
+create index if not exists workout_days_workout_plan_id_idx on public.workout_days(workout_plan_id);
+
+drop trigger if exists workout_days_set_updated_at on public.workout_days;
+create trigger workout_days_set_updated_at before update on public.workout_days
+for each row execute function public.set_updated_at();
+
+-- exercise_id e' SEMPRE text, MAI una foreign key: deve contenere sia gli id
+-- testuali dei 44 esercizi storici locali (mai su Supabase, vivono in
+-- mobile/src/data/exercise-library.ts) sia gli UUID di public.exercises
+-- (custom/ymove) — vedi mobile/src/hooks/use-exercise-resolver.ts per come i
+-- tre casi vengono risolti in lettura. Un vincolo FK qui romperebbe la
+-- compatibilita' con i 44 esercizi locali, che non hanno (e non devono avere)
+-- una riga in public.exercises.
+create table if not exists public.workout_day_exercises (
+  id uuid primary key default gen_random_uuid(),
+  workout_day_id uuid not null references public.workout_days(id) on delete cascade,
+  exercise_id text not null,
+  exercise_order integer not null default 0,
+  sets integer not null default 3,
+  reps integer not null default 10,
+  reps_min integer,
+  reps_max integer,
+  target_weight numeric(6,2),
+  rest_seconds integer not null default 60,
+  notes text,
+  technique_type text not null default 'normal' check (technique_type in ('normal', 'superset', 'stripping', 'circuit')),
+  superset_group_id text,
+  -- Non ancora scritto da mobile/src/lib/workout-plan-service.ts (nessun
+  -- campo equivalente su WorkoutExercise oggi): colonna pronta per un futuro
+  -- utilizzo (es. esercizio cardio a tempo invece che a serie/ripetizioni),
+  -- richiesta esplicitamente nello schema. Sempre NULL finche' l'app non la
+  -- popola.
+  duration_seconds integer,
+  completed boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists workout_day_exercises_workout_day_id_idx on public.workout_day_exercises(workout_day_id);
+create index if not exists workout_day_exercises_exercise_id_idx on public.workout_day_exercises(exercise_id);
+
+drop trigger if exists workout_day_exercises_set_updated_at on public.workout_day_exercises;
+create trigger workout_day_exercises_set_updated_at before update on public.workout_day_exercises
+for each row execute function public.set_updated_at();
+
+alter table public.workout_templates enable row level security;
+alter table public.workout_plans enable row level security;
+alter table public.workout_days enable row level security;
+alter table public.workout_day_exercises enable row level security;
+
+-- workout_templates: solo il coach proprietario gestisce i propri modelli
+-- personalizzati. I 7 modelli predefiniti restano dati statici locali
+-- (mobile/src/data/workout-plan-templates.ts, non toccati): questa tabella
+-- e' pronta per una futura UI "i miei modelli", non ancora costruita in
+-- questo intervento (nessuna schermata la richiede oggi).
+drop policy if exists workout_templates_superadmin_all on public.workout_templates;
+create policy workout_templates_superadmin_all on public.workout_templates
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+drop policy if exists workout_templates_coach_own_all on public.workout_templates;
+create policy workout_templates_coach_own_all on public.workout_templates
+  for all using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+
+-- workout_plans: il coach gestisce (CRUD completo) solo le proprie schede, e
+-- solo per i propri clienti reali (is_coach_for_client, gia' esistente sopra)
+-- — assegnare una scheda a un cliente non collegato viene rifiutato sia qui
+-- sia (di nuovo, prima ancora di arrivare qui) dalla RPC save_workout_plan
+-- sotto. Il cliente LEGGE SOLO le proprie schede (client_id = auth.uid()):
+-- NESSUNA policy di insert/update/delete diretta per il cliente su questa
+-- tabella. Gli aggiornamenti di sessione consentiti al cliente (session_
+-- status/started_at/completed_at/duration_seconds e il completamento dei
+-- singoli esercizi) passano SEMPRE dalla RPC
+-- update_workout_session_progress sotto (security definer): e' li', non con
+-- un privilegio a livello di colonna, che si applica la regola "il cliente
+-- non puo' modificare serie/esercizi/peso target/struttura della scheda".
+drop policy if exists workout_plans_superadmin_all on public.workout_plans;
+create policy workout_plans_superadmin_all on public.workout_plans
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+drop policy if exists workout_plans_coach_scope on public.workout_plans;
+create policy workout_plans_coach_scope on public.workout_plans
+  for all using (coach_id = auth.uid())
+  with check (coach_id = auth.uid() and public.is_coach_for_client(client_id));
+drop policy if exists workout_plans_client_read on public.workout_plans;
+create policy workout_plans_client_read on public.workout_plans
+  for select using (client_id = auth.uid());
+
+-- workout_days/workout_day_exercises: nessuna colonna coach_id/client_id
+-- diretta (evita denormalizzazione): lo scoping passa sempre dalla riga
+-- workout_plans genitore tramite EXISTS/JOIN.
+drop policy if exists workout_days_superadmin_all on public.workout_days;
+create policy workout_days_superadmin_all on public.workout_days
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+drop policy if exists workout_days_coach_scope on public.workout_days;
+create policy workout_days_coach_scope on public.workout_days
+  for all using (
+    exists (select 1 from public.workout_plans where workout_plans.id = workout_days.workout_plan_id and workout_plans.coach_id = auth.uid())
+  )
+  with check (
+    exists (select 1 from public.workout_plans where workout_plans.id = workout_days.workout_plan_id and workout_plans.coach_id = auth.uid())
+  );
+drop policy if exists workout_days_client_read on public.workout_days;
+create policy workout_days_client_read on public.workout_days
+  for select using (
+    exists (select 1 from public.workout_plans where workout_plans.id = workout_days.workout_plan_id and workout_plans.client_id = auth.uid())
+  );
+
+drop policy if exists workout_day_exercises_superadmin_all on public.workout_day_exercises;
+create policy workout_day_exercises_superadmin_all on public.workout_day_exercises
+  for all using (public.is_superadmin()) with check (public.is_superadmin());
+drop policy if exists workout_day_exercises_coach_scope on public.workout_day_exercises;
+create policy workout_day_exercises_coach_scope on public.workout_day_exercises
+  for all using (
+    exists (
+      select 1 from public.workout_days
+      join public.workout_plans on workout_plans.id = workout_days.workout_plan_id
+      where workout_days.id = workout_day_exercises.workout_day_id and workout_plans.coach_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.workout_days
+      join public.workout_plans on workout_plans.id = workout_days.workout_plan_id
+      where workout_days.id = workout_day_exercises.workout_day_id and workout_plans.coach_id = auth.uid()
+    )
+  );
+drop policy if exists workout_day_exercises_client_read on public.workout_day_exercises;
+create policy workout_day_exercises_client_read on public.workout_day_exercises
+  for select using (
+    exists (
+      select 1 from public.workout_days
+      join public.workout_plans on workout_plans.id = workout_days.workout_plan_id
+      where workout_days.id = workout_day_exercises.workout_day_id and workout_plans.client_id = auth.uid()
+    )
+  );
+
+-- Validazione UUID SICURA (2026-07-14, bug reale corretto): un cast diretto
+-- `(testo)::uuid` su un valore non validato SOLLEVA un'eccezione Postgres
+-- ("invalid input syntax for type uuid") non gestita dal codice applicativo
+-- — il bug reale segnalato dall'utente ("invalid input syntax for type
+-- uuid: \"1\"") veniva esattamente da qui: WorkoutPlan/WorkoutExercise
+-- possono avere id locali testuali/numerici (es. "1", "we-1") prima del
+-- primo salvataggio, e questa funzione provava a convertirli direttamente in
+-- uuid. is_valid_uuid richiama SEMPRE PRIMA di ogni cast, in modo che un id
+-- locale venga trattato come "riga nuova" invece di far fallire l'intera
+-- chiamata. Nessuna eccezione per un input null o vuoto (ritorna false).
+create or replace function public.is_valid_uuid(value text)
+returns boolean
+language sql
+immutable
+as $$
+  select value is not null and value ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+$$;
+
+-- Salvataggio atomico multi-tabella (workout_plans + workout_days +
+-- workout_day_exercises): SECURITY DEFINER, un solo statement PL/pgSQL per
+-- chiamata, quindi o va tutto a buon fine o (in caso di eccezione) NIENTE
+-- viene scritto — nessuna scheda parzialmente salvata. Autorizzazione
+-- verificata esplicitamente (bypassa la RLS, deve rifarla a mano): il
+-- chiamante deve essere il coach proprietario (o superadmin) E il cliente
+-- indicato deve essere davvero collegato a quel coach.
+--
+-- payload atteso (jsonb): { id?, coach_id, client_id, template_id?, name,
+-- start_date, expiry_date, scheduled_time?, session_status?, day_label?,
+-- week_label?, subscription_id?, exercises: [{ id?, exercise_id,
+-- exercise_order, sets, reps, reps_min?, reps_max?, target_weight?,
+-- rest_seconds, notes?, technique_type?, superset_group_id? }] }.
+-- Un id di scheda/esercizio assente, vuoto O NON UN UUID VALIDO (2026-07-14:
+-- prima si controllava solo "assente o vuoto", non il formato — vedi
+-- is_valid_uuid sopra) = nuova riga; un UUID valido = aggiornamento
+-- in-place. Qualunque riga workout_day_exercises esistente NON ricomparsa
+-- nel payload viene eliminata (l'editor invia sempre la lista COMPLETA e
+-- aggiornata degli esercizi, mai un delta). exercise_id (l'ESERCIZIO, non la
+-- riga) resta SEMPRE testo libero, mai validato/castato come uuid: puo'
+-- essere un id locale dei 44 storici, un UUID Supabase custom/ymove — vedi
+-- commento sulla tabella workout_day_exercises piu' sopra.
+create or replace function public.save_workout_plan(payload jsonb)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_plan_id uuid;
+  v_coach_id uuid;
+  v_client_id uuid;
+  v_template_id uuid;
+  v_day_id uuid;
+  v_status text;
+  v_start_date date;
+  v_expiry_date date;
+  v_exercise jsonb;
+  v_seen_ids uuid[] := '{}';
+  v_ex_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'NOT_AUTHENTICATED: sessione mancante';
+  end if;
+
+  -- coach_id/client_id sono sempre popolati dall'app con id di sessione
+  -- reali, ma non ci si fida MAI del solo "e' presente": deve anche essere
+  -- un uuid valido, altrimenti il cast sotto solleverebbe la stessa
+  -- eccezione non gestita del bug originale.
+  v_coach_id := case when public.is_valid_uuid(payload->>'coach_id') then (payload->>'coach_id')::uuid else null end;
+  v_client_id := case when public.is_valid_uuid(payload->>'client_id') then (payload->>'client_id')::uuid else null end;
+
+  if v_coach_id is null or v_client_id is null then
+    raise exception 'INVALID_PAYLOAD: coach_id o client_id mancante o non valido';
+  end if;
+  if v_coach_id <> auth.uid() and not public.is_superadmin() then
+    raise exception 'FORBIDDEN: non sei il coach proprietario di questa scheda';
+  end if;
+  if not public.is_superadmin() and not public.is_coach_for_client(v_client_id) then
+    raise exception 'NOT_YOUR_CLIENT: il cliente indicato non risulta collegato a questo coach';
+  end if;
+
+  v_start_date := (payload->>'start_date')::date;
+  v_expiry_date := (payload->>'expiry_date')::date;
+  if v_start_date is null or v_expiry_date is null then
+    raise exception 'INVALID_PAYLOAD: data allenamento o scadenza mancante';
+  end if;
+
+  v_template_id := case when public.is_valid_uuid(payload->>'template_id') then (payload->>'template_id')::uuid else null end;
+
+  -- Stesso calcolo di WORKOUT_PLAN_EXPIRING_WITHIN_DAYS (7 giorni) usato lato
+  -- client in computeWorkoutPlanStatus (mobile/src/types/training.ts): mero
+  -- valore di comodo, l'app ricalcola sempre autonomamente per la UI.
+  v_status := case
+    when v_expiry_date < current_date then 'expired'
+    when v_expiry_date <= current_date + 7 then 'expiring'
+    else 'active'
+  end;
+
+  if public.is_valid_uuid(payload->>'id') then
+    v_plan_id := (payload->>'id')::uuid;
+    update public.workout_plans set
+      client_id = v_client_id,
+      template_id = v_template_id,
+      name = payload->>'name',
+      status = v_status,
+      start_date = v_start_date,
+      expiry_date = v_expiry_date,
+      scheduled_time = nullif(payload->>'scheduled_time', ''),
+      session_status = coalesce(nullif(payload->>'session_status', ''), 'todo'),
+      day_label = nullif(payload->>'day_label', ''),
+      week_label = nullif(payload->>'week_label', ''),
+      subscription_id = nullif(payload->>'subscription_id', '')
+    where id = v_plan_id and coach_id = v_coach_id
+    returning id into v_plan_id;
+
+    if v_plan_id is null then
+      raise exception 'NOT_FOUND: scheda non trovata o non di proprieta'' di questo coach';
+    end if;
+  else
+    -- payload->>'id' assente, vuoto o non un uuid valido (es. "1", un
+    -- placeholder locale mai salvato prima): SEMPRE trattato come scheda
+    -- NUOVA, mai un tentativo di cast che romperebbe la chiamata.
+    insert into public.workout_plans (
+      coach_id, client_id, template_id, name, status, start_date, expiry_date,
+      scheduled_time, session_status, day_label, week_label, subscription_id
+    ) values (
+      v_coach_id, v_client_id, v_template_id, payload->>'name', v_status,
+      v_start_date, v_expiry_date, nullif(payload->>'scheduled_time', ''),
+      coalesce(nullif(payload->>'session_status', ''), 'todo'), nullif(payload->>'day_label', ''),
+      nullif(payload->>'week_label', ''), nullif(payload->>'subscription_id', '')
+    )
+    returning id into v_plan_id;
+  end if;
+
+  select id into v_day_id from public.workout_days where workout_plan_id = v_plan_id and day_order = 1;
+  if v_day_id is null then
+    insert into public.workout_days (workout_plan_id, day_order) values (v_plan_id, 1) returning id into v_day_id;
+  end if;
+
+  for v_exercise in select * from jsonb_array_elements(coalesce(payload->'exercises', '[]'::jsonb))
+  loop
+    if public.is_valid_uuid(v_exercise->>'id') then
+      v_ex_id := (v_exercise->>'id')::uuid;
+      update public.workout_day_exercises set
+        exercise_id = v_exercise->>'exercise_id',
+        exercise_order = (v_exercise->>'exercise_order')::integer,
+        sets = (v_exercise->>'sets')::integer,
+        reps = (v_exercise->>'reps')::integer,
+        reps_min = nullif(v_exercise->>'reps_min', '')::integer,
+        reps_max = nullif(v_exercise->>'reps_max', '')::integer,
+        target_weight = nullif(v_exercise->>'target_weight', '')::numeric,
+        rest_seconds = (v_exercise->>'rest_seconds')::integer,
+        notes = coalesce(v_exercise->>'notes', ''),
+        technique_type = coalesce(nullif(v_exercise->>'technique_type', ''), 'normal'),
+        superset_group_id = nullif(v_exercise->>'superset_group_id', '')
+      where id = v_ex_id and workout_day_id = v_day_id
+      returning id into v_ex_id;
+
+      if v_ex_id is null then
+        raise exception 'INVALID_PAYLOAD: esercizio scheda non trovato per aggiornamento';
+      end if;
+    else
+      -- v_exercise->>'id' assente, vuoto o non un uuid valido (es. "1", "2",
+      -- "3", un id locale mai salvato prima): SEMPRE trattato come riga
+      -- NUOVA, mai un tentativo di cast. exercise_id (l'ESERCIZIO) resta
+      -- testo libero, mai castato: puo' essere "lat-machine-avanti" (locale)
+      -- o un uuid Supabase/YMove, entrambi validi senza distinzione qui.
+      insert into public.workout_day_exercises (
+        workout_day_id, exercise_id, exercise_order, sets, reps, reps_min, reps_max,
+        target_weight, rest_seconds, notes, technique_type, superset_group_id
+      ) values (
+        v_day_id, v_exercise->>'exercise_id', (v_exercise->>'exercise_order')::integer,
+        (v_exercise->>'sets')::integer, (v_exercise->>'reps')::integer,
+        nullif(v_exercise->>'reps_min', '')::integer, nullif(v_exercise->>'reps_max', '')::integer,
+        nullif(v_exercise->>'target_weight', '')::numeric, (v_exercise->>'rest_seconds')::integer,
+        coalesce(v_exercise->>'notes', ''), coalesce(nullif(v_exercise->>'technique_type', ''), 'normal'),
+        nullif(v_exercise->>'superset_group_id', '')
+      )
+      returning id into v_ex_id;
+    end if;
+    v_seen_ids := array_append(v_seen_ids, v_ex_id);
+  end loop;
+
+  delete from public.workout_day_exercises
+  where workout_day_id = v_day_id
+    and (array_length(v_seen_ids, 1) is null or id <> all (v_seen_ids));
+
+  -- Realtime (2026-07-14): tocca SEMPRE updated_at su workout_plans, anche
+  -- quando l'unica cosa cambiata e' la lista esercizi (workout_day_exercises
+  -- e' una tabella diversa, il trigger set_updated_at di workout_plans non
+  -- scatterebbe da solo per quelle righe) — senza questo, la subscription
+  -- Realtime su workout_plans non riceverebbe alcun evento per un salvataggio
+  -- che ha modificato solo gli esercizi.
+  update public.workout_plans set updated_at = now() where id = v_plan_id;
+
+  return v_plan_id;
+end;
+$$;
+
+-- is_valid_uuid resta eseguibile di default (nessun revoke): e' un helper
+-- puro senza alcun effetto/dato sensibile, stesso trattamento gia' riservato
+-- a is_superadmin()/is_coach_for_client() piu' sopra in questo file.
+revoke all on function public.save_workout_plan(jsonb) from public, anon;
+grant execute on function public.save_workout_plan(jsonb) to authenticated;
+
+-- Aggiornamento di sessione consentito al CLIENTE (oltre che al coach, per il
+-- toggle manuale Da fare/Completato/Saltato/Annullato in schede/[id].tsx):
+-- SECURITY DEFINER, tocca SOLO session_status/started_at/completed_at/
+-- duration_seconds su workout_plans e SOLO la colonna completed su
+-- workout_day_exercises — mai serie/ripetizioni/peso/esercizi/struttura. E'
+-- qui, non con un privilegio a livello di colonna, che si applica la regola
+-- "il cliente puo' aggiornare solo i dati di sessione consentiti".
+-- p_clear_started_at distingue esplicitamente "non toccare started_at" da
+-- "riportalo a NULL" (necessario per "Fine allenamento", che deve azzerarlo).
+create or replace function public.update_workout_session_progress(
+  p_plan_id uuid,
+  p_session_status text default null,
+  p_started_at timestamptz default null,
+  p_clear_started_at boolean default false,
+  p_completed_at timestamptz default null,
+  p_duration_seconds integer default null,
+  p_completed_exercise_ids uuid[] default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_plan public.workout_plans%rowtype;
+  v_day_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'NOT_AUTHENTICATED: sessione mancante';
+  end if;
+  if p_session_status is not null and p_session_status not in ('todo', 'completed', 'skipped', 'cancelled') then
+    raise exception 'INVALID_PAYLOAD: stato sessione non valido';
+  end if;
+
+  select * into v_plan from public.workout_plans where id = p_plan_id;
+  if not found then
+    raise exception 'NOT_FOUND: scheda non trovata';
+  end if;
+  if v_plan.coach_id <> auth.uid() and v_plan.client_id <> auth.uid() and not public.is_superadmin() then
+    raise exception 'FORBIDDEN: non autorizzato su questa scheda';
+  end if;
+
+  update public.workout_plans set
+    session_status = coalesce(p_session_status, session_status),
+    started_at = case when p_clear_started_at then null else coalesce(p_started_at, started_at) end,
+    completed_at = coalesce(p_completed_at, completed_at),
+    duration_seconds = coalesce(p_duration_seconds, duration_seconds)
+  where id = p_plan_id;
+
+  if p_completed_exercise_ids is not null then
+    select id into v_day_id from public.workout_days where workout_plan_id = p_plan_id and day_order = 1;
+    if v_day_id is not null then
+      update public.workout_day_exercises set completed = (id = any (p_completed_exercise_ids))
+      where workout_day_id = v_day_id;
+    end if;
+  end if;
+end;
+$$;
+
+revoke all on function public.update_workout_session_progress(uuid, text, timestamptz, boolean, timestamptz, integer, uuid[]) from public, anon;
+grant execute on function public.update_workout_session_progress(uuid, text, timestamptz, boolean, timestamptz, integer, uuid[]) to authenticated;
+
+-- Realtime: senza aggiungere la tabella alla pubblicazione supabase_realtime,
+-- nessun evento verrebbe mai consegnato ai client sottoscritti,
+-- indipendentemente dal codice lato app. Guardia idempotente (Postgres non
+-- ha "add table if not exists" per le pubblicazioni): rieseguibile senza
+-- errori se gia' presente.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'workout_plans'
+  ) then
+    alter publication supabase_realtime add table public.workout_plans;
+  end if;
+end $$;
+
+notify pgrst, 'reload schema';

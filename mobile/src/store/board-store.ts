@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { SEED_BOARD_POSTS } from '@/data/seed-board';
+import { DEMO_DATA_ENABLED } from '@/lib/demo-data';
 import type { BoardPost } from '@/types/board';
 
 // PERSISTENZA LOCALE. Sola lettura lato cliente in questo intervento: nessuna
@@ -17,7 +18,8 @@ type BoardState = {
 export const useBoardStore = create<BoardState>()(
   persist(
     (set) => ({
-      posts: SEED_BOARD_POSTS,
+      // Seed demo SOLO con EXPO_PUBLIC_ENABLE_DEMO_DATA=true (lib/demo-data.ts).
+      posts: DEMO_DATA_ENABLED ? SEED_BOARD_POSTS : [],
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
@@ -26,6 +28,13 @@ export const useBoardStore = create<BoardState>()(
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // Purge dei seed gia' persistiti (vedi client-store.ts).
+        if (!DEMO_DATA_ENABLED && state) {
+          const seedPostIds = new Set(SEED_BOARD_POSTS.map((post) => post.id));
+          useBoardStore.setState((s) => ({
+            posts: s.posts.filter((post) => !seedPostIds.has(post.id)),
+          }));
+        }
       },
     }
   )

@@ -4,9 +4,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
+import { createAppointment } from '@/lib/appointment-service';
 import { findOverlappingAppointment, isValidTimeRange } from '@/lib/appointment-overlap';
 import { clientFullName } from '@/lib/client-helpers';
 import { formatDateForDisplay, parseDateFromDisplay } from '@/lib/format-date';
+import { notifyAppointmentPush } from '@/lib/push-notification-service';
+import { supabaseConfig } from '@/lib/supabase';
 import { getClientPlans } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useClientStore } from '@/store/client-store';
@@ -38,10 +41,11 @@ export default function NuovoAppuntamentoScreen() {
   const [workoutSessionId, setWorkoutSessionId] = useState(initialSessionId ?? '');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const clientSessions = getClientPlans(workoutPlans, clientId);
 
-  function handleSave() {
+  async function handleSave() {
     if (!clientId) {
       setError('Seleziona un cliente.');
       return;
@@ -68,19 +72,43 @@ export default function NuovoAppuntamentoScreen() {
     }
 
     setError(null);
-    const appointment: Appointment = {
-      id: `appt-${Date.now()}`,
+    const draft = {
       clientId,
-      coachId: DEFAULT_COACH_ID,
       workoutSessionId: workoutSessionId || undefined,
       title: title.trim(),
       date: isoDate,
       startTime: startTime.trim(),
       endTime: endTime.trim(),
-      status: 'scheduled',
+      status: 'scheduled' as const,
       type,
       notes: notes.trim() || undefined,
+    };
+
+    // Fase 5: quando Supabase e' configurato l'appuntamento viene creato PRIMA
+    // sulla fonte reale (public.appointments, coach_id dalla sessione reale,
+    // mai DEFAULT_COACH_ID) e solo in caso di successo mirrorato nello store
+    // locale con l'id/coachId reali restituiti dal DB. Se fallisce, errore
+    // visibile e NESSUNA scrittura locale (mai un successo simulato).
+    if (supabaseConfig.isConfigured) {
+      setSaving(true);
+      const result = await createAppointment(draft);
+      setSaving(false);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      addAppointment(result.data);
+      // Push al cliente per il nuovo appuntamento (best-effort, mai bloccante).
+      notifyAppointmentPush('appointment_created', result.data.clientId, result.data.title);
+      router.replace('/appuntamenti');
+      return;
+    }
+
+    const appointment: Appointment = {
+      id: `appt-${Date.now()}`,
+      coachId: DEFAULT_COACH_ID,
       createdAt: new Date().toISOString(),
+      ...draft,
     };
     addAppointment(appointment);
     router.replace('/appuntamenti');
@@ -138,7 +166,7 @@ export default function NuovoAppuntamentoScreen() {
 
       {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
 
-      <AppButton label="Crea appuntamento" onPress={handleSave} fullWidth size="lg" />
+      <AppButton label={saving ? 'Creazione...' : 'Crea appuntamento'} onPress={handleSave} loading={saving} disabled={saving} fullWidth size="lg" />
     </AppScreen>
   );
 }

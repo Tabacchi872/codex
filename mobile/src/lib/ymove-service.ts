@@ -124,7 +124,9 @@ function normalizeSummary(raw: unknown): YmoveExerciseSummary | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const id = normalizePlainString(o.id);
-  const title = normalizePlainString(o.title);
+  // Difensivo anche qui (non solo nella Edge Function): alcuni esercizi
+  // YMove arrivano con "name" invece di "title" — fallback esplicito.
+  const title = normalizePlainString(o.title) ?? normalizePlainString(o.name);
   if (!id || !title) return null;
   return {
     id,
@@ -160,9 +162,21 @@ function normalizeDetail(raw: unknown): YmoveExerciseDetail | null {
 
 export async function searchYmoveExercises(filters: YmoveSearchFilters): Promise<YmoveServiceResult<YmoveExerciseSummary[]>> {
   const result = await invokeYmove<unknown>({ action: 'search', filters });
-  if (!result.ok) return result;
+  if (!result.ok) {
+    // Log sicuro (nessuna chiave/token/URL firmato): solo conteggi, per capire
+    // se il picker mostra pochi/nessun esercizio per una risposta vuota di
+    // YMove o per un errore di rete/autenticazione.
+    console.log('YMOVE_SEARCH_DEBUG', { rawCount: 0, normalizedCount: 0, renderedCount: 0, hasError: true });
+    return result;
+  }
   const rawList = Array.isArray(result.data) ? result.data : [];
   const items = rawList.map(normalizeSummary).filter((item): item is YmoveExerciseSummary => item !== null);
+  console.log('YMOVE_SEARCH_DEBUG', {
+    rawCount: rawList.length,
+    normalizedCount: items.length,
+    renderedCount: items.length,
+    hasError: false,
+  });
   return { ok: true, data: items };
 }
 

@@ -668,6 +668,18 @@ export async function ensureProfileForCurrentUser(): Promise<
 export async function signOut(): Promise<AuthServiceResult<null>> {
   if (!isReady() || !supabase) return { ok: true, data: null };
 
+  // Il token push di QUESTO device va rimosso PRIMA di chiudere la sessione
+  // (la RLS owner-scope su push_tokens richiede la sessione attiva): cosi'
+  // un account diverso che fara' login dopo non riceve le notifiche del
+  // precedente. Import lazy per non trascinare expo-notifications in ogni
+  // percorso che usa auth-service (es. web); best-effort, mai bloccante.
+  try {
+    const { unregisterCurrentPushToken } = await import('./push-notification-service');
+    await unregisterCurrentPushToken();
+  } catch {
+    // push non disponibili su questa piattaforma: il logout procede comunque
+  }
+
   const { error } = await supabase.auth.signOut();
   if (error) {
     return { ok: false, code: 'auth_error', message: error.message };

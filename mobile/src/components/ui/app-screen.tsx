@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Platform, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabInset } from '@/constants/theme';
@@ -11,6 +11,13 @@ type AppScreenProps = {
   contentStyle?: StyleProp<ViewStyle>;
   footer?: ReactNode;
   bottomTabInset?: boolean;
+  // Per le schermate con form lunghi (registrazione, login): avvolge il
+  // contenuto in una KeyboardAvoidingView behavior="padding" — necessaria su
+  // Android perche' l'app e' edge-to-edge (SDK 57, default) e adjustResize
+  // NON ridimensiona piu' automaticamente la ScrollView: senza, la tastiera
+  // copre gli ultimi campi e il form non resta scorrevole. Su web e' un
+  // no-op (nessuna KeyboardAvoidingView montata).
+  keyboardAvoiding?: boolean;
 };
 
 // Contenitore comune a ogni schermata migrata al nuovo design system: sfondo
@@ -20,18 +27,32 @@ type AppScreenProps = {
 // mockup). Sostituisce gradualmente ScreenBackground + ScrollView ripetuti a
 // mano in ogni schermata — non tocca ScreenBackground/Card esistenti, che
 // restano in uso nelle schermate non ancora migrate.
-export function AppScreen({ children, scroll = true, contentStyle, footer, bottomTabInset = true }: AppScreenProps) {
+//
+// Tastiera: keyboardShouldPersistTaps="handled" (un tocco su un bottone con
+// tastiera aperta agisce SUBITO, senza il doppio tap; un tocco su area vuota
+// chiude la tastiera) e keyboardDismissMode="on-drag" (scorrere chiude la
+// tastiera) sono attivi su OGNI AppScreen scrollabile.
+export function AppScreen({
+  children,
+  scroll = true,
+  contentStyle,
+  footer,
+  bottomTabInset = true,
+  keyboardAvoiding = false,
+}: AppScreenProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   const paddingTop = Platform.OS === 'web' ? AppSpacing[5] : insets.top + AppSpacing[3];
   const paddingBottom = (bottomTabInset ? insets.bottom + BottomTabInset : insets.bottom) + AppSpacing[4];
 
-  return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+  const body = (
+    <>
       {scroll ? (
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop, paddingBottom }, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
@@ -43,6 +64,18 @@ export function AppScreen({ children, scroll = true, contentStyle, footer, botto
           {footer}
         </View>
       ) : null}
+    </>
+  );
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {keyboardAvoiding && Platform.OS !== 'web' ? (
+        <KeyboardAvoidingView style={styles.root} behavior="padding">
+          {body}
+        </KeyboardAvoidingView>
+      ) : (
+        body
+      )}
     </View>
   );
 }

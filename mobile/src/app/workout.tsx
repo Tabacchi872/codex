@@ -1,11 +1,12 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Calendar, ChevronRight, Dumbbell } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppBadge, AppCard } from '@/components/ui';
+import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
+import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
 import { getClientPlans, getSessionDayLabel, getSessionWeekLabel } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
@@ -28,6 +29,13 @@ export default function WorkoutClienteScreen() {
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const hasHydrated = useTrainingStore((s) => s.hasHydrated);
   const [tab, setTab] = useState<Tab>('todo');
+  const { loading: remoteLoading, error: remoteError, refresh } = useWorkoutPlansSync();
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const myPlans = useMemo(() => getClientPlans(workoutPlans, currentClientId), [workoutPlans, currentClientId]);
 
@@ -43,6 +51,31 @@ export default function WorkoutClienteScreen() {
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         <View style={styles.loading}>
           <Text style={{ color: colors.inkSoft }}>Caricamento…</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (remoteLoading && myPlans.length === 0) {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={styles.loading}>
+          <ActivityIndicator />
+          <Text style={{ color: colors.inkSoft, marginTop: AppSpacing[2] }}>Caricamento allenamenti…</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (remoteError && myPlans.length === 0) {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={styles.loading}>
+          <Text style={{ color: colors.ink, fontWeight: '700' }}>Impossibile caricare i tuoi allenamenti.</Text>
+          <Text style={{ color: colors.inkSoft, marginTop: 4, textAlign: 'center', paddingHorizontal: AppSpacing[5] }}>{remoteError}</Text>
+          <View style={{ marginTop: AppSpacing[3] }}>
+            <AppButton label="Riprova" onPress={refresh} />
+          </View>
         </View>
       </View>
     );

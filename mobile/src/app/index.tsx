@@ -1,10 +1,11 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { AppCard, AppHeader, AppScreen, AppSectionTitle, AppStatCard } from '@/components/ui';
 import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
+import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -12,9 +13,14 @@ import { useSubscriptionStore } from '@/store/subscription-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
 
+// Griglia a due colonne misurata via onLayout: logica condivisa in
+// hooks/use-two-column-grid.ts (fix BUG-020, vedi commento la').
+const GRID_GAP = AppSpacing[2];
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { onLayout: handleGridLayout, itemStyle: gridItemStyle } = useTwoColumnGrid(GRID_GAP);
   const currentRole = useAuthStore((s) => s.currentRole);
   const clients = useClientStore((s) => s.clients);
   const clientsHydrated = useClientStore((s) => s.hasHydrated);
@@ -53,14 +59,14 @@ export default function DashboardScreen() {
 
       <YmoveAutoLinkBanner />
 
-      <View style={styles.statsGrid}>
+      <View style={styles.statsGrid} onLayout={handleGridLayout}>
         <AppStatCard
           size="lg"
           label="Attivi"
           value={String(attivi)}
           accentColor={colors.moss}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
           size="lg"
@@ -68,7 +74,7 @@ export default function DashboardScreen() {
           value={String(inScadenza)}
           accentColor={colors.amber}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
           size="lg"
@@ -76,9 +82,9 @@ export default function DashboardScreen() {
           value={String(scaduti)}
           accentColor={colors.rust}
           onPress={() => router.push('/clienti')}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
-        <View style={styles.statCardWrap}>
+        <View style={gridItemStyle}>
           <AppCard onPress={() => router.push('/appuntamenti')} style={styles.appointmentCard}>
             <Text style={[styles.statLabel, { color: colors.inkSoft }]}>Prossimo appuntamento</Text>
             <Text style={[styles.appointmentTitle, { color: colors.ink }]} numberOfLines={2}>
@@ -93,25 +99,25 @@ export default function DashboardScreen() {
 
       <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
       <View style={styles.quickActions}>
-        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={styles.quickActionWrap}>
+        <Pressable onPress={() => router.push('/clienti/new')} hitSlop={4} style={gridItemStyle}>
           <View style={[styles.quickAction, { backgroundColor: colors.coral }]}>
             <Text style={[styles.quickActionLabel, { color: colors.onCoral }]}>Nuovo cliente</Text>
           </View>
         </Pressable>
-        <QuickAction label="Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} />
-        <QuickAction label="Assegna scheda" onPress={() => router.push('/schede/new')} />
-        <QuickAction label="Supporto" onPress={() => router.push('/supporto')} />
-        <QuickAction label="Impostazioni" onPress={() => router.push('/impostazioni')} />
+        <QuickAction label="Nuovo appuntamento" style={gridItemStyle} onPress={() => router.push('/appuntamenti/new')} />
+        <QuickAction label="Assegna scheda" style={gridItemStyle} onPress={() => router.push('/schede/new')} />
+        <QuickAction label="Supporto" style={gridItemStyle} onPress={() => router.push('/supporto')} />
+        <QuickAction label="Impostazioni" style={gridItemStyle} onPress={() => router.push('/impostazioni')} />
       </View>
     </AppScreen>
   );
 }
 
-function QuickAction({ label, onPress }: { label: string; onPress: () => void }) {
+function QuickAction({ label, style, onPress }: { label: string; style: ViewStyle; onPress: () => void }) {
   const { colors } = useAppTheme();
 
   return (
-    <Pressable onPress={onPress} hitSlop={4} style={styles.quickActionWrap}>
+    <Pressable onPress={onPress} hitSlop={4} style={style}>
       <View style={[styles.quickAction, { borderColor: colors.border, backgroundColor: colors.surface }]}>
         <Text style={[styles.quickActionLabel, { color: colors.ink }]}>{label}</Text>
       </View>
@@ -131,11 +137,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: AppSpacing[2],
   },
-  statCardWrap: {
-    width: '48.5%',
-    minWidth: 136,
-    flexGrow: 1,
-  },
   appointmentCard: {
     minHeight: 104,
     justifyContent: 'center',
@@ -153,11 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: AppSpacing[2],
-  },
-  quickActionWrap: {
-    width: '48.5%',
-    minWidth: 136,
-    flexGrow: 1,
   },
   quickAction: {
     minHeight: 52,

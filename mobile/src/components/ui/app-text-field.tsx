@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
@@ -11,7 +12,17 @@ type AppTextFieldProps = TextInputProps & {
 // bordo line, radius 12, sfondo surfaceSubtle quando disabled (coerente con
 // TextField disabled nel mockup: sand + testo faint). Errore in rust sotto il
 // campo, stesso ruolo colore di AppBadge tone="rust"/AppErrorState.
-export function AppTextField({ label, error, style, editable, ...props }: AppTextFieldProps) {
+//
+// Tastiera (fix APK Android): returnKeyType di default "done" — ogni campo
+// single-line mostra "Fine" e alla conferma chiude la tastiera (blur di
+// default di TextInput), cosi' nessun form resta bloccato con la tastiera
+// aperta. Override con returnKeyType="next" + onSubmitEditing per il
+// chaining campo→campo (vedi registration-screens.tsx). forwardRef espone il
+// TextInput nativo proprio per permettere quel chaining (.focus()).
+export const AppTextField = forwardRef<TextInput, AppTextFieldProps>(function AppTextField(
+  { label, error, style, editable, returnKeyType = 'done', ...props },
+  ref,
+) {
   const { colors } = useAppTheme();
   const disabled = editable === false;
 
@@ -20,7 +31,9 @@ export function AppTextField({ label, error, style, editable, ...props }: AppTex
       {label ? <Text style={[styles.label, { color: colors.inkSoft }]}>{label}</Text> : null}
       <TextInput
         {...props}
+        ref={ref}
         editable={editable}
+        returnKeyType={returnKeyType}
         placeholderTextColor={colors.inkFaint}
         style={[
           styles.input,
@@ -35,7 +48,7 @@ export function AppTextField({ label, error, style, editable, ...props }: AppTex
       {error ? <Text style={[styles.error, { color: colors.rust }]}>{error}</Text> : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

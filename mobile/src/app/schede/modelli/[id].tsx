@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/card';
@@ -13,8 +13,11 @@ import { DEFAULT_COACH_ID } from '@/constants/app-info';
 import { getExerciseById } from '@/data/exercise-library';
 import { getWorkoutPlanTemplateById } from '@/data/workout-plan-templates';
 import { useTheme } from '@/hooks/use-theme';
+import { getCurrentSession } from '@/lib/auth-service';
 import { clientFullName } from '@/lib/client-helpers';
+import { supabaseConfig } from '@/lib/supabase';
 import { instantiateSessionExercises } from '@/lib/workout-template-copy';
+import { createWorkoutPlan } from '@/lib/workout-plan-service';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
@@ -32,6 +35,8 @@ export default function ModelloDettaglioScreen() {
   const [mode, setMode] = useState<'view' | 'assign'>('view');
   const [clientId, setClientId] = useState('');
   const [subscriptionId, setSubscriptionId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const template = getWorkoutPlanTemplateById(id);
 
@@ -47,14 +52,21 @@ export default function ModelloDettaglioScreen() {
 
   const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
 
-  function handleConfirmAssign() {
+  // Crea N schede (una per sessione del modello) in sequenza, mai in
+  // parallelo: ognuna passa dalla stessa RPC atomica save_workout_plan
+  // (docs/SUPABASE_SCHEMA.sql) usata dal form di modifica scheda, cosi' non
+  // esiste un percorso di scrittura "modelli" separato e meno sicuro.
+  async function handleConfirmAssign() {
     if (!clientId) return;
-    template!.sessions.forEach((session, index) => {
-      const today = new Date();
+    setError('');
+
+    const today = new Date();
+    const buildPlan = (sessionIndex: number): WorkoutPlan => {
+      const session = template!.sessions[sessionIndex];
       const expiry = new Date(today);
       expiry.setDate(expiry.getDate() + template!.durationWeeks * 7);
-      const plan: WorkoutPlan = {
-        id: `plan-${Date.now()}-${index}`,
+      return {
+        id: `plan-${Date.now()}-${sessionIndex}`,
         name: `${template!.title} — ${session.title}`,
         clientId,
         coachId: DEFAULT_COACH_ID,
@@ -63,8 +75,33 @@ export default function ModelloDettaglioScreen() {
         expiryDate: expiry.toISOString().slice(0, 10),
         exercises: instantiateSessionExercises(session),
       };
-      addWorkoutPlan(plan);
-    });
+    };
+
+    if (!supabaseConfig.isConfigured) {
+      template!.sessions.forEach((_, index) => addWorkoutPlan(buildPlan(index)));
+      router.replace(`/clienti/${clientId}`);
+      return;
+    }
+
+    setSaving(true);
+    const session = await getCurrentSession();
+    const realCoachId = session.ok ? (session.data?.user.id ?? null) : null;
+    if (!realCoachId) {
+      setSaving(false);
+      setError('Nessuna sessione coach reale trovata. Prova a rifare il login.');
+      return;
+    }
+
+    for (let index = 0; index < template!.sessions.length; index++) {
+      const result = await createWorkoutPlan({ ...buildPlan(index), coachId: realCoachId });
+      if (!result.ok) {
+        setSaving(false);
+        setError(`Creata ${index} su ${template!.sessions.length} schede, poi errore: ${result.message}`);
+        return;
+      }
+      addWorkoutPlan(result.data);
+    }
+    setSaving(false);
     router.replace(`/clienti/${clientId}`);
   }
 
@@ -186,17 +223,27 @@ export default function ModelloDettaglioScreen() {
               da "Modifica scheda", senza toccare il modello originale.
             </ThemedText>
 
+            {error ? (
+              <ThemedText type="small" themeColor="statusExpired">
+                {error}
+              </ThemedText>
+            ) : null}
+
             <View style={styles.assignActionsRow}>
-              <Pressable onPress={() => setMode('view')} style={styles.cancelButtonWrap}>
+              <Pressable onPress={() => setMode('view')} style={styles.cancelButtonWrap} disabled={saving}>
                 <View style={[styles.secondaryButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallBold">Annulla</ThemedText>
                 </View>
               </Pressable>
-              <Pressable onPress={handleConfirmAssign} disabled={!clientId} style={styles.confirmButtonWrap}>
+              <Pressable onPress={handleConfirmAssign} disabled={!clientId || saving} style={styles.confirmButtonWrap}>
                 <View style={[styles.primaryButton, { backgroundColor: clientId ? theme.primary : theme.border }]}>
-                  <ThemedText type="smallBold" themeColor="onPrimary">
-                    Salva piano personalizzato per il cliente
-                  </ThemedText>
+                  {saving ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText type="smallBold" themeColor="onPrimary">
+                      Salva piano personalizzato per il cliente
+                    </ThemedText>
+                  )}
                 </View>
               </Pressable>
             </View>

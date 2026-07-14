@@ -7,6 +7,7 @@ import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
 import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
 import { clientFullName } from '@/lib/client-helpers';
+import { isSeedClientId } from '@/lib/demo-data';
 import { supabaseConfig } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -79,7 +80,10 @@ export default function ClientiListScreen() {
                     {subscription ? subscription.packageName : 'Nessun abbonamento'}
                   </Text>
                 </View>
-                <AppBadge label={COMPUTED_SUBSCRIPTION_STATUS_LABEL[status]} tone={subscriptionTone(status)} />
+                <View style={styles.badgeStack}>
+                  <AppBadge label={COMPUTED_SUBSCRIPTION_STATUS_LABEL[status]} tone={subscriptionTone(status)} />
+                  {isSeedClientId(item.id) ? <AppBadge label="Demo" tone="neutral" /> : null}
+                </View>
               </View>
             </AppCard>
           );
@@ -197,6 +201,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  badgeStack: {
+    alignItems: 'flex-end',
+    gap: AppSpacing[1],
   },
   name: {
     fontWeight: '700',

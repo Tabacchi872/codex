@@ -113,6 +113,11 @@ export function WorkoutPlanForm({
       return;
     }
     setError(null);
+    // Id placeholder SOLO se non esiste gia' un piano reale: quando Supabase
+    // e' configurato, workout-plan-service.ts (isValidUuid) riconosce che non
+    // e' un UUID e lo tratta come "nuova scheda", lasciando che sia Postgres
+    // a generare l'id reale (mai un ID inventato lato client che poi
+    // verrebbe ignorato).
     onSave({
       id: initialPlan?.id ?? `plan-${Date.now()}`,
       name: name.trim(),

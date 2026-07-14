@@ -27,7 +27,7 @@ export default function SuperadminCoachDetail() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const coachIdParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const { colors } = useAppTheme();
-  const { coaches, loading, reload } = useSuperadminCoaches();
+  const { coaches, loading, error: loadError, reload } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
   const clients = useSuperadminStore((s) => s.coachClients);
   const updateCoach = useSuperadminStore((s) => s.updateCoach);
@@ -47,6 +47,7 @@ export default function SuperadminCoachDetail() {
   const [periodStartsAt, setPeriodStartsAt] = useState('');
   const [periodEndsAt, setPeriodEndsAt] = useState('');
   const [error, setError] = useState('');
+  const [saveFeedback, setSaveFeedback] = useState('');
   const [saving, setSaving] = useState(false);
   const [codeFeedback, setCodeFeedback] = useState('');
   const [codeBusy, setCodeBusy] = useState(false);
@@ -72,11 +73,16 @@ export default function SuperadminCoachDetail() {
 
   if (!coach) {
     return (
-      <SuperadminShell title={loading ? 'Caricamento...' : 'Coach non trovato'}>
+      <SuperadminShell title={loading ? 'Caricamento...' : loadError ? 'Errore' : 'Coach non trovato'}>
         <AppCard style={styles.card}>
-          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
-            {loading ? 'Caricamento coach da Supabase in corso...' : "Il coach richiesto non e' disponibile."}
+          <Text style={{ color: loadError ? colors.rust : colors.inkSoft, fontSize: AppFontSize.sm }}>
+            {loading
+              ? 'Caricamento coach da Supabase in corso...'
+              : loadError
+                ? loadError
+                : "Il coach richiesto non e' disponibile."}
           </Text>
+          {!loading && loadError ? <AppButton label="Riprova" onPress={reload} variant="outline" fullWidth /> : null}
           {!loading ? (
             <AppButton label="Torna alla lista coach" onPress={() => router.replace('/superadmin/coaches' as Href)} fullWidth />
           ) : null}
@@ -105,6 +111,7 @@ export default function SuperadminCoachDetail() {
     if (isSupabaseCoach) {
       setSaving(true);
       setError('');
+      setSaveFeedback('');
       const profileResult = await updateCoachProfile(coachId, { fullName: name, businessName, phone });
       if (!profileResult.ok) {
         setSaving(false);
@@ -117,6 +124,7 @@ export default function SuperadminCoachDetail() {
         setError(statusResult.message);
         return;
       }
+      setSaveFeedback('Modifiche salvate su Supabase.');
       reload();
       return;
     }
@@ -382,6 +390,12 @@ export default function SuperadminCoachDetail() {
         <AppTextField label="Nome attivita'" value={businessName} onChangeText={setBusinessName} placeholder="Es. Studio FitCoach" />
         <AppTextField label="Telefono" value={phone} onChangeText={setPhone} placeholder="Es. 333 1234567" keyboardType="phone-pad" />
         <OptionGroup label="Piano" options={plans.map((item) => ({ value: item.code, label: item.name }))} value={planCode} onChange={setPlanCode} disabled={isSupabaseCoach} />
+        {isSupabaseCoach ? (
+          <Text style={[styles.smallText, { color: colors.inkFaint }]}>
+            Il "Piano" legacy non e' modificabile per un coach registrato: l'abbonamento reale e' il "Pacchetto acquistato" in alto,
+            che determina anche il limite clienti.
+          </Text>
+        ) : null}
         <OptionGroup
           label="Stato pagamento"
           options={STATUSES.map((status) => ({ value: status, label: getBillingStatusLabel(status) }))}
@@ -399,6 +413,7 @@ export default function SuperadminCoachDetail() {
           </View>
         </View>
         {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
+        {saveFeedback && !error ? <Text style={[styles.errorText, { color: colors.moss }]}>{saveFeedback}</Text> : null}
         <View style={styles.actions}>
           <ToneOutlineButton
             label={billingStatus === 'blocked' ? 'Sblocca coach' : 'Blocca coach'}
@@ -412,7 +427,17 @@ export default function SuperadminCoachDetail() {
 
       <AppCard style={styles.card}>
         <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Clienti attivi</Text>
-        {coachClients.length === 0 ? (
+        {isSupabaseCoach ? (
+          // Per un coach reale il CONTEGGIO viene da coach_clients su Supabase
+          // (status='active', vedi superadmin-coach-service.ts); l'elenco
+          // locale sotto contiene solo dati demo per-device e mostrarlo qui
+          // contraddirebbe il conteggio reale.
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+            {coach.clientsUsed === 0
+              ? 'Nessun cliente attivo collegato su Supabase.'
+              : `${coach.clientsUsed} ${coach.clientsUsed === 1 ? 'cliente attivo collegato' : 'clienti attivi collegati'} su Supabase (conteggio reale da coach_clients).`}
+          </Text>
+        ) : coachClients.length === 0 ? (
           <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun cliente attivo associato a questo coach.</Text>
         ) : (
           coachClients.map((client) => <ClientRow key={client.id} client={client} />)

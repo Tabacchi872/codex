@@ -19,7 +19,13 @@ const NAV_ITEMS = [
   { href: '/superadmin/support' as Href, label: 'Supporto', icon: LifeBuoy, activePrefix: '/superadmin/support' },
 ] as const satisfies readonly { href: Href; label: string; icon: LucideIcon; activePrefix?: string }[];
 
-const SUPERADMIN_TAB_BAR_HEIGHT = 74;
+// Altezza del SOLO contenuto della bottom bar (pillola 26 + gap 4 + label 13
+// + paddingTop 8 + paddingBottom base 4 ≈ 55, arrotondata con margine): l'
+// altezza totale della bar e' SEMPRE contenuto + insets.bottom, mai un valore
+// fisso — su Android la barra di navigazione di sistema (gesture o 3 pulsanti,
+// inset 24-48px) veniva prima SOTTRATTA dai 74px fissi, schiacciando icone e
+// label e facendo finire i form sotto la bar.
+const SUPERADMIN_TAB_BAR_CONTENT_HEIGHT = 58;
 
 type SuperadminShellProps = {
   title: string;
@@ -56,7 +62,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           styles.content,
           {
             paddingTop: insets.top + AppSpacing[4],
-            paddingBottom: insets.bottom + SUPERADMIN_TAB_BAR_HEIGHT + AppSpacing[4],
+            paddingBottom: insets.bottom + SUPERADMIN_TAB_BAR_CONTENT_HEIGHT + AppSpacing[4],
           },
           contentStyle,
         ]}>
@@ -75,7 +81,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
                 size={42}
               />
               {unreadNotifications > 0 ? (
-                <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]}>
+                <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
                   <Text style={styles.badgeText}>{unreadNotifications > 99 ? '99+' : String(unreadNotifications)}</Text>
                 </View>
               ) : null}
@@ -109,7 +115,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
               <View style={[styles.tabIconPill, active && { backgroundColor: colors.coralSoft }]}>
                 <Icon size={18} color={active ? colors.coral : colors.inkFaint} strokeWidth={2.2} />
                 {isSupport && unreadCoachSupport > 0 ? (
-                  <View style={[styles.supportBadge, { backgroundColor: colors.coral }]}>
+                  <View style={[styles.supportBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
                   </View>
                 ) : null}
@@ -176,7 +182,6 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     bottom: 0,
     flexDirection: 'row',
-    height: SUPERADMIN_TAB_BAR_HEIGHT,
     left: 0,
     paddingHorizontal: AppSpacing[1],
     paddingTop: AppSpacing[2],

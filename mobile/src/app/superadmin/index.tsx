@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppBadge, AppCard, AppStatCard } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
 import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
+import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
@@ -12,6 +13,10 @@ export default function SuperadminDashboard() {
   const { colors } = useAppTheme();
   const { coaches } = useSuperadminCoaches();
   const plans = useSuperadminStore((s) => s.plans);
+  // Stessa griglia misurata della dashboard coach (fix BUG-020): niente
+  // percentuali+minWidth+flexGrow, che a 320-412px causavano righe piu'
+  // larghe del contenitore e la sovrapposizione con la card alert sotto.
+  const { onLayout: handleGridLayout, itemStyle: gridItemStyle } = useTwoColumnGrid(AppSpacing[2]);
 
   const totalCoaches = coaches.length;
   const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active').length;
@@ -26,52 +31,52 @@ export default function SuperadminDashboard() {
 
   return (
     <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
-      <View style={styles.grid}>
+      <View style={styles.grid} onLayout={handleGridLayout}>
         <AppStatCard
-          size="lg"
+          size="sm"
           label="Coach totali"
           value={String(totalCoaches)}
           onPress={() => router.push('/superadmin/coaches?status=all' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
-          size="lg"
+          size="sm"
           label="Coach attivi"
           value={String(activeCoaches)}
           accentColor={colors.moss}
           onPress={() => router.push('/superadmin/coaches?status=active' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
-          size="lg"
+          size="sm"
           label="In prova"
           value={String(trialCoaches)}
           accentColor={colors.amber}
           onPress={() => router.push('/superadmin/coaches?status=trial' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
-          size="lg"
+          size="sm"
           label="Pagamento scaduto"
           value={String(pastDueCoaches)}
           accentColor={colors.rust}
           onPress={() => router.push('/superadmin/coaches?status=past_due' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
-          size="lg"
+          size="sm"
           label="Bloccati"
           value={String(blockedCoaches)}
           accentColor={colors.rust}
           onPress={() => router.push('/superadmin/coaches?status=blocked' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
         <AppStatCard
-          size="lg"
+          size="sm"
           label="Ricavi mensili stimati"
           value={`EUR ${monthlyRecurringRevenue}`}
           onPress={() => router.push('/superadmin/payment-events' as Href)}
-          style={styles.statCardWrap}
+          style={gridItemStyle}
         />
       </View>
 
@@ -105,11 +110,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: AppSpacing[2],
-  },
-  statCardWrap: {
-    width: '48.5%',
-    minWidth: 136,
-    flexGrow: 1,
   },
   card: {
     gap: AppSpacing[2],

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -11,6 +11,20 @@ const DURATION = 600;
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
+
+  // Rete di sicurezza per l'APK Android: questo overlay copre TUTTA l'app
+  // (absoluteFill, zIndex 1000) e viene smontato solo dalla callback di fine
+  // animazione Reanimated — se quella callback non scatta (finished=false o
+  // worklet mai eseguito in una build release), l'overlay resterebbe montato
+  // per sempre, invisibile (opacity 0 a fine keyframe) ma sopra ogni pulsante
+  // e tab. Il timeout garantisce lo smontaggio comunque poco dopo la durata
+  // dell'animazione; pointerEvents="none" sotto garantisce che, anche mentre
+  // e' montato, non intercetti mai un tocco (e' puramente decorativo).
+  useEffect(() => {
+    if (!animate) return;
+    const timeout = setTimeout(() => setVisible(false), DURATION + 400);
+    return () => clearTimeout(timeout);
+  }, [animate]);
 
   if (!visible) return null;
 
@@ -37,6 +51,7 @@ export function AnimatedSplashOverlay() {
 
   return animate ? (
     <Animated.View
+      pointerEvents="none"
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet';
         if (finished) {
@@ -48,6 +63,7 @@ export function AnimatedSplashOverlay() {
     </Animated.View>
   ) : (
     <View
+      pointerEvents="none"
       onLayout={() => {
         SplashScreen.hideAsync().finally(() => {
           setAnimate(true);

@@ -23,8 +23,15 @@ function toBillingStatus(value: string | null | undefined): AppBillingStatus {
   return (VALID_BILLING_STATUS as string[]).includes(value ?? '') ? (value as AppBillingStatus) : 'trial';
 }
 
-export async function loadSupabaseCoaches(): Promise<SuperadminCoach[]> {
-  if (!supabaseConfig.isConfigured || !supabase) return [];
+export type LoadSupabaseCoachesResult = { ok: true; data: SuperadminCoach[] } | { ok: false; message: string };
+
+// Ritorna un risultato esplicito (mai un array vuoto silenzioso in caso di
+// errore reale): il chiamante (hooks/use-superadmin-coaches.ts) deve poter
+// distinguere "nessun coach registrato" da "la query e' fallita", per
+// mostrare un vero stato di errore con Riprova invece di un elenco vuoto
+// ingannevole.
+export async function loadSupabaseCoaches(): Promise<LoadSupabaseCoachesResult> {
+  if (!supabaseConfig.isConfigured || !supabase) return { ok: true, data: [] };
 
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
@@ -32,9 +39,9 @@ export async function loadSupabaseCoaches(): Promise<SuperadminCoach[]> {
     .eq('role', 'coach');
   if (profilesError) {
     if (__DEV__) console.error('SUPERADMIN_COACHES_LOOKUP_ERROR', profilesError.message);
-    return [];
+    return { ok: false, message: "Impossibile caricare i coach da Supabase. Riprova." };
   }
-  if (!profiles || profiles.length === 0) return [];
+  if (!profiles || profiles.length === 0) return { ok: true, data: [] };
 
   const coachIds = profiles.map((profile) => profile.id);
 
@@ -77,7 +84,7 @@ export async function loadSupabaseCoaches(): Promise<SuperadminCoach[]> {
     package: { name: string; max_clients: number | null; target_role: string } | null;
   }>;
 
-  return profiles.map((profile): SuperadminCoach => {
+  const data = profiles.map((profile): SuperadminCoach => {
     const coachProfile = coachProfiles.find((item) => item.user_id === profile.id);
     const billingProfileRow = billingProfiles.find((item) => item.coach_id === profile.id);
     const codesForCoach = registrationCodes.filter((item) => item.coach_id === profile.id);
@@ -137,4 +144,6 @@ export async function loadSupabaseCoaches(): Promise<SuperadminCoach[]> {
       activeSubscriptionId: activePackageSubscription?.id ?? null,
     };
   });
+
+  return { ok: true, data };
 }

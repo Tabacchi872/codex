@@ -47,6 +47,12 @@
         {
           "photosPermission": "L'app usa le foto per allegarle al check-in settimanale che invii al tuo coach."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default"
+        }
       ]
     ],
     "experiments": {

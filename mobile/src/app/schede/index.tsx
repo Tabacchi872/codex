@@ -1,12 +1,13 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
+import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
 import { useAuthStore } from '@/store/auth-store';
@@ -26,6 +27,18 @@ export default function SchedeListScreen() {
   const clients = useClientStore((s) => s.clients);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [tab, setTab] = useState<Tab>('todo');
+  const { loading: remoteLoading, error: remoteError, refresh } = useWorkoutPlansSync();
+
+  // Refresh ad ogni apertura/foreground della lista (2026-07-14, migrazione
+  // Supabase): garantisce che una scheda creata/modificata su un altro
+  // dispositivo compaia qui senza dover riavviare l'app — stesso pattern
+  // gia' usato altrove nel progetto (useFocusEffect + refresh, vedi
+  // docs/PROJECT_STATE.md).
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const filtered = useMemo(() => {
     return workoutPlans.filter((p) => {
@@ -42,6 +55,27 @@ export default function SchedeListScreen() {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <Text style={{ color: colors.inkSoft }}>Caricamento schede…</Text>
+      </View>
+    );
+  }
+
+  if (remoteLoading && workoutPlans.length === 0) {
+    return (
+      <View style={[styles.loading, { backgroundColor: colors.background }]}>
+        <ActivityIndicator />
+        <Text style={{ color: colors.inkSoft, marginTop: AppSpacing[2] }}>Caricamento schede da Supabase…</Text>
+      </View>
+    );
+  }
+
+  if (remoteError && workoutPlans.length === 0) {
+    return (
+      <View style={[styles.loading, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.ink, fontWeight: '700' }}>Impossibile caricare le schede.</Text>
+        <Text style={{ color: colors.inkSoft, marginTop: 4, textAlign: 'center', paddingHorizontal: AppSpacing[5] }}>{remoteError}</Text>
+        <View style={{ marginTop: AppSpacing[3] }}>
+          <AppButton label="Riprova" onPress={refresh} />
+        </View>
       </View>
     );
   }

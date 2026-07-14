@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, type Href } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View, type TextInput } from 'react-native';
 
 import { AppButton, AppCard, AppScreen, AppTextField } from '@/components/ui';
 import { signUpClientWithCoachCode, signUpCoach } from '@/lib/auth-service';
@@ -51,6 +51,12 @@ export function CoachRegistrationScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
+  // Chaining tastiera "Avanti" sui campi credenziali (fix APK Android):
+  // nome -> email -> password -> conferma; dalla conferma in poi ogni campo
+  // ha il "Fine" di default di AppTextField, che chiude la tastiera.
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -234,20 +240,43 @@ export function CoachRegistrationScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+    <AppScreen contentStyle={styles.content} bottomTabInset={false} keyboardAvoiding>
       <AppCard style={styles.form}>
         <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Registrati come coach</Text>
-        <AppTextField label="Nome e cognome" value={fullName} onChangeText={setFullName} placeholder="Es. Laura Bassi" />
         <AppTextField
+          label="Nome e cognome"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Es. Laura Bassi"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => emailRef.current?.focus()}
+        />
+        <AppTextField
+          ref={emailRef}
           label="Email"
           value={email}
           onChangeText={setEmail}
           placeholder="coach@email.it"
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
         />
-        <AppTextField label="Password" value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
         <AppTextField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Minimo 6 caratteri"
+          secureTextEntry
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+        />
+        <AppTextField
+          ref={confirmPasswordRef}
           label="Conferma password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -364,6 +393,12 @@ export function ClientRegistrationScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
+  // Chaining tastiera "Avanti" (fix APK Android): codice -> nome -> email ->
+  // password -> conferma; l'ultimo campo ha il "Fine" di default che chiude.
+  const fullNameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -498,7 +533,7 @@ export function ClientRegistrationScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.content} bottomTabInset={false}>
+    <AppScreen contentStyle={styles.content} bottomTabInset={false} keyboardAvoiding>
       <AppCard style={styles.form}>
         <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Registrati come cliente</Text>
         <AppTextField
@@ -507,18 +542,45 @@ export function ClientRegistrationScreen() {
           onChangeText={(value) => setCoachCode(normalizeCoachCode(value))}
           placeholder="FC-8KQ4-MR2P"
           autoCapitalize="characters"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => fullNameRef.current?.focus()}
         />
-        <AppTextField label="Nome e cognome" value={fullName} onChangeText={setFullName} placeholder="Es. Anna Rossi" />
         <AppTextField
+          ref={fullNameRef}
+          label="Nome e cognome"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Es. Anna Rossi"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => emailRef.current?.focus()}
+        />
+        <AppTextField
+          ref={emailRef}
           label="Email"
           value={email}
           onChangeText={setEmail}
           placeholder="cliente@email.it"
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
         />
-        <AppTextField label="Password" value={password} onChangeText={setPassword} placeholder="Minimo 6 caratteri" secureTextEntry />
         <AppTextField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Minimo 6 caratteri"
+          secureTextEntry
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+        />
+        <AppTextField
+          ref={confirmPasswordRef}
           label="Conferma password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}

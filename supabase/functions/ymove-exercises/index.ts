@@ -179,7 +179,11 @@ function normalizeSummary(raw: unknown): YmoveExerciseSummary | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const id = pickString(o, 'id');
-  const title = pickString(o, 'title');
+  // Alcuni esercizi YMove arrivano con "name" invece di "title" (variante di
+  // schema non documentata, osservata in produzione): fallback esplicito,
+  // altrimenti un esercizio altrimenti valido sparirebbe dalla ricerca solo
+  // per il nome del campo usato da YMove per quel record.
+  const title = pickString(o, 'title') ?? pickString(o, 'name');
   if (!id || !title) return null;
   return {
     id,

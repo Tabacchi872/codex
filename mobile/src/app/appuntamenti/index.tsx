@@ -1,31 +1,44 @@
-import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBadge, AppButton, AppCard } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
+import { setAppointmentStatus } from '@/lib/appointment-service';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth } from '@/lib/format-date';
+import { notifyAppointmentPush } from '@/lib/push-notification-service';
+import { supabaseConfig } from '@/lib/supabase';
+import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
-import { AppFontSize, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
-import { APPOINTMENT_STATUS_LABEL, APPOINTMENT_TYPE_LABEL, type Appointment } from '@/types/appointment';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
+import { APPOINTMENT_STATUS_LABEL, APPOINTMENT_TYPE_LABEL, type Appointment, type AppointmentStatus } from '@/types/appointment';
 
-// Agenda coach: prima mostrava solo dati statici di esempio (PLACEHOLDER_APPOINTMENTS)
-// con il bottone "+ Nuovo appuntamento" disabilitato. Ora legge da
-// useAppointmentStore (persistito) e il bottone porta alla creazione reale
-// (vedi appuntamenti/new.tsx). Vista solo lista, cronologica: la vista
-// calendario mensile/settimanale resta un passo successivo (docs/TODO_NEXT.md).
+// Agenda coach: da questa fase (5) la fonte principale e' Supabase
+// (public.appointments) quando configurato — useAppointmentStore resta il
+// mirror locale letto qui e dalla dashboard, aggiornato da
+// use-appointments-realtime.ts (refresh su focus + eventi Realtime). Vista
+// solo lista, cronologica: la vista calendario resta un passo successivo.
 export default function AppuntamentiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const appointments = useAppointmentStore((s) => s.appointments);
+  const updateAppointmentLocal = useAppointmentStore((s) => s.updateAppointment);
   const clients = useClientStore((s) => s.clients);
+  const { loading, error, refresh } = useAppointmentsRealtime();
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const upcoming = useMemo(
     () =>
@@ -34,6 +47,23 @@ export default function AppuntamentiScreen() {
         .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`)),
     [appointments]
   );
+
+  async function handleStatusChange(appointment: Appointment, status: AppointmentStatus) {
+    setStatusError(null);
+    if (supabaseConfig.isConfigured) {
+      const result = await setAppointmentStatus(appointment.id, status);
+      if (!result.ok) {
+        setStatusError(result.message);
+        return;
+      }
+      // Push al cliente per annullamento (best-effort, mai bloccante).
+      if (status === 'cancelled') {
+        notifyAppointmentPush('appointment_cancelled', appointment.clientId, appointment.title);
+      }
+      refresh();
+    }
+    updateAppointmentLocal({ ...appointment, status });
+  }
 
   if (!isCoach) {
     return <CoachOnlyNotice />;
@@ -58,17 +88,35 @@ export default function AppuntamentiScreen() {
               <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Prossimi appuntamenti con i tuoi clienti</Text>
             </View>
             <AppButton label="+ Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} size="lg" />
+            {loading && upcoming.length === 0 ? (
+              <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento appuntamenti...</Text>
+            ) : null}
+            {error ? (
+              <AppCard style={styles.errorCard}>
+                <Text style={{ color: colors.rust, fontSize: AppFontSize.sm, fontWeight: '600' }}>{error}</Text>
+                <AppButton label="Riprova" onPress={refresh} variant="outline" size="sm" />
+              </AppCard>
+            ) : null}
+            {statusError ? (
+              <Text style={{ color: colors.rust, fontSize: AppFontSize.sm, fontWeight: '600' }}>{statusError}</Text>
+            ) : null}
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
-        ListEmptyComponent={<Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun appuntamento in programma.</Text>}
+        ListEmptyComponent={
+          loading || error ? null : (
+            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun appuntamento in programma.</Text>
+          )
+        }
         renderItem={({ item }) => {
           const client = getClientById(clients, item.clientId);
           return (
             <AppointmentRow
               appointment={item}
-              clientName={client ? clientFullName(client) : 'Cliente non trovato'}
+              clientName={client ? clientFullName(client) : 'Cliente'}
               onPress={() => (client ? router.push(`/clienti/${client.id}`) : undefined)}
+              onComplete={() => handleStatusChange(item, 'completed')}
+              onCancel={() => handleStatusChange(item, 'cancelled')}
             />
           );
         }}
@@ -81,10 +129,14 @@ function AppointmentRow({
   appointment,
   clientName,
   onPress,
+  onComplete,
+  onCancel,
 }: {
   appointment: Appointment;
   clientName: string;
   onPress: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
 }) {
   const { colors } = useAppTheme();
   const isCompleted = appointment.status === 'completed';
@@ -99,8 +151,23 @@ function AppointmentRow({
         <View style={styles.statusPillWrap}>
           <AppBadge label={APPOINTMENT_STATUS_LABEL[appointment.status]} tone="moss" />
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.actionsRow}>
+          <RowAction label="Completa" color={colors.moss} onPress={onComplete} />
+          <RowAction label="Annulla" color={colors.rust} onPress={onCancel} />
+        </View>
+      )}
     </AppCard>
+  );
+}
+
+// Azione compatta dentro la card (non un AppButton pieno: la card e' gia'
+// premibile per aprire il cliente, qui servono due azioni secondarie chiare).
+function RowAction({ label, color, onPress }: { label: string; color: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={6} style={[styles.rowAction, { borderColor: color }]}>
+      <Text style={[styles.rowActionLabel, { color }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -122,6 +189,9 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.sm,
     fontWeight: '600',
   },
+  errorCard: {
+    gap: AppSpacing[2],
+  },
   row: {
     gap: 2,
   },
@@ -134,5 +204,21 @@ const styles = StyleSheet.create({
   },
   statusPillWrap: {
     marginTop: 2,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    marginTop: AppSpacing[2],
+  },
+  rowAction: {
+    borderRadius: AppRadius.pill,
+    borderWidth: 1.5,
+    minHeight: 32,
+    justifyContent: 'center',
+    paddingHorizontal: AppSpacing[3],
+  },
+  rowActionLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
 });
