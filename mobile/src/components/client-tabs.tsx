@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logClientNavPress } from '@/lib/client-navigation';
-import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
+import { AppColors, AppRadius, AppSpacing } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
@@ -21,10 +21,10 @@ export default function ClientTabs() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useAppTheme();
+  const colors = AppColors.dark;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.slot}>
         <Slot screenOptions={{ headerShown: false }} />
       </View>
@@ -51,11 +51,11 @@ export default function ClientTabs() {
               hitSlop={4}
               style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
-                <Icon size={23} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
+                <Icon size={24} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
               </View>
               <Text
                 numberOfLines={1}
-                style={[styles.tabLabel, { color: isActive ? colors.ink : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
+                style={[styles.tabLabel, { color: isActive ? colors.moss : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -74,13 +74,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    minHeight: 74,
+    minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 28,
     marginHorizontal: AppSpacing[4],
-    marginBottom: AppSpacing[2],
+    marginBottom: 0,
     paddingTop: AppSpacing[1],
     zIndex: 20,
     elevation: 20,

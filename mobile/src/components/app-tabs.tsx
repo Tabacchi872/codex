@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logCoachNavPress } from '@/lib/coach-navigation';
 import { useChatStore } from '@/store/chat-store';
-import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
+import { AppColors, AppRadius, AppSpacing } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/', label: 'Home', icon: House, source: 'coach-tab-home' },
@@ -21,13 +21,13 @@ export default function AppTabs() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useAppTheme();
+  const colors = AppColors.dark;
   const unreadMessagesCount = useChatStore(
     (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.slot}>
         <Slot screenOptions={{ headerShown: false }} />
       </View>
@@ -54,7 +54,7 @@ export default function AppTabs() {
               hitSlop={4}
               style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
-                <Icon size={19} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.4} />
+                <Icon size={24} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
                 {tab.path === '/chat' && unreadMessagesCount > 0 ? (
                   <View style={[styles.badge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}</Text>
@@ -63,7 +63,7 @@ export default function AppTabs() {
               </View>
               <Text
                 numberOfLines={1}
-                style={[styles.tabLabel, { color: isActive ? colors.ink : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
+                style={[styles.tabLabel, { color: isActive ? colors.moss : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -82,13 +82,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    minHeight: 72,
+    minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 28,
     marginHorizontal: AppSpacing[4],
-    marginBottom: AppSpacing[2],
+    marginBottom: 0,
     paddingTop: AppSpacing[1],
     zIndex: 20,
     elevation: 20,
@@ -104,8 +104,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   iconPill: {
-    width: 40,
-    height: 26,
+    width: 44,
+    height: 30,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   tabLabel: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14,
     maxWidth: '100%',
     textAlign: 'center',
   },

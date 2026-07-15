@@ -302,8 +302,10 @@ export default function EsercizioDettaglioScreen() {
         onBack={handleBack}
       />
 
-      <Card style={[styles.exerciseHero, compactLayout && styles.exerciseHeroCompact]}>
-        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compactLayout ? 76 : 88} />
+      <Card style={styles.exerciseHero}>
+        <View style={[styles.exerciseMediaFrame, { backgroundColor: theme.backgroundSelected, borderColor: theme.border }]}>
+          <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compactLayout ? 112 : 128} />
+        </View>
         <View style={styles.exerciseHeroCopy}>
           <ThemedText type="subtitle" style={styles.exerciseTitle} numberOfLines={3} ellipsizeMode="tail">
             {exercise.name}
@@ -651,23 +653,26 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   exerciseHero: {
-    alignItems: 'center',
-    flexDirection: 'row',
     gap: Spacing.three,
     minWidth: 0,
   },
-  exerciseHeroCompact: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
+  exerciseMediaFrame: {
+    alignItems: 'center',
+    aspectRatio: 16 / 9,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
   },
   exerciseHeroCopy: {
-    flex: 1,
     gap: Spacing.two,
     minWidth: 0,
   },
   exerciseTitle: {
-    fontSize: 25,
-    lineHeight: 31,
+    fontSize: 29,
+    letterSpacing: 0,
+    lineHeight: 35,
     minWidth: 0,
   },
   badgeRow: {

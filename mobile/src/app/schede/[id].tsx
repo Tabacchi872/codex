@@ -321,7 +321,7 @@ export default function SchedaDettaglioScreen() {
               <View style={styles.heroCopy}>
                 <AppBadge
                   label={badgeLabel}
-                  tone={sessionStatus === 'completed' ? 'moss' : sessionStatus === 'todo' ? 'coral' : sessionStatus === 'skipped' ? 'amber' : 'rust'}
+                  tone={sessionStatus === 'completed' ? 'moss' : sessionStatus === 'todo' ? 'neutral' : sessionStatus === 'skipped' ? 'amber' : 'rust'}
                 />
                 <Text style={[styles.planTitle, { color: theme.text }]} numberOfLines={3} ellipsizeMode="tail">
                   {plan.name}
@@ -474,8 +474,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   detailHero: {
-    gap: Spacing.three,
-    padding: Spacing.three,
+    gap: 14,
+    padding: 22,
   },
   heroTop: {
     alignItems: 'center',
@@ -492,10 +492,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   planTitle: {
-    fontSize: 27,
+    fontSize: 29,
     fontWeight: '700',
-    letterSpacing: -0.45,
-    lineHeight: 33,
+    letterSpacing: 0,
+    lineHeight: 35,
     minWidth: 0,
   },
   clientName: {
@@ -507,9 +507,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    height: 84,
+    height: 72,
     justifyContent: 'center',
-    width: 84,
+    width: 78,
   },
   heroVisualStacked: {
     alignSelf: 'flex-start',
@@ -520,9 +520,9 @@ const styles = StyleSheet.create({
     width: 'auto',
   },
   exerciseCount: {
-    fontSize: 30,
+    fontSize: 27,
     fontWeight: '800',
-    lineHeight: 34,
+    lineHeight: 31,
   },
   exerciseCountLabel: {
     fontSize: 12,
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   heroMetaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.two,
+    gap: 10,
   },
   heroMetaItem: {
     flex: 1,
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   },
   heroProgressTrack: {
     borderRadius: Radius.pill,
-    height: 8,
+    height: 10,
     overflow: 'hidden',
   },
   heroProgressFill: {

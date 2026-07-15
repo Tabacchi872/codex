@@ -9,7 +9,7 @@ import { signOut } from '@/lib/auth-service';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
-import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
+import { AppColors, AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 
 const NAV_ITEMS = [
   { href: '/superadmin' as Href, label: 'Dashboard', icon: House, activePrefix: '/superadmin' },
@@ -44,6 +44,7 @@ type SuperadminShellProps = {
 export function SuperadminShell({ title, description, children, contentStyle }: SuperadminShellProps) {
   const pathname = usePathname();
   const { colors, cardShadow } = useAppTheme();
+  const tabColors = AppColors.dark;
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
   const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);
@@ -103,8 +104,8 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
         style={[
           styles.bottomBar,
           {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
+            backgroundColor: tabColors.surface,
+            borderColor: tabColors.border,
             paddingBottom: insets.bottom + AppSpacing[1],
           },
           cardShadow,
@@ -119,8 +120,8 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           const Icon = item.icon;
           return (
             <Pressable key={href} onPress={() => navigate(`superadmin-tab-${item.label.toLowerCase()}`, item.href)} hitSlop={4} style={styles.tabItem}>
-              <View style={[styles.tabIconPill, active && { backgroundColor: colors.mossSoft }]}>
-                <Icon size={18} color={active ? colors.moss : colors.inkFaint} strokeWidth={2.2} />
+              <View style={[styles.tabIconPill, active && { backgroundColor: tabColors.mossSoft, borderColor: tabColors.moss }]}>
+                <Icon size={23} color={active ? tabColors.moss : tabColors.inkFaint} strokeWidth={2.25} />
                 {isSupport && unreadCoachSupport > 0 ? (
                   <View style={[styles.supportBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
@@ -129,7 +130,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
               </View>
               <Text
                 numberOfLines={1}
-                style={[styles.tabLabel, { color: active ? colors.ink : colors.inkFaint, fontWeight: active ? '700' : '500' }]}>
+                style={[styles.tabLabel, { color: active ? tabColors.moss : tabColors.inkFaint, fontWeight: active ? '700' : '500' }]}>
                 {item.label}
               </Text>
             </Pressable>
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     borderRadius: 28,
     borderWidth: 1,
-    bottom: AppSpacing[2],
+    bottom: 0,
     flexDirection: 'row',
     left: AppSpacing[4],
     paddingHorizontal: AppSpacing[1],
@@ -208,15 +209,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 1,
   },
   tabIconPill: {
-    width: 40,
-    height: 26,
+    width: 44,
+    height: 30,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
   },
   tabLabel: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14,
     maxWidth: '100%',
     textAlign: 'center',
   },

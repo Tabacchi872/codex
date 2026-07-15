@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: AppFontSize.xs,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: 0,
   },
   heroTitle: {
-    fontSize: 34,
-    fontWeight: '900',
-    lineHeight: 39,
+    fontSize: 32,
+    fontWeight: '800',
+    lineHeight: 38,
   },
   heroSubtitle: {
     fontSize: AppFontSize.sm,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: AppFontSize.base,
-    fontWeight: '900',
+    fontWeight: '800',
   },
   actionGrid: {
     flexDirection: 'row',

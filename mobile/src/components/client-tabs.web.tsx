@@ -3,7 +3,7 @@ import { Apple, Dumbbell, House, Menu, MessageCircle, type LucideIcon } from 'lu
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { logClientNavPress } from '@/lib/client-navigation';
-import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
+import { AppColors, AppRadius, AppSpacing } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
@@ -33,10 +33,10 @@ const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = 
 export default function ClientTabs() {
   const pathname = usePathname();
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const colors = AppColors.dark;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.slot}>
         <Slot screenOptions={{ headerShown: false }} />
       </View>
@@ -54,12 +54,12 @@ export default function ClientTabs() {
               }}
               hitSlop={4}
               style={styles.tabItem}>
-              <View style={[styles.iconPill, isActive && { backgroundColor: colors.coralSoft }]}>
-                <Icon size={19} color={isActive ? colors.coral : colors.inkFaint} strokeWidth={2} />
+              <View style={[styles.iconPill, isActive && { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
+                <Icon size={24} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
               </View>
               <Text
                 numberOfLines={1}
-                style={[styles.tabLabel, { color: isActive ? colors.ink : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
+                style={[styles.tabLabel, { color: isActive ? colors.moss : colors.inkFaint, fontWeight: isActive ? '700' : '500' }]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    height: 66,
+    height: 76,
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -97,15 +97,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   iconPill: {
-    width: 40,
-    height: 26,
+    width: 44,
+    height: 30,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
   },
   tabLabel: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14,
     maxWidth: '100%',
     textAlign: 'center',
   },

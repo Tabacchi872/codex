@@ -130,12 +130,13 @@ function WorkoutRow({ plan, myPlans, onPress }: { plan: WorkoutPlan; myPlans: Wo
   const weekLabel = getSessionWeekLabel(myPlans, plan);
   const dayLabel = getSessionDayLabel(plan);
   const firstExercise = plan.exercises[0] ? resolve(plan.exercises[0].exerciseId) : null;
+  const thumbnailSize = 84;
 
   return (
     <AppPressableCard onPress={onPress} accessibilityLabel={`Apri allenamento ${plan.name}`} style={styles.card}>
       <View style={styles.cardRow}>
         {firstExercise ? (
-          <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={64} />
+          <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={thumbnailSize} />
         ) : (
           <View style={[styles.planPlaceholder, { backgroundColor: colors.mossSoft }]}>
             <Dumbbell size={26} color={colors.moss} />
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    padding: AppSpacing[3],
+    padding: 14,
   },
   cardRow: {
     alignItems: 'center',
@@ -230,9 +231,9 @@ const styles = StyleSheet.create({
   planPlaceholder: {
     alignItems: 'center',
     borderRadius: AppRadius.xl,
-    height: 64,
+    height: 84,
     justifyContent: 'center',
-    width: 64,
+    width: 84,
   },
   badgeRow: {
     alignItems: 'center',
@@ -247,13 +248,15 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   metaText: {
+    flex: 1,
     fontSize: AppFontSize.sm,
     fontWeight: '600',
+    minWidth: 0,
   },
   planName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 22,
+    lineHeight: 23,
     minWidth: 0,
   },
   loading: {

@@ -73,12 +73,13 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
   },
   cardLg: {
-    minHeight: 104,
+    minHeight: 88,
     justifyContent: 'center',
     gap: AppSpacing[1],
   },
   valueLg: {
-    fontSize: 28,
+    fontSize: 24,
+    lineHeight: 29,
   },
   label: {
     fontSize: 10.5,

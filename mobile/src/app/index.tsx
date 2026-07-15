@@ -14,8 +14,9 @@ import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
+import type { Client } from '@/types/client';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import { computeSubscriptionStatus, getCurrentSubscription } from '@/types/subscription';
+import { computeSubscriptionStatus, getCurrentSubscription, type ComputedSubscriptionStatus, type SubscriptionPackage } from '@/types/subscription';
 
 // Griglia a due colonne misurata via onLayout: logica condivisa in
 // hooks/use-two-column-grid.ts (fix BUG-020, vedi commento la').
@@ -32,7 +33,7 @@ export default function DashboardScreen() {
   const appointments = useAppointmentStore((s) => s.appointments);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
 
-  const statuses = clients.map((c) => computeSubscriptionStatus(getCurrentSubscription(subscriptions, c.id)));
+  const statuses = clients.map((client) => getDashboardClientStatus(client, getCurrentSubscription(subscriptions, client.id)));
   const attivi = statuses.filter((s) => s === 'active').length;
   const inScadenza = statuses.filter((s) => s === 'expiring').length;
   const scaduti = statuses.filter((s) => s === 'expired').length;
@@ -128,13 +129,6 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} hitSlop={4}>
-        <View style={[styles.primaryAction, { backgroundColor: colors.moss }]}>
-          <Plus size={20} color={colors.onMoss} />
-          <Text style={[styles.primaryActionLabel, { color: colors.onMoss }]}>Nuovo cliente</Text>
-        </View>
-      </Pressable>
-
       <View style={styles.dashboardColumns}>
         <View style={styles.column}>
           <AppSectionTitle>CLIENTI RECENTI</AppSectionTitle>
@@ -208,6 +202,13 @@ export default function DashboardScreen() {
         </View>
       </View>
 
+      <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} hitSlop={4}>
+        <View style={[styles.primaryAction, { backgroundColor: colors.moss }]}>
+          <Plus size={20} color={colors.onMoss} />
+          <Text style={[styles.primaryActionLabel, { color: colors.onMoss }]}>Nuovo cliente</Text>
+        </View>
+      </Pressable>
+
       <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
       <View style={styles.quickActions}>
         <QuickAction label="Nuovo appuntamento" style={gridItemStyle} onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
@@ -217,6 +218,13 @@ export default function DashboardScreen() {
       </View>
     </AppScreen>
   );
+}
+
+function getDashboardClientStatus(client: Client, subscription: SubscriptionPackage | null): ComputedSubscriptionStatus {
+  if (subscription) return computeSubscriptionStatus(subscription);
+  if (client.status === 'attivo') return 'active';
+  if (client.status === 'in_pausa') return 'expiring';
+  return 'expired';
 }
 
 function QuickAction({ label, style, onPress }: { label: string; style: ViewStyle; onPress: () => void }) {
@@ -244,7 +252,7 @@ const styles = StyleSheet.create({
     gap: AppSpacing[1],
     justifyContent: 'space-between',
     overflow: 'hidden',
-    padding: AppSpacing[5],
+    padding: AppSpacing[4],
   },
   heroCopy: {
     flex: 1,
@@ -270,10 +278,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: AppRadius.xxl,
     borderWidth: 1,
-    height: 96,
+    height: 84,
     justifyContent: 'center',
     overflow: 'hidden',
-    width: 96,
+    width: 84,
   },
   heroOrb: {
     borderRadius: 999,
@@ -290,7 +298,7 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
   },
   appointmentCard: {
-    minHeight: 104,
+    minHeight: 88,
     justifyContent: 'center',
     gap: 4,
   },
@@ -313,7 +321,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: AppSpacing[2],
     justifyContent: 'center',
-    minHeight: 54,
+    minHeight: 52,
     paddingHorizontal: AppSpacing[4],
   },
   primaryActionLabel: {
@@ -334,7 +342,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: AppSpacing[3],
-    minHeight: 58,
+    minHeight: 56,
     paddingVertical: AppSpacing[2],
   },
   clientText: {
@@ -368,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: AppSpacing[3],
-    minHeight: 58,
+    minHeight: 54,
     paddingVertical: AppSpacing[2],
   },
   agendaTime: {

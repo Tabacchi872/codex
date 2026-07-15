@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Play } from 'lucide-react-native';
+import { Dumbbell, Play } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -170,6 +170,9 @@ export function ExerciseThumbnail({
     );
   }
 
+  const placeholderLabel = catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.label : exercise.name.charAt(0).toUpperCase();
+  const placeholderForeground = catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.foregroundColor : theme.textSecondary;
+
   return (
     <View
       style={[
@@ -183,15 +186,20 @@ export function ExerciseThumbnail({
       {loadingRemote ? (
         <ActivityIndicator size="small" color={theme.textSecondary} />
       ) : (
-        <ThemedText
-          type="smallBold"
-          themeColor="textSecondary"
-          style={{
-            color: catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.foregroundColor : theme.textSecondary,
-            fontSize: size * 0.32,
-          }}>
-          {catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.label : exercise.name.charAt(0).toUpperCase()}
-        </ThemedText>
+        <View style={styles.placeholderContent}>
+          <Dumbbell size={Math.max(16, size * 0.3)} color={placeholderForeground} strokeWidth={2.1} />
+          <ThemedText
+            type="smallBold"
+            themeColor="textSecondary"
+            style={{
+              color: placeholderForeground,
+              fontSize: Math.max(10, size * 0.18),
+              lineHeight: Math.max(13, size * 0.22),
+            }}
+            numberOfLines={1}>
+            {placeholderLabel}
+          </ThemedText>
+        </View>
       )}
       {showUploadVideoBadge ? (
         <View style={styles.placeholderVideoBadge} pointerEvents="none">
@@ -227,5 +235,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  placeholderContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
   },
 });
