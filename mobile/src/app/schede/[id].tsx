@@ -1,7 +1,10 @@
+import { Image, type ImageProps } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { ArrowRight } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { ScreenBackground } from '@/components/screen-background';
 import { SupersetBlock } from '@/components/superset-block';
@@ -12,6 +15,7 @@ import { WorkoutExerciseRow } from '@/components/workout-exercise-row';
 import { WorkoutPlanForm } from '@/components/workout-plan-form';
 import { WorkoutSessionControls } from '@/components/workout-session-controls';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
@@ -25,9 +29,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
-import { SESSION_STATUS_LABEL, type WorkoutExercise, type WorkoutPlan, type WorkoutSessionStatus } from '@/types/training';
+import { SESSION_STATUS_LABEL, type Exercise, type WorkoutExercise, type WorkoutPlan, type WorkoutSessionStatus } from '@/types/training';
 
 const SESSION_STATUSES: WorkoutSessionStatus[] = ['todo', 'completed', 'skipped', 'cancelled'];
+const DEFAULT_WORKOUT_HERO = require('../../../assets/images/workouts/default-workout-hero.png');
 
 // Raggruppa gli esercizi consecutivi che condividono supersetGroupId in blocchi,
 // mantenendo l'ordine. Un esercizio senza gruppo resta un elemento standalone.
@@ -215,6 +220,19 @@ export default function SchedaDettaglioScreen() {
   const cardioExerciseIds = getCardioExerciseIds(plan);
   const cardioDone = cardioExerciseIds.length > 0 && cardioExerciseIds.every((weId) => (plan.completedExerciseIds ?? []).includes(weId));
   const exerciseProgress = getExerciseCompletionProgress(plan);
+  const primaryExercise = plan.exercises[0] ? (resolveExercise(plan.exercises[0].exerciseId) ?? null) : null;
+  const heroImageSource = getWorkoutHeroSource(plan, primaryExercise);
+  const isClientView = !isCoach;
+  const isInProgress = isClientView && Boolean(plan.startedAt) && sessionStatus !== 'completed';
+  const heroBadgeLabel =
+    sessionStatus === 'completed'
+      ? 'Completata'
+      : sessionStatus === 'skipped' || sessionStatus === 'cancelled'
+        ? 'Saltata'
+        : isInProgress
+          ? 'In corso'
+          : 'Workout da fare';
+  const heroCtaLabel = isInProgress ? 'Continua' : sessionStatus === 'completed' ? 'Completata' : 'Inizia';
 
   function toggleExerciseCompleted(workoutExerciseId: string) {
     const current = plan!.completedExerciseIds ?? [];
@@ -316,6 +334,65 @@ export default function SchedaDettaglioScreen() {
             </ThemedText>
           ) : null}
 
+          {isClientView ? (
+            <AppCard padded={false} style={[styles.clientDetailHero, stackHero && styles.clientDetailHeroCompact, { borderColor: theme.border }]}>
+              <Image
+                source={heroImageSource}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                contentPosition={stackHero ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
+              />
+              <WorkoutHeroOverlay />
+              <View style={styles.clientHeroContent}>
+                <View style={styles.clientHeroText}>
+                  <AppBadge
+                    label={heroBadgeLabel}
+                    tone={sessionStatus === 'completed' || isInProgress ? 'moss' : sessionStatus === 'skipped' || sessionStatus === 'cancelled' ? 'amber' : 'neutral'}
+                  />
+                  <Text style={styles.clientPlanTitle} numberOfLines={3} ellipsizeMode="tail">
+                    {plan.name}
+                  </Text>
+                  <View style={styles.clientHeroMetaGrid}>
+                    <ClientHeroMeta label="Data" value={`${formatDayMonth(plan.startDate)}${plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''}`} />
+                    <ClientHeroMeta label="Scadenza" value={formatDayMonth(plan.expiryDate)} />
+                    <ClientHeroMeta label="Completati" value={`${exerciseProgress.completed}/${exerciseProgress.total}`} />
+                  </View>
+                </View>
+                <View style={styles.clientExerciseBox}>
+                  <Text style={[styles.clientExerciseCount, { color: theme.primary }]}>{plan.exercises.length}</Text>
+                  <Text style={styles.clientExerciseLabel}>esercizi</Text>
+                </View>
+              </View>
+              <View style={styles.clientHeroBottom}>
+                <View style={styles.clientProgressRow}>
+                  <Text style={styles.clientProgressLabel}>Progresso</Text>
+                  <Text style={styles.clientProgressValue}>
+                    {exerciseProgress.completed}/{exerciseProgress.total}
+                  </Text>
+                </View>
+                <View style={styles.clientProgressTrack}>
+                  <View
+                    style={[
+                      styles.clientProgressFill,
+                      {
+                        backgroundColor: theme.primary,
+                        width: `${exerciseProgress.total > 0 ? Math.min(exerciseProgress.completed / exerciseProgress.total, 1) * 100 : 0}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Pressable
+                  onPress={!plan.startedAt && sessionStatus !== 'completed' ? handleStartSession : undefined}
+                  disabled={sessionStatus === 'completed'}
+                  accessibilityRole="button"
+                  accessibilityLabel={heroCtaLabel}
+                  style={({ pressed }) => [styles.clientHeroAction, { backgroundColor: theme.primary, opacity: sessionStatus === 'completed' ? 0.72 : pressed ? 0.9 : 1 }]}>
+                  <Text style={styles.clientHeroActionLabel}>{heroCtaLabel}</Text>
+                  <ArrowRight size={19} color="#11150D" strokeWidth={2.4} />
+                </Pressable>
+              </View>
+            </AppCard>
+          ) : (
           <AppCard style={styles.detailHero}>
             <View style={[styles.heroTop, stackHero && styles.heroTopStacked]}>
               <View style={styles.heroCopy}>
@@ -361,6 +438,7 @@ export default function SchedaDettaglioScreen() {
               </View>
             ) : null}
           </AppCard>
+          )}
 
           {isCoach && (
             <View style={styles.statusChipsRow}>
@@ -441,7 +519,7 @@ export default function SchedaDettaglioScreen() {
             );
           })}
 
-          {!isCoach && (
+          {!isCoach && (plan.startedAt || sessionStatus === 'completed') ? (
             <WorkoutSessionControls
               startedAt={plan.startedAt}
               isCompleted={sessionStatus === 'completed'}
@@ -449,7 +527,7 @@ export default function SchedaDettaglioScreen() {
               onStart={handleStartSession}
               onFinish={handleFinishSession}
             />
-          )}
+          ) : null}
         </>
       )}
     </ScrollView>
@@ -468,10 +546,200 @@ function HeroMeta({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ClientHeroMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.clientHeroMetaItem}>
+      <Text style={styles.clientHeroMetaLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text style={styles.clientHeroMetaValue} numberOfLines={1} ellipsizeMode="tail">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function WorkoutHeroOverlay() {
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <Svg width="100%" height="100%" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="detailLeftOverlay" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#050705" stopOpacity="0.97" />
+            <Stop offset="46%" stopColor="#050705" stopOpacity="0.8" />
+            <Stop offset="74%" stopColor="#050705" stopOpacity="0.28" />
+            <Stop offset="100%" stopColor="#050705" stopOpacity="0.06" />
+          </LinearGradient>
+          <LinearGradient id="detailBottomOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#050705" stopOpacity="0" />
+            <Stop offset="56%" stopColor="#050705" stopOpacity="0.64" />
+            <Stop offset="100%" stopColor="#050705" stopOpacity="0.94" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#detailLeftOverlay)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#detailBottomOverlay)" />
+      </Svg>
+    </View>
+  );
+}
+
+function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Exercise | null): ImageProps['source'] {
+  const planImageUri = getOptionalImageUri(plan);
+  if (planImageUri) return { uri: planImageUri };
+
+  const exerciseImageUri = getOptionalImageUri(exercise);
+  if (exerciseImageUri) return { uri: exerciseImageUri };
+
+  if (exercise) {
+    const catalogThumbnail = resolveExerciseCatalogThumbnail(exercise);
+    if (catalogThumbnail.kind === 'image') return catalogThumbnail.source;
+  }
+
+  return DEFAULT_WORKOUT_HERO;
+}
+
+function getOptionalImageUri(value: unknown) {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const uri = record.imageUrl ?? record.coverImageUrl ?? record.heroImageUrl ?? record.thumbnailUrl;
+  return typeof uri === 'string' && uri.trim() ? uri.trim() : null;
+}
+
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
+  },
+  clientDetailHero: {
+    borderRadius: 24,
+    justifyContent: 'space-between',
+    minHeight: 344,
+    overflow: 'hidden',
+    padding: 18,
+    position: 'relative',
+    width: '100%',
+  },
+  clientDetailHeroCompact: {
+    borderRadius: 22,
+    minHeight: 318,
+    padding: 16,
+  },
+  clientHeroContent: {
+    alignItems: 'flex-start',
+    flex: 1,
+    flexDirection: 'row',
+    gap: Spacing.two,
+    justifyContent: 'space-between',
+    minWidth: 0,
+    position: 'relative',
+    zIndex: 1,
+  },
+  clientHeroText: {
+    flexShrink: 1,
+    gap: Spacing.two,
+    justifyContent: 'center',
+    maxWidth: '62%',
+    minWidth: 0,
+    paddingTop: Spacing.two,
+  },
+  clientPlanTitle: {
+    color: '#F7F6EE',
+    fontSize: 30,
+    fontWeight: '800',
+    lineHeight: 36,
+    minWidth: 0,
+  },
+  clientHeroMetaGrid: {
+    gap: 7,
+    marginTop: 2,
+    minWidth: 0,
+  },
+  clientHeroMetaItem: {
+    minWidth: 0,
+  },
+  clientHeroMetaLabel: {
+    color: '#BFC6B7',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 17,
+  },
+  clientHeroMetaValue: {
+    color: '#F1F3EA',
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
+    minWidth: 0,
+  },
+  clientExerciseBox: {
+    alignItems: 'center',
+    backgroundColor: '#050705B8',
+    borderColor: '#FFFFFF24',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 76,
+    minWidth: 78,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+    zIndex: 1,
+  },
+  clientExerciseCount: {
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 32,
+  },
+  clientExerciseLabel: {
+    color: '#E7E9DF',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 15,
+  },
+  clientHeroBottom: {
+    gap: Spacing.two,
+    position: 'relative',
+    zIndex: 1,
+  },
+  clientProgressRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  clientProgressLabel: {
+    color: '#BFC6B7',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  clientProgressValue: {
+    color: '#F1F3EA',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  clientProgressTrack: {
+    backgroundColor: '#FFFFFF24',
+    borderRadius: Radius.pill,
+    height: 9,
+    overflow: 'hidden',
+  },
+  clientProgressFill: {
+    borderRadius: Radius.pill,
+    height: '100%',
+  },
+  clientHeroAction: {
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    flexDirection: 'row',
+    height: 54,
+    justifyContent: 'center',
+    marginTop: Spacing.one,
+    paddingHorizontal: Spacing.three,
+  },
+  clientHeroActionLabel: {
+    color: '#11150D',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    lineHeight: 20,
+    textAlign: 'center',
   },
   detailHero: {
     gap: 14,
