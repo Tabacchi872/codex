@@ -69,15 +69,21 @@ export function SoundSettings() {
       <AppCard padded={false}>
         {SOUND_OPTIONS.map((sound, index) => (
           <View key={sound}>
-            <Pressable onPress={() => updateSoundSettings({ selectedSound: sound })} style={styles.soundOptionRow}>
-              <View style={[styles.radio, { borderColor: colors.moss }]}>
-                {settings.selectedSound === sound ? <View style={[styles.radioDot, { backgroundColor: colors.moss }]} /> : null}
-              </View>
-              <Text style={[styles.soundOptionLabel, { color: colors.ink }]}>{SOUND_LABELS[sound]}</Text>
-              <Pressable onPress={() => playPreview(sound)} hitSlop={8}>
+            <View style={styles.soundOptionRow}>
+              <Pressable
+                onPress={() => updateSoundSettings({ selectedSound: sound })}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: settings.selectedSound === sound }}
+                style={styles.soundOptionMain}>
+                <View style={[styles.radio, { borderColor: colors.moss }]}>
+                  {settings.selectedSound === sound ? <View style={[styles.radioDot, { backgroundColor: colors.moss }]} /> : null}
+                </View>
+                <Text style={[styles.soundOptionLabel, { color: colors.ink }]}>{SOUND_LABELS[sound]}</Text>
+              </Pressable>
+              <Pressable onPress={() => playPreview(sound)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Prova ${SOUND_LABELS[sound]}`}>
                 <Text style={[styles.previewLink, { color: colors.moss }]}>Prova</Text>
               </Pressable>
-            </Pressable>
+            </View>
             {index < SOUND_OPTIONS.length - 1 ? <Divider /> : null}
           </View>
         ))}
@@ -192,11 +198,19 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   soundOptionRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: AppSpacing[2],
-    paddingVertical: AppSpacing[3],
+    minHeight: 54,
     paddingHorizontal: AppSpacing[3],
+  },
+  soundOptionMain: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    minHeight: 54,
+    minWidth: 0,
   },
   radio: {
     width: 18,

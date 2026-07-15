@@ -1,12 +1,14 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { Calendar, ChevronRight, Dumbbell } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppBadge, AppButton, AppCard } from '@/components/ui';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
+import { AppBadge, AppButton, AppPressableCard } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
@@ -14,7 +16,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
-import type { WorkoutSessionStatus } from '@/types/training';
+import type { WorkoutPlan, WorkoutSessionStatus } from '@/types/training';
 
 type Tab = 'todo' | 'past';
 
@@ -120,31 +122,59 @@ export default function SchedeListScreen() {
         }
         renderItem={({ item }) => {
           const client = getClientById(clients, item.clientId);
-          const status: WorkoutSessionStatus = item.sessionStatus ?? 'todo';
           return (
-            <AppCard onPress={() => router.push(`/schede/${item.id}`)} style={styles.row}>
-              <View style={styles.rowLeft}>
-                <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-                  {formatWeekday(item.startDate)} · {formatDayMonth(item.startDate)}
-                </Text>
-                <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.smallText, { color: colors.inkSoft }]} numberOfLines={1}>
-                  {client ? clientFullName(client) : 'Cliente non trovato'} · {item.exercises.length} esercizi
-                </Text>
-                {status !== 'todo' ? (
-                  <View style={styles.statusPillWrap}>
-                    <AppBadge label={status === 'skipped' ? 'Saltato' : 'Completato'} tone={status === 'skipped' ? 'rust' : 'moss'} />
-                  </View>
-                ) : null}
-              </View>
-              <ChevronRight size={20} color={colors.inkFaint} />
-            </AppCard>
+            <CoachWorkoutRow
+              plan={item}
+              clientName={client ? clientFullName(client) : 'Cliente non trovato'}
+              onPress={() => router.push(`/schede/${item.id}`)}
+            />
           );
         }}
       />
     </View>
+  );
+}
+
+
+function CoachWorkoutRow({ plan, clientName, onPress }: { plan: WorkoutPlan; clientName: string; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  const { resolve } = useExerciseResolver();
+  const status: WorkoutSessionStatus = plan.sessionStatus ?? 'todo';
+  const firstExercise = plan.exercises[0] ? resolve(plan.exercises[0].exerciseId) : null;
+
+  return (
+    <AppPressableCard onPress={onPress} accessibilityLabel={`Apri scheda ${plan.name}`} style={styles.row}>
+      {firstExercise ? (
+        <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={60} />
+      ) : (
+        <View style={[styles.rowPlaceholder, { backgroundColor: colors.mossSoft }]}>
+          <Dumbbell size={24} color={colors.moss} />
+        </View>
+      )}
+      <View style={styles.rowLeft}>
+        <View style={styles.rowBadgeLine}>
+          <View style={styles.rowMetaInline}>
+            <Calendar size={13} color={colors.inkSoft} />
+            <Text style={[styles.smallText, { color: colors.inkSoft }]} numberOfLines={1}>
+              {formatWeekday(plan.startDate)} · {formatDayMonth(plan.startDate)}
+            </Text>
+          </View>
+          {status !== 'todo' ? (
+            <AppBadge
+              label={status === 'completed' ? 'Completato' : status === 'skipped' ? 'Saltato' : 'Annullato'}
+              tone={status === 'completed' ? 'moss' : status === 'skipped' ? 'amber' : 'rust'}
+            />
+          ) : null}
+        </View>
+        <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={2} ellipsizeMode="tail">
+          {plan.name}
+        </Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]} numberOfLines={1}>
+          {clientName} · {plan.exercises.length} esercizi
+        </Text>
+      </View>
+      <ChevronRight size={20} color={colors.inkFaint} />
+    </AppPressableCard>
   );
 }
 
@@ -205,25 +235,43 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[3],
+    padding: AppSpacing[3],
+  },
+  rowPlaceholder: {
+    alignItems: 'center',
+    borderRadius: AppRadius.xl,
+    height: 60,
+    justifyContent: 'center',
+    width: 60,
   },
   rowLeft: {
     gap: 2,
     flex: 1,
     minWidth: 0,
-    marginRight: AppSpacing[2],
   },
   planName: {
     fontSize: 17,
     fontWeight: '700',
+    lineHeight: 22,
+  },
+  rowBadgeLine: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[1],
+    justifyContent: 'space-between',
+  },
+  rowMetaInline: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    minWidth: 0,
   },
   smallText: {
     fontSize: AppFontSize.sm,
-  },
-  statusPillWrap: {
-    marginTop: 2,
   },
   loading: {
     flex: 1,

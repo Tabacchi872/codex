@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from './card';
 import { ThemedText } from './themed-text';
+import { AppButton } from './ui';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -51,11 +52,7 @@ export function ExerciseAttachments({ clientId, workoutExerciseId }: { clientId:
         </View>
       )}
 
-      <Pressable onPress={handleUpload}>
-        <View style={[styles.uploadButton, { borderColor: theme.border }]}>
-          <ThemedText type="smallBold">Carica allegato +</ThemedText>
-        </View>
-      </Pressable>
+      <AppButton label="Carica allegato" onPress={handleUpload} variant="outline" size="sm" fullWidth />
     </Card>
   );
 }
@@ -90,12 +87,5 @@ const styles = StyleSheet.create({
   removeBadgeText: {
     fontSize: 11,
     lineHeight: 13,
-  },
-  uploadButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderStyle: 'dashed',
-    paddingVertical: Spacing.two,
-    alignItems: 'center',
   },
 });

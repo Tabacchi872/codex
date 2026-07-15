@@ -12,7 +12,7 @@ Il SQL eseguibile e in `docs/SUPABASE_SCHEMA.sql`. Questa sezione e il file SQL 
 
 ## Tabelle ufficiali
 
-- `profiles`: `id uuid primary key`, `role text check in ('superadmin','coach','cliente')`, `full_name`, `email`, `phone`, `avatar_url`, `is_active`, `created_at`, `updated_at`.
+- `profiles`: `id uuid primary key`, `role text check in ('superadmin','coach','cliente')`, `full_name`, `email`, `phone`, `avatar_url`, `avatar_preset` (`male`/`female`/`neutral`, default `neutral`), `is_active`, `created_at`, `updated_at`.
 - `coach_profiles`: `id uuid primary key`, `user_id references profiles(id)`, `business_name`, `bio`, `phone`, `billing_status`, `created_at`, `updated_at`.
 - `billing_profiles`: `id uuid primary key`, `coach_id references profiles(id)`, dati fiscali/intestazione fattura, PEC, codice SDI, email fatturazione, `created_at`, `updated_at`.
 - `client_profiles`: `id uuid primary key`, `user_id references profiles(id)`, `goal`, `height`, `weight`, `notes`, `created_at`, `updated_at`.

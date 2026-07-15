@@ -2,23 +2,19 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
 
-import { Radius } from '@/constants/theme';
-import type { ThemeColor } from '@/constants/theme';
+import { Radius, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-// Badge piccolo e leggibile (gruppo muscolare, stato video, ecc.), mai decorativo:
-// ogni pill comunica un dato reale (categoria o stato), non un colore a caso.
 export function Pill({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'positive' | ThemeColor }) {
   const theme = useTheme();
 
-  const color =
-    tone === 'positive' ? theme.statusActive : tone === 'neutral' ? theme.textSecondary : theme[tone as ThemeColor];
-  const backgroundColor =
-    tone === 'positive' ? theme.backgroundSelected : tone === 'primary' ? theme.softRed : theme.background;
+  const isPositive = tone === 'positive' || tone === 'primary' || tone === 'statusActive';
+  const color = isPositive ? theme.statusActive : tone === 'neutral' ? theme.textSecondary : theme[tone as ThemeColor];
+  const backgroundColor = isPositive ? theme.backgroundSelected : theme.background;
 
   return (
-    <View style={[styles.pill, { backgroundColor, borderColor: theme.border }]}>
-      <ThemedText type="small" style={[styles.label, { color }]}>
+    <View style={[styles.pill, { backgroundColor, borderColor: isPositive ? color : theme.border }]}>
+      <ThemedText type="small" style={[styles.label, { color }]} numberOfLines={1}>
         {label}
       </ThemedText>
     </View>
@@ -30,8 +26,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   label: {
     fontSize: 12,

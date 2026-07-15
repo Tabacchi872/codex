@@ -1,6 +1,6 @@
 import { useAudioPlayer } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Vibration, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native';
 
 import { Card } from './card';
 import { ThemedText } from './themed-text';
@@ -27,6 +27,8 @@ function formatSeconds(totalSeconds: number) {
 // ExerciseSetLogger) senza duplicare la logica di countdown in due posti.
 export function RestTimer({ restSeconds, autoStartToken }: { restSeconds: number; autoStartToken?: number }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 360;
   const soundSettings = useTrainingStore((s) => s.soundSettings);
   const [remaining, setRemaining] = useState(restSeconds);
   const [isRunning, setIsRunning] = useState(false);
@@ -129,8 +131,8 @@ export function RestTimer({ restSeconds, autoStartToken }: { restSeconds: number
         {formatSeconds(remaining)}
       </ThemedText>
 
-      <View style={styles.buttonsRow}>
-        <Pressable onPress={handleStart} disabled={isRunning} style={styles.primaryButtonWrap}>
+      <View style={[styles.buttonsRow, compact && styles.buttonsRowCompact]}>
+        <Pressable onPress={handleStart} disabled={isRunning} style={[styles.primaryButtonWrap, compact && styles.primaryButtonWrapCompact]}>
           <View style={[styles.primaryButton, { backgroundColor: theme.primary }, isRunning && styles.buttonDisabled]}>
             <ThemedText type="smallBold" themeColor="onPrimary">
               {isRunning ? 'In corso…' : 'Start'}
@@ -181,8 +183,8 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   countdown: {
-    fontSize: 56,
-    lineHeight: 62,
+    fontSize: 48,
+    lineHeight: 54,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -191,8 +193,15 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     alignSelf: 'stretch',
   },
+  buttonsRowCompact: {
+    flexWrap: 'wrap',
+  },
   primaryButtonWrap: {
     flex: 1.4,
+  },
+  primaryButtonWrapCompact: {
+    flexBasis: '100%',
+    flexGrow: 1,
   },
   secondaryButtonWrap: {
     flex: 1,

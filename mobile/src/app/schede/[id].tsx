@@ -1,16 +1,17 @@
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenBackground } from '@/components/screen-background';
 import { SupersetBlock } from '@/components/superset-block';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppBadge, AppButton, AppCard, BackHeader } from '@/components/ui';
 import { WorkoutExerciseRow } from '@/components/workout-exercise-row';
 import { WorkoutPlanForm } from '@/components/workout-plan-form';
 import { WorkoutSessionControls } from '@/components/workout-session-controls';
-import { Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
@@ -47,6 +48,8 @@ export default function SchedaDettaglioScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const stackHero = width < 390;
   const theme = useTheme();
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const updateWorkoutPlanLocal = useTrainingStore((s) => s.updateWorkoutPlan);
@@ -204,8 +207,9 @@ export default function SchedaDettaglioScreen() {
   }
 
   function setSessionStatus(status: WorkoutSessionStatus) {
-    updateWorkoutPlanLocal({ ...plan!, sessionStatus: status });
-    syncSessionProgress(plan!.id, { sessionStatus: status });
+    const completedAt = status === 'completed' ? (plan!.completedAt ?? new Date().toISOString()) : undefined;
+    updateWorkoutPlanLocal({ ...plan!, sessionStatus: status, completedAt: completedAt ?? plan!.completedAt });
+    syncSessionProgress(plan!.id, completedAt ? { sessionStatus: status, completedAt } : { sessionStatus: status });
   }
 
   const cardioExerciseIds = getCardioExerciseIds(plan);
@@ -259,14 +263,21 @@ export default function SchedaDettaglioScreen() {
   const badgeLabel =
     sessionStatus === 'completed' ? 'Workout completato' : sessionStatus === 'skipped' ? 'Workout saltato' : 'Workout da fare';
 
+  function openExerciseDetail(exerciseId: string) {
+    router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: plan!.id } });
+  }
+
   return (
     <ScreenBackground>
     <ScrollView
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three, paddingBottom: Spacing.six },
+        {
+          paddingTop: Platform.OS === 'web' ? Spacing.four : insets.top + Spacing.three,
+          paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
+        },
       ]}>
-      <Stack.Screen options={{ title: plan.name }} />
+      <BackHeader title="Dettaglio scheda" fallbackHref={(isCoach ? '/schede' : '/workout') as Href} />
 
       {mode === 'edit' && isCoach ? (
         <>
@@ -299,17 +310,57 @@ export default function SchedaDettaglioScreen() {
         </>
       ) : (
         <>
-          <View style={[styles.statusBadge, { backgroundColor: theme.primary }]}>
-            <ThemedText type="smallBold" themeColor="onPrimary">
-              {badgeLabel}
-            </ThemedText>
-          </View>
-
           {progressError ? (
             <ThemedText type="small" themeColor="statusExpired">
               {progressError}
             </ThemedText>
           ) : null}
+
+          <AppCard style={styles.detailHero}>
+            <View style={[styles.heroTop, stackHero && styles.heroTopStacked]}>
+              <View style={styles.heroCopy}>
+                <AppBadge
+                  label={badgeLabel}
+                  tone={sessionStatus === 'completed' ? 'moss' : sessionStatus === 'todo' ? 'coral' : sessionStatus === 'skipped' ? 'amber' : 'rust'}
+                />
+                <Text style={[styles.planTitle, { color: theme.text }]} numberOfLines={3} ellipsizeMode="tail">
+                  {plan.name}
+                </Text>
+                {isCoach ? (
+                  <Text style={[styles.clientName, { color: theme.textSecondary }]} numberOfLines={1}>
+                    {client ? clientFullName(client) : 'Cliente non trovato'}
+                  </Text>
+                ) : null}
+              </View>
+              <View
+                style={[
+                  styles.heroVisual,
+                  stackHero && styles.heroVisualStacked,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundSelected },
+                ]}>
+                <Text style={[styles.exerciseCount, { color: theme.primary }]}>{plan.exercises.length}</Text>
+                <Text style={[styles.exerciseCountLabel, { color: theme.textSecondary }]}>esercizi</Text>
+              </View>
+            </View>
+            <View style={styles.heroMetaGrid}>
+              <HeroMeta label="Data" value={`${formatDayMonth(plan.startDate)}${plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''}`} />
+              <HeroMeta label="Scadenza" value={formatDayMonth(plan.expiryDate)} />
+              {!isCoach ? <HeroMeta label="Completati" value={`${exerciseProgress.completed}/${exerciseProgress.total}`} /> : null}
+            </View>
+            {!isCoach ? (
+              <View style={[styles.heroProgressTrack, { backgroundColor: theme.background }]}>
+                <View
+                  style={[
+                    styles.heroProgressFill,
+                    {
+                      backgroundColor: theme.primary,
+                      width: `${exerciseProgress.total > 0 ? Math.min(exerciseProgress.completed / exerciseProgress.total, 1) * 100 : 0}%`,
+                    },
+                  ]}
+                />
+              </View>
+            ) : null}
+          </AppCard>
 
           {isCoach && (
             <View style={styles.statusChipsRow}>
@@ -332,37 +383,16 @@ export default function SchedaDettaglioScreen() {
             </View>
           )}
 
-          {!isCoach && (
-            cardioExerciseIds.length > 0 ? (
-              <Pressable onPress={toggleCardioDone}>
-                <View style={[styles.cardioButton, { backgroundColor: theme.primary }]}>
-                  <ThemedText type="smallBold" themeColor="onPrimary">
-                    {cardioDone ? '✓ Cardio completato' : '❤️ Cardio da fare'}
-                  </ThemedText>
-                </View>
-              </Pressable>
-            ) : (
-              <View style={[styles.cardioButton, styles.cardioButtonEmpty, { borderColor: theme.border }]}>
-                <ThemedText type="smallBold" themeColor="disabled">
-                  Nessun cardio assegnato
-                </ThemedText>
-              </View>
-            )
-          )}
+          {!isCoach && cardioExerciseIds.length > 0 ? (
+            <AppButton
+              label={cardioDone ? 'Cardio completato' : 'Cardio da fare'}
+              onPress={toggleCardioDone}
+              variant={cardioDone ? 'outline' : 'secondary'}
+              fullWidth
+            />
+          ) : null}
 
-          <View style={styles.metaRow}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatDayMonth(plan.startDate)}
-              {plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''} · {client ? clientFullName(client) : 'Cliente non trovato'} ·{' '}
-              {plan.exercises.length} esercizi · Scadenza {plan.expiryDate}
-            </ThemedText>
-          </View>
-
-          <Pressable onPress={() => setMode('edit')} disabled={!isCoach} style={!isCoach && styles.hidden}>
-            <View style={[styles.editButton, { borderColor: theme.border }]}>
-              <ThemedText type="smallBold">Modifica scheda</ThemedText>
-            </View>
-          </Pressable>
+          {isCoach ? <AppButton label="Modifica scheda" onPress={() => setMode('edit')} variant="outline" fullWidth /> : null}
 
           <View style={styles.exercisesLabelRow}>
             <ThemedText type="smallBold">Esercizi</ThemedText>
@@ -387,7 +417,7 @@ export default function SchedaDettaglioScreen() {
                         exercise={exercise}
                         workoutExercise={we}
                         compact
-                        onPress={() => router.push(isCoach ? `/esercizi/${exercise.id}` : `/esercizi/${exercise.id}?planId=${plan.id}`)}
+                        onPress={() => openExerciseDetail(exercise.id)}
                         completed={!isCoach ? (plan.completedExerciseIds ?? []).includes(we.id) : undefined}
                         onToggleComplete={!isCoach ? () => toggleExerciseCompleted(we.id) : undefined}
                       />
@@ -404,7 +434,7 @@ export default function SchedaDettaglioScreen() {
                 key={we.id}
                 exercise={exercise}
                 workoutExercise={we}
-                onPress={() => router.push(`/esercizi/${exercise.id}`)}
+                onPress={() => openExerciseDetail(exercise.id)}
                 completed={!isCoach ? (plan.completedExerciseIds ?? []).includes(we.id) : undefined}
                 onToggleComplete={!isCoach ? () => toggleExerciseCompleted(we.id) : undefined}
               />
@@ -427,75 +457,140 @@ export default function SchedaDettaglioScreen() {
   );
 }
 
+function HeroMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.heroMetaItem}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+      <ThemedText type="smallBold">{value}</ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
   },
-  statusBadge: {
+  detailHero: {
+    gap: Spacing.three,
+    padding: Spacing.three,
+  },
+  heroTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.three,
+  },
+  heroTopStacked: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+  },
+  heroCopy: {
+    flex: 1,
+    gap: Spacing.two,
+    minWidth: 0,
+  },
+  planTitle: {
+    fontSize: 27,
+    fontWeight: '700',
+    letterSpacing: -0.45,
+    lineHeight: 33,
+    minWidth: 0,
+  },
+  clientName: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 19,
+  },
+  heroVisual: {
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    height: 84,
+    justifyContent: 'center',
+    width: 84,
+  },
+  heroVisualStacked: {
     alignSelf: 'flex-start',
-    borderRadius: Radius.pill,
+    flexDirection: 'row',
+    gap: 7,
+    height: 48,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    width: 'auto',
+  },
+  exerciseCount: {
+    fontSize: 30,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  exerciseCountLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  heroMetaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  heroMetaItem: {
+    flex: 1,
+    minWidth: 92,
+  },
+  heroProgressTrack: {
+    borderRadius: Radius.pill,
+    height: 8,
+    overflow: 'hidden',
+  },
+  heroProgressFill: {
+    borderRadius: Radius.pill,
+    height: '100%',
   },
   statusChipsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   statusChip: {
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
+    minHeight: 38,
     paddingHorizontal: Spacing.three,
-    paddingVertical: 7,
+    paddingVertical: 8,
   },
   statusChipActiveText: {
     fontWeight: '700',
   },
-  metaRow: {
-    marginTop: -Spacing.one,
-  },
-  editButton: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.two,
-    alignItems: 'center',
-  },
   exercisesLabelRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: Spacing.two,
-  },
-  cardioButton: {
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-  },
-  cardioButtonEmpty: {
-    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: Spacing.one,
   },
   editFooter: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
     justifyContent: 'space-between',
     marginTop: Spacing.two,
   },
   savingRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: Spacing.two,
   },
   retryButton: {
     borderRadius: Radius.md,
     borderWidth: 1.5,
+    marginTop: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
-    marginTop: Spacing.two,
   },
   notFound: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
     gap: Spacing.two,
+    justifyContent: 'center',
   },
   hidden: {
     display: 'none',

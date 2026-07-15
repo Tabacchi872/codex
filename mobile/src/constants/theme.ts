@@ -1,50 +1,50 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Legacy-compatible semantic tokens.
+ *
+ * A number of older screens still consume `useTheme()`/`Colors`, while the
+ * redesigned screens consume `useAppTheme()`/`AppColors`.  Keeping two
+ * unrelated palettes was the main reason workout and exercise screens looked
+ * like a different app (red accent, grey cards and oversized typography).
+ * These tokens now mirror the FitCoach Pro design system while preserving the
+ * old property names until every screen has migrated.
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
-// Sistema visivo "product": sfondo grigio molto chiaro, card bianche sollevate,
-// UN SOLO accento (rosso profondo, palette fornita dall'utente su riferimento
-// visivo di app fitness professionali — vedi docs/DECISIONS.md per la sostituzione
-// del precedente accento verde). `statusActive` è volutamente un verde indipendente
-// dal primary: ora che il primary è rosso, "stato positivo/attivo" non può più
-// coincidere con l'accento del brand senza creare ambiguità con azioni/allerta.
 export const Colors = {
   light: {
-    text: '#111111',
-    background: '#F7F7F8',
+    text: '#111820',
+    background: '#F5F7F9',
     backgroundElement: '#FFFFFF',
-    backgroundSelected: '#F9E3E7',
-    textSecondary: '#707782',
-    border: '#ECEEF2',
-    primary: '#C90018',
-    onPrimary: '#FFFFFF',
-    softRed: '#F9E3E7',
-    dangerSoft: '#FF6666',
-    statusActive: '#15803D',
-    statusWarning: '#B45309',
-    statusExpired: '#C4291C',
-    disabled: '#9BA0A6',
+    backgroundSelected: '#E7F8DB',
+    textSecondary: '#68727C',
+    border: '#DFE5E8',
+    primary: '#63D90C',
+    onPrimary: '#07110B',
+    softRed: '#E7F8DB',
+    dangerSoft: '#FFE1E5',
+    statusActive: '#3EBE66',
+    statusWarning: '#D88900',
+    statusExpired: '#D93652',
+    disabled: '#9AA3AB',
   },
   dark: {
-    text: '#F5F5F6',
-    background: '#121214',
-    backgroundElement: '#1D1D20',
-    backgroundSelected: '#3A1620',
-    textSecondary: '#9A9FA6',
-    border: '#2C2C30',
-    primary: '#E43A4E',
-    onPrimary: '#FFFFFF',
-    softRed: '#3A1620',
-    dangerSoft: '#5C1A22',
-    statusActive: '#34D399',
-    statusWarning: '#FBBF24',
-    statusExpired: '#F87171',
-    disabled: '#5B6167',
+    text: '#F7F9FA',
+    background: '#05090D',
+    backgroundElement: '#0D141B',
+    backgroundSelected: '#1B3519',
+    textSecondary: '#9AA4AE',
+    border: '#24313A',
+    primary: '#7BEA18',
+    onPrimary: '#07110B',
+    softRed: '#1B3519',
+    dangerSoft: '#3B1820',
+    statusActive: '#7BEA18',
+    statusWarning: '#F4A300',
+    statusExpired: '#FF607A',
+    disabled: '#66717A',
   },
 } as const;
 
@@ -52,19 +52,15 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'sans-serif',
     serif: 'serif',
-    rounded: 'normal',
+    rounded: 'sans-serif',
     mono: 'monospace',
   },
   web: {
@@ -75,39 +71,35 @@ export const Fonts = Platform.select({
   },
 });
 
+// 4/8 based scale retained for existing screens, with narrower mobile gutters.
 export const Spacing = {
   half: 2,
   one: 4,
   two: 8,
   three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+  four: 20,
+  five: 28,
+  six: 48,
 } as const;
 
-// Radius unico per le card (16) e per elementi in evidenza (20), come da sistema visivo richiesto.
 export const Radius = {
-  sm: 10,
-  md: 16,
-  lg: 20,
+  sm: 12,
+  md: 20,
+  lg: 24,
   pill: 999,
 } as const;
 
-// Ombra leggera per le card (mai decorativa/pesante). `elevation` è l'equivalente Android.
 export const CardShadow = Platform.select({
-  web: { boxShadow: '0 1px 2px rgba(16, 20, 24, 0.04), 0 4px 12px rgba(16, 20, 24, 0.06)' },
+  web: { boxShadow: '0 1px 2px rgba(0,0,0,0.18), 0 10px 24px -18px rgba(0,0,0,0.55)' },
   default: {
-    shadowColor: '#0B0D10',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
     elevation: 2,
   },
 }) as object;
 
-// Altezza della tab bar fissa nella preview web (vedi app-tabs.web.tsx): serve anche
-// come inset per il contenuto scrollabile, così nessuna schermata resta coperta.
 export const WebTabBarHeight = 64;
-
 export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: WebTabBarHeight }) ?? 0;
 export const MaxContentWidth = 800;

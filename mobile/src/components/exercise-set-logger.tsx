@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Card } from './card';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
+import { AppButton } from './ui';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -40,6 +41,8 @@ export function ExerciseSetLogger({
   onRequestRest: () => void;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 350;
   const addProgressEntry = useTrainingStore((s) => s.addProgressEntry);
   const [rows, setRows] = useState<SetRow[]>(() => Array.from({ length: Math.max(plannedSets, 1) }, () => ({ weight: '', reps: '' })));
   const [notes, setNotes] = useState('');
@@ -100,7 +103,7 @@ export function ExerciseSetLogger({
           <ThemedText type="small" themeColor="textSecondary" style={styles.setLabel}>
             Serie {index + 1}
           </ThemedText>
-          <View style={styles.setInputsRow}>
+          <View style={[styles.setInputsRow, compact && styles.setInputsStack]}>
             <ThemedTextInput
               style={styles.setInput}
               placeholder="Peso (kg)"
@@ -136,13 +139,7 @@ export function ExerciseSetLogger({
         style={styles.notesInput}
       />
 
-      <Pressable onPress={handleSave}>
-        <View style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            {saved ? 'Serie salvate ✓' : 'Salva serie'}
-          </ThemedText>
-        </View>
-      </Pressable>
+      <AppButton label={saved ? 'Serie salvate ✓' : 'Salva serie'} onPress={handleSave} fullWidth />
     </Card>
   );
 }
@@ -185,13 +182,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  setInputsStack: {
+    flexDirection: 'column',
+  },
   notesInput: {
     minHeight: 60,
     textAlignVertical: 'top',
-  },
-  saveButton: {
-    borderRadius: Radius.sm,
-    paddingVertical: Spacing.two,
-    alignItems: 'center',
   },
 });

@@ -1,7 +1,7 @@
 import Svg, { Circle } from 'react-native-svg';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppFontSize, useAppTheme } from '@/theme';
+import { useAppTheme } from '@/theme';
 
 type AppRingProgressProps = {
   value: number;
@@ -21,7 +21,7 @@ export function AppRingProgress({ value, max, label, size = 160, strokeWidth = 1
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const safeMax = max > 0 ? max : 1;
-  const pct = Math.max(0.03, Math.min(1, value / safeMax));
+  const pct = value <= 0 ? 0 : Math.max(0.03, Math.min(1, value / safeMax));
   const dash = circumference * pct;
 
   return (
@@ -40,10 +40,10 @@ export function AppRingProgress({ value, max, label, size = 160, strokeWidth = 1
         />
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
-        <Text style={[styles.value, { color: colors.ink }]}>
+        <Text style={[styles.value, { color: colors.ink, fontSize: Math.max(25, size * 0.24) }]}>
           {value}/{max}
         </Text>
-        <Text style={[styles.label, { color: colors.inkSoft }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.inkSoft, fontSize: Math.max(10, size * 0.085) }]}>{label}</Text>
       </View>
     </View>
   );
@@ -58,12 +58,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   value: {
-    fontSize: 32,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   label: {
-    fontSize: AppFontSize.xs,
     fontWeight: '700',
     marginTop: 4,
     letterSpacing: 0.5,

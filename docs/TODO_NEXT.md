@@ -274,3 +274,18 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   5. Impostare in EAS le public keys `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` e `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`.
   6. Creare una development/preview build reale Android/iOS (non Expo Go) e verificare acquisto, restore, cambio pacchetto, rinnovo, cancellazione, scadenza, billing issue e logout/cambio coach.
   7. Verificare in Table editor che gli acquisti RevenueCat scrivano `payment_provider='revenuecat'` e che le assegnazioni manuali superadmin restino `payment_provider='superadmin_manual'`.
+
+- [ ] **Verifica nuovo APK Android - back, contatore e layout form (priorita assoluta):**
+  1. Cliente: Workout -> scheda -> esercizio -> back torna alla scheda; secondo back torna a Workout. Se si apre la route senza cronologia, fallback coerente a Workout/Altro/Home.
+  2. Coach: Clienti -> cliente -> Nuova scheda -> back torna al cliente; Schede -> scheda -> Esercizio -> back torna alla scheda.
+  3. Superadmin: Coach -> dettaglio -> back torna alla lista; piani/pacchetti/notifiche/pagamenti/supporto hanno una sola freccia, nessuna doppia freccia nativa.
+  4. Contatore: con 0 completati mostra 0/12; completa una scheda -> 1/12; completa una seconda -> 2/12; lato coach stesso cliente mostra 2/12; riaprire una scheda gia' completed non deve diventare 3/12.
+  5. Persistenza: chiudere e riaprire l'app dopo completamento sessione; il contatore deve restare coerente perche' deriva da `workout_plans.session_status='completed'`.
+  6. Nuova scheda Android 320/360/393/412px: nessun campo tagliato, Data/Ora e Giorno/Settimana impilati quando serve, pulsanti "Aggiungi esercizio"/"Libreria YMove" dentro schermo, form non coperto dalla tab bar.
+- [ ] **Verifica redesign/avatar/catalogo esercizi sul nuovo APK:**
+  1. Eseguire la sezione SQL "FitCoach Pro visual assets" di `docs/SUPABASE_SCHEMA.sql` su Supabase prima di testare upload foto reale.
+  2. Creare/verificare bucket `client-avatars`, caricare una foto da Profilo cliente e confermare che `profiles.avatar_url` contenga il path Storage e che l'immagine ricompaia dopo logout/login.
+  3. Registrazione cliente e creazione cliente coach: scegliere avatar uomo/donna/neutro e verificare che dashboard/lista/dettaglio mostrino il preset senza foto.
+  4. Aprire Home cliente, Dashboard coach e Superadmin su Android 320/360/393/412px: logo/header leggibili, nessun overflow, nessuna metrica fake.
+  5. Aprire una scheda con esercizi locali, YMove e upload manuale: asset locale presente -> immagine; asset mancante -> placeholder gruppo; YMove valido -> thumbnail live; upload senza poster -> placeholder con badge video.
+  6. Quando saranno disponibili asset reali, popolare `IMAGE_REGISTRY`/`exercise_image_catalog` e verificare che non venga mai restituita una sorgente immagine non esistente.

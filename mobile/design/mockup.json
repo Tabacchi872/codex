@@ -1,0 +1,504 @@
+{
+  "project": {
+    "name": "FitCoach Pro",
+    "version": "1.0",
+    "purpose": "Specifiche visuali e funzionali per il redesign completo delle aree Cliente, Coach e Superadmin.",
+    "source_of_truth": [
+      "docs/design/client-dashboard-reference.png",
+      "docs/design/coach-dashboard-reference.png",
+      "docs/design/superadmin-dashboard-reference.png"
+    ],
+    "rules": [
+      "Usare solo dati reali già disponibili nell'app.",
+      "Non inventare statistiche, fatturato, appuntamenti o profili.",
+      "Non modificare logica Supabase, RevenueCat, ruoli, permessi o navigazione.",
+      "Non usare immagini casuali o senza licenza.",
+      "Non salvare URL temporanei o signed URL nel database.",
+      "Mantenere tema Chiaro, Scuro e Sistema.",
+      "Il dark premium è il riferimento principale."
+    ]
+  },
+  "brand": {
+    "logo": {
+      "text": "FitCoach Pro",
+      "component_name": "FitCoachLogo",
+      "rendering": "text_component",
+      "fitcoach_color_token": "textPrimary",
+      "pro_color_token": "brandCoral",
+      "font_style": "italic",
+      "font_weight": 800,
+      "sizes": {
+        "sm": 18,
+        "md": 22,
+        "lg": 28
+      },
+      "forbidden": [
+        "logo raster sgranato",
+        "cerchio con lettera F",
+        "logo ripetuto nelle schermate interne"
+      ]
+    },
+    "palette": {
+      "dark": {
+        "background": "#05090D",
+        "surface": "#0D141B",
+        "surfaceElevated": "#121C25",
+        "border": "rgba(255,255,255,0.08)",
+        "primary": "#7BEA18",
+        "primaryStrong": "#8BFF1F",
+        "brandCoral": "#FF5A3C",
+        "textPrimary": "#F7F9FA",
+        "textSecondary": "#9AA4AE",
+        "warning": "#F4A300",
+        "danger": "#FF4D4D"
+      },
+      "light": {
+        "background": "#F5F7F9",
+        "surface": "#FFFFFF",
+        "surfaceElevated": "#F0F3F5",
+        "border": "rgba(5,9,13,0.08)",
+        "primary": "#63D90C",
+        "primaryStrong": "#70E814",
+        "brandCoral": "#FF5A3C",
+        "textPrimary": "#111820",
+        "textSecondary": "#68727C",
+        "warning": "#D88900",
+        "danger": "#D93636"
+      }
+    },
+    "typography": {
+      "page_title": {
+        "size": 36,
+        "line_height": 42,
+        "weight": 800
+      },
+      "hero_title": {
+        "size": 28,
+        "line_height": 34,
+        "weight": 750
+      },
+      "card_title": {
+        "size": 20,
+        "line_height": 26,
+        "weight": 700
+      },
+      "section_title": {
+        "size": 22,
+        "line_height": 28,
+        "weight": 700
+      },
+      "body": {
+        "size": 15,
+        "line_height": 21,
+        "weight": 500
+      },
+      "secondary": {
+        "size": 13,
+        "line_height": 18,
+        "weight": 500
+      },
+      "kpi": {
+        "size": 32,
+        "line_height": 36,
+        "weight": 800
+      },
+      "tab_label": {
+        "size": 12,
+        "line_height": 14,
+        "weight": 600
+      },
+      "rules": [
+        "Non usare weight 900 ovunque.",
+        "Mai spezzare una parola lettera per lettera.",
+        "Usare minWidth: 0 e flexShrink: 1 nei contenitori flex.",
+        "Titoli scheda massimo 2-3 righe."
+      ]
+    },
+    "spacing": {
+      "screen_horizontal": 18,
+      "section_gap": 18,
+      "card_padding": 20,
+      "grid_gap": 14,
+      "card_radius": 22,
+      "button_height": 54,
+      "touch_target_min": 44
+    }
+  },
+  "shared_components": {
+    "FitCoachLogo": {
+      "required": true,
+      "screens": [
+        "login",
+        "client.home",
+        "coach.home",
+        "superadmin.dashboard"
+      ]
+    },
+    "UserAvatar": {
+      "required": true,
+      "states": [
+        "uploaded",
+        "default_male",
+        "default_female",
+        "default_neutral",
+        "initials"
+      ],
+      "sizes": {
+        "sm": 36,
+        "md": 48,
+        "lg": 60
+      },
+      "must_not_render_blank": true
+    },
+    "AppCard": {
+      "role": "visual_container_only",
+      "root": "View",
+      "must_not_be_pressable": true
+    },
+    "AppPressableCard": {
+      "role": "single_action_card",
+      "root": "Pressable",
+      "must_not_contain": [
+        "button",
+        "Pressable",
+        "link",
+        "switch",
+        "input"
+      ]
+    },
+    "BackHeader": {
+      "required_on_internal_screens": true,
+      "behavior": "router.back() quando possibile; fallback di sezione solo senza cronologia"
+    },
+    "ExerciseImage": {
+      "resolver": "resolveExerciseImage",
+      "priority": [
+        "internal_cover",
+        "internal_thumbnail",
+        "muscle_group_placeholder",
+        "generic_placeholder"
+      ],
+      "must_not_use_persisted_temporary_url": true
+    }
+  },
+  "responsive": {
+    "tested_widths": [
+      320,
+      360,
+      393,
+      412
+    ],
+    "tablet": true,
+    "rules": [
+      "KPI in 2 colonne su telefoni stretti.",
+      "Nessuno scroll orizzontale involontario.",
+      "Tutti i contenitori testo usano minWidth: 0.",
+      "Le label lunghe usano flexShrink: 1.",
+      "Padding bottom = tab bar + safe area.",
+      "La hero card impila i contenuti se il layout orizzontale diventa illeggibile."
+    ]
+  },
+  "screens": {
+    "login": {
+      "reference": "docs/design/login-reference.png",
+      "current": "docs/design/current-login.png",
+      "layout": [
+        "FitCoachLogo",
+        "sottotitolo Accesso riservato",
+        "card scura",
+        "campo email",
+        "campo password con mostra/nascondi",
+        "pulsante Accedi verde lime",
+        "Password dimenticata",
+        "Registrati come coach",
+        "Registrati come cliente"
+      ]
+    },
+    "client.home": {
+      "reference": "docs/design/client-dashboard-reference.png",
+      "current": [
+        "docs/design/current-client-home-top.png",
+        "docs/design/current-client-home-bottom.png"
+      ],
+      "sections": [
+        {
+          "id": "header",
+          "elements": [
+            "FitCoachLogo",
+            "saluto",
+            "data",
+            "UserAvatar"
+          ],
+          "notes": "Nessun cerchio con F. Avatar in alto a destra."
+        },
+        {
+          "id": "subscription_progress",
+          "layout": "horizontal",
+          "min_height": 185,
+          "elements": [
+            "progress_ring",
+            "completed_total",
+            "remaining",
+            "next_workout_status"
+          ],
+          "rules": [
+            "Ring massimo 42% della larghezza.",
+            "Nessun grande poligono diagonale che attraversa il testo.",
+            "Solo gradiente verde molto leggero."
+          ]
+        },
+        {
+          "id": "next_workout",
+          "layout": "hero_card",
+          "min_height": 300,
+          "elements": [
+            "plan_label",
+            "plan_title",
+            "exercise_count",
+            "duration_if_real",
+            "difficulty_if_real",
+            "stable_exercise_image_or_placeholder",
+            "start_button"
+          ],
+          "rules": [
+            "Titolo massimo 3 righe.",
+            "Immagine a destra o sullo sfondo con overlay scuro.",
+            "Nessuna parola spezzata."
+          ]
+        },
+        {
+          "id": "quick_actions",
+          "layout": "2x2",
+          "cards": [
+            "nutrition",
+            "checkin",
+            "bookings",
+            "board"
+          ],
+          "card_height_range": [
+            110,
+            125
+          ]
+        },
+        {
+          "id": "progress_summary",
+          "layout": "3_columns",
+          "metrics": [
+            "workouts",
+            "sets",
+            "progress_if_real"
+          ],
+          "rules": [
+            "Nascondere metriche prive di fonte reale."
+          ]
+        }
+      ]
+    },
+    "client.workout_detail.todo": {
+      "reference": "docs/design/client-workout-detail-todo-reference.png",
+      "current": "docs/design/current/client-workout-detail-todo-current.png",
+      "sections": [
+        "BackHeader",
+        "badge Workout da fare",
+        "titolo scheda",
+        "numero esercizi",
+        "cliente",
+        "data",
+        "scadenza",
+        "lista esercizi",
+        "pulsante Inizia allenamento"
+      ],
+      "typography": {
+        "plan_title_size": 30,
+        "plan_title_line_height": 36,
+        "max_lines": 3
+      },
+      "rules": [
+        "Nessuna parola spezzata lettera per lettera.",
+        "Il numero esercizi deve essere integrato nella hero.",
+        "I metadata devono stare in una griglia compatta."
+      ]
+    },
+    "client.workout_detail.completed": {
+      "reference": "docs/design/client-workout-detail-completed-reference.png",
+      "current": "docs/design/current/client-workout-detail-completed-current.png",
+      "rules": [
+        "Stato completato verde.",
+        "Lista esercizi leggibile.",
+        "Nessun doppio conteggio."
+      ]
+    },
+    "client.exercise_list": {
+      "reference": "docs/design/client-exercise-list-reference.png",
+      "current": "docs/design/current/client-exercise-list-current.png",
+      "sections": [
+        "BackHeader",
+        "metadati workout",
+        "tab Esercizi/Dettagli",
+        "righe esercizio con immagini stabili",
+        "stato completamento",
+        "azione principale"
+      ]
+    },
+    "coach.home": {
+      "reference": "docs/design/coach-dashboard-reference.png",
+      "current": "docs/design/current-coach-dashboard.png",
+      "sections": [
+        "FitCoachLogo",
+        "Dashboard Coach",
+        "grafica verde senza foto finte",
+        "KPI reali",
+        "clienti recenti",
+        "agenda di oggi",
+        "Nuovo cliente",
+        "tab bar coach"
+      ],
+      "real_data_only": true
+    },
+    "coach.clients": {
+      "reference": "docs/design/coach-clients-reference.png",
+      "current": "docs/design/current-coach-clients.png",
+      "sections": [
+        "titolo e Nuovo cliente",
+        "metriche reali",
+        "ricerca",
+        "filtri",
+        "lista clienti con UserAvatar",
+        "stato",
+        "progresso abbonamento",
+        "prossimo appuntamento se reale"
+      ]
+    },
+    "coach.client_detail": {
+      "reference": "docs/design/coach-client-detail-reference.png",
+      "current": "docs/design/current-coach-client-detail.png",
+      "sections": [
+        "BackHeader",
+        "UserAvatar e nome",
+        "stato cliente",
+        "contatti",
+        "obiettivo",
+        "abbonamento",
+        "schede assegnate",
+        "appuntamenti",
+        "note interne",
+        "credenziali"
+      ]
+    },
+    "coach.plan_create": {
+      "reference": "docs/design/coach-plan-create-reference.png",
+      "current": "docs/design/current-coach-plan-create.png",
+      "rules": [
+        "Nessun overflow.",
+        "Data/Ora verticali sotto 390 px.",
+        "Giorno/Settimana verticali sotto 390 px.",
+        "Pulsanti esercizi sempre dentro lo schermo."
+      ]
+    },
+    "coach.settings": {
+      "reference": "docs/design/coach-settings-reference.png",
+      "current": "docs/design/current-coach-settings.png",
+      "sections": [
+        "tema",
+        "suoni recupero",
+        "countdown",
+        "vibrazione",
+        "volume",
+        "suono selezionato",
+        "sviluppatore",
+        "logout"
+      ],
+      "rules": [
+        "Preservare Chiaro, Scuro e Sistema."
+      ]
+    },
+    "superadmin.dashboard": {
+      "reference": "docs/design/superadmin-dashboard-reference.png",
+      "current": "docs/design/current-superadmin-dashboard.png",
+      "sections": [
+        "FitCoachLogo",
+        "Superadmin",
+        "KPI reali",
+        "coach recenti",
+        "azioni rapide",
+        "attività recenti",
+        "tab bar superadmin"
+      ],
+      "real_data_only": true
+    }
+  },
+  "avatar_system": {
+    "variants": [
+      "male",
+      "female",
+      "neutral"
+    ],
+    "assets": {
+      "male": "mobile/assets/images/avatars/default-client-male.png",
+      "female": "mobile/assets/images/avatars/default-client-female.png",
+      "neutral": "mobile/assets/images/avatars/default-client-neutral.png"
+    },
+    "storage_bucket": "profile-avatars",
+    "storage_private": true,
+    "database_fields": [
+      "avatar_variant",
+      "avatar_source",
+      "avatar_storage_path",
+      "avatar_updated_at"
+    ]
+  },
+  "exercise_catalog": {
+    "providers": [
+      "internal",
+      "ymove",
+      "musclewiki",
+      "custom"
+    ],
+    "storage_bucket": "exercise-images",
+    "resolution_order": [
+      "exerciseCatalogId",
+      "provider + external_id",
+      "slug normalizzato esatto",
+      "alias dichiarato esatto",
+      "placeholder"
+    ],
+    "forbidden": [
+      "fuzzy match generico",
+      "URL YMove temporanee persistite",
+      "copia media YMove senza diritti verificati",
+      "thumbnail vuota"
+    ]
+  },
+  "quality_gates": {
+    "commands": [
+      "cd mobile && npx.cmd tsc --noEmit",
+      "cd mobile && npx.cmd expo-doctor",
+      "cd mobile && npx.cmd expo export --platform web",
+      "cd mobile && npx.cmd expo export --platform android"
+    ],
+    "must_pass": [
+      "Nessun nested button.",
+      "Nessun warning hydration.",
+      "Nessun overflow orizzontale.",
+      "Nessuna immagine esercizio vuota.",
+      "Nessun dato finto.",
+      "Nessuna regressione navigazione.",
+      "Nessuna regressione contatore workout.",
+      "Nessuna regressione RevenueCat.",
+      "Nessuna regressione Supabase Auth."
+    ]
+  },
+  "implementation_order": [
+    "tema e token",
+    "componenti condivisi",
+    "logo",
+    "avatar",
+    "resolver immagini esercizi",
+    "Home cliente",
+    "schede cliente",
+    "Home coach",
+    "clienti coach",
+    "dashboard superadmin",
+    "responsive e regressione"
+  ]
+}

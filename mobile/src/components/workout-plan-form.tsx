@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Card } from './card';
+import { AppButton } from './ui';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
 import { WorkoutExerciseEditor } from './workout-exercise-editor';
@@ -14,6 +15,7 @@ import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
 import { supabaseConfig } from '@/lib/supabase';
+import { getActiveSubscription } from '@/lib/workout-progress';
 import { useClientStore } from '@/store/client-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
@@ -44,6 +46,7 @@ export function WorkoutPlanForm({
   saveLabel: string;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const clients = useClientStore((s) => s.clients);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const [name, setName] = useState(initialPlan?.name ?? '');
@@ -61,6 +64,17 @@ export function WorkoutPlanForm({
   const { resolve: resolveExercise, registerExercise } = useExerciseResolver();
 
   const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
+  const activeSubscription = getActiveSubscription(subscriptions, clientId);
+  const stackFieldPairs = width < 390;
+
+  useEffect(() => {
+    if (initialPlan?.subscriptionId) return;
+    if (!clientId) return;
+    setSubscriptionId((current) => {
+      if (current && clientSubscriptions.some((subscription) => subscription.id === current)) return current;
+      return activeSubscription?.id ?? '';
+    });
+  }, [activeSubscription?.id, clientId, initialPlan?.subscriptionId]);
 
   function addExercise(exerciseId: string) {
     setExercises((prev) => [...prev, newWorkoutExercise(exerciseId, prev.length)]);
@@ -141,6 +155,7 @@ export function WorkoutPlanForm({
   return (
     <View style={styles.container}>
       <Card style={styles.detailsCard}>
+        <ThemedText type="subtitle" style={styles.detailsTitle}>Dettagli scheda</ThemedText>
         <Field label="Nome scheda">
           <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Forza — Fase 2" />
         </Field>
@@ -166,11 +181,11 @@ export function WorkoutPlanForm({
           </View>
         </Field>
 
-        <View style={styles.fieldsRow}>
-          <Field label="Data allenamento (AAAA-MM-GG)">
+        <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+          <Field label="Data allenamento (AAAA-MM-GG)" style={styles.rowField}>
             <ThemedTextInput value={startDate} onChangeText={setStartDate} placeholder="2026-07-05" />
           </Field>
-          <Field label="Ora (HH:mm, opzionale)">
+          <Field label="Ora (HH:mm, opzionale)" style={styles.rowField}>
             <ThemedTextInput value={scheduledTime} onChangeText={setScheduledTime} placeholder="17:30" />
           </Field>
         </View>
@@ -179,11 +194,11 @@ export function WorkoutPlanForm({
           <ThemedTextInput value={expiryDate} onChangeText={setExpiryDate} placeholder="2026-08-05" />
         </Field>
 
-        <View style={styles.fieldsRow}>
-          <Field label="Giorno (opzionale, es. Giorno 3)">
+        <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+          <Field label="Giorno (opzionale, es. Giorno 3)" style={styles.rowField}>
             <ThemedTextInput value={dayLabel} onChangeText={setDayLabel} placeholder="Derivato automaticamente" />
           </Field>
-          <Field label="Settimana (opzionale, es. Settimana 4)">
+          <Field label="Settimana (opzionale, es. Settimana 4)" style={styles.rowField}>
             <ThemedTextInput value={weekLabel} onChangeText={setWeekLabel} placeholder="Derivata automaticamente" />
           </Field>
         </View>
@@ -247,22 +262,14 @@ export function WorkoutPlanForm({
       })}
 
       {!showPicker && !showYMovePicker ? (
-        <View style={styles.addButtonsRow}>
-          <Pressable style={styles.addButtonFlex} onPress={() => setShowPicker(true)}>
-            <View style={[styles.addButton, { borderColor: theme.primary }]}>
-              <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                + Aggiungi esercizio
-              </ThemedText>
-            </View>
-          </Pressable>
+        <View style={[styles.addButtonsRow, stackFieldPairs && styles.addButtonsColumn]}>
+          <View style={styles.addButtonFlex}>
+            <AppButton label="+ Aggiungi esercizio" onPress={() => setShowPicker(true)} variant="outline" fullWidth />
+          </View>
           {supabaseConfig.isConfigured ? (
-            <Pressable style={styles.addButtonFlex} onPress={() => setShowYMovePicker(true)}>
-              <View style={[styles.addButton, { borderColor: theme.primary }]}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                  Libreria YMove
-                </ThemedText>
-              </View>
-            </Pressable>
+            <View style={styles.addButtonFlex}>
+              <AppButton label="Libreria YMove" onPress={() => setShowYMovePicker(true)} variant="outline" fullWidth />
+            </View>
           ) : null}
         </View>
       ) : showYMovePicker ? (
@@ -302,21 +309,15 @@ export function WorkoutPlanForm({
         </ThemedText>
       )}
 
-      <Pressable onPress={handleSave}>
-        <View style={[styles.saveButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            {saveLabel}
-          </ThemedText>
-        </View>
-      </Pressable>
+      <AppButton label={saveLabel} onPress={handleSave} size="lg" fullWidth />
     </View>
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, style }: { label: string; children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
-    <View style={styles.field}>
-      <ThemedText type="small" themeColor="textSecondary">
+    <View style={[styles.field, style]}>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
         {label}
       </ThemedText>
       {children}
@@ -327,27 +328,51 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 const styles = StyleSheet.create({
   container: {
     gap: Spacing.three,
+    width: '100%',
+    minWidth: 0,
   },
   detailsCard: {
     gap: Spacing.three,
+    width: '100%',
+    minWidth: 0,
+  },
+  detailsTitle: {
+    fontSize: 20,
+    lineHeight: 26,
   },
   field: {
     gap: 4,
+    width: '100%',
+    minWidth: 0,
+  },
+  fieldLabel: {
+    flexShrink: 1,
   },
   fieldsRow: {
     flexDirection: 'row',
     gap: Spacing.three,
+    width: '100%',
+    minWidth: 0,
+  },
+  fieldsColumn: {
+    flexDirection: 'column',
+  },
+  rowField: {
+    flex: 1,
+    minWidth: 0,
   },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
+    minWidth: 0,
   },
   chip: {
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,
     paddingVertical: 7,
+    maxWidth: '100%',
   },
   exercisesLabel: {
     marginTop: Spacing.two,
@@ -355,32 +380,28 @@ const styles = StyleSheet.create({
   addButtonsRow: {
     flexDirection: 'row',
     gap: Spacing.two,
+    width: '100%',
+    minWidth: 0,
+  },
+  addButtonsColumn: {
+    flexDirection: 'column',
   },
   addButtonFlex: {
     flex: 1,
-  },
-  addButton: {
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    padding: Spacing.three,
-    alignItems: 'center',
+    minWidth: 0,
   },
   pickerContainer: {
     gap: Spacing.three,
+    minWidth: 0,
   },
   pickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.two,
+    minWidth: 0,
   },
   pickerGroup: {
     gap: Spacing.one,
-  },
-  saveButton: {
-    borderRadius: Radius.md,
-    padding: Spacing.three,
-    alignItems: 'center',
-    marginTop: Spacing.two,
   },
 });

@@ -4,7 +4,7 @@ import type React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, AppIconButton } from '@/components/ui';
+import { AppButton, AppIconButton, FitCoachLogo } from '@/components/ui';
 import { signOut } from '@/lib/auth-service';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useAuthStore } from '@/store/auth-store';
@@ -74,6 +74,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
         ]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
+            <FitCoachLogo size="sm" />
             <Text style={[AppTextStyle.eyebrow, { color: colors.moss }]}>AREA SUPERADMIN</Text>
             <Text style={[AppTextStyle.title, styles.title, { color: colors.ink }]}>{title}</Text>
             {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
@@ -103,7 +104,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           styles.bottomBar,
           {
             backgroundColor: colors.surface,
-            borderTopColor: colors.border,
+            borderColor: colors.border,
             paddingBottom: insets.bottom + AppSpacing[1],
           },
           cardShadow,
@@ -118,8 +119,8 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           const Icon = item.icon;
           return (
             <Pressable key={href} onPress={() => navigate(`superadmin-tab-${item.label.toLowerCase()}`, item.href)} hitSlop={4} style={styles.tabItem}>
-              <View style={[styles.tabIconPill, active && { backgroundColor: colors.coralSoft }]}>
-                <Icon size={18} color={active ? colors.coral : colors.inkFaint} strokeWidth={2.2} />
+              <View style={[styles.tabIconPill, active && { backgroundColor: colors.mossSoft }]}>
+                <Icon size={18} color={active ? colors.moss : colors.inkFaint} strokeWidth={2.2} />
                 {isSupport && unreadCoachSupport > 0 ? (
                   <View style={[styles.supportBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
@@ -185,14 +186,16 @@ const styles = StyleSheet.create({
     top: -4,
   },
   bottomBar: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    bottom: 0,
+    borderRadius: 28,
+    borderWidth: 1,
+    bottom: AppSpacing[2],
     flexDirection: 'row',
-    left: 0,
+    left: AppSpacing[4],
     paddingHorizontal: AppSpacing[1],
     paddingTop: AppSpacing[2],
     position: 'absolute',
-    right: 0,
+    right: AppSpacing[4],
+    overflow: 'hidden',
     zIndex: 20,
   },
   tabItem: {

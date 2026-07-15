@@ -6,32 +6,21 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
 
 import { Radius } from '@/constants/theme';
-import { resolveImageSource } from '@/data/image-registry';
+import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchExerciseVideoInfoCached } from '@/lib/exercise-video-info-cache';
 import { supabaseConfig } from '@/lib/supabase';
 import { fetchYmoveThumbnail, getCachedYmoveThumbnail, refreshYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
 import type { Exercise } from '@/types/training';
 
-// Thumbnail dell'esercizio nelle card di scheda (coach/cliente, superserie e
-// circuiti compresi — tutte passano da qui tramite WorkoutExerciseRow).
-// Mostra SOLO un'immagine statica (mai VideoView, mai autoplay/audio: il
-// video vero parte solo nel Dettaglio esercizio dopo un tocco esplicito) con
-// queste priorita', dalla piu' specifica alla piu' generica:
-// 1. Esercizio importato DA YMove (source==='ymove'): thumbnailUrl live
-//    dell'esercizio YMove di origine, mai salvata nel DB (e' un link
-//    firmato che scade), presa da una cache in memoria condivisa
-//    (lib/ymove-thumbnail-cache.ts) per non richiamare la Edge Function ad
-//    ogni render/ogni card con lo stesso video.
-// 2. Esercizio locale storico o custom con un video YMove ASSOCIATO
-//    (exercise_videos.ymove_exercise_id, 2026-07-13): stessa cache, stessa
-//    live-fetch, chiave sempre l'id YMove (mai l'id dell'esercizio FitCoach).
-// 3. Video caricato manualmente dal coach (exercise_videos.video_url): oggi
-//    non esiste alcuna colonna per un poster/thumbnail salvato — resta il
-//    placeholder con l'iniziale finche' non esistera' una vera generazione/
-//    salvataggio di anteprima per questo caso (nessun frame estratto qui:
-//    farlo richiederebbe montare il video, esplicitamente vietato).
-// 4. Nessun video: placeholder con l'iniziale, come sempre.
+// Thumbnail condivisa per liste, schede, modelli e dettaglio esercizio.
+// Priorita' visuale:
+// 1. immagine interna stabile del catalogo FitCoach;
+// 2. thumbnail YMove richiesta live e mantenuta soltanto in cache quando non
+//    esiste ancora un asset interno;
+// 3. placeholder stabile per gruppo muscolare;
+// 4. iniziale/indicatore video caricato come ultimo fallback.
+// Non monta mai un video e non salva URL YMove temporanee nel database.
 export function ExerciseThumbnail({
   exercise,
   exerciseId,
@@ -46,8 +35,8 @@ export function ExerciseThumbnail({
   // Caso 1: l'id YMove e' gia' noto direttamente sull'esercizio, nessuna
   // query a exercise_videos necessaria.
   const directYmoveId = exercise.source === 'ymove' ? (exercise.ymoveExerciseId ?? null) : null;
-  const imageFile = exercise.videoFile.replace(/\.mp4$/i, '.jpg');
-  const localImageSource = resolveImageSource(imageFile);
+  const catalogThumbnail = resolveExerciseCatalogThumbnail(exercise);
+  const localImageSource = catalogThumbnail.kind === 'image' ? catalogThumbnail.source : null;
   const containerStyle = { width: size, height: size, borderRadius: size >= 64 ? Radius.md : Radius.sm };
   const mountedRef = useRef(true);
   const activeRequestKeyRef = useRef('');
@@ -67,7 +56,7 @@ export function ExerciseThumbnail({
 
   useEffect(() => {
     let cancelled = false;
-    activeRequestKeyRef.current = `${id}:${directYmoveId ?? ''}:${imageFile}:${exercise.videoUrl ?? ''}`;
+    activeRequestKeyRef.current = `${id}:${directYmoveId ?? ''}:${catalogThumbnail.catalogId}:${exercise.videoUrl ?? ''}`;
     setRemoteThumbnailUrl(null);
     setLinkedYmoveId(null);
     setHasUploadVideo(Boolean(exercise.videoUrl));
@@ -87,6 +76,14 @@ export function ExerciseThumbnail({
         setRemoteThumbnailUrl(url);
         setLoadingRemote(false);
       });
+    }
+
+    // Una cover interna stabile ha sempre priorita': evita chiamate YMove
+    // inutili e non permette a un URL temporaneo di sostituire l'asset nostro.
+    if (localImageSource) {
+      return () => {
+        cancelled = true;
+      };
     }
 
     if (directYmoveId) {
@@ -116,11 +113,11 @@ export function ExerciseThumbnail({
     return () => {
       cancelled = true;
     };
-  }, [id, directYmoveId, exercise.source, exercise.videoUrl, imageFile]);
+  }, [id, directYmoveId, exercise.source, exercise.videoUrl, catalogThumbnail.catalogId, localImageSource]);
 
   const effectiveYmoveId = directYmoveId ?? linkedYmoveId;
   const remoteSourceType = directYmoveId ? 'ymove' : linkedYmoveId ? 'ymove-linked' : null;
-  const imageSource = !imageFailed ? (remoteThumbnailUrl ? { uri: remoteThumbnailUrl } : localImageSource) : null;
+  const imageSource = !imageFailed ? (localImageSource ?? (remoteThumbnailUrl ? { uri: remoteThumbnailUrl } : null)) : null;
   const showUploadVideoBadge = hasUploadVideo && !imageSource;
 
   function logThumbnailError(sourceType: string, attemptedSource: string) {
@@ -157,7 +154,7 @@ export function ExerciseThumbnail({
     }
 
     if (localImageSource) {
-      logThumbnailError('local-image', `local:${imageFile}`);
+      logThumbnailError('catalog-image', catalogThumbnail.attemptedSource);
     }
     setImageFailed(true);
   }
@@ -174,12 +171,26 @@ export function ExerciseThumbnail({
   }
 
   return (
-    <View style={[styles.placeholder, containerStyle, { backgroundColor: theme.background, borderColor: theme.border }]}>
+    <View
+      style={[
+        styles.placeholder,
+        containerStyle,
+        {
+          backgroundColor: catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.backgroundColor : theme.background,
+          borderColor: catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.foregroundColor : theme.border,
+        },
+      ]}>
       {loadingRemote ? (
         <ActivityIndicator size="small" color={theme.textSecondary} />
       ) : (
-        <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: size * 0.36 }}>
-          {exercise.name.charAt(0).toUpperCase()}
+        <ThemedText
+          type="smallBold"
+          themeColor="textSecondary"
+          style={{
+            color: catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.foregroundColor : theme.textSecondary,
+            fontSize: size * 0.32,
+          }}>
+          {catalogThumbnail.kind === 'placeholder' ? catalogThumbnail.label : exercise.name.charAt(0).toUpperCase()}
         </ThemedText>
       )}
       {showUploadVideoBadge ? (

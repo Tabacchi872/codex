@@ -2,12 +2,13 @@ import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Dumbbell, Play, RefreshCw } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Card } from './card';
 import { Pill } from './pill';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
+import { AppButton } from './ui';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -47,13 +48,13 @@ function safeText(value: unknown): string {
   return '';
 }
 
-// Ricerca/anteprima/import dal catalogo YMove ("opzione B": il coach crea un
-// esercizio FitCoach a partire da YMove, mai un semplice link esterno). Stile
-// coerente col cluster editor scheda/esercizio, deliberatamente NON migrato
-// al nuovo design system (vedi docs/PROJECT_STATE.md) — usa Card/ThemedText/
-// ThemedTextInput come il resto di questo file, non AppCard/AppButton.
+// Ricerca, anteprima e import dal catalogo YMove. Il pannello conserva il
+// comportamento remoto esistente, ma usa le proporzioni e i controlli del
+// design system FitCoach per restare leggibile anche sui telefoni stretti.
 export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoLinkSelected, onClose }: YMoveExercisePickerProps) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 390;
   const [name, setName] = useState('');
   const [muscle, setMuscle] = useState('');
   const [equipment, setEquipment] = useState('');
@@ -108,7 +109,7 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
       </View>
 
       <ThemedTextInput value={name} onChangeText={setName} placeholder="Cerca per nome" onSubmitEditing={handleSearch} />
-      <View style={styles.filterRow}>
+      <View style={[styles.filterRow, compact && styles.stackRow]}>
         <View style={styles.filterField}>
           <ThemedTextInput value={muscle} onChangeText={setMuscle} placeholder="Muscolo" onSubmitEditing={handleSearch} />
         </View>
@@ -116,7 +117,7 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
           <ThemedTextInput value={equipment} onChangeText={setEquipment} placeholder="Attrezzatura" onSubmitEditing={handleSearch} />
         </View>
       </View>
-      <View style={styles.filterRow}>
+      <View style={[styles.filterRow, compact && styles.stackRow]}>
         <View style={styles.filterField}>
           <ThemedTextInput value={type} onChangeText={setType} placeholder="Tipologia" onSubmitEditing={handleSearch} />
         </View>
@@ -125,11 +126,7 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
         </View>
       </View>
 
-      <Pressable onPress={handleSearch}>
-        <View style={[styles.searchButton, { backgroundColor: theme.primary }]}>
-          {loading ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" themeColor="onPrimary">Cerca</ThemedText>}
-        </View>
-      </Pressable>
+      <AppButton label="Cerca" onPress={handleSearch} loading={loading} disabled={loading} fullWidth />
 
       {loading && results.length === 0 && !error ? (
         <View style={styles.initialLoading}>
@@ -236,6 +233,8 @@ function YMoveResultRow({
   onVideoLinkSelected?: (selection: YmoveVideoLinkSelection) => void;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 390;
   const [showPreview, setShowPreview] = useState(false);
   const [detail, setDetail] = useState<YmoveExerciseDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -302,7 +301,7 @@ function YMoveResultRow({
           <YMoveResultThumbnail item={item} />
         </Pressable>
         <View style={styles.resultHeaderText}>
-          <ThemedText type="smallBold">{item.title}</ThemedText>
+          <ThemedText type="smallBold" numberOfLines={2} style={styles.resultTitle}>{item.title}</ThemedText>
           <View style={styles.chipsRow}>
             {safeText(item.muscleGroup) ? <Pill label={safeText(item.muscleGroup)} /> : null}
             {safeText(item.equipment) ? <Pill label={safeText(item.equipment)} /> : null}
@@ -312,29 +311,30 @@ function YMoveResultRow({
         </View>
       </View>
 
-      <View style={styles.actionsRow}>
-        <Pressable onPress={togglePreview} hitSlop={6}>
-          <ThemedText type="small" style={{ color: theme.primary }}>
-            {showPreview ? 'Nascondi anteprima' : 'Anteprima'}
-          </ThemedText>
-        </Pressable>
-        <Pressable onPress={handleAdd} disabled={importing || imported} hitSlop={6}>
-          <View style={[styles.addButton, { backgroundColor: imported ? theme.backgroundElement : theme.primary, opacity: importing ? 0.7 : 1 }]}>
-            {importing ? (
-              <ActivityIndicator size="small" color={imported ? theme.text : '#fff'} />
-            ) : (
-              <ThemedText type="small" themeColor={imported ? 'text' : 'onPrimary'} style={styles.addButtonLabel}>
-                {imported
-                  ? mode === 'link-video'
-                    ? 'Selezionato'
-                    : 'Aggiunto'
-                  : mode === 'link-video'
-                    ? 'Usa questo video'
-                    : 'Aggiungi a FitCoach'}
-              </ThemedText>
-            )}
-          </View>
-        </Pressable>
+      <View style={[styles.actionsRow, compact && styles.actionsStack]}>
+        <AppButton
+          label={showPreview ? 'Nascondi anteprima' : 'Anteprima'}
+          onPress={togglePreview}
+          variant="outline"
+          size="sm"
+          fullWidth={compact}
+        />
+        <AppButton
+          label={
+            imported
+              ? mode === 'link-video'
+                ? 'Selezionato'
+                : 'Aggiunto'
+              : mode === 'link-video'
+                ? 'Usa questo video'
+                : 'Aggiungi a FitCoach'
+          }
+          onPress={handleAdd}
+          size="sm"
+          loading={importing}
+          disabled={importing || imported}
+          fullWidth={compact}
+        />
       </View>
 
       {importError ? (
@@ -451,11 +451,10 @@ const styles = StyleSheet.create({
   },
   filterField: {
     flex: 1,
+    minWidth: 0,
   },
-  searchButton: {
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.two,
-    alignItems: 'center',
+  stackRow: {
+    flexDirection: 'column',
   },
   initialLoading: {
     flexDirection: 'row',
@@ -475,8 +474,14 @@ const styles = StyleSheet.create({
   },
   resultHeaderText: {
     flex: 1,
-    gap: Spacing.two,
+    minWidth: 0,
+    gap: Spacing.one,
     justifyContent: 'center',
+  },
+  resultTitle: {
+    flexShrink: 1,
+    fontSize: 16,
+    lineHeight: 21,
   },
   resultThumbnail: {
     width: 56,
@@ -504,16 +509,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
-  addButton: {
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 6,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  addButtonLabel: {
-    fontWeight: '700',
+  actionsStack: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
   },
   previewBlock: {
     gap: Spacing.two,

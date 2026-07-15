@@ -299,3 +299,34 @@ Formato per ogni voce:
 - **Causa:** `mobile/src/lib/package-checkout-service.ts` era ancora lo stub progettato nella fase precedente: non usava RevenueCat, Apple IAP o Google Play Billing e non esisteva una Edge Function sicura per scrivere gli abbonamenti dopo ricevuta verificata.
 - **Fix applicato:** installato `react-native-purchases`; nuovo `revenuecat-service.ts` con configure una sola volta, public keys Android/iOS, login RevenueCat con UUID Supabase, logout su cambio account, offerings/prodotti/prezzo store, purchase, pending/cancel/error, restore e CustomerInfo listener deduplicato. `abbonamento-coach.tsx` mostra prezzo store e non usa `price_cents`/prezzo Supabase come prezzo finale. Nuova Edge Function `revenuecat-webhook` con secret, service role solo server-side, ledger idempotente `revenuecat_webhook_events`, risoluzione pacchetto da product id/entitlement e upsert di `user_subscriptions` con `payment_provider='revenuecat'`. Manuale superadmin preservato con `payment_provider='superadmin_manual'`.
 - **Verifica:** `npx.cmd tsc --noEmit` pulito durante lo sviluppo. Non verificabile end-to-end senza prodotti RevenueCat/Google/Apple configurati, migrazione SQL applicata, function deployata e build nativa reale.
+
+## BUG-031 - Schermate interne senza freccia indietro coerente
+- **Stato:** risolto (da verificare su nuovo APK)
+- **Severita:** media
+- **Data apertura/chiusura codice:** 2026-07-14
+- **Causa:** verificata nel codice. I sotto-stack `schede`, `clienti`, `esercizi`, `appuntamenti` usavano ancora header nativi parziali, mentre `client-tabs.tsx`/`app-tabs.tsx` renderizzano le route interne dentro shell custom con `Slot`. Superadmin aveva `headerShown:false` globale, quindi diverse route interne non avevano alcuna freccia nativa.
+- **Fix applicato:** nuovo `mobile/src/components/ui/back-header.tsx` con `ArrowLeft`, hit area 44x44, `accessibilityRole="button"`, `accessibilityLabel="Torna indietro"`, safe-area opzionale e fallback coerenti. Se `router.canGoBack()` e' vero usa `router.back()`, altrimenti fa `router.push(fallbackHref)`. Header nativi disabilitati dove e' visibile il custom header per evitare doppie frecce.
+- **Verifica:** `tsc`, `expo-doctor`, `expo export --platform android` puliti. Non verificato con navigazione reale su APK.
+
+## BUG-032 - Contatore workout cliente/coach bloccato a 0/12
+- **Stato:** risolto (da verificare su dati reali)
+- **Severita:** alta
+- **Data apertura/chiusura codice:** 2026-07-14
+- **Causa:** `getWorkoutCounter` restituiva `subscription.completedWorkouts` appena esisteva un abbonamento attivo. Quel campo legacy viene incrementato solo se la scheda completata ha `WorkoutPlan.subscriptionId`; le schede gia' completate ma non collegate all'abbonamento restavano corrette come `sessionStatus='completed'`, ma il numeratore UI restava 0.
+- **Fix applicato:** il numeratore deriva ora dalle `workoutPlans` reali: stesso `clientId`, `sessionStatus='completed'`, deduplica per `plan.id`, `subscriptionId` uguale quando presente. Le schede legacy senza `subscriptionId` vengono contate solo se `completedAt` o `startDate` rientra nel periodo dell'abbonamento attivo. Home cliente, profilo/progressi cliente e dettaglio cliente coach usano la stessa funzione. Le nuove schede selezionano automaticamente l'abbonamento attivo del cliente se il coach non sceglie altro.
+- **Verifica:** `tsc`, `expo-doctor`, `expo export --platform android` puliti. Non verificato contro il dataset reale con 2 schede completate.
+
+## BUG-033 - Android: form "Nuova scheda" usciva orizzontalmente dallo schermo
+- **Stato:** risolto (da verificare su device 320/360/393/412px)
+- **Severita:** alta
+- **Data apertura/chiusura codice:** 2026-07-14
+- **Causa:** `WorkoutPlanForm` usava coppie di campi sempre in `flexDirection:'row'` senza breakpoint, senza `minWidth:0` sui figli e con input/label che potevano forzare la larghezza. `schede/new.tsx` usava inoltre un padding bottom fisso, non calcolato su tab bar + safe area Android.
+- **Fix applicato:** `ThemedTextInput` e `AppTextField` hanno `width:'100%'`/`minWidth:0`; `WorkoutPlanForm` ha contenitori e figli flex con `minWidth:0`, coppie Data/Ora e Giorno/Settimana impilate sotto 390px, pulsanti "Aggiungi esercizio"/"Libreria YMove" impilabili, label con `flexShrink`. `schede/new.tsx` e `schede/[id].tsx` usano padding bottom `safe area + BottomTabInset + spazio extra`. Applicata la stessa correzione leggera alla riga oraria di `appuntamenti/new.tsx`.
+- **Verifica:** `tsc`, `expo-doctor`, `expo export --platform android` puliti. Non verificato visivamente su device reale.
+## BUG-034 - Redesign avatar/catalogo: asset reali e bucket non ancora applicati su Supabase
+- **Stato:** aperto come verifica operativa, codice predisposto
+- **Severita:** media
+- **Data apertura:** 2026-07-14
+- **Descrizione:** il codice ora supporta avatar cliente e catalogo anteprime esercizi, ma il bucket `client-avatars`, `profiles.avatar_preset` e la tabella opzionale `exercise_image_catalog` non esistono finche' la migrazione locale non viene eseguita manualmente sul progetto Supabase reale. Inoltre non sono ancora stati forniti asset fotografici locali per gli esercizi.
+- **Comportamento atteso finche' non si applica la migrazione:** la foto profilo puo' essere scelta e mostrata localmente; l'upload remoto mostra errore leggibile se il bucket manca/non e' configurato. Le anteprime esercizi non restano vuote: se manca l'asset reale si vede il placeholder stabile per gruppo muscolare.
+- **Verifica necessaria:** eseguire SQL da `docs/SUPABASE_SCHEMA.sql`, testare upload avatar con un cliente reale, popolare il catalogo immagini con asset reali e ricostruire un APK per verifica visiva.

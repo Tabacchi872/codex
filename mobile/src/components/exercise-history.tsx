@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Card } from './card';
 import { ThemedText } from './themed-text';
@@ -28,6 +28,8 @@ export function ExerciseHistory({
   workoutPlanId: string;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 360;
   const [showAll, setShowAll] = useState(false);
 
   const progressHistory = useTrainingStore((s) => s.progressHistory);
@@ -60,7 +62,7 @@ export function ExerciseHistory({
     <Card style={styles.container}>
       <ThemedText type="smallBold">Storico pesi</ThemedText>
 
-      <View style={styles.summaryRow}>
+      <View style={[styles.summaryRow, compact && styles.summaryStack]}>
         <SummaryStat label="Ultimo peso" value={lastEntry ? `${lastEntry.weightUsed} kg` : '—'} />
         <View style={[styles.summaryStat, styles.summaryStatHighlight, { backgroundColor: theme.backgroundSelected }]}>
           <ThemedText type="small" themeColor="primary">
@@ -148,7 +150,11 @@ const styles = StyleSheet.create({
   },
   summaryStat: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
+  },
+  summaryStack: {
+    flexDirection: 'column',
   },
   summaryStatHighlight: {
     borderRadius: Radius.sm,
@@ -171,6 +177,7 @@ const styles = StyleSheet.create({
   },
   cell: {
     flex: 1,
+    minWidth: 0,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
   },

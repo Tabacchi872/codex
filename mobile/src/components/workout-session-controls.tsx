@@ -1,11 +1,9 @@
+import { CheckCircle2, Play, Square } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from './card';
-import { ThemedText } from './themed-text';
-
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppButton, AppCard } from '@/components/ui';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
 function formatDuration(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -13,11 +11,6 @@ function formatDuration(totalSeconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Controlli della sessione live lato cliente: "Inizia allenamento" salva
-// `startedAt` (persistito, così il timer sopravvive a un refresh), poi mostra un
-// timer che conta i secondi trascorsi; "Fine allenamento" calcola la durata
-// reale e la passa al chiamante, che la salva e aggiorna sessionStatus/contatore.
-// Se la scheda è già completata, mostra la durata registrata invece dei controlli.
 export function WorkoutSessionControls({
   startedAt,
   isCompleted,
@@ -31,92 +24,110 @@ export function WorkoutSessionControls({
   onStart: () => void;
   onFinish: (durationSeconds: number) => void;
 }) {
-  const theme = useTheme();
-  const [elapsed, setElapsed] = useState(() => (startedAt ? Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000) : 0));
+  const { colors } = useAppTheme();
+  const [elapsed, setElapsed] = useState(() => (startedAt ? Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)) : 0));
 
   useEffect(() => {
     if (!startedAt) return undefined;
     const startMs = new Date(startedAt).getTime();
-    setElapsed(Math.floor((Date.now() - startMs) / 1000));
+    setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startMs) / 1000));
+      setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     }, 1000);
     return () => clearInterval(interval);
   }, [startedAt]);
 
   if (isCompleted) {
     return (
-      <Card style={styles.container}>
-        <ThemedText type="smallBold">Allenamento completato</ThemedText>
-        {savedDurationSeconds !== undefined && (
-          <ThemedText type="small" themeColor="textSecondary">
-            Durata: {formatDuration(savedDurationSeconds)}
-          </ThemedText>
-        )}
-      </Card>
+      <AppCard style={styles.completedCard}>
+        <View style={[styles.statusIcon, { backgroundColor: colors.mossSoft }]}>
+          <CheckCircle2 size={24} color={colors.moss} />
+        </View>
+        <View style={styles.completedCopy}>
+          <Text style={[styles.completedTitle, { color: colors.ink }]}>Allenamento completato</Text>
+          {savedDurationSeconds !== undefined ? (
+            <Text style={[styles.caption, { color: colors.inkSoft }]}>Durata registrata: {formatDuration(savedDurationSeconds)}</Text>
+          ) : null}
+        </View>
+      </AppCard>
     );
   }
 
   if (!startedAt) {
-    return (
-      <Pressable onPress={onStart}>
-        <View style={[styles.startButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            Inizia allenamento
-          </ThemedText>
-        </View>
-      </Pressable>
-    );
+    return <AppButton label="Inizia allenamento" onPress={onStart} icon={<Play size={18} color={colors.onMoss} fill={colors.onMoss} />} size="lg" fullWidth />;
   }
 
   return (
-    <Card style={styles.container}>
-      <View style={styles.headerRow}>
-        <ThemedText type="smallBold">Allenamento in corso</ThemedText>
-        <ThemedText type="small" themeColor="statusActive">
-          In corso
-        </ThemedText>
-      </View>
-      <ThemedText type="title" style={styles.timer}>
-        {formatDuration(elapsed)}
-      </ThemedText>
-      <Pressable onPress={() => onFinish(elapsed)}>
-        <View style={[styles.finishButton, { backgroundColor: theme.primary }]}>
-          <ThemedText type="smallBold" themeColor="onPrimary">
-            Fine allenamento
-          </ThemedText>
+    <AppCard style={styles.runningCard}>
+      <View style={styles.runningHeader}>
+        <View>
+          <Text style={[styles.runningTitle, { color: colors.ink }]}>Allenamento in corso</Text>
+          <Text style={[styles.caption, { color: colors.moss }]}>Sessione attiva</Text>
         </View>
-      </Pressable>
-    </Card>
+        <View style={[styles.liveDot, { backgroundColor: colors.moss }]} />
+      </View>
+      <Text style={[styles.timer, { color: colors.ink }]}>{formatDuration(elapsed)}</Text>
+      <AppButton
+        label="Completa allenamento"
+        onPress={() => onFinish(elapsed)}
+        icon={<Square size={16} color={colors.onMoss} fill={colors.onMoss} />}
+        size="lg"
+        fullWidth
+      />
+    </AppCard>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  completedCard: {
     alignItems: 'center',
-    gap: Spacing.two,
+    flexDirection: 'row',
+    gap: AppSpacing[3],
   },
-  headerRow: {
+  statusIcon: {
+    alignItems: 'center',
+    borderRadius: 24,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  completedCopy: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+  },
+  completedTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  caption: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
+  },
+  runningCard: {
+    alignItems: 'stretch',
+    gap: AppSpacing[3],
+  },
+  runningHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    alignSelf: 'stretch',
+  },
+  runningTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  liveDot: {
+    borderRadius: 6,
+    height: 12,
+    width: 12,
   },
   timer: {
     fontSize: 44,
-    lineHeight: 50,
-    fontWeight: '700',
     fontVariant: ['tabular-nums'],
-  },
-  startButton: {
-    borderRadius: Radius.sm,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-  },
-  finishButton: {
-    borderRadius: Radius.sm,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    alignSelf: 'stretch',
+    fontWeight: '700',
+    letterSpacing: -1,
+    lineHeight: 50,
+    textAlign: 'center',
   },
 });

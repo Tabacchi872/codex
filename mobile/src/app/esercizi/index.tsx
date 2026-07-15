@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, SectionList, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/card';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
 import { Pill } from '@/components/pill';
-import { PlaceholderBanner } from '@/components/placeholder-banner';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
+import { AppPressableCard } from '@/components/ui';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { EXERCISE_LIBRARY, MUSCLE_GROUPS, exercisesByMuscleGroup } from '@/data/exercise-library';
 import { useTheme } from '@/hooks/use-theme';
@@ -50,8 +51,6 @@ export default function EserciziListScreen() {
             </ThemedText>
           </View>
 
-          <PlaceholderBanner text="Nessun video locale ancora caricato: ogni esercizio mostra onestamente 'Video mancante' finché non aggiungi i file in mobile/assets/videos/." />
-
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             <FilterChip label="Tutti" active={filter === 'Tutti'} onPress={() => setFilter('Tutti')} />
             {MUSCLE_GROUPS.map((group) => (
@@ -71,25 +70,25 @@ export default function EserciziListScreen() {
       }
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       renderItem={({ item }) => (
-        <Pressable onPress={() => router.push(`/esercizi/${item.id}`)}>
-          <Card style={styles.exerciseCard}>
-            <View style={styles.exerciseInfo}>
-              <ThemedText type="default" style={styles.exerciseName}>
-                {item.name}
-              </ThemedText>
-              <View style={styles.badgeRow}>
-                <Pill label={item.muscleGroup} />
-                <Pill
-                  label={item.videoStatus === 'available' ? 'Video disponibile' : 'Video mancante'}
-                  tone={item.videoStatus === 'available' ? 'positive' : 'neutral'}
-                />
-              </View>
-            </View>
-            <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
-              Apri
+        <AppPressableCard
+          onPress={() => router.push(`/esercizi/${item.id}`)}
+          accessibilityLabel={`Apri esercizio ${item.name}`}
+          style={styles.exerciseCard}>
+          <ExerciseThumbnail exercise={item} exerciseId={item.id} size={64} />
+          <View style={styles.exerciseInfo}>
+            <ThemedText type="default" style={styles.exerciseName} numberOfLines={2} ellipsizeMode="tail">
+              {item.name}
             </ThemedText>
-          </Card>
-        </Pressable>
+            <View style={styles.badgeRow}>
+              <Pill label={item.muscleGroup} />
+              <Pill
+                label={item.videoStatus === 'available' ? 'Video disponibile' : 'Anteprima'}
+                tone={item.videoStatus === 'available' ? 'positive' : 'neutral'}
+              />
+            </View>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </AppPressableCard>
       )}
     />
     </ScreenBackground>
@@ -152,17 +151,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.one,
   },
   exerciseCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: Spacing.two,
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.three,
   },
   exerciseInfo: {
     flex: 1,
     gap: 6,
   },
   exerciseName: {
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 21,
   },
   badgeRow: {
     flexDirection: 'row',

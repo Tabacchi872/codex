@@ -4,8 +4,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppBadge, AppButton, AppCard } from '@/components/ui';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
+import { AppBadge, AppButton, AppPressableCard } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { logClientNavPress } from '@/lib/client-navigation';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
@@ -123,38 +125,52 @@ export default function WorkoutClienteScreen() {
 
 function WorkoutRow({ plan, myPlans, onPress }: { plan: WorkoutPlan; myPlans: WorkoutPlan[]; onPress: () => void }) {
   const { colors } = useAppTheme();
+  const { resolve } = useExerciseResolver();
   const status = plan.sessionStatus ?? 'todo';
   const weekLabel = getSessionWeekLabel(myPlans, plan);
   const dayLabel = getSessionDayLabel(plan);
+  const firstExercise = plan.exercises[0] ? resolve(plan.exercises[0].exerciseId) : null;
 
   return (
-    <AppCard onPress={onPress} style={styles.card}>
-      <View style={styles.rowTop}>
-        <View style={styles.badgeRow}>
-          <AppBadge label={`GIORNO ${dayLabel}`} tone="moss" />
+    <AppPressableCard onPress={onPress} accessibilityLabel={`Apri allenamento ${plan.name}`} style={styles.card}>
+      <View style={styles.cardRow}>
+        {firstExercise ? (
+          <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={64} />
+        ) : (
+          <View style={[styles.planPlaceholder, { backgroundColor: colors.mossSoft }]}>
+            <Dumbbell size={26} color={colors.moss} />
+          </View>
+        )}
+        <View style={styles.cardCopy}>
+          <View style={styles.badgeRow}>
+            <AppBadge label={`GIORNO ${dayLabel}`} tone="moss" />
+            {status !== 'todo' ? (
+              <AppBadge
+                label={SESSION_STATUS_LABEL[status]}
+                tone={status === 'completed' ? 'moss' : status === 'skipped' ? 'amber' : 'rust'}
+              />
+            ) : null}
+          </View>
+          <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={2} ellipsizeMode="tail">
+            {plan.name}
+          </Text>
           <View style={styles.metaRow}>
             <Calendar size={13} color={colors.inkSoft} />
             <Text style={[styles.metaText, { color: colors.inkSoft }]} numberOfLines={1}>
               {formatWeekday(plan.startDate)} · {formatDayMonth(plan.startDate)}
-              {plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''} · Settimana {weekLabel}
+              {plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''}
             </Text>
           </View>
-        </View>
-        {status !== 'todo' ? <AppBadge label={SESSION_STATUS_LABEL[status]} tone={status === 'skipped' ? 'rust' : 'moss'} /> : null}
-      </View>
-      <View style={styles.rowBottom}>
-        <View style={styles.rowBottomLeft}>
-          <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={1}>
-            {plan.name}
-          </Text>
           <View style={styles.metaRow}>
             <Dumbbell size={13} color={colors.inkSoft} />
-            <Text style={[styles.metaText, { color: colors.inkSoft }]}>{plan.exercises.length} esercizi</Text>
+            <Text style={[styles.metaText, { color: colors.inkSoft }]} numberOfLines={1}>
+              {plan.exercises.length} esercizi · Settimana {weekLabel}
+            </Text>
           </View>
         </View>
         <ChevronRight size={20} color={colors.inkFaint} />
       </View>
-    </AppCard>
+    </AppPressableCard>
   );
 }
 
@@ -198,20 +214,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    gap: AppSpacing[3],
+    padding: AppSpacing[3],
   },
-  rowTop: {
-    flexDirection: 'row',
+  cardRow: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: AppSpacing[2],
+    flexDirection: 'row',
+    gap: AppSpacing[3],
+    minWidth: 0,
+  },
+  cardCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  planPlaceholder: {
+    alignItems: 'center',
+    borderRadius: AppRadius.xl,
+    height: 64,
+    justifyContent: 'center',
+    width: 64,
   },
   badgeRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: AppSpacing[2],
-    flex: 1,
-    minWidth: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[1],
   },
   metaRow: {
     flexDirection: 'row',
@@ -223,19 +250,11 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.sm,
     fontWeight: '600',
   },
-  rowBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  rowBottomLeft: {
-    gap: 3,
-    flex: 1,
-    minWidth: 0,
-  },
   planName: {
     fontSize: 17,
     fontWeight: '700',
+    lineHeight: 22,
+    minWidth: 0,
   },
   loading: {
     flex: 1,

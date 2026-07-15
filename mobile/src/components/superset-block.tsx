@@ -1,17 +1,11 @@
+import { Repeat2 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from './themed-text';
-
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppCard } from '@/components/ui';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import { TECHNIQUE_LABEL, type TechniqueType } from '@/types/training';
 
-// Blocco grigio chiaro che raggruppa visivamente gli esercizi da eseguire insieme
-// (superserie o circuito), così è chiaro a colpo d'occhio che non sono esercizi
-// indipendenti. Il glifo "⇄" comunica "cambio/rotazione tra esercizi" senza bisogno
-// di un pacchetto icone: resta leggibile anche se il font non lo rende in modo
-// identico su ogni piattaforma.
 export function SupersetBlock({
   technique,
   children,
@@ -19,39 +13,54 @@ export function SupersetBlock({
   technique: Extract<TechniqueType, 'superset' | 'circuit'>;
   children: ReactNode;
 }) {
-  const theme = useTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, borderColor: theme.border }]}>
+    <AppCard style={styles.container}>
       <View style={styles.header}>
-        <ThemedText style={[styles.icon, { color: theme.primary }]}>⇄</ThemedText>
-        <ThemedText type="smallBold">{TECHNIQUE_LABEL[technique]}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          — da eseguire insieme
-        </ThemedText>
+        <View style={[styles.iconWrap, { backgroundColor: colors.mossSoft }]}>
+          <Repeat2 size={17} color={colors.moss} />
+        </View>
+        <View style={styles.headerCopy}>
+          <Text style={[styles.title, { color: colors.ink }]}>{TECHNIQUE_LABEL[technique]}</Text>
+          <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Esegui gli esercizi in sequenza</Text>
+        </View>
       </View>
       <View style={styles.items}>{children}</View>
-    </View>
+    </AppCard>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: Spacing.three,
-    gap: Spacing.two,
+    gap: AppSpacing[2],
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    paddingBottom: AppSpacing[1],
   },
-  icon: {
-    fontSize: 16,
+  iconWrap: {
+    alignItems: 'center',
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: AppFontSize.base,
     fontWeight: '700',
   },
+  subtitle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
+  },
   items: {
-    gap: Spacing.two,
+    gap: AppSpacing[1],
   },
 });

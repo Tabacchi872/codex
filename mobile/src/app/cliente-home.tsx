@@ -1,12 +1,15 @@
 import { Redirect, useRouter, type Href } from 'expo-router';
-import { Apple, Calendar, ClipboardList, Dumbbell, Megaphone, MessageCircle, User } from 'lucide-react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Apple, Calendar, ClipboardList, Dumbbell, Megaphone, MessageCircle, TrendingUp, User } from 'lucide-react-native';
+import type { ReactNode } from 'react';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { AppButton, AppCard, AppEmptyState, AppHeader, AppListRow, AppRingProgress, AppScreen } from '@/components/ui';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
+import { AppButton, AppCard, AppEmptyState, AppPressableCard, AppRingProgress, AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { logClientNavPress } from '@/lib/client-navigation';
 import { getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatFullDateEyebrow } from '@/lib/format-date';
 import { getNextWorkoutPlan, getSessionDayLabel, getWorkoutCounter } from '@/lib/workout-progress';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useAuthStore } from '@/store/auth-store';
 import { useBoardStore } from '@/store/board-store';
 import { useBookingStore } from '@/store/booking-store';
@@ -17,11 +20,12 @@ import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
-// Home cliente: mostra SOLO i dati collegati al proprio clientId (nessuna lista
-// clienti, nessun dato di altri clienti, nessuna nota interna del coach).
 export default function ClienteHomeScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 360;
+  const narrow = width < 390;
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const clients = useClientStore((s) => s.clients);
@@ -32,6 +36,7 @@ export default function ClienteHomeScreen() {
   const bookings = useBookingStore((s) => s.bookings);
   const boardPosts = useBoardStore((s) => s.posts);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
+  const { resolve: resolveExercise } = useExerciseResolver();
 
   const client = getClientById(clients, currentClientId);
 
@@ -40,26 +45,19 @@ export default function ClienteHomeScreen() {
     router.push(target as Href);
   }
 
-  if (currentRole === 'coach') {
-    return <Redirect href="/" />;
-  }
+  if (currentRole === 'coach') return <Redirect href="/" />;
 
   if (!hasHydrated) {
     return (
       <AppScreen scroll={false}>
         <View style={styles.loading}>
-          <Text style={{ color: colors.inkSoft }}>Caricamento…</Text>
+          <Text style={{ color: colors.inkSoft }}>Caricamento...</Text>
         </View>
       </AppScreen>
     );
   }
 
-  const { completed: completedCount, total: purchasedTotal } = getWorkoutCounter(
-    subscriptions,
-    workoutPlans,
-    client,
-    currentClientId
-  );
+  const { completed: completedCount, total: purchasedTotal } = getWorkoutCounter(subscriptions, workoutPlans, client, currentClientId);
   const nextPlan = getNextWorkoutPlan(workoutPlans, currentClientId);
   const nutritionPlan = nutritionPlans.find((p) => p.clientId === currentClientId) ?? null;
   const lastCheckin = checkins
@@ -69,22 +67,29 @@ export default function ClienteHomeScreen() {
     .filter((b) => b.clientId === currentClientId && b.status === 'confermata')
     .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))[0];
   const relevantPosts = boardPosts.filter((p) => p.scope === 'globale' || p.clientId === currentClientId);
+  const totalSets = nextPlan ? nextPlan.exercises.reduce((sum, item) => sum + item.sets, 0) : 0;
+  const nextExercise = nextPlan?.exercises[0] ? resolveExercise(nextPlan.exercises[0].exerciseId) : null;
 
   return (
-    <AppScreen>
-      <AppHeader
-        eyebrow={formatFullDateEyebrow(new Date())}
-        title={`Ciao${client ? `, ${client.firstName}` : ''}`}
-        action={
-          <AppButton
-            label="Coach"
-            variant="outline"
-            size="sm"
-            icon={<MessageCircle size={14} color={colors.moss} />}
-            onPress={() => navigate('cliente-home-coach', '/chat')}
-          />
-        }
-      />
+    <AppScreen contentStyle={styles.screenContent}>
+      <View style={styles.topBar}>
+        <FitCoachLogo size="md" />
+        <UserAvatar
+          firstName={client?.firstName}
+          lastName={client?.lastName}
+          imageUrl={client?.avatarUrl}
+          preset={client?.avatarPreset}
+          size={compact ? 54 : 60}
+        />
+      </View>
+
+      <View style={styles.heroHeader}>
+        <Text style={[styles.heroTitle, compact && styles.heroTitleCompact, { color: colors.ink }]} numberOfLines={2}>
+          Ciao{client ? ', ' : ''}
+          {client ? <Text style={{ color: colors.moss }}>{client.firstName}</Text> : null}
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.inkSoft }]}>{formatFullDateEyebrow(new Date())}</Text>
+      </View>
 
       {!client ? (
         <AppCard>
@@ -92,112 +97,365 @@ export default function ClienteHomeScreen() {
         </AppCard>
       ) : (
         <>
-          <View style={styles.ringWrap}>
-            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" />
-          </View>
+          <AppCard style={styles.progressHero}>
+            <View style={styles.glowWrap} pointerEvents="none">
+              <View style={[styles.heroBeam, { backgroundColor: colors.moss }]} />
+            </View>
+            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" size={compact ? 112 : narrow ? 122 : 128} strokeWidth={11} />
+            <View style={styles.progressCopy}>
+              <Text style={[styles.progressTitle, { color: colors.ink }]}>Allenamenti completati</Text>
+              <Text style={[styles.remainingText, { color: colors.moss }]}>{Math.max(0, purchasedTotal - completedCount)} rimanenti</Text>
+              <View style={styles.progressMetaRow}>
+                <Calendar size={15} color={colors.inkSoft} />
+                <Text style={[styles.progressMeta, { color: colors.inkSoft }]} numberOfLines={2}>
+                  {nextPlan ? 'Prossimo allenamento disponibile' : 'Nessun allenamento assegnato'}
+                </Text>
+              </View>
+            </View>
+          </AppCard>
 
-          <AppCard style={styles.listCard}>
-            <AppListRow
-              icon={<Dumbbell size={19} color={colors.coral} />}
-              iconBackground={colors.coralSoft}
-              title={nextPlan ? nextPlan.name : 'Allenamenti'}
-              subtitle={
-                nextPlan
-                  ? `${nextPlan.exercises.length} esercizi · Giorno ${getSessionDayLabel(nextPlan)}`
-                  : 'Nessun allenamento assegnato'
-              }
-              onPress={() => navigate('cliente-home-workout', nextPlan ? `/schede/${nextPlan.id}` : '/workout')}
-            />
-            <Divider />
-            <AppListRow
-              icon={<Apple size={19} color={colors.moss} />}
-              iconBackground={colors.mossSoft}
-              title="Nutrizione"
-              subtitle={nutritionPlan ? nutritionPlan.title : 'Nessun piano nutrizionale assegnato'}
-              onPress={() => navigate('cliente-home-nutrizione', '/nutrizione')}
-            />
-            <Divider />
-            <AppListRow
-              icon={<ClipboardList size={19} color={colors.ink} />}
-              iconBackground={colors.surfaceSubtle}
-              title="Check-in settimanale"
-              subtitle={lastCheckin ? `Ultimo: ${formatDayMonth(lastCheckin.date)}` : 'Da compilare'}
-              onPress={() => navigate('cliente-home-checkin', '/questionario')}
-              trailing={<TrailingPill label="Check In" />}
-            />
-            <Divider />
-            <AppListRow
-              icon={<Calendar size={19} color={colors.ink} />}
-              iconBackground={colors.surfaceSubtle}
-              title="Le tue prenotazioni"
-              subtitle={
-                nextBooking
-                  ? `Prossima: ${formatDayMonth(nextBooking.date)} alle ${nextBooking.time}`
-                  : 'Nessuna prenotazione attiva'
-              }
-              onPress={() => navigate('cliente-home-prenota', '/prenotazioni')}
-              trailing={nextBooking ? undefined : <TrailingPill label="Prenota" />}
-            />
-            <Divider />
-            <AppListRow
-              icon={<Megaphone size={19} color={colors.ink} />}
-              iconBackground={colors.surfaceSubtle}
-              title="Bacheca"
-              subtitle={relevantPosts.length === 0 ? 'Nessun annuncio recente' : `${relevantPosts.length} ${relevantPosts.length === 1 ? 'annuncio' : 'annunci'}`}
-              onPress={() => navigate('cliente-home-bacheca', '/bacheca')}
+          <AppCard style={styles.workoutHero}>
+            <View style={[styles.workoutHeroTop, compact && styles.workoutHeroTopCompact]}>
+              <View style={styles.workoutText}>
+                <Text style={[styles.kicker, { color: colors.moss }]}>PIANO ATTUALE</Text>
+                <Text
+                  style={[styles.workoutTitle, compact && styles.workoutTitleCompact, { color: colors.ink }]}
+                  numberOfLines={3}
+                  ellipsizeMode="tail">
+                  {nextPlan ? nextPlan.name : 'Allenamenti'}
+                </Text>
+                <View style={styles.workoutMetaRow}>
+                  <Dumbbell size={16} color={colors.inkSoft} />
+                  <Text style={[styles.workoutMeta, { color: colors.inkSoft }]} numberOfLines={2}>
+                    {nextPlan ? `${nextPlan.exercises.length} esercizi · Giorno ${getSessionDayLabel(nextPlan)}` : 'Apri Workout per vedere lo storico'}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.workoutVisual, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]} pointerEvents="none">
+                {nextExercise ? (
+                  <ExerciseThumbnail exercise={nextExercise} exerciseId={nextExercise.id} size={compact ? 92 : 112} />
+                ) : (
+                  <Dumbbell size={compact ? 42 : 50} color={colors.moss} strokeWidth={1.8} />
+                )}
+              </View>
+            </View>
+            <AppButton
+              label="Inizia"
+              onPress={() => navigate('cliente-home-inizia', nextPlan ? `/schede/${nextPlan.id}` : '/workout')}
+              icon={<Dumbbell size={18} color={colors.onMoss} />}
+              size="lg"
+              fullWidth
             />
           </AppCard>
+
+          <View style={styles.quickGrid}>
+            <QuickTile
+              title="Nutrizione"
+              subtitle={nutritionPlan ? nutritionPlan.title : 'Piani e ricette'}
+              icon={<Apple size={compact ? 27 : 30} color={colors.moss} />}
+              onPress={() => navigate('cliente-home-nutrizione', '/nutrizione')}
+            />
+            <QuickTile
+              title="Check-in"
+              subtitle={lastCheckin ? `Ultimo ${formatDayMonth(lastCheckin.date)}` : 'Tieni il ritmo'}
+              icon={<ClipboardList size={compact ? 27 : 30} color={colors.moss} />}
+              onPress={() => navigate('cliente-home-checkin', '/questionario')}
+            />
+            <QuickTile
+              title="Prenotazioni"
+              subtitle={nextBooking ? `${formatDayMonth(nextBooking.date)} ${nextBooking.time}` : 'I tuoi appuntamenti'}
+              icon={<Calendar size={compact ? 27 : 30} color={colors.moss} />}
+              onPress={() => navigate('cliente-home-prenota', '/prenotazioni')}
+            />
+            <QuickTile
+              title="Bacheca"
+              subtitle={relevantPosts.length ? `${relevantPosts.length} aggiornamenti` : 'News e aggiornamenti'}
+              icon={<Megaphone size={compact ? 27 : 30} color={colors.moss} />}
+              onPress={() => navigate('cliente-home-bacheca', '/bacheca')}
+            />
+          </View>
+
+          <AppCard style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <TrendingUp size={21} color={colors.moss} />
+              <Text style={[styles.summaryTitle, { color: colors.ink }]}>I tuoi progressi</Text>
+            </View>
+            <View style={[styles.summaryStats, compact && styles.summaryStatsCompact]}>
+              <SummaryMetric label="Workout" value={String(completedCount)} compact={compact} />
+              <SummaryMetric label="Serie" value={String(totalSets)} divided={!compact} compact={compact} />
+              <SummaryMetric label="Progresso" value={`${Math.round((completedCount / Math.max(1, purchasedTotal)) * 100)}%`} divided={!compact} compact={compact} />
+            </View>
+          </AppCard>
+
+          <AppButton
+            label="Chat con il coach"
+            variant="outline"
+            icon={<MessageCircle size={16} color={colors.moss} />}
+            onPress={() => navigate('cliente-home-coach', '/chat')}
+            fullWidth
+          />
         </>
       )}
     </AppScreen>
   );
 }
 
-function Divider() {
-  const { colors } = useAppTheme();
-  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
-}
-
-// Etichetta visiva (non un Pressable/bottone): usata come `trailing` di una
-// AppListRow che ha già lo stesso `onPress` — un AppButton qui dentro
-// creerebbe un <button> annidato in un altro <button> (bug di hydration su
-// web, l'intera riga è già un Pressable/role="button"). Stesso aspetto di
-// AppButton size="sm" (coral pieno), ma puramente decorativa.
-function TrailingPill({ label }: { label: string }) {
+function QuickTile({ title, subtitle, icon, onPress }: { title: string; subtitle: string; icon: ReactNode; onPress: () => void }) {
   const { colors } = useAppTheme();
   return (
-    <View style={[styles.trailingPill, { backgroundColor: colors.coral }]}>
-      <Text style={[styles.trailingPillLabel, { color: colors.onCoral }]}>{label}</Text>
+    <AppPressableCard onPress={onPress} accessibilityLabel={title} style={styles.quickTile}>
+      <View style={styles.quickTop}>
+        {icon}
+        <Text style={[styles.quickArrow, { color: colors.inkFaint }]}>›</Text>
+      </View>
+      <View style={styles.quickText}>
+        <Text style={[styles.quickTitle, { color: colors.ink }]}>{title}</Text>
+        <Text style={[styles.quickSubtitle, { color: colors.inkSoft }]} numberOfLines={2}>
+          {subtitle}
+        </Text>
+      </View>
+    </AppPressableCard>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  divided = false,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  divided?: boolean;
+  compact?: boolean;
+}) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.summaryMetric, compact && styles.summaryMetricCompact, divided && { borderLeftColor: colors.border, borderLeftWidth: StyleSheet.hairlineWidth }]}>
+      <Text style={[styles.summaryValue, { color: colors.ink }]}>{value}</Text>
+      <Text style={[styles.summaryLabel, { color: colors.inkSoft }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    gap: 18,
+    paddingHorizontal: 18,
+  },
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ringWrap: {
+  topBar: {
     alignItems: 'center',
-    paddingVertical: AppSpacing[2],
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: AppSpacing[3],
+    marginBottom: AppSpacing[1],
   },
-  listCard: {
-    paddingVertical: AppSpacing[1],
+  heroHeader: {
+    gap: AppSpacing[1],
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: -AppSpacing[4],
+  heroTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    lineHeight: 42,
   },
-  trailingPill: {
-    height: 36,
-    borderRadius: AppRadius.lg,
-    paddingHorizontal: AppSpacing[4],
+  heroTitleCompact: {
+    fontSize: 34,
+    lineHeight: 40,
+  },
+  subtitle: {
+    fontSize: AppFontSize.sm + 1,
+    fontWeight: '500',
+    textTransform: 'none',
+  },
+  progressHero: {
     alignItems: 'center',
+    borderRadius: 22,
+    flexDirection: 'row',
+    gap: AppSpacing[4],
+    minHeight: 184,
+    overflow: 'hidden',
+    padding: AppSpacing[5],
+  },
+  glowWrap: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.35,
+  },
+  heroBeam: {
+    borderRadius: 999,
+    height: 160,
+    opacity: 0.08,
+    position: 'absolute',
+    right: -92,
+    top: 46,
+    width: 160,
+  },
+  progressCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  progressTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 27,
+  },
+  remainingText: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: AppSpacing[2],
+  },
+  progressMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    marginTop: AppSpacing[4],
+    minWidth: 0,
+  },
+  progressMeta: {
+    fontSize: AppFontSize.sm,
+    flex: 1,
+    fontWeight: '500',
+    lineHeight: 19,
+    minWidth: 0,
+  },
+  workoutHero: {
+    borderRadius: 22,
+    gap: AppSpacing[4],
+    minHeight: 274,
+    overflow: 'hidden',
+    padding: AppSpacing[5],
+  },
+  workoutHeroTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[4],
+    minWidth: 0,
+  },
+  workoutHeroTopCompact: {
+    alignItems: 'stretch',
+    flexDirection: 'column-reverse',
+  },
+  workoutText: {
+    flex: 1,
+    gap: AppSpacing[3],
     justifyContent: 'center',
+    minWidth: 0,
   },
-  trailingPillLabel: {
+  kicker: {
     fontSize: AppFontSize.xs,
     fontWeight: '800',
+    letterSpacing: 0,
+  },
+  workoutTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 31,
+  },
+  workoutTitleCompact: {
+    fontSize: 23,
+    lineHeight: 29,
+  },
+  workoutMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    minWidth: 0,
+  },
+  workoutMeta: {
+    flex: 1,
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
+    lineHeight: 19,
+    minWidth: 0,
+  },
+  workoutVisual: {
+    alignItems: 'center',
+    borderRadius: AppRadius.xxl,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 122,
+    overflow: 'hidden',
+    padding: AppSpacing[1],
+    width: 122,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  quickTile: {
+    borderRadius: 22,
+    flexBasis: '47%',
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    minHeight: 116,
+    padding: AppSpacing[4],
+  },
+  quickTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickArrow: {
+    fontSize: 23,
+    fontWeight: '600',
+  },
+  quickText: {
+    gap: 3,
+  },
+  quickTitle: {
+    fontSize: AppFontSize.base,
+    fontWeight: '700',
+    lineHeight: 21,
+  },
+  quickSubtitle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  summaryCard: {
+    borderRadius: 22,
+    gap: AppSpacing[4],
+    padding: AppSpacing[5],
+  },
+  summaryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  summaryStats: {
+    flexDirection: 'row',
+  },
+  summaryStatsCompact: {
+    flexWrap: 'wrap',
+    rowGap: AppSpacing[3],
+  },
+  summaryMetric: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+    paddingHorizontal: AppSpacing[2],
+  },
+  summaryMetricCompact: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    borderLeftWidth: 0,
+  },
+  summaryValue: {
+    fontSize: 30,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  summaryLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
   },
 });

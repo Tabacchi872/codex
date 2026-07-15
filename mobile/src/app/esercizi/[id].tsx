@@ -1,11 +1,12 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/card';
 import { ExerciseAttachments } from '@/components/exercise-attachments';
 import { ExerciseHistory } from '@/components/exercise-history';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
 import { ExerciseSetLogger } from '@/components/exercise-set-logger';
 import { ExerciseVideoPlayer } from '@/components/exercise-video-player';
 import { ExerciseVideoUploadControl } from '@/components/exercise-video-upload';
@@ -16,6 +17,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
+import { BackHeader } from '@/components/ui';
 import { YMoveExercisePicker, type YmoveVideoLinkSelection } from '@/components/ymove-exercise-picker';
 import { YMoveVideoPlayer } from '@/components/ymove-video-player';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
@@ -45,10 +47,12 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 type InfoTab = 'esecuzione' | 'descrizione';
 
 export default function EsercizioDettaglioScreen() {
-  const { id, planId } = useLocalSearchParams<{ id: string; planId?: string }>();
+  const { id, planId, returnTo } = useLocalSearchParams<{ id: string; planId?: string; returnTo?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const compactLayout = width < 370;
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const clients = useClientStore((s) => s.clients);
   const currentRole = useAuthStore((s) => s.currentRole);
@@ -267,6 +271,20 @@ export default function EsercizioDettaglioScreen() {
   const sessionPosition = sessionOrder.findIndex((we) => we.exerciseId === exercise.id);
   const nextInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition + 1] : undefined;
   const prevInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition - 1] : undefined;
+  const explicitReturnHref = getExplicitReturnHref(returnTo, planId);
+  const fallbackHref = (explicitReturnHref ?? (currentRole === 'cliente' ? '/workout' : '/esercizi')) as Href;
+
+  function handleBack() {
+    if (explicitReturnHref) {
+      router.dismissTo(explicitReturnHref);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(fallbackHref);
+  }
 
   return (
     <ScreenBackground>
@@ -278,13 +296,25 @@ export default function EsercizioDettaglioScreen() {
           paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
         },
       ]}>
-      <Stack.Screen options={{ title: exercise.name }} />
+      <BackHeader
+        title="Dettaglio esercizio"
+        fallbackHref={fallbackHref}
+        onBack={handleBack}
+      />
 
-      <View style={styles.badgeRow}>
-        <Pill label={exercise.muscleGroup} />
-        <Pill label={exercise.equipment} />
-        <Pill label={DIFFICULTY_LABEL[exercise.difficulty] ?? exercise.difficulty} />
-      </View>
+      <Card style={[styles.exerciseHero, compactLayout && styles.exerciseHeroCompact]}>
+        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compactLayout ? 76 : 88} />
+        <View style={styles.exerciseHeroCopy}>
+          <ThemedText type="subtitle" style={styles.exerciseTitle} numberOfLines={3} ellipsizeMode="tail">
+            {exercise.name}
+          </ThemedText>
+          <View style={styles.badgeRow}>
+            <Pill label={exercise.muscleGroup} />
+            <Pill label={exercise.equipment} />
+            <Pill label={DIFFICULTY_LABEL[exercise.difficulty] ?? exercise.difficulty} />
+          </View>
+        </View>
+      </Card>
 
       {exercise.source === 'ymove' && exercise.ymoveExerciseId ? (
         // Esercizio importato DA YMove: il suo video e' sempre quello
@@ -481,7 +511,7 @@ export default function EsercizioDettaglioScreen() {
                 <ThemedText type="smallBold">
                   Assegnato a {selectedClient ? clientFullName(selectedClient) : 'cliente'}
                 </ThemedText>
-                <View style={styles.summaryRow}>
+                <View style={[styles.summaryRow, compactLayout && styles.summaryRowCompact]}>
                   <SummaryStat icon="▦" label="Serie" value={String(selected.workoutExercise.sets)} />
                   <SummaryStat
                     icon="↻"
@@ -531,8 +561,10 @@ export default function EsercizioDettaglioScreen() {
       )}
 
       {sessionPlan && sessionPosition >= 0 && (
-        <View style={[styles.sessionNav, { borderTopColor: theme.border }]}>
-          <Pressable onPress={() => prevInSession && router.setParams({ id: prevInSession.exerciseId })} disabled={!prevInSession}>
+        <View style={[styles.sessionNav, compactLayout && styles.sessionNavCompact, { borderTopColor: theme.border }]}>
+          <Pressable
+            onPress={() => prevInSession && router.setParams({ id: prevInSession.exerciseId, planId: sessionPlan.id })}
+            disabled={!prevInSession}>
             <ThemedText type="title" style={[styles.navArrow, !prevInSession && styles.navArrowDisabled]}>
               ‹
             </ThemedText>
@@ -550,7 +582,7 @@ export default function EsercizioDettaglioScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => nextInSession && router.setParams({ id: nextInSession.exerciseId })}
+            onPress={() => nextInSession && router.setParams({ id: nextInSession.exerciseId, planId: sessionPlan.id })}
             disabled={!nextInSession}>
             <ThemedText type="title" style={[styles.navArrow, { color: theme.primary }, !nextInSession && styles.navArrowDisabled]}>
               ›
@@ -561,6 +593,28 @@ export default function EsercizioDettaglioScreen() {
     </ScrollView>
     </ScreenBackground>
   );
+}
+
+function getParamValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function isSafeInternalHref(value: string) {
+  return value.startsWith('/') && !value.startsWith('//') && !value.includes('://');
+}
+
+function getExplicitReturnHref(returnTo: string | string[] | undefined, planId: string | string[] | undefined): Href | null {
+  const returnToValue = getParamValue(returnTo)?.trim();
+  if (returnToValue && isSafeInternalHref(returnToValue)) {
+    return returnToValue as Href;
+  }
+
+  const planIdValue = getParamValue(planId)?.trim();
+  if (!planIdValue) {
+    return null;
+  }
+
+  return { pathname: '/schede/[id]', params: { id: planIdValue } };
 }
 
 function InfoTabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
@@ -595,6 +649,26 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
+  },
+  exerciseHero: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.three,
+    minWidth: 0,
+  },
+  exerciseHeroCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+  },
+  exerciseHeroCopy: {
+    flex: 1,
+    gap: Spacing.two,
+    minWidth: 0,
+  },
+  exerciseTitle: {
+    fontSize: 25,
+    lineHeight: 31,
+    minWidth: 0,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -647,9 +721,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: Spacing.two,
   },
+  summaryRowCompact: {
+    flexWrap: 'wrap',
+    rowGap: Spacing.three,
+  },
   summaryStat: {
     alignItems: 'center',
+    flex: 1,
     gap: 2,
+    minWidth: 82,
   },
   summaryIcon: {
     fontSize: 18,
@@ -680,6 +760,9 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: Spacing.three,
     marginTop: Spacing.two,
+  },
+  sessionNavCompact: {
+    gap: Spacing.one,
   },
   navArrow: {
     fontSize: 32,
