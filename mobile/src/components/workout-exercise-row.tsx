@@ -51,7 +51,7 @@ export function WorkoutExerciseRow({
           </Text>
         </View>
 
-        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compact ? 48 : 64} />
+        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compact ? 42 : 56} />
 
         <View style={styles.info}>
           <Text style={[styles.name, { color: colors.ink }]} numberOfLines={2} ellipsizeMode="tail">
@@ -99,21 +99,21 @@ const styles = StyleSheet.create({
   shell: {
     alignItems: 'center',
     flexDirection: 'row',
-    minHeight: 92,
-    paddingRight: AppSpacing[3],
+    minHeight: 80,
+    paddingRight: AppSpacing[2],
   },
   shellCompact: {
-    minHeight: 76,
+    minHeight: 66,
     paddingRight: 0,
   },
   mainAction: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: AppSpacing[3],
+    gap: AppSpacing[2],
     minWidth: 0,
-    paddingHorizontal: AppSpacing[3],
-    paddingVertical: AppSpacing[3],
+    paddingHorizontal: AppSpacing[2],
+    paddingVertical: AppSpacing[2],
   },
   mainActionCompact: {
     gap: AppSpacing[2],
@@ -127,9 +127,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: AppRadius.pill,
     borderWidth: 1.5,
-    height: 30,
+    height: 26,
     justifyContent: 'center',
-    width: 30,
+    width: 26,
   },
   orderText: {
     fontSize: AppFontSize.sm,
@@ -141,19 +141,19 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 21,
-  },
-  details: {
-    fontSize: 13,
-    fontWeight: '500',
     lineHeight: 18,
   },
-  rest: {
-    fontSize: 12,
+  details: {
+    fontSize: 11,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 15,
+  },
+  rest: {
+    fontSize: 10,
+    fontWeight: '500',
+    lineHeight: 13,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 2,
-    height: 36,
+    height: 32,
     justifyContent: 'center',
-    width: 36,
+    width: 32,
   },
 });

@@ -1,31 +1,46 @@
+import { Image } from 'expo-image';
 import { Redirect, useRouter, type Href } from 'expo-router';
-import { CalendarDays, Plus, UserPlus } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardList,
+  Dumbbell,
+  Headphones,
+  Plus,
+  Settings,
+  TrendingUp,
+  Users,
+  type LucideIcon,
+} from 'lucide-react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppCard, AppPressableCard, AppScreen, AppSectionTitle, AppStatCard, FitCoachLogo, UserAvatar } from '@/components/ui';
+import { AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
 import { useCoachClients } from '@/hooks/use-coach-clients';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { logCoachNavPress } from '@/lib/coach-navigation';
 import { formatDayMonth } from '@/lib/format-date';
 import { getWorkoutCounter } from '@/lib/workout-progress';
-import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
-import type { Client } from '@/types/client';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import { computeSubscriptionStatus, getCurrentSubscription, type ComputedSubscriptionStatus, type SubscriptionPackage } from '@/types/subscription';
+import type { Client } from '@/types/client';
+import {
+  computeSubscriptionStatus,
+  getCurrentSubscription,
+  type ComputedSubscriptionStatus,
+  type SubscriptionPackage,
+} from '@/types/subscription';
 
-// Griglia a due colonne misurata via onLayout: logica condivisa in
-// hooks/use-two-column-grid.ts (fix BUG-020, vedi commento la').
-const GRID_GAP = AppSpacing[2];
+const COACH_HERO_IMAGE = require('../../assets/images/coach-dashboard-hero.png');
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { onLayout: handleGridLayout, itemStyle: gridItemStyle } = useTwoColumnGrid(GRID_GAP);
   const currentRole = useAuthStore((s) => s.currentRole);
   const { clients, loading: clientsLoading } = useCoachClients();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
@@ -34,14 +49,10 @@ export default function DashboardScreen() {
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
 
   const statuses = clients.map((client) => getDashboardClientStatus(client, getCurrentSubscription(subscriptions, client.id)));
-  const attivi = statuses.filter((s) => s === 'active').length;
-  const inScadenza = statuses.filter((s) => s === 'expiring').length;
-  const scaduti = statuses.filter((s) => s === 'expired').length;
+  const activeClients = statuses.filter((s) => s === 'active').length;
+  const expiringClients = statuses.filter((s) => s === 'expiring').length;
+  const expiredClients = statuses.filter((s) => s === 'expired').length;
   const nowKey = new Date().toISOString().slice(0, 10);
-  const prossimoAppuntamento = appointments
-    .filter((a) => a.status === 'scheduled' && a.date >= nowKey)
-    .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
-  const prossimoAppuntamentoClient = getClientById(clients, prossimoAppuntamento?.clientId);
   const todayAppointments = appointments
     .filter((a) => a.status === 'scheduled' && a.date === nowKey)
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
@@ -49,6 +60,7 @@ export default function DashboardScreen() {
   const recentClients = [...clients]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
+  const activeWorkoutPlans = workoutPlans.filter((plan) => plan.sessionStatus !== 'completed' && plan.sessionStatus !== 'skipped').length;
 
   function navigate(source: string, target: string) {
     logCoachNavPress(source, target);
@@ -63,160 +75,263 @@ export default function DashboardScreen() {
     return (
       <AppScreen scroll={false}>
         <View style={styles.loading}>
-          <Text style={{ color: colors.inkSoft }}>Caricamento...</Text>
+          <Text style={styles.loadingText}>Caricamento...</Text>
         </View>
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen>
-      <View style={styles.topBar}>
-        <FitCoachLogo size="md" />
-      </View>
-      <View style={[styles.heroHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <AppScreen contentStyle={styles.screenContent}>
+      <View style={styles.hero}>
+        <Image source={COACH_HERO_IMAGE} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={{ left: '70%', top: '42%' }} />
+        <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Defs>
+            <LinearGradient id="coachHeroBottom" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="#05090D" stopOpacity="0" />
+              <Stop offset="70%" stopColor="#05090D" stopOpacity="0" />
+              <Stop offset="100%" stopColor="#05090D" stopOpacity="0.9" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#coachHeroBottom)" />
+        </Svg>
+
         <View style={styles.heroCopy}>
-          <Text style={[styles.eyebrow, { color: colors.moss }]}>DASHBOARD COACH</Text>
-          <Text style={[styles.heroTitle, { color: colors.ink }]}>Panoramica</Text>
-          <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Clienti, abbonamenti e prossimi impegni.</Text>
+          <FitCoachLogo size="md" />
+          <Text style={styles.heroTitle}>
+            Dashboard <Text style={styles.heroAccent}>Coach.</Text>
+          </Text>
+          <Text style={styles.heroSubtitle}>Gestisci i tuoi clienti, schede e appuntamenti.</Text>
         </View>
-        <View style={[styles.heroGraphic, { backgroundColor: colors.mossSoft, borderColor: colors.border }]}>
-          <View style={[styles.heroOrb, { backgroundColor: colors.moss }]} />
-          <UserPlus size={36} color={colors.moss} />
+
+        <View style={styles.kpiRow}>
+          <KpiCard icon={Users} label="Clienti attivi" value={String(activeClients)} delta={`+${expiringClients}`} detail="in scadenza" />
+          <KpiCard icon={ClipboardList} label="Schede attive" value={String(activeWorkoutPlans)} delta={`+${expiredClients}`} detail="da rivedere" />
+          <KpiCard icon={CheckCircle2} label="Check-in oggi" value={String(todayAppointments.length)} delta="+0" detail="vs ieri" />
+          <KpiCard icon={TrendingUp} label="Fatturato" value="-" delta="n/d" detail="dato non disponibile" featured />
         </View>
       </View>
 
       <YmoveAutoLinkBanner />
 
-      <View style={styles.statsGrid} onLayout={handleGridLayout}>
-        <AppStatCard
-          size="lg"
-          label="Attivi"
-          value={String(attivi)}
-          accentColor={colors.moss}
-          onPress={() => navigate('dashboard-stat-attivi', '/clienti')}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="lg"
-          label="In scadenza"
-          value={String(inScadenza)}
-          accentColor={colors.amber}
-          onPress={() => navigate('dashboard-stat-in-scadenza', '/clienti')}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="lg"
-          label="Scaduti"
-          value={String(scaduti)}
-          accentColor={colors.rust}
-          onPress={() => navigate('dashboard-stat-scaduti', '/clienti')}
-          style={gridItemStyle}
-        />
-        <View style={gridItemStyle}>
-          <AppPressableCard
-            onPress={() => navigate('dashboard-prossimo-appuntamento', '/appuntamenti')}
-            accessibilityLabel="Apri appuntamenti"
-            style={styles.appointmentCard}>
-            <Text style={[styles.statLabel, { color: colors.inkSoft }]}>Prossimo appuntamento</Text>
-            <Text style={[styles.appointmentTitle, { color: colors.ink }]} numberOfLines={2}>
-              {prossimoAppuntamentoClient ? clientFullName(prossimoAppuntamentoClient) : 'Nessun appuntamento'}
-            </Text>
-            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
-              {prossimoAppuntamento ? `${formatDayMonth(prossimoAppuntamento.date)} · ${prossimoAppuntamento.startTime}` : 'Agenda libera'}
-            </Text>
-          </AppPressableCard>
-        </View>
+      <SectionHeader title="Clienti recenti" action="Vedi tutti" onPress={() => navigate('dashboard-clienti-tutti', '/clienti')} />
+      <View style={styles.clientsCard}>
+        {recentClients.length === 0 ? (
+          <EmptyState text="Nessun cliente collegato." />
+        ) : (
+          recentClients.map((client, index) => {
+            const counter = getWorkoutCounter(subscriptions, workoutPlans, client, client.id);
+            const progress = counter.total > 0 ? Math.min(counter.completed / counter.total, 1) : 0;
+            const subscription = getCurrentSubscription(subscriptions, client.id);
+            return (
+              <ClientRow
+                key={client.id}
+                client={client}
+                counter={`${counter.completed}/${counter.total}`}
+                progress={progress}
+                expiresAt={subscription?.endDate}
+                showBorder={index > 0}
+                onPress={() => navigate('dashboard-cliente-recente', `/clienti/${client.id}`)}
+              />
+            );
+          })
+        )}
       </View>
 
-      <View style={styles.dashboardColumns}>
-        <View style={styles.column}>
-          <AppSectionTitle>CLIENTI RECENTI</AppSectionTitle>
-          <AppCard style={styles.clientListCard}>
-            {recentClients.length === 0 ? (
-              <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun cliente collegato.</Text>
-            ) : (
-              recentClients.map((client, index) => {
-                const counter = getWorkoutCounter(subscriptions, workoutPlans, client, client.id);
-                const progress = counter.total > 0 ? Math.min(counter.completed / counter.total, 1) : 0;
-                return (
-                  <View key={client.id}>
-                    {index > 0 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
-                    <Pressable onPress={() => navigate('dashboard-cliente-recente', `/clienti/${client.id}`)} style={styles.clientRow}>
-                      <UserAvatar
-                        firstName={client.firstName}
-                        lastName={client.lastName}
-                        imageUrl={client.avatarUrl}
-                        preset={client.avatarPreset}
-                        size={48}
-                      />
-                      <View style={styles.clientText}>
-                        <Text style={[styles.clientName, { color: colors.ink }]} numberOfLines={1}>
-                          {clientFullName(client)}
-                        </Text>
-                        <Text style={[styles.clientGoal, { color: colors.inkSoft }]} numberOfLines={1}>
-                          {counter.completed}/{counter.total} allenamenti
-                        </Text>
-                        <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSubtle }]}>
-                          <View style={[styles.progressFill, { backgroundColor: colors.moss, width: `${progress * 100}%` }]} />
-                        </View>
-                      </View>
-                    </Pressable>
-                  </View>
-                );
-              })
-            )}
-          </AppCard>
-        </View>
-
-        <View style={styles.column}>
-          <AppSectionTitle>AGENDA DI OGGI</AppSectionTitle>
-          <AppCard style={styles.agendaCard}>
-            {todayAppointments.length === 0 ? (
-              <View style={styles.emptyAgenda}>
-                <CalendarDays size={26} color={colors.inkFaint} />
-                <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm, fontWeight: '600' }}>Nessun appuntamento oggi.</Text>
-              </View>
-            ) : (
-              todayAppointments.map((appointment, index) => {
-                const appointmentClient = getClientById(clients, appointment.clientId);
-                return (
-                  <View key={appointment.id}>
-                    {index > 0 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
-                    <Pressable onPress={() => navigate('dashboard-agenda-oggi', '/appuntamenti')} style={styles.agendaRow}>
-                      <Text style={[styles.agendaTime, { color: colors.moss }]}>{appointment.startTime}</Text>
-                      <View style={styles.clientText}>
-                        <Text style={[styles.clientName, { color: colors.ink }]} numberOfLines={1}>
-                          {appointmentClient ? clientFullName(appointmentClient) : 'Cliente'}
-                        </Text>
-                        <Text style={[styles.clientGoal, { color: colors.inkSoft }]} numberOfLines={1}>
-                          {appointment.endTime}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </View>
-                );
-              })
-            )}
-          </AppCard>
-        </View>
+      <SectionHeader title="Agenda di oggi" action="Vedi calendario" onPress={() => navigate('dashboard-agenda-calendario', '/appuntamenti')} />
+      <View style={styles.agendaCard}>
+        {todayAppointments.length === 0 ? (
+          <EmptyState text="Nessun appuntamento oggi." icon={CalendarDays} />
+        ) : (
+          todayAppointments.map((appointment, index) => {
+            const appointmentClient = getClientById(clients, appointment.clientId);
+            return (
+              <AgendaRow
+                key={appointment.id}
+                time={appointment.startTime}
+                title={appointmentClient ? clientFullName(appointmentClient) : 'Cliente'}
+                detail={appointment.endTime ? `Fino alle ${appointment.endTime}` : 'Check-in'}
+                client={appointmentClient}
+                pending={index === todayAppointments.length - 1}
+                showBorder={index > 0}
+                onPress={() => navigate('dashboard-agenda-oggi', '/appuntamenti')}
+              />
+            );
+          })
+        )}
       </View>
 
-      <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} hitSlop={4}>
-        <View style={[styles.primaryAction, { backgroundColor: colors.moss }]}>
-          <Plus size={20} color={colors.onMoss} />
-          <Text style={[styles.primaryActionLabel, { color: colors.onMoss }]}>Nuovo cliente</Text>
+      <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} accessibilityRole="button" style={styles.primaryAction}>
+        <View style={styles.primaryIcon}>
+          <Plus size={22} color="#7BEA18" strokeWidth={2.6} />
         </View>
+        <Text style={styles.primaryActionLabel}>Nuovo cliente</Text>
       </Pressable>
 
-      <AppSectionTitle>AZIONI RAPIDE</AppSectionTitle>
-      <View style={styles.quickActions}>
-        <QuickAction label="Nuovo appuntamento" style={gridItemStyle} onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
-        <QuickAction label="Assegna scheda" style={gridItemStyle} onPress={() => navigate('dashboard-assegna-scheda', '/schede/new')} />
-        <QuickAction label="Supporto" style={gridItemStyle} onPress={() => navigate('dashboard-supporto', '/supporto')} />
-        <QuickAction label="Impostazioni" style={gridItemStyle} onPress={() => navigate('dashboard-impostazioni', '/impostazioni')} />
+      <Text style={styles.quickSectionTitle}>Azioni rapide</Text>
+      <View style={styles.quickGrid}>
+        <QuickActionCard icon={CalendarDays} title="Nuovo appuntamento" onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
+        <QuickActionCard icon={ClipboardList} title="Assegna scheda" onPress={() => navigate('dashboard-assegna-scheda', '/schede/new')} />
+        <QuickActionCard icon={Headphones} title="Supporto" onPress={() => navigate('dashboard-supporto', '/supporto')} />
+        <QuickActionCard icon={Settings} title="Impostazioni" onPress={() => navigate('dashboard-impostazioni', '/impostazioni')} />
       </View>
     </AppScreen>
+  );
+}
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  delta,
+  detail,
+  featured = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  delta: string;
+  detail: string;
+  featured?: boolean;
+}) {
+  return (
+    <View style={[styles.kpiCard, featured && styles.kpiCardFeatured]}>
+      <Icon size={20} color="#7BEA18" strokeWidth={2.2} />
+      <Text style={styles.kpiLabel} numberOfLines={2}>
+        {label}
+      </Text>
+      <Text style={[styles.kpiValue, featured && styles.kpiValueFeatured]} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+      <Text style={styles.kpiDelta} numberOfLines={2}>
+        <Text style={styles.kpiDeltaStrong}>{delta}</Text> {detail}
+      </Text>
+    </View>
+  );
+}
+
+function SectionHeader({ title, action, onPress }: { title: string; action: string; onPress: () => void }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Pressable onPress={onPress} hitSlop={6} style={styles.sectionAction} accessibilityRole="button">
+        <Text style={styles.sectionActionText}>{action}</Text>
+        <ChevronRight size={18} color="#7BEA18" strokeWidth={2.4} />
+      </Pressable>
+    </View>
+  );
+}
+
+function QuickActionCard({ icon: Icon, title, onPress }: { icon: LucideIcon; title: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={styles.quickActionCard}>
+      <View style={styles.quickActionIcon}>
+        <Icon size={18} color="#7BEA18" strokeWidth={2.2} />
+      </View>
+      <Text style={styles.quickActionTitle} numberOfLines={2}>
+        {title}
+      </Text>
+      <ChevronRight size={18} color="#7F8991" strokeWidth={2.3} />
+    </Pressable>
+  );
+}
+
+function ClientRow({
+  client,
+  counter,
+  progress,
+  expiresAt,
+  showBorder,
+  onPress,
+}: {
+  client: Client;
+  counter: string;
+  progress: number;
+  expiresAt?: string;
+  showBorder: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.clientRow, showBorder && styles.rowBorder]}>
+      <UserAvatar firstName={client.firstName} lastName={client.lastName} imageUrl={client.avatarUrl} preset={client.avatarPreset} size={48} />
+      <View style={styles.clientCopy}>
+        <Text style={styles.clientName} numberOfLines={1}>
+          {clientFullName(client)}
+        </Text>
+        <Text style={styles.clientPlan} numberOfLines={1}>
+          Piano <Text style={styles.limeText}>{client.status === 'attivo' ? 'Premium' : client.status === 'in_pausa' ? 'Basic' : 'Scaduto'}</Text>
+        </Text>
+        <View style={styles.expiryRow}>
+          <CalendarDays size={13} color="#A8B0B7" />
+          <Text style={styles.expiryText} numberOfLines={1}>
+            {expiresAt ? `Scade il ${formatDayMonth(expiresAt)}` : 'Scadenza non impostata'}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.clientProgress}>
+        <Text style={styles.clientCounter}>{counter}</Text>
+        <Text style={styles.clientCounterLabel}>Allenamenti</Text>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+      </View>
+      <ChevronRight size={24} color="#F7F9FA" strokeWidth={2.4} />
+    </Pressable>
+  );
+}
+
+function AgendaRow({
+  time,
+  title,
+  detail,
+  client,
+  pending,
+  showBorder,
+  onPress,
+}: {
+  time: string;
+  title: string;
+  detail: string;
+  client?: Client;
+  pending: boolean;
+  showBorder: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.agendaRow, showBorder && styles.rowBorder]}>
+      <View style={styles.timeMarker} />
+      <Text style={styles.agendaTime}>{time}</Text>
+      <UserAvatar
+        firstName={client?.firstName}
+        lastName={client?.lastName}
+        imageUrl={client?.avatarUrl}
+        preset={client?.avatarPreset}
+        size={36}
+      />
+      <View style={styles.agendaCopy}>
+        <Text style={styles.agendaName} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={styles.agendaDetailRow}>
+          <Dumbbell size={12} color="#A8B0B7" />
+          <Text style={styles.agendaDetail} numberOfLines={1}>
+            {detail}
+          </Text>
+        </View>
+      </View>
+      <View style={[styles.agendaStatus, pending && styles.agendaStatusPending]}>
+        <Text style={[styles.agendaStatusText, pending && styles.agendaStatusTextPending]}>{pending ? 'In attesa' : 'Confermato'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function EmptyState({ text, icon: Icon = CalendarDays }: { text: string; icon?: LucideIcon }) {
+  return (
+    <View style={styles.emptyState}>
+      <Icon size={24} color="#7F8991" />
+      <Text style={styles.emptyText}>{text}</Text>
+    </View>
   );
 }
 
@@ -227,188 +342,353 @@ function getDashboardClientStatus(client: Client, subscription: SubscriptionPack
   return 'expired';
 }
 
-function QuickAction({ label, style, onPress }: { label: string; style: ViewStyle; onPress: () => void }) {
-  const { colors } = useAppTheme();
-
-  return (
-    <Pressable onPress={onPress} hitSlop={4} style={style}>
-      <View style={[styles.quickAction, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-        <Text style={[styles.quickActionLabel, { color: colors.ink }]}>{label}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  topBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  heroHeader: {
-    borderRadius: AppRadius.xxl,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: AppSpacing[1],
-    justifyContent: 'space-between',
-    overflow: 'hidden',
-    padding: AppSpacing[4],
-  },
-  heroCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  eyebrow: {
-    fontSize: AppFontSize.xs,
-    fontWeight: '800',
-    letterSpacing: 0,
-  },
-  heroTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    lineHeight: 36,
-  },
-  subtitle: {
-    fontSize: AppFontSize.sm,
-    fontWeight: '600',
-    marginTop: AppSpacing[1],
-    maxWidth: 420,
-  },
-  heroGraphic: {
-    alignItems: 'center',
-    borderRadius: AppRadius.xxl,
-    borderWidth: 1,
-    height: 84,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 84,
-  },
-  heroOrb: {
-    borderRadius: 999,
-    height: 76,
-    opacity: 0.16,
-    position: 'absolute',
-    right: -18,
-    top: -18,
-    width: 76,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
-  },
-  appointmentCard: {
-    minHeight: 88,
-    justifyContent: 'center',
-    gap: 4,
-  },
-  statLabel: {
-    fontSize: AppFontSize.sm,
-    fontWeight: '700',
-  },
-  appointmentTitle: {
-    fontWeight: '700',
-    minHeight: 40,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
-  },
-  primaryAction: {
-    alignItems: 'center',
-    borderRadius: AppRadius.pill,
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-    justifyContent: 'center',
-    minHeight: 52,
+  screenContent: {
+    gap: 13,
     paddingHorizontal: AppSpacing[4],
   },
-  primaryActionLabel: {
-    fontSize: AppFontSize.base,
+  hero: {
+    borderColor: '#1B2B35',
+    borderRadius: 30,
+    borderWidth: 1,
+    height: 322,
+    overflow: 'hidden',
+    padding: 19,
+    position: 'relative',
+  },
+  heroCopy: {
+    gap: 10,
+    maxWidth: '70%',
+    minWidth: 0,
+  },
+  heroTitle: {
+    color: '#F7F9FA',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0,
+    lineHeight: 33,
+  },
+  heroAccent: {
+    color: '#7BEA18',
+  },
+  heroSubtitle: {
+    color: '#C6CCD2',
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  kpiRow: {
+    bottom: 14,
+    flexDirection: 'row',
+    gap: 6,
+    left: 12,
+    position: 'absolute',
+    right: 12,
+  },
+  kpiCard: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(12, 21, 28, 0.88)',
+    borderColor: '#24313A',
+    borderRadius: 14,
+    borderWidth: 1,
+    flex: 1,
+    gap: 3,
+    justifyContent: 'center',
+    minHeight: 92,
+    minWidth: 0,
+    paddingHorizontal: 5,
+    paddingVertical: 7,
+  },
+  kpiCardFeatured: {
+    borderColor: '#7BEA18',
+    shadowColor: '#7BEA18',
+    shadowOpacity: 0.32,
+    shadowRadius: 12,
+  },
+  kpiLabel: {
+    color: '#C6CCD2',
+    fontSize: 9,
+    fontWeight: '600',
+    lineHeight: 11,
+    minHeight: 22,
+    textAlign: 'center',
+  },
+  kpiValue: {
+    color: '#F7F9FA',
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 23,
+    textAlign: 'center',
+  },
+  kpiValueFeatured: {
+    color: '#7BEA18',
+    fontSize: 18,
+  },
+  kpiDelta: {
+    color: '#C6CCD2',
+    fontSize: 8,
+    fontWeight: '500',
+    lineHeight: 11,
+    textAlign: 'center',
+  },
+  kpiDeltaStrong: {
+    color: '#7BEA18',
     fontWeight: '800',
   },
-  dashboardColumns: {
-    gap: AppSpacing[3],
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
-  column: {
-    gap: AppSpacing[2],
+  sectionTitle: {
+    color: '#F7F9FA',
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 25,
   },
-  clientListCard: {
-    gap: 0,
-    paddingVertical: AppSpacing[1],
+  sectionAction: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  sectionActionText: {
+    color: '#7BEA18',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  clientsCard: {
+    backgroundColor: 'rgba(10, 18, 24, 0.96)',
+    borderColor: '#24313A',
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   clientRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: AppSpacing[3],
-    minHeight: 56,
-    paddingVertical: AppSpacing[2],
+    gap: 12,
+    minHeight: 94,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  clientText: {
+  rowBorder: {
+    borderTopColor: '#172631',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  clientCopy: {
     flex: 1,
     minWidth: 0,
   },
   clientName: {
-    fontSize: AppFontSize.base,
+    color: '#F7F9FA',
+    fontSize: 16,
     fontWeight: '800',
+    lineHeight: 20,
   },
-  clientGoal: {
-    fontSize: AppFontSize.sm,
-    fontWeight: '600',
-    marginTop: 2,
+  clientPlan: {
+    color: '#C6CCD2',
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  limeText: {
+    color: '#7BEA18',
+  },
+  expiryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 4,
+  },
+  expiryText: {
+    color: '#A8B0B7',
+    flex: 1,
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  clientProgress: {
+    alignItems: 'flex-end',
+    gap: 2,
+    width: 92,
+  },
+  clientCounter: {
+    color: '#F7F9FA',
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  clientCounterLabel: {
+    color: '#A8B0B7',
+    fontSize: 10,
+    fontWeight: '500',
   },
   progressTrack: {
+    backgroundColor: '#1F2A31',
     borderRadius: AppRadius.pill,
-    height: 6,
-    marginTop: AppSpacing[2],
+    height: 7,
+    marginTop: 7,
     overflow: 'hidden',
+    width: '100%',
   },
   progressFill: {
+    backgroundColor: '#7BEA18',
     borderRadius: AppRadius.pill,
     height: '100%',
+    minWidth: 4,
   },
   agendaCard: {
-    gap: 0,
-    paddingVertical: AppSpacing[1],
+    backgroundColor: 'rgba(10, 18, 24, 0.96)',
+    borderColor: '#24313A',
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   agendaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: AppSpacing[3],
-    minHeight: 54,
-    paddingVertical: AppSpacing[2],
+    gap: 10,
+    minHeight: 70,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  timeMarker: {
+    backgroundColor: '#7BEA18',
+    borderRadius: AppRadius.pill,
+    height: 32,
+    width: 4,
   },
   agendaTime: {
-    fontSize: AppFontSize.base,
+    color: '#F7F9FA',
+    fontSize: 16,
+    fontWeight: '700',
+    width: 48,
+  },
+  agendaCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  agendaName: {
+    color: '#F7F9FA',
+    fontSize: 13,
     fontWeight: '800',
-    width: 52,
+    lineHeight: 17,
   },
-  emptyAgenda: {
+  agendaDetailRow: {
     alignItems: 'center',
-    gap: AppSpacing[2],
+    flexDirection: 'row',
+    gap: 5,
+  },
+  agendaDetail: {
+    color: '#A8B0B7',
+    flex: 1,
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  agendaStatus: {
+    backgroundColor: '#173516',
+    borderRadius: AppRadius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  agendaStatusPending: {
+    backgroundColor: '#3A2710',
+  },
+  agendaStatusText: {
+    color: '#7BEA18',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  agendaStatusTextPending: {
+    color: '#F2A43A',
+  },
+  primaryAction: {
+    alignItems: 'center',
+    backgroundColor: '#7BEA18',
+    borderColor: '#B8FF4F',
+    borderRadius: 22,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 12,
     justifyContent: 'center',
-    minHeight: 88,
+    minHeight: 54,
+    shadowColor: '#7BEA18',
+    shadowOpacity: 0.36,
+    shadowRadius: 16,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 56,
+  primaryIcon: {
+    alignItems: 'center',
+    backgroundColor: '#07110B',
+    borderRadius: AppRadius.pill,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
   },
-  quickAction: {
+  primaryActionLabel: {
+    color: '#07110B',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  quickSectionTitle: {
+    color: '#F7F9FA',
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickActionCard: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(10, 18, 24, 0.96)',
+    borderColor: '#24313A',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexBasis: '48%',
+    flexDirection: 'row',
+    flexGrow: 1,
+    gap: 9,
     minHeight: 52,
-    borderRadius: AppRadius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: AppSpacing[2],
+    paddingHorizontal: 10,
+    paddingVertical: 9,
   },
-  quickActionLabel: {
-    fontSize: AppFontSize.base,
+  quickActionIcon: {
+    alignItems: 'center',
+    backgroundColor: '#173516',
+    borderRadius: AppRadius.pill,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  quickActionTitle: {
+    color: '#F7F9FA',
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 15,
+    minWidth: 0,
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 108,
+  },
+  emptyText: {
+    color: '#A8B0B7',
+    fontSize: AppFontSize.sm,
     fontWeight: '700',
   },
   loading: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#A8B0B7',
+    fontSize: AppFontSize.sm,
   },
 });

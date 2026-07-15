@@ -1,7 +1,7 @@
 import { router, usePathname, type Href } from 'expo-router';
-import { Bell, Euro, House, LifeBuoy, Package, Ticket, Users, type LucideIcon } from 'lucide-react-native';
+import { Bell, Euro, House, LifeBuoy, Package, Users, type LucideIcon } from 'lucide-react-native';
 import type React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, type RefreshControlProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton, AppIconButton, FitCoachLogo } from '@/components/ui';
@@ -14,7 +14,6 @@ import { AppColors, AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppThem
 const NAV_ITEMS = [
   { href: '/superadmin' as Href, label: 'Dashboard', icon: House, activePrefix: '/superadmin' },
   { href: '/superadmin/coaches' as Href, label: 'Coach', icon: Users, activePrefix: '/superadmin/coaches' },
-  { href: '/superadmin/plans' as Href, label: 'Piani', icon: Ticket, activePrefix: '/superadmin/plans' },
   { href: '/superadmin/pacchetti' as Href, label: 'Pacchetti', icon: Package, activePrefix: '/superadmin/pacchetti' },
   { href: '/superadmin/payment-events' as Href, label: 'Pagamenti', icon: Euro, activePrefix: '/superadmin/payment-events' },
   { href: '/superadmin/support' as Href, label: 'Supporto', icon: LifeBuoy, activePrefix: '/superadmin/support' },
@@ -26,13 +25,15 @@ const NAV_ITEMS = [
 // fisso — su Android la barra di navigazione di sistema (gesture o 3 pulsanti,
 // inset 24-48px) veniva prima SOTTRATTA dai 74px fissi, schiacciando icone e
 // label e facendo finire i form sotto la bar.
-const SUPERADMIN_TAB_BAR_CONTENT_HEIGHT = 58;
+const SUPERADMIN_TAB_BAR_CONTENT_HEIGHT = 50;
 
 type SuperadminShellProps = {
   title: string;
   description?: string;
   children: React.ReactNode;
   contentStyle?: ViewStyle;
+  hideHeader?: boolean;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 };
 
 // Shell superadmin migrata al nuovo design system: stesso sfondo/spacing/
@@ -41,7 +42,7 @@ type SuperadminShellProps = {
 // che è uno Stack) con pillola coralSoft dietro la voce attiva, come la tab
 // bar del mockup — qui è raggiungibile perché la tab bar è JS/React Native,
 // non nativa OS (a differenza di app-tabs.tsx/client-tabs.tsx).
-export function SuperadminShell({ title, description, children, contentStyle }: SuperadminShellProps) {
+export function SuperadminShell({ title, description, children, contentStyle, hideHeader = false, refreshControl }: SuperadminShellProps) {
   const pathname = usePathname();
   const { colors, cardShadow } = useAppTheme();
   const tabColors = AppColors.dark;
@@ -72,31 +73,34 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
             paddingBottom: insets.bottom + SUPERADMIN_TAB_BAR_CONTENT_HEIGHT + AppSpacing[4],
           },
           contentStyle,
-        ]}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <FitCoachLogo size="sm" />
-            <Text style={[AppTextStyle.eyebrow, { color: colors.moss }]}>AREA SUPERADMIN</Text>
-            <Text style={[AppTextStyle.title, styles.title, { color: colors.ink }]}>{title}</Text>
-            {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
-          </View>
-          <View style={styles.headerActions}>
-            <View>
-              <AppIconButton
-                icon={<Bell size={18} color={colors.ink} />}
-                onPress={() => navigate('superadmin-header-notifiche', '/superadmin/notifications' as Href)}
-                accessibilityLabel="Notifiche"
-                size={42}
-              />
-              {unreadNotifications > 0 ? (
-                <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
-                  <Text style={styles.badgeText}>{unreadNotifications > 99 ? '99+' : String(unreadNotifications)}</Text>
-                </View>
-              ) : null}
+        ]}
+        refreshControl={refreshControl}>
+        {!hideHeader ? (
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <FitCoachLogo size="sm" />
+              <Text style={[AppTextStyle.eyebrow, { color: colors.moss }]}>AREA SUPERADMIN</Text>
+              <Text style={[AppTextStyle.title, styles.title, { color: colors.ink }]}>{title}</Text>
+              {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
             </View>
-            <AppButton label="Esci" onPress={handleLogout} variant="outline" size="sm" />
+            <View style={styles.headerActions}>
+              <View>
+                <AppIconButton
+                  icon={<Bell size={18} color={colors.ink} />}
+                  onPress={() => navigate('superadmin-header-notifiche', '/superadmin/notifications' as Href)}
+                  accessibilityLabel="Notifiche"
+                  size={42}
+                />
+                {unreadNotifications > 0 ? (
+                  <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
+                    <Text style={styles.badgeText}>{unreadNotifications > 99 ? '99+' : String(unreadNotifications)}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <AppButton label="Esci" onPress={handleLogout} variant="outline" size="sm" />
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {children}
       </ScrollView>
@@ -121,7 +125,7 @@ export function SuperadminShell({ title, description, children, contentStyle }: 
           return (
             <Pressable key={href} onPress={() => navigate(`superadmin-tab-${item.label.toLowerCase()}`, item.href)} hitSlop={4} style={styles.tabItem}>
               <View style={[styles.tabIconPill, active && { backgroundColor: tabColors.mossSoft, borderColor: tabColors.moss }]}>
-                <Icon size={23} color={active ? tabColors.moss : tabColors.inkFaint} strokeWidth={2.25} />
+                <Icon size={21} color={active ? tabColors.moss : tabColors.inkFaint} strokeWidth={2.2} />
                 {isSupport && unreadCoachSupport > 0 ? (
                   <View style={[styles.supportBadge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadCoachSupport > 99 ? '99+' : String(unreadCoachSupport)}</Text>
@@ -146,9 +150,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: AppSpacing[5],
-    gap: AppSpacing[4],
-    maxWidth: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: AppSpacing[4],
+    gap: 12,
+    maxWidth: 760,
     width: '100%',
   },
   header: {
@@ -166,7 +171,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
   },
   description: {
-    fontSize: AppFontSize.sm,
+    fontSize: AppFontSize.sm + 2,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -187,13 +192,13 @@ const styles = StyleSheet.create({
     top: -4,
   },
   bottomBar: {
-    borderRadius: 28,
+    borderRadius: 26,
     borderWidth: 1,
     bottom: 0,
     flexDirection: 'row',
     left: AppSpacing[4],
     paddingHorizontal: AppSpacing[1],
-    paddingTop: AppSpacing[2],
+    paddingTop: 7,
     position: 'absolute',
     right: AppSpacing[4],
     overflow: 'hidden',
@@ -202,15 +207,15 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: 'center',
     flex: 1,
-    gap: 4,
+    gap: 2,
     justifyContent: 'flex-start',
-    minHeight: 44,
+    minHeight: 38,
     minWidth: 0,
     paddingHorizontal: 1,
   },
   tabIconPill: {
-    width: 44,
-    height: 30,
+    width: 38,
+    height: 27,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -218,8 +223,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   tabLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 9,
+    lineHeight: 12,
     maxWidth: '100%',
     textAlign: 'center',
   },

@@ -51,7 +51,7 @@ export default function ClientTabs() {
               hitSlop={4}
               style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
-                <Icon size={24} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
+                <Icon size={18} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.2} />
               </View>
               <Text
                 numberOfLines={1}
@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    minHeight: 76,
+    minHeight: 62,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 22,
     marginHorizontal: AppSpacing[4],
     marginBottom: 0,
     paddingTop: AppSpacing[1],
@@ -90,14 +90,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 4,
-    minHeight: 50,
+    gap: 2,
+    minHeight: 34,
     minWidth: 0,
     paddingHorizontal: 2,
   },
   iconPill: {
-    width: 44,
-    height: 30,
+    width: 34,
+    height: 24,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -105,8 +105,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   tabLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 6,
+    lineHeight: 9,
     maxWidth: '100%',
     textAlign: 'center',
   },

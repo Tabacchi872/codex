@@ -97,7 +97,7 @@ export default function ClienteHomeScreen() {
           lastName={client?.lastName}
           imageUrl={client?.avatarUrl}
           preset={client?.avatarPreset}
-          size={compact ? 54 : 60}
+          size={compact ? 46 : 52}
         />
       </View>
 
@@ -119,7 +119,7 @@ export default function ClienteHomeScreen() {
             <View style={styles.glowWrap} pointerEvents="none">
               <View style={[styles.heroBeam, { backgroundColor: colors.moss }]} />
             </View>
-            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" size={compact ? 112 : narrow ? 122 : 128} strokeWidth={11} />
+            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" size={compact ? 92 : narrow ? 100 : 106} strokeWidth={9} />
             <View style={styles.progressCopy}>
               <Text style={[styles.progressTitle, { color: colors.ink }]}>Allenamenti completati</Text>
               <Text style={[styles.remainingText, { color: colors.moss }]}>{Math.max(0, purchasedTotal - completedCount)} rimanenti</Text>
@@ -187,25 +187,25 @@ export default function ClienteHomeScreen() {
             <QuickTile
               title="Nutrizione"
               subtitle={nutritionPlan ? nutritionPlan.title : 'Piani e ricette'}
-              icon={<Apple size={compact ? 27 : 30} color={colors.moss} />}
+              icon={<Apple size={compact ? 22 : 24} color={colors.moss} />}
               onPress={() => navigate('cliente-home-nutrizione', '/nutrizione')}
             />
             <QuickTile
               title="Check-in"
               subtitle={lastCheckin ? `Ultimo ${formatDayMonth(lastCheckin.date)}` : 'Tieni il ritmo'}
-              icon={<ClipboardList size={compact ? 27 : 30} color={colors.moss} />}
+              icon={<ClipboardList size={compact ? 22 : 24} color={colors.moss} />}
               onPress={() => navigate('cliente-home-checkin', '/questionario')}
             />
             <QuickTile
               title="Prenotazioni"
               subtitle={nextBooking ? `${formatDayMonth(nextBooking.date)} ${nextBooking.time}` : 'I tuoi appuntamenti'}
-              icon={<Calendar size={compact ? 27 : 30} color={colors.moss} />}
+              icon={<Calendar size={compact ? 22 : 24} color={colors.moss} />}
               onPress={() => navigate('cliente-home-prenota', '/prenotazioni')}
             />
             <QuickTile
               title="Bacheca"
               subtitle={relevantPosts.length ? `${relevantPosts.length} aggiornamenti` : 'News e aggiornamenti'}
-              icon={<Megaphone size={compact ? 27 : 30} color={colors.moss} />}
+              icon={<Megaphone size={compact ? 22 : 24} color={colors.moss} />}
               onPress={() => navigate('cliente-home-bacheca', '/bacheca')}
             />
           </View>
@@ -329,8 +329,8 @@ function SummaryMetric({
 
 const styles = StyleSheet.create({
   screenContent: {
-    gap: 18,
-    paddingHorizontal: 18,
+    gap: 12,
+    paddingHorizontal: 16,
   },
   loading: {
     flex: 1,
@@ -342,19 +342,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: AppSpacing[3],
-    marginBottom: AppSpacing[1],
+    marginBottom: 0,
   },
   heroHeader: {
     gap: AppSpacing[1],
   },
   heroTitle: {
-    fontSize: 36,
+    fontSize: 31,
     fontWeight: '800',
-    lineHeight: 42,
+    lineHeight: 36,
   },
   heroTitleCompact: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 29,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: AppFontSize.sm + 1,
@@ -365,10 +365,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 22,
     flexDirection: 'row',
-    gap: AppSpacing[4],
-    minHeight: 184,
+    gap: AppSpacing[3],
+    minHeight: 148,
     overflow: 'hidden',
-    padding: AppSpacing[5],
+    padding: AppSpacing[3],
   },
   glowWrap: {
     ...StyleSheet.absoluteFill,
@@ -376,32 +376,32 @@ const styles = StyleSheet.create({
   },
   heroBeam: {
     borderRadius: 999,
-    height: 160,
+    height: 130,
     opacity: 0.08,
     position: 'absolute',
     right: -92,
     top: 46,
-    width: 160,
+    width: 130,
   },
   progressCopy: {
     flex: 1,
     minWidth: 0,
   },
   progressTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 27,
+    lineHeight: 22,
   },
   remainingText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    marginTop: AppSpacing[2],
+    marginTop: AppSpacing[1],
   },
   progressMetaRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: AppSpacing[2],
-    marginTop: AppSpacing[4],
+    marginTop: AppSpacing[2],
     minWidth: 0,
   },
   progressMeta: {
@@ -412,25 +412,25 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   workoutHero: {
-    borderRadius: 24,
+    borderRadius: 20,
     justifyContent: 'space-between',
-    minHeight: 330,
+    minHeight: 286,
     overflow: 'hidden',
-    padding: 18,
+    padding: 14,
     position: 'relative',
     width: '100%',
   },
   workoutHeroCompact: {
-    borderRadius: 22,
-    minHeight: 310,
-    padding: 16,
+    borderRadius: 20,
+    minHeight: 266,
+    padding: 13,
   },
   workoutContent: {
     flex: 1,
     justifyContent: 'center',
     minWidth: 0,
-    paddingBottom: AppSpacing[3],
-    paddingTop: AppSpacing[2],
+    paddingBottom: AppSpacing[2],
+    paddingTop: AppSpacing[1],
     width: '62%',
     zIndex: 1,
   },
@@ -445,20 +445,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   kicker: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0,
   },
   workoutTitle: {
     color: '#F7F6EE',
-    fontSize: 29,
+    fontSize: 23,
     fontWeight: '800',
-    lineHeight: 35,
+    lineHeight: 28,
     minWidth: 0,
   },
   workoutTitleCompact: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 21,
+    lineHeight: 26,
   },
   workoutMetaWrap: {
     alignItems: 'center',
@@ -476,40 +476,40 @@ const styles = StyleSheet.create({
   workoutMeta: {
     color: '#E7E9DF',
     flexShrink: 1,
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
-    lineHeight: 19,
+    lineHeight: 15,
     minWidth: 0,
   },
   workoutAction: {
     alignItems: 'center',
     borderRadius: AppRadius.lg,
     flexDirection: 'row',
-    height: 54,
+    height: 46,
     justifyContent: 'center',
-    marginTop: AppSpacing[3],
+    marginTop: AppSpacing[2],
     paddingHorizontal: AppSpacing[4],
     position: 'relative',
     zIndex: 1,
   },
   workoutActionLabel: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
     textAlign: 'center',
   },
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    gap: 10,
   },
   quickTile: {
-    borderRadius: 22,
+    borderRadius: 18,
     flexBasis: '47%',
     flexGrow: 1,
     justifyContent: 'space-between',
-    minHeight: 116,
-    padding: AppSpacing[4],
+    minHeight: 94,
+    padding: AppSpacing[3],
   },
   quickTop: {
     alignItems: 'center',
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   quickArrow: {
-    fontSize: 23,
+    fontSize: 18,
     fontWeight: '600',
   },
   quickText: {
@@ -526,17 +526,17 @@ const styles = StyleSheet.create({
   quickTitle: {
     fontSize: AppFontSize.base,
     fontWeight: '700',
-    lineHeight: 21,
+    lineHeight: 17,
   },
   quickSubtitle: {
     fontSize: AppFontSize.sm,
     fontWeight: '500',
-    lineHeight: 18,
+    lineHeight: 15,
   },
   summaryCard: {
-    borderRadius: 22,
-    gap: AppSpacing[4],
-    padding: AppSpacing[5],
+    borderRadius: 18,
+    gap: AppSpacing[3],
+    padding: AppSpacing[3],
   },
   summaryHeader: {
     alignItems: 'center',
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
   },
   summaryTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
   },
   summaryStats: {
@@ -566,9 +566,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
   },
   summaryValue: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '800',
-    lineHeight: 34,
+    lineHeight: 28,
   },
   summaryLabel: {
     fontSize: AppFontSize.sm,

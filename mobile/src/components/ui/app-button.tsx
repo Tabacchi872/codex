@@ -18,7 +18,7 @@ type AppButtonProps = {
 };
 
 const HEIGHT: Record<AppButtonSize, number> = { sm: 36, md: 42, lg: 52 };
-const FONT_SIZE: Record<AppButtonSize, number> = { sm: AppFontSize.xs, md: AppFontSize.sm, lg: 15 };
+const FONT_SIZE: Record<AppButtonSize, number> = { sm: AppFontSize.xs, md: AppFontSize.sm, lg: 13 };
 
 // Bottone unico del design system. `primary` (coral) è l'UNICO colore per
 // azioni — "Inizia allenamento", "Salva", "Invia" — mai per stato. `secondary`

@@ -54,7 +54,7 @@ export default function AppTabs() {
               hitSlop={4}
               style={styles.tabItem}>
               <View style={[styles.iconPill, isActive && { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
-                <Icon size={24} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.35} />
+                <Icon size={21} color={isActive ? colors.moss : colors.inkFaint} strokeWidth={2.25} />
                 {tab.path === '/chat' && unreadMessagesCount > 0 ? (
                   <View style={[styles.badge, { backgroundColor: colors.coral }]} pointerEvents="none">
                     <Text style={styles.badgeText}>{unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}</Text>
@@ -82,11 +82,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    minHeight: 76,
+    minHeight: 70,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 26,
     marginHorizontal: AppSpacing[4],
     marginBottom: 0,
     paddingTop: AppSpacing[1],
@@ -98,14 +98,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 3,
-    minHeight: 44,
+    gap: 2,
+    minHeight: 39,
     minWidth: 0,
     paddingHorizontal: 2,
   },
   iconPill: {
-    width: 44,
-    height: 30,
+    width: 38,
+    height: 27,
     borderRadius: AppRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -124,13 +124,13 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '700',
     lineHeight: 13,
   },
   tabLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 7,
+    lineHeight: 10,
     maxWidth: '100%',
     textAlign: 'center',
   },

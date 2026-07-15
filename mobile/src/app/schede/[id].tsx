@@ -607,22 +607,22 @@ function getOptionalImageUri(value: unknown) {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    gap: Spacing.two,
   },
   clientDetailHero: {
-    borderRadius: 24,
+    borderRadius: 20,
     justifyContent: 'space-between',
-    minHeight: 344,
+    minHeight: 292,
     overflow: 'hidden',
-    padding: 18,
+    padding: 14,
     position: 'relative',
     width: '100%',
   },
   clientDetailHeroCompact: {
-    borderRadius: 22,
-    minHeight: 318,
-    padding: 16,
+    borderRadius: 20,
+    minHeight: 270,
+    padding: 13,
   },
   clientHeroContent: {
     alignItems: 'flex-start',
@@ -644,9 +644,9 @@ const styles = StyleSheet.create({
   },
   clientPlanTitle: {
     color: '#F7F6EE',
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '800',
-    lineHeight: 36,
+    lineHeight: 29,
     minWidth: 0,
   },
   clientHeroMetaGrid: {
@@ -659,15 +659,15 @@ const styles = StyleSheet.create({
   },
   clientHeroMetaLabel: {
     color: '#BFC6B7',
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '700',
-    lineHeight: 17,
+    lineHeight: 14,
   },
   clientHeroMetaValue: {
     color: '#F1F3EA',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
-    lineHeight: 20,
+    lineHeight: 16,
     minWidth: 0,
   },
   clientExerciseBox: {
@@ -677,22 +677,22 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 76,
-    minWidth: 78,
+    minHeight: 62,
+    minWidth: 64,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     zIndex: 1,
   },
   clientExerciseCount: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '800',
-    lineHeight: 32,
+    lineHeight: 26,
   },
   clientExerciseLabel: {
     color: '#E7E9DF',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
-    lineHeight: 15,
+    lineHeight: 12,
   },
   clientHeroBottom: {
     gap: Spacing.two,
@@ -706,18 +706,18 @@ const styles = StyleSheet.create({
   },
   clientProgressLabel: {
     color: '#BFC6B7',
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '700',
   },
   clientProgressValue: {
     color: '#F1F3EA',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '800',
   },
   clientProgressTrack: {
     backgroundColor: '#FFFFFF24',
     borderRadius: Radius.pill,
-    height: 9,
+    height: 7,
     overflow: 'hidden',
   },
   clientProgressFill: {
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.lg,
     flexDirection: 'row',
-    height: 54,
+    height: 46,
     justifyContent: 'center',
     marginTop: Spacing.one,
     paddingHorizontal: Spacing.three,
@@ -736,9 +736,9 @@ const styles = StyleSheet.create({
   clientHeroActionLabel: {
     color: '#11150D',
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
-    lineHeight: 20,
+    lineHeight: 16,
     textAlign: 'center',
   },
   detailHero: {

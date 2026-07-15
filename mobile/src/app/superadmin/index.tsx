@@ -1,39 +1,58 @@
 import { router, type Href } from 'expo-router';
-import { CreditCard, LifeBuoy, Package, Shield, Ticket, Users } from 'lucide-react-native';
+import {
+  ArrowUp,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  Crown,
+  Euro,
+  Headphones,
+  Layers3,
+  LifeBuoy,
+  MessageSquare,
+  Package,
+  Shield,
+  Users,
+  WalletCards,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react-native';
 import type React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 
-import { AppBadge, AppCard, AppStatCard } from '@/components/ui';
+import { FitCoachLogo } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
 import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
-import { useTwoColumnGrid } from '@/hooks/use-two-column-grid';
+import { DEMO_DATA_ENABLED } from '@/lib/demo-data';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
+import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
+import type { AppBillingStatus, DemoPaymentEvent, SuperadminCoach, SuperadminNotification } from '@/types/superadmin';
+
+type Tone = 'lime' | 'orange' | 'purple' | 'green' | 'red' | 'muted';
+
+const currencyFormatter = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
 export default function SuperadminDashboard() {
   const { colors } = useAppTheme();
-  const { coaches } = useSuperadminCoaches();
-  // Stessa griglia misurata della dashboard coach (fix BUG-020): niente
-  // percentuali+minWidth+flexGrow, che a 320-412px causavano righe piu'
-  // larghe del contenitore e la sovrapposizione con la card alert sotto.
-  const { onLayout: handleGridLayout, itemStyle: gridItemStyle } = useTwoColumnGrid(AppSpacing[2]);
+  const { coaches, loading, error, reload } = useSuperadminCoaches();
+  const paymentEvents = useSuperadminStore((s) => s.paymentEvents);
+  const supportMessages = useSuperadminStore((s) => s.coachSupportMessages);
+  const notifications = useSuperadminStore((s) => s.notifications);
+  const localCoaches = useSuperadminStore((s) => s.coaches);
+  const supportConversations = getSuperadminSupportConversations(localCoaches, supportMessages);
 
-  const totalCoaches = coaches.length;
-  const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active').length;
-  const trialCoaches = coaches.filter((coach) => coach.billingStatus === 'trial').length;
-  const pastDueCoaches = coaches.filter((coach) => coach.billingStatus === 'past_due').length;
-  const blockedCoaches = coaches.filter((coach) => coach.billingStatus === 'blocked').length;
-  const coachesWithActivePackage = coaches.filter((coach) => coach.hasActivePackageSubscription).length;
-  const paymentAlerts = coaches.filter((coach) => coach.billingStatus === 'past_due');
-  const recentCoaches = [...coaches].slice(0, 3);
-  const activityItems = [
-    ...paymentAlerts.slice(0, 2).map((coach) => ({ id: `payment-${coach.id}`, label: coach.name, detail: 'Pagamento scaduto', tone: 'rust' as const })),
-    ...coaches
-      .filter((coach) => coach.billingStatus === 'trial')
-      .slice(0, 2)
-      .map((coach) => ({ id: `trial-${coach.id}`, label: coach.name, detail: 'Coach in prova', tone: 'amber' as const })),
-  ].slice(0, 4);
+  const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active' && !coach.blocked).length;
+  const activeSubscriptions = coaches.filter((coach) => coach.hasActivePackageSubscription).length;
+  const unresolvedSupport = supportConversations.filter((conversation) => conversation.unreadCount > 0).length;
+  const visiblePaymentEvents = DEMO_DATA_ENABLED ? paymentEvents : paymentEvents.filter((event) => event.provider !== 'demo' && event.provider !== 'demo_gateway');
+  const monthRevenue = visiblePaymentEvents
+    .filter((event) => event.status === 'succeeded' && isCurrentMonth(event.createdAt))
+    .reduce((sum, event) => sum + (event.amount ?? 0), 0);
+  const recentCoaches = [...coaches].sort(sortByRecentActivity).slice(0, 3);
+  const recentActivities = buildRecentActivities(coaches, visiblePaymentEvents, notifications, supportConversations).slice(0, 4);
 
   function navigate(source: string, target: Href) {
     logSuperadminNavPress(source, target.toString());
@@ -41,266 +60,739 @@ export default function SuperadminDashboard() {
   }
 
   return (
-    <SuperadminShell title="Dashboard" description="Controllo amministrativo di coach, piani e abbonamenti app.">
-      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.heroCopy}>
-          <Text style={[styles.eyebrow, { color: colors.moss }]}>FITCOACH PRO</Text>
-          <Text style={[styles.heroTitle, { color: colors.ink }]}>Superadmin</Text>
-          <Text style={[styles.heroSubtitle, { color: colors.inkSoft }]}>
-            Stato piattaforma, coach e pacchetti in un'unica vista.
-          </Text>
+    <SuperadminShell
+      title="Superadmin"
+      hideHeader
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.moss} />}>
+      <View style={styles.header}>
+        <View style={styles.headerGlow} pointerEvents="none" />
+        <View style={styles.headerText}>
+          <FitCoachLogo size="sm" style={styles.headerLogo} />
+          <Text style={styles.headerTitle}>Superadmin</Text>
+          <Text style={styles.headerSubtitle}>Controllo piattaforma</Text>
         </View>
-        <View style={[styles.heroIcon, { backgroundColor: colors.mossSoft, borderColor: colors.border }]}>
-          <Shield size={36} color={colors.moss} />
-        </View>
+        <Pressable
+          onPress={() => navigate('superadmin-profile-notifiche', '/superadmin/notifications' as Href)}
+          accessibilityRole="button"
+          accessibilityLabel="Notifiche superadmin"
+          style={styles.adminProfile}>
+          <Shield size={23} color={colors.moss} />
+          <Crown size={13} color={colors.moss} style={styles.crownIcon} />
+          <View style={[styles.onlineDot, { backgroundColor: colors.moss }]} />
+        </Pressable>
       </View>
 
-      <View style={styles.grid} onLayout={handleGridLayout}>
-        <AppStatCard
-          size="sm"
-          label="Coach totali"
-          value={String(totalCoaches)}
-          onPress={() => navigate('superadmin-stat-coach-totali', '/superadmin/coaches?status=all' as Href)}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="sm"
-          label="Coach attivi"
-          value={String(activeCoaches)}
-          accentColor={colors.moss}
-          onPress={() => navigate('superadmin-stat-coach-attivi', '/superadmin/coaches?status=active' as Href)}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="sm"
-          label="In prova"
-          value={String(trialCoaches)}
-          accentColor={colors.amber}
-          onPress={() => navigate('superadmin-stat-coach-trial', '/superadmin/coaches?status=trial' as Href)}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="sm"
-          label="Pagamento scaduto"
-          value={String(pastDueCoaches)}
-          accentColor={colors.rust}
-          onPress={() => navigate('superadmin-stat-coach-scaduti', '/superadmin/coaches?status=past_due' as Href)}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="sm"
-          label="Bloccati"
-          value={String(blockedCoaches)}
-          accentColor={colors.rust}
-          onPress={() => navigate('superadmin-stat-coach-bloccati', '/superadmin/coaches?status=blocked' as Href)}
-          style={gridItemStyle}
-        />
-        <AppStatCard
-          size="sm"
-          label="Coach con pacchetto"
-          value={String(coachesWithActivePackage)}
-          onPress={() => navigate('superadmin-stat-pacchetti-attivi', '/superadmin/coaches?status=all' as Href)}
-          style={gridItemStyle}
-        />
-      </View>
-
-      <View style={styles.sectionPair}>
-        <AppCard style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.ink }]}>Coach recenti</Text>
-            <Pressable onPress={() => navigate('superadmin-vedi-coach', '/superadmin/coaches' as Href)} hitSlop={6}>
-              <Text style={[styles.sectionLink, { color: colors.moss }]}>Vedi coach</Text>
-            </Pressable>
-          </View>
-          {recentCoaches.length === 0 ? (
-            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun coach disponibile.</Text>
-          ) : (
-            recentCoaches.map((coach, index) => (
-              <Pressable
-                key={coach.id}
-                onPress={() => navigate('superadmin-coach-recente', `/superadmin/coaches/${coach.id}` as Href)}
-                style={[styles.coachRow, index > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                <View style={[styles.avatarFallback, { backgroundColor: colors.mossSoft }]}>
-                  <Text style={[styles.avatarText, { color: colors.moss }]}>{coach.name.trim().charAt(0).toUpperCase() || 'C'}</Text>
-                </View>
-                <View style={styles.alertText}>
-                  <Text style={[styles.alertName, { color: colors.ink }]} numberOfLines={1}>
-                    {coach.name}
-                  </Text>
-                  <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }} numberOfLines={1}>
-                    {coach.hasActivePackageSubscription ? coach.activePackageName ?? 'Pacchetto attivo' : 'Nessun pacchetto attivo'}
-                  </Text>
-                </View>
-                <AppBadge label={getBillingStatusLabel(coach.billingStatus)} tone={coach.billingStatus === 'active' ? 'moss' : coach.billingStatus === 'trial' ? 'amber' : 'rust'} />
-              </Pressable>
-            ))
-          )}
-        </AppCard>
-
-        <AppCard style={styles.card}>
-          <Text style={[styles.sectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
-          <View style={styles.actionGrid}>
-            <QuickAdminAction label="Coach" icon={<Users size={20} color={colors.moss} />} onPress={() => navigate('superadmin-quick-coach', '/superadmin/coaches' as Href)} />
-            <QuickAdminAction label="Piani" icon={<Ticket size={20} color={colors.moss} />} onPress={() => navigate('superadmin-quick-piani', '/superadmin/plans' as Href)} />
-            <QuickAdminAction label="Pacchetti" icon={<Package size={20} color={colors.moss} />} onPress={() => navigate('superadmin-quick-pacchetti', '/superadmin/pacchetti' as Href)} />
-            <QuickAdminAction label="Pagamenti" icon={<CreditCard size={20} color={colors.moss} />} onPress={() => navigate('superadmin-quick-pagamenti', '/superadmin/payment-events' as Href)} />
-            <QuickAdminAction label="Supporto" icon={<LifeBuoy size={20} color={colors.moss} />} onPress={() => navigate('superadmin-quick-supporto', '/superadmin/support' as Href)} />
-          </View>
-        </AppCard>
-      </View>
-
-      <AppCard style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.ink }]}>Attività recenti</Text>
-          <Pressable onPress={() => navigate('superadmin-vedi-coach', '/superadmin/coaches' as Href)} hitSlop={6}>
-            <Text style={[styles.sectionLink, { color: colors.moss }]}>Vedi coach</Text>
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorTitle}>Dati non disponibili</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={reload} style={[styles.retryButton, { borderColor: colors.moss }]} accessibilityRole="button">
+            <Text style={[styles.retryLabel, { color: colors.moss }]}>Riprova</Text>
           </Pressable>
         </View>
-        {activityItems.length === 0 ? (
-          <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessuna attività recente da segnalare.</Text>
+      ) : null}
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroller}>
+        {loading ? (
+          [0, 1, 2, 3].map((item) => <SkeletonCard key={item} width={72} height={116} />)
         ) : (
-          activityItems.map((item) => (
-            <View key={item.id} style={[styles.alertRow, { borderColor: colors.border }]}>
-              <View style={styles.alertText}>
-                <Text style={[styles.alertName, { color: colors.ink }]}>{item.label}</Text>
-                <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>{item.detail}</Text>
-              </View>
-              <AppBadge label={item.tone === 'rust' ? 'Alert' : 'Trial'} tone={item.tone} />
-            </View>
+          <>
+            <KpiCard icon={Users} label="Coach attivi" value={String(activeCoaches)} tone="lime" onPress={() => navigate('superadmin-kpi-coach-attivi', '/superadmin/coaches?status=active' as Href)} />
+            <KpiCard icon={CalendarDays} label="Abbonamenti attivi" value={formatCompact(activeSubscriptions)} tone="lime" onPress={() => navigate('superadmin-kpi-abbonamenti', '/superadmin/coaches?status=all' as Href)} />
+            <KpiCard icon={Euro} label="Incassi mese" value={monthRevenue > 0 ? currencyFormatter.format(monthRevenue) : '-'} tone="green" onPress={() => navigate('superadmin-kpi-incassi', '/superadmin/payment-events' as Href)} />
+            <KpiCard icon={MessageSquare} label="Ticket aperti" value={String(unresolvedSupport)} tone="orange" onPress={() => navigate('superadmin-kpi-ticket', '/superadmin/support' as Href)} />
+          </>
+        )}
+      </ScrollView>
+
+      <SectionHeader title="Coach recenti" action="Vedi tutti" onPress={() => navigate('superadmin-coach-tutti', '/superadmin/coaches' as Href)} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.coachScroller}>
+        {loading ? (
+          [0, 1, 2].map((item) => <SkeletonCard key={item} width={96} height={150} />)
+        ) : recentCoaches.length === 0 ? (
+          <EmptyPanel title="Nessun coach registrato" detail="Quando Supabase restituira' coach reali, compariranno qui." />
+        ) : (
+          recentCoaches.map((coach) => (
+            <CoachCard key={coach.id} coach={coach} onPress={() => navigate('superadmin-coach-card', `/superadmin/coaches/${coach.id}` as Href)} />
           ))
         )}
-      </AppCard>
+      </ScrollView>
+
+      <Text style={styles.sectionTitle}>Azioni rapide</Text>
+      <View style={styles.quickGrid}>
+        <QuickAction title="Piani" subtitle="Gestisci piani" icon={Layers3} onPress={() => navigate('superadmin-action-piani', '/superadmin/plans' as Href)} />
+        <QuickAction title="Pacchetti" subtitle="Gestisci pacchetti" icon={Package} onPress={() => navigate('superadmin-action-pacchetti', '/superadmin/pacchetti' as Href)} />
+        <QuickAction title="Pagamenti" subtitle="Transazioni" icon={CreditCard} onPress={() => navigate('superadmin-action-pagamenti', '/superadmin/payment-events' as Href)} />
+        <QuickAction title="Supporto" subtitle="Ticket & help" icon={Headphones} onPress={() => navigate('superadmin-action-supporto', '/superadmin/support' as Href)} />
+      </View>
+
+      <SectionHeader title="Attivita' recenti" action="Vedi tutte" onPress={() => navigate('superadmin-attivita', '/superadmin/notifications' as Href)} />
+      <View style={styles.activityCard}>
+        {loading ? (
+          [0, 1, 2].map((item) => <ActivitySkeleton key={item} />)
+        ) : recentActivities.length === 0 ? (
+          <Text style={styles.emptyActivity}>Nessuna attivita' recente disponibile.</Text>
+        ) : (
+          recentActivities.map((activity, index) => (
+            <ActivityRow key={activity.id} item={activity} showBorder={index > 0} onPress={() => navigate(`superadmin-activity-${activity.id}`, activity.href)} />
+          ))
+        )}
+      </View>
     </SuperadminShell>
   );
 }
 
+function KpiCard({ icon: Icon, label, value, tone, onPress }: { icon: LucideIcon; label: string; value: string; tone: Tone; onPress: () => void }) {
+  const palette = getTonePalette(tone);
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.kpiCard}>
+      <View style={[styles.kpiIcon, { backgroundColor: palette.soft }]}>
+        <Icon size={19} color={palette.strong} strokeWidth={2.1} />
+      </View>
+      <Text style={styles.kpiLabel} numberOfLines={2}>{label}</Text>
+      <Text style={styles.kpiValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      <View style={styles.kpiDeltaRow}>
+        <ArrowUp size={11} color={palette.strong} />
+        <Text style={[styles.kpiDelta, { color: palette.strong }]}>n/d</Text>
+      </View>
+      <Text style={styles.kpiVs}>vs mese scorso</Text>
+    </Pressable>
+  );
+}
+
+function CoachCard({ coach, onPress }: { coach: SuperadminCoach; onPress: () => void }) {
+  const status = getStatusPresentation(coach.billingStatus);
+  const planName = coach.activePackageName ?? planCodeLabel(coach.planCode);
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Apri dettaglio coach ${coach.name}`} style={styles.coachCard}>
+      <ChevronRight size={19} color="#96A0A8" style={styles.cardChevron} />
+      <View style={styles.avatar}>
+        <Text style={styles.avatarInitial}>{getInitials(coach.name)}</Text>
+        <View style={[styles.avatarOnline, { backgroundColor: coach.blocked ? '#7A828A' : '#7BEA18' }]} />
+      </View>
+      <Text style={styles.coachName} numberOfLines={1}>{coach.name}</Text>
+      <Text style={[styles.coachPlan, { color: status.color }]} numberOfLines={1}>{planName}</Text>
+      <Text style={styles.coachMetaLabel}>Clienti</Text>
+      <Text style={styles.coachUsage}>{formatUsage(coach.clientsUsed, coach.activePackageMaxClients)}</Text>
+      <View style={styles.coachDivider} />
+      <Text style={styles.coachMetaLabel}>Abbonamento</Text>
+      <View style={[styles.statusPill, { backgroundColor: status.soft }]}>
+        {status.icon}
+        <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function QuickAction({ title, subtitle, icon: Icon, onPress }: { title: string; subtitle: string; icon: LucideIcon; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.quickAction}>
+      <View style={styles.quickIcon}>
+        <Icon size={22} color={colors.moss} />
+      </View>
+      <ChevronRight size={18} color="#7F8991" style={styles.quickChevron} />
+      <Text style={styles.quickTitle}>{title}</Text>
+      <Text style={styles.quickSubtitle}>{subtitle}</Text>
+    </Pressable>
+  );
+}
+
+type ActivityItem = {
+  id: string;
+  createdAt: string;
+  title: string;
+  detail: string;
+  value: string;
+  time: string;
+  tone: Tone;
+  icon: LucideIcon;
+  href: Href;
+};
+
+function ActivityRow({ item, showBorder, onPress }: { item: ActivityItem; showBorder: boolean; onPress: () => void }) {
+  const palette = getTonePalette(item.tone);
+  const Icon = item.icon;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.activityRow, showBorder && styles.activityBorder]}>
+      <View style={[styles.activityIcon, { backgroundColor: palette.soft }]}>
+        <Icon size={19} color={palette.strong} />
+      </View>
+      <View style={styles.activityCopy}>
+        <Text style={styles.activityTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.activityDetail} numberOfLines={1}>{item.detail}</Text>
+      </View>
+      <View style={styles.activityMeta}>
+        <Text style={[styles.activityValue, { color: palette.strong }]} numberOfLines={1}>{item.value}</Text>
+        <Text style={styles.activityTime} numberOfLines={1}>{item.time}</Text>
+      </View>
+      <ChevronRight size={20} color="#76818A" />
+    </Pressable>
+  );
+}
+
+function SectionHeader({ title, action, onPress }: { title: string; action: string; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Pressable onPress={onPress} hitSlop={6} style={styles.sectionAction}>
+        <Text style={[styles.sectionLink, { color: colors.moss }]}>{action}</Text>
+        <ChevronRight size={16} color={colors.moss} />
+      </Pressable>
+    </View>
+  );
+}
+
+function SkeletonCard({ width, height }: { width: number; height: number }) {
+  return <View style={[styles.skeletonCard, { width, height }]} />;
+}
+
+function ActivitySkeleton() {
+  return (
+    <View style={styles.activityRow}>
+      <View style={styles.skeletonIcon} />
+      <View style={styles.activityCopy}>
+        <View style={styles.skeletonLineWide} />
+        <View style={styles.skeletonLine} />
+      </View>
+    </View>
+  );
+}
+
+function EmptyPanel({ title, detail }: { title: string; detail: string }) {
+  return (
+    <View style={styles.emptyPanel}>
+      <Text style={styles.emptyPanelTitle}>{title}</Text>
+      <Text style={styles.emptyPanelDetail}>{detail}</Text>
+    </View>
+  );
+}
+
+function buildRecentActivities(
+  coaches: SuperadminCoach[],
+  paymentEvents: DemoPaymentEvent[],
+  notifications: SuperadminNotification[],
+  supportConversations: ReturnType<typeof getSuperadminSupportConversations>,
+): ActivityItem[] {
+  const paymentItems: ActivityItem[] = paymentEvents.map((event) => {
+    const coach = coaches.find((item) => item.id === event.coachId);
+    const failed = event.status === 'failed';
+    return {
+      id: `payment-${event.id}`,
+      createdAt: event.createdAt,
+      title: failed ? 'Pagamento fallito' : event.eventType === 'subscription_renewed' ? 'Pagamento ricevuto' : 'Evento pagamento',
+      detail: `${coach?.name ?? 'Coach'} · ${getPaymentEventLabel(event.eventType)}`,
+      value: event.amount === undefined ? '-' : currencyFormatter.format(event.amount),
+      time: formatRelativeDate(event.createdAt),
+      tone: failed ? 'orange' : 'green',
+      icon: failed ? WalletCards : Euro,
+      href: '/superadmin/payment-events' as Href,
+    };
+  });
+
+  const supportItems: ActivityItem[] = supportConversations.map((conversation) => ({
+    id: `support-${conversation.lastMessage.id}`,
+    createdAt: conversation.lastMessage.createdAt,
+    title: 'Nuovo ticket aperto',
+    detail: `${conversation.coach.name} · ${conversation.lastMessage.text}`,
+    value: `#${conversation.lastMessage.id.slice(-6).toUpperCase()}`,
+    time: formatRelativeDate(conversation.lastMessage.createdAt),
+    tone: 'purple',
+    icon: LifeBuoy,
+    href: `/superadmin/support/${conversation.coach.id}` as Href,
+  }));
+
+  const notificationItems: ActivityItem[] = notifications.map((notification) => ({
+    id: `notification-${notification.id}`,
+    createdAt: notification.createdAt,
+    title: notification.title,
+    detail: notification.description,
+    value: notification.read ? 'Letta' : 'Nuova',
+    time: formatRelativeDate(notification.createdAt),
+    tone: notification.type === 'payment_past_due' ? 'orange' : notification.type === 'coach_support_message' ? 'purple' : 'lime',
+    icon: notification.type === 'payment_past_due' ? CreditCard : notification.type === 'coach_support_message' ? MessageSquare : Shield,
+    href: '/superadmin/notifications' as Href,
+  }));
+
+  return [...paymentItems, ...supportItems, ...notificationItems].sort((a, b) => getActivityTime(b) - getActivityTime(a));
+}
+
+function getActivityTime(item: ActivityItem) {
+  const timestamp = new Date(item.createdAt).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getPaymentEventLabel(eventType: string) {
+  const labels: Record<string, string> = {
+    subscription_renewed: 'Piano rinnovato',
+    trial_started: 'Prova attivata',
+    invoice_payment_failed: 'Problema di incasso',
+    access_blocked_manual: 'Account sospeso',
+  };
+  return labels[eventType] ?? 'Evento';
+}
+
+function getStatusPresentation(status: AppBillingStatus) {
+  const label = getBillingStatusLabel(status);
+  if (status === 'active') return { label: 'Attivo', color: '#7BEA18', soft: '#173516', icon: <CheckCircle2 size={12} color="#7BEA18" /> };
+  if (status === 'trial') return { label: 'Prova gratuita', color: '#B887FF', soft: '#2B1D42', icon: <Shield size={12} color="#B887FF" /> };
+  if (status === 'past_due') return { label: 'In scadenza', color: '#F2A43A', soft: '#3A2710', icon: <CalendarDays size={12} color="#F2A43A" /> };
+  if (status === 'blocked') return { label: 'Sospeso', color: '#A8B0B7', soft: '#242B31', icon: <XCircle size={12} color="#A8B0B7" /> };
+  return { label, color: '#FF6B73', soft: '#3B171D', icon: <XCircle size={12} color="#FF6B73" /> };
+}
+
+function getTonePalette(tone: Tone) {
+  const palettes = {
+    lime: { strong: '#7BEA18', soft: '#163715' },
+    green: { strong: '#72E22B', soft: '#123416' },
+    orange: { strong: '#F2A43A', soft: '#3A2710' },
+    purple: { strong: '#A55CFF', soft: '#291946' },
+    red: { strong: '#FF607A', soft: '#3A1720' },
+    muted: { strong: '#A7B0B8', soft: '#222B32' },
+  } satisfies Record<Tone, { strong: string; soft: string }>;
+  return palettes[tone];
+}
+
+function formatUsage(used: number, limit: number | null | undefined) {
+  return `${used} / ${limit == null ? '∞' : limit}`;
+}
+
+function formatCompact(value: number) {
+  return new Intl.NumberFormat('it-IT', { notation: value >= 1000 ? 'compact' : 'standard' }).format(value);
+}
+
+function formatRelativeDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || '-';
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  const time = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  return sameDay ? `Oggi, ${time}` : date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+}
+
+function isCurrentMonth(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
+function sortByRecentActivity(a: SuperadminCoach, b: SuperadminCoach) {
+  return new Date(b.periodStartsAt || 0).getTime() - new Date(a.periodStartsAt || 0).getTime();
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return `${parts[0]?.[0] ?? 'C'}${parts[1]?.[0] ?? ''}`.toUpperCase();
+}
+
+function planCodeLabel(value: string) {
+  if (value === 'starter') return 'Studio';
+  if (value === 'pro') return 'Pro';
+  if (value === 'free') return 'Free';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
-  },
-  hero: {
+  header: {
     alignItems: 'center',
-    borderRadius: AppRadius.xxl,
-    borderWidth: 1,
     flexDirection: 'row',
-    gap: AppSpacing[3],
     justifyContent: 'space-between',
+    marginBottom: 0,
+    minHeight: 104,
     overflow: 'hidden',
-    padding: AppSpacing[5],
+    position: 'relative',
   },
-  heroCopy: {
+  headerGlow: {
+    backgroundColor: '#7BEA18',
+    borderRadius: 180,
+    height: 180,
+    opacity: 0.1,
+    position: 'absolute',
+    right: -104,
+    top: -82,
+    transform: [{ rotate: '-24deg' }],
+    width: 180,
+  },
+  headerText: {
     flex: 1,
+    gap: 2,
     minWidth: 0,
   },
-  eyebrow: {
-    fontSize: AppFontSize.xs,
+  headerLogo: {
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  headerTitle: {
+    color: '#F7F9FA',
+    fontSize: 28,
     fontWeight: '800',
     letterSpacing: 0,
+    lineHeight: 33,
   },
-  heroTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    lineHeight: 38,
-  },
-  heroSubtitle: {
-    fontSize: AppFontSize.sm,
+  headerSubtitle: {
+    color: '#A8B0B7',
+    fontSize: 14,
     fontWeight: '600',
-    marginTop: AppSpacing[1],
+    lineHeight: 18,
+    marginTop: 2,
   },
-  heroIcon: {
+  adminProfile: {
     alignItems: 'center',
-    borderRadius: AppRadius.xxl,
-    borderWidth: 1,
-    height: 92,
+    borderColor: '#7BEA18',
+    borderRadius: 999,
+    borderWidth: 1.3,
+    height: 50,
     justifyContent: 'center',
-    width: 92,
+    shadowColor: '#7BEA18',
+    shadowOpacity: 0.24,
+    shadowRadius: 16,
+    width: 50,
   },
-  sectionPair: {
-    gap: AppSpacing[3],
+  crownIcon: {
+    position: 'absolute',
+    top: 20,
   },
-  card: {
-    gap: AppSpacing[2],
+  onlineDot: {
+    borderColor: '#07100A',
+    borderRadius: 999,
+    borderWidth: 2,
+    bottom: 5,
+    height: 12,
+    position: 'absolute',
+    right: 2,
+    width: 12,
+  },
+  errorBox: {
+    backgroundColor: '#180E10',
+    borderColor: '#70323A',
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+    padding: AppSpacing[3],
+  },
+  errorTitle: {
+    color: '#FF8F9D',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  errorText: {
+    color: '#D5B7BC',
+    fontSize: AppFontSize.sm + 2,
+    lineHeight: 21,
+  },
+  retryButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    borderWidth: 1,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  retryLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  kpiScroller: {
+    gap: 6,
+    paddingRight: AppSpacing[2],
+  },
+  kpiCard: {
+    backgroundColor: '#091018',
+    borderColor: '#1B2B35',
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4,
+    minHeight: 116,
+    padding: 7,
+    shadowColor: '#7BEA18',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    width: 72,
+  },
+  kpiIcon: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  kpiLabel: {
+    color: '#AEB7BE',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 13,
+    minHeight: 24,
+  },
+  kpiValue: {
+    color: '#F7F9FA',
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  kpiDeltaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 3,
+  },
+  kpiDelta: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  kpiVs: {
+    color: '#9AA4AE',
+    fontSize: 11,
+    fontWeight: '600',
   },
   sectionHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: AppSpacing[2],
     justifyContent: 'space-between',
   },
   sectionTitle: {
-    fontSize: AppFontSize.base,
-    fontWeight: '700',
+    color: '#F7F9FA',
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  sectionAction: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
   },
   sectionLink: {
-    fontSize: AppFontSize.base,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  alertRow: {
+  coachScroller: {
+    gap: 6,
+    paddingRight: AppSpacing[2],
+  },
+  coachCard: {
+    backgroundColor: '#091018',
+    borderColor: '#1B2B35',
+    borderRadius: 14,
+    borderWidth: 1,
+    minHeight: 150,
+    padding: 9,
+    position: 'relative',
+    width: 96,
+  },
+  cardChevron: {
+    position: 'absolute',
+    right: 8,
+    top: 22,
+  },
+  avatar: {
     alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-    justifyContent: 'space-between',
-    paddingTop: AppSpacing[2],
+    backgroundColor: '#22303A',
+    borderRadius: 999,
+    height: 36,
+    justifyContent: 'center',
+    marginBottom: 7,
+    width: 36,
   },
-  alertText: {
+  avatarInitial: {
+    color: '#EDF4F0',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  avatarOnline: {
+    borderColor: '#091018',
+    borderRadius: 999,
+    borderWidth: 2,
+    bottom: 1,
+    height: 11,
+    position: 'absolute',
+    right: -1,
+    width: 11,
+  },
+  coachName: {
+    color: '#F7F9FA',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 15,
+  },
+  coachPlan: {
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  coachMetaLabel: {
+    color: '#9AA4AE',
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 5,
+  },
+  coachUsage: {
+    color: '#F7F9FA',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  coachDivider: {
+    backgroundColor: '#1B2B35',
+    height: StyleSheet.hairlineWidth,
+    marginTop: 5,
+  },
+  statusPill: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
+    minHeight: 20,
+    paddingHorizontal: 5,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickAction: {
+    backgroundColor: '#091018',
+    borderColor: '#1B2B35',
+    borderRadius: 13,
+    borderWidth: 1,
+    flexBasis: '47%',
+    flexGrow: 1,
+    minHeight: 76,
+    padding: 10,
+    position: 'relative',
+  },
+  quickIcon: {
+    marginBottom: 6,
+  },
+  quickChevron: {
+    position: 'absolute',
+    right: 8,
+    top: 15,
+  },
+  quickTitle: {
+    color: '#F7F9FA',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  quickSubtitle: {
+    color: '#9AA4AE',
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 13,
+  },
+  activityCard: {
+    backgroundColor: '#091018',
+    borderColor: '#1B2B35',
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  activityRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 50,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  activityBorder: {
+    borderTopColor: '#172631',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  activityIcon: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  activityCopy: {
     flex: 1,
     minWidth: 0,
   },
-  alertName: {
-    fontSize: AppFontSize.base,
-    fontWeight: '700',
+  activityTitle: {
+    color: '#F7F9FA',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
   },
-  coachRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: AppSpacing[3],
-    minHeight: 62,
-    paddingVertical: AppSpacing[2],
+  activityDetail: {
+    color: '#9AA4AE',
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 13,
   },
-  avatarFallback: {
-    alignItems: 'center',
-    borderRadius: AppRadius.pill,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+  activityMeta: {
+    alignItems: 'flex-end',
+    maxWidth: 70,
   },
-  avatarText: {
-    fontSize: AppFontSize.base,
+  activityValue: {
+    fontSize: 11,
     fontWeight: '800',
   },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
+  activityTime: {
+    color: '#9AA4AE',
+    fontSize: 9,
+    fontWeight: '600',
   },
-  quickAction: {
-    alignItems: 'center',
-    borderRadius: AppRadius.lg,
+  emptyActivity: {
+    color: '#9AA4AE',
+    fontSize: 14,
+    fontWeight: '600',
+    padding: AppSpacing[3],
+  },
+  emptyPanel: {
+    backgroundColor: '#091018',
+    borderColor: '#1B2B35',
+    borderRadius: 18,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-    minHeight: 48,
-    minWidth: '46%',
-    paddingHorizontal: AppSpacing[3],
+    gap: 6,
+    justifyContent: 'center',
+    minHeight: 128,
+    padding: AppSpacing[3],
+    width: 220,
   },
-  quickActionLabel: {
-    flexShrink: 1,
-    fontSize: AppFontSize.sm,
+  emptyPanelTitle: {
+    color: '#F7F9FA',
+    fontSize: 16,
     fontWeight: '800',
+  },
+  emptyPanelDetail: {
+    color: '#9AA4AE',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  skeletonCard: {
+    backgroundColor: '#0C151C',
+    borderColor: '#1B2B35',
+    borderRadius: 18,
+    borderWidth: 1,
+    opacity: 0.78,
+  },
+  skeletonIcon: {
+    backgroundColor: '#16242E',
+    borderRadius: 999,
+    height: 34,
+    width: 34,
+  },
+  skeletonLineWide: {
+    backgroundColor: '#16242E',
+    borderRadius: 999,
+    height: 12,
+    marginBottom: 8,
+    width: '74%',
+  },
+  skeletonLine: {
+    backgroundColor: '#16242E',
+    borderRadius: 999,
+    height: 10,
+    width: '52%',
   },
 });
-
-function QuickAdminAction({ label, icon, onPress }: { label: string; icon: React.ReactNode; onPress: () => void }) {
-  const { colors } = useAppTheme();
-  return (
-    <Pressable onPress={onPress} hitSlop={4} style={[styles.quickAction, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
-      {icon}
-      <Text style={[styles.quickActionLabel, { color: colors.ink }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}

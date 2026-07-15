@@ -192,11 +192,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: AppSpacing[5],
+    paddingHorizontal: AppSpacing[4],
   },
   header: {
-    gap: AppSpacing[3],
-    marginBottom: AppSpacing[2],
+    gap: AppSpacing[2],
+    marginBottom: AppSpacing[1],
   },
   tabRow: {
     flexDirection: 'row',
@@ -204,23 +204,23 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: AppRadius.lg,
+    minHeight: 38,
+    borderRadius: AppRadius.md,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabButtonLabel: {
-    fontSize: AppFontSize.sm + 1,
+    fontSize: AppFontSize.sm,
     fontWeight: '700',
   },
   card: {
-    padding: 14,
+    padding: 11,
   },
   cardRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: AppSpacing[3],
+    gap: AppSpacing[2],
     minWidth: 0,
   },
   cardCopy: {
@@ -231,9 +231,9 @@ const styles = StyleSheet.create({
   planPlaceholder: {
     alignItems: 'center',
     borderRadius: AppRadius.xl,
-    height: 84,
+    height: 72,
     justifyContent: 'center',
-    width: 84,
+    width: 72,
   },
   badgeRow: {
     alignItems: 'center',
@@ -254,9 +254,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   planName: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700',
-    lineHeight: 23,
+    lineHeight: 19,
     minWidth: 0,
   },
   loading: {

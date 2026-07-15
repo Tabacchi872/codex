@@ -8,9 +8,9 @@ type FitCoachLogoProps = {
 };
 
 const SIZE = {
-  sm: { main: 18, pro: AppFontSize.sm },
-  md: { main: 22, pro: AppFontSize.base },
-  lg: { main: 28, pro: AppFontSize.md },
+  sm: { main: 16, pro: AppFontSize.sm },
+  md: { main: 20, pro: AppFontSize.base },
+  lg: { main: 26, pro: AppFontSize.md },
 } as const;
 
 export function FitCoachLogo({ size = 'md', style }: FitCoachLogoProps) {

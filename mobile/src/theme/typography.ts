@@ -9,13 +9,13 @@ import { Platform } from 'react-native';
 // sistema con peso maggiore + letter-spacing negativo per avvicinarsi
 // all'effetto "display" del mockup, non il font esatto — vedi TODO_NEXT.md.
 export const AppFontSize = {
-  xs: 11,
-  sm: 12.5,
-  base: 14.5,
-  md: 16,
-  lg: 19,
-  xl: 24,
-  hero: 36,
+  xs: 9,
+  sm: 10.5,
+  base: 12.5,
+  md: 14,
+  lg: 17,
+  xl: 22,
+  hero: 34,
 } as const;
 
 export const AppFontFamily = Platform.select({
@@ -52,7 +52,7 @@ export const AppTextStyle = {
   },
   cardTitle: {
     fontFamily: AppFontFamily.display,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700' as const,
   },
   body: {
