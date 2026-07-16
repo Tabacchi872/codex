@@ -110,31 +110,162 @@ export async function createAppointment(
   }
   const startAt = toUtcIso(appointment.date, appointment.startTime);
   const endAt = toUtcIso(appointment.date, appointment.endTime);
-  if (!startAt || !endAt) {
+  if (!startAt || !endAt || endAt <= startAt) {
     return { ok: false, code: 'invalid_datetime', message: 'Data o orario non validi.' };
   }
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert({
-      coach_id: session.data.user.id,
-      client_id: appointment.clientId,
-      title: appointment.title,
-      description: appointment.notes ?? null,
-      start_at: startAt,
-      end_at: endAt,
-      status: appointment.status,
-      type: appointment.type,
-      workout_session_id: appointment.workoutSessionId ?? null,
-    })
-    .select(ROW_COLUMNS)
-    .single();
+  const coachId = session.data.user.id;
+  const scope = await validateAppointmentScope(coachId, appointment);
+  if (!scope.ok) return scope.result;
 
-  if (error || !data) {
-    // Messaggio RLS tipico se il cliente non e' collegato a questo coach.
-    return { ok: false, code: 'create_failed', message: 'Impossibile creare l\'appuntamento. Verifica che il cliente sia collegato al tuo account.' };
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert({
+        coach_id: coachId,
+        client_id: appointment.clientId,
+        title: appointment.title,
+        description: appointment.notes ?? null,
+        start_at: startAt,
+        end_at: endAt,
+        status: appointment.status,
+        type: appointment.type,
+        workout_session_id: appointment.workoutSessionId ?? null,
+      })
+      .select(ROW_COLUMNS)
+      .single();
+
+    if (error || !data) {
+      return mapCreateAppointmentError(error, data ? 'no_error_but_no_data' : undefined);
+    }
+    return { ok: true, data: mapRowToAppointment(data as AppointmentRow) };
+  } catch (error) {
+    logSupabaseError('APPOINTMENT_CREATE_THROW', error);
+    return mapThrownAppointmentError(error);
   }
-  return { ok: true, data: mapRowToAppointment(data as AppointmentRow) };
+}
+
+async function validateAppointmentScope(
+  coachId: string,
+  appointment: Omit<Appointment, 'id' | 'coachId' | 'createdAt'>,
+): Promise<{ ok: true } | { ok: false; result: AppointmentServiceResult<never> }> {
+  if (!supabase) return { ok: false, result: NOT_CONFIGURED };
+  if (!isValidUuid(appointment.clientId)) {
+    return {
+      ok: false,
+      result: { ok: false, code: 'client_not_linked', message: 'Il cliente selezionato non risulta collegato al tuo account.' },
+    };
+  }
+
+  const { data: link, error: linkError } = await supabase
+    .from('coach_clients')
+    .select('client_id')
+    .eq('coach_id', coachId)
+    .eq('client_id', appointment.clientId)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (linkError) {
+    logSupabaseError('APPOINTMENT_CLIENT_LINK_CHECK_ERROR', linkError);
+    return { ok: false, result: mapCreateAppointmentError(linkError) };
+  }
+  if (!link) {
+    return {
+      ok: false,
+      result: { ok: false, code: 'client_not_linked', message: 'Il cliente selezionato non risulta collegato al tuo account.' },
+    };
+  }
+
+  if (!appointment.workoutSessionId) return { ok: true };
+  if (!isValidUuid(appointment.workoutSessionId)) {
+    return {
+      ok: false,
+      result: {
+        ok: false,
+        code: 'workout_plan_not_synced',
+        message: 'La scheda selezionata non e ancora sincronizzata con Supabase.',
+      },
+    };
+  }
+
+  const { data: plan, error: planError } = await supabase
+    .from('workout_plans')
+    .select('id')
+    .eq('id', appointment.workoutSessionId)
+    .eq('coach_id', coachId)
+    .eq('client_id', appointment.clientId)
+    .maybeSingle();
+
+  if (planError) {
+    logSupabaseError('APPOINTMENT_PLAN_SCOPE_CHECK_ERROR', planError);
+    return { ok: false, result: mapCreateAppointmentError(planError) };
+  }
+  if (!plan) {
+    return {
+      ok: false,
+      result: { ok: false, code: 'workout_plan_client_mismatch', message: 'La scheda selezionata non appartiene al cliente scelto.' },
+    };
+  }
+
+  return { ok: true };
+}
+
+function mapCreateAppointmentError(error: unknown, fallbackCode = 'create_failed'): AppointmentServiceResult<never> {
+  logSupabaseError('APPOINTMENT_CREATE_ERROR', error);
+  const info = readSupabaseErrorInfo(error);
+  const code = info.code;
+  const message = info.message.toLowerCase();
+  const details = info.details.toLowerCase();
+
+  if (code === '23514') {
+    return { ok: false, code: 'invalid_datetime', message: 'Data o orario non validi.' };
+  }
+  if (code === '23503') {
+    const isWorkoutPlan = message.includes('workout') || details.includes('workout');
+    return isWorkoutPlan
+      ? { ok: false, code: 'workout_plan_client_mismatch', message: 'La scheda selezionata non appartiene al cliente scelto.' }
+      : { ok: false, code: 'client_not_linked', message: 'Il cliente selezionato non risulta collegato al tuo account.' };
+  }
+  if (code === '42501' || message.includes('row-level security') || message.includes('permission denied')) {
+    return { ok: false, code: 'rls_denied', message: 'Permessi insufficienti per creare questo appuntamento.' };
+  }
+  if (code === '42703') {
+    return { ok: false, code: 'schema_mismatch', message: 'Schema appuntamenti non aggiornato. Controlla la migration Supabase.' };
+  }
+  if (message.includes('failed to fetch') || message.includes('network')) {
+    return { ok: false, code: 'network_error', message: 'Errore di rete. Riprova tra poco.' };
+  }
+
+  return { ok: false, code: fallbackCode, message: 'Impossibile creare l\'appuntamento. Riprova.' };
+}
+
+function mapThrownAppointmentError(error: unknown): AppointmentServiceResult<never> {
+  const info = readSupabaseErrorInfo(error);
+  if (info.message.toLowerCase().includes('network') || info.message.toLowerCase().includes('failed to fetch')) {
+    return { ok: false, code: 'network_error', message: 'Errore di rete. Riprova tra poco.' };
+  }
+  return { ok: false, code: 'unknown_error', message: 'Errore imprevisto durante la creazione dell\'appuntamento.' };
+}
+
+function logSupabaseError(label: string, error: unknown): void {
+  if (!__DEV__) return;
+  const info = readSupabaseErrorInfo(error);
+  console.error(label, {
+    code: info.code,
+    message: info.message,
+    details: info.details,
+    hint: info.hint,
+  });
+}
+
+function readSupabaseErrorInfo(error: unknown) {
+  const item = (error ?? {}) as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown };
+  return {
+    code: typeof item.code === 'string' ? item.code : undefined,
+    message: typeof item.message === 'string' ? item.message : '',
+    details: typeof item.details === 'string' ? item.details : '',
+    hint: typeof item.hint === 'string' ? item.hint : '',
+  };
 }
 
 export async function updateAppointment(appointment: Appointment): Promise<AppointmentServiceResult<Appointment>> {

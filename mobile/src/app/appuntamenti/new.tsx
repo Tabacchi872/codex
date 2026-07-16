@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { AppButton, AppCard, AppScreen, AppTextField, BackHeader } from '@/components/ui';
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
+import { useCoachClients } from '@/hooks/use-coach-clients';
 import { createAppointment } from '@/lib/appointment-service';
 import { findOverlappingAppointment, isValidTimeRange } from '@/lib/appointment-overlap';
 import { clientFullName } from '@/lib/client-helpers';
@@ -12,7 +13,6 @@ import { notifyAppointmentPush } from '@/lib/push-notification-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { getClientPlans } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
-import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { APPOINTMENT_TYPE_LABEL, type Appointment, type AppointmentType } from '@/types/appointment';
@@ -28,12 +28,12 @@ export default function NuovoAppuntamentoScreen() {
     workoutSessionId?: string;
   }>();
 
-  const clients = useClientStore((s) => s.clients);
+  const { clients, coachId, loading: clientsLoading, error: clientsError } = useCoachClients();
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const appointments = useAppointmentStore((s) => s.appointments);
   const addAppointment = useAppointmentStore((s) => s.addAppointment);
 
-  const [clientId, setClientId] = useState(initialClientId ?? clients[0]?.id ?? '');
+  const [clientId, setClientId] = useState(initialClientId ?? '');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(formatDateForDisplay(new Date().toISOString().slice(0, 10)));
   const [startTime, setStartTime] = useState('');
@@ -44,12 +44,44 @@ export default function NuovoAppuntamentoScreen() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const clientSessions = getClientPlans(workoutPlans, clientId);
+  const clientSessions = useMemo(() => getClientPlans(workoutPlans, clientId), [workoutPlans, clientId]);
   const stackFieldPairs = width < 390;
 
+  useEffect(() => {
+    if (clients.length === 0) {
+      if (clientId) setClientId('');
+      return;
+    }
+    if (clientId && clients.some((client) => client.id === clientId)) return;
+    const initialClient = initialClientId ? clients.find((client) => client.id === initialClientId) : null;
+    setClientId(initialClient?.id ?? clients[0].id);
+  }, [clientId, clients, initialClientId]);
+
+  useEffect(() => {
+    if (!workoutSessionId) return;
+    if (!clientSessions.some((session) => session.id === workoutSessionId)) {
+      setWorkoutSessionId('');
+    }
+  }, [clientSessions, workoutSessionId]);
+
+  function handleClientSelect(nextClientId: string) {
+    if (nextClientId === clientId) return;
+    setClientId(nextClientId);
+    setWorkoutSessionId('');
+  }
+
   async function handleSave() {
+    if (saving) return;
+    if (supabaseConfig.isConfigured && clientsLoading) {
+      setError('Caricamento clienti in corso. Attendi un momento.');
+      return;
+    }
     if (!clientId) {
       setError('Seleziona un cliente.');
+      return;
+    }
+    if (!clients.some((client) => client.id === clientId)) {
+      setError('Il cliente selezionato non risulta collegato al tuo account.');
       return;
     }
     if (!title.trim()) {
@@ -65,8 +97,23 @@ export default function NuovoAppuntamentoScreen() {
       setError('Inserisci un orario di inizio e fine validi (formato HH:mm), con fine dopo inizio.');
       return;
     }
+    if (workoutSessionId && !clientSessions.some((session) => session.id === workoutSessionId)) {
+      setWorkoutSessionId('');
+      setError('La scheda selezionata non appartiene al cliente scelto.');
+      return;
+    }
 
-    const candidate = { coachId: DEFAULT_COACH_ID, date: isoDate, startTime: startTime.trim(), endTime: endTime.trim() };
+    let effectiveCoachId: string;
+    if (supabaseConfig.isConfigured) {
+      if (coachId == null) {
+        setError('Sessione coach non disponibile. Esci e accedi nuovamente.');
+        return;
+      }
+      effectiveCoachId = coachId;
+    } else {
+      effectiveCoachId = DEFAULT_COACH_ID;
+    }
+    const candidate = { coachId: effectiveCoachId, date: isoDate, startTime: startTime.trim(), endTime: endTime.trim() };
     const conflict = findOverlappingAppointment(appointments, candidate);
     if (conflict) {
       setError('Orario non disponibile. Scegli un altro orario.');
@@ -121,9 +168,14 @@ export default function NuovoAppuntamentoScreen() {
       <BackHeader title="Nuovo appuntamento" fallbackHref={initialClientId ? `/clienti/${initialClientId}` : '/appuntamenti'} />
       <AppCard style={styles.card}>
         <Field label="Cliente">
+          {clientsLoading ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>Caricamento clienti...</Text> : null}
+          {clientsError ? <Text style={[styles.smallText, { color: colors.rust }]}>{clientsError}</Text> : null}
+          {!clientsLoading && clients.length === 0 ? (
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun cliente collegato al tuo account.</Text>
+          ) : null}
           <View style={styles.chipsRow}>
             {clients.map((client) => (
-              <Chip key={client.id} label={clientFullName(client)} active={client.id === clientId} onPress={() => setClientId(client.id)} />
+              <Chip key={client.id} label={clientFullName(client)} active={client.id === clientId} onPress={() => handleClientSelect(client.id)} />
             ))}
           </View>
         </Field>
@@ -169,7 +221,14 @@ export default function NuovoAppuntamentoScreen() {
 
       {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
 
-      <AppButton label={saving ? 'Creazione...' : 'Crea appuntamento'} onPress={handleSave} loading={saving} disabled={saving} fullWidth size="lg" />
+      <AppButton
+        label={saving ? 'Creazione...' : 'Crea appuntamento'}
+        onPress={handleSave}
+        loading={saving}
+        disabled={saving || clientsLoading || clients.length === 0}
+        fullWidth
+        size="lg"
+      />
     </AppScreen>
   );
 }

@@ -8,6 +8,7 @@ import type { Client } from '@/types/client';
 
 type UseCoachClientsResult = {
   clients: Client[];
+  coachId: string | null;
   loading: boolean;
   error: string | null;
   reload: () => void;
@@ -17,6 +18,7 @@ export function useCoachClients(): UseCoachClientsResult {
   const storeClients = useClientStore((s) => s.clients);
   const setClients = useClientStore((s) => s.setClients);
   const [clients, setLocalClients] = useState<Client[]>(storeClients);
+  const [coachId, setCoachId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
@@ -31,6 +33,7 @@ export function useCoachClients(): UseCoachClientsResult {
     if (result.ok) {
       setLocalClients(result.data);
       setClients(result.data);
+      setCoachId(result.coachId);
     } else {
       setError(result.message);
     }
@@ -50,5 +53,5 @@ export function useCoachClients(): UseCoachClientsResult {
     return () => subscription.remove();
   }, [load]);
 
-  return { clients, loading, error, reload: load };
+  return { clients, coachId, loading, error, reload: load };
 }
