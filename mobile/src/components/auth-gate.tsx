@@ -35,6 +35,7 @@ const CLIENT_ONLY_ROUTES = [
   '/altro',
   '/cliente-profilo',
   '/progressi',
+  '/metriche',
   '/bacheca',
   '/prenotazioni',
   '/questionario',

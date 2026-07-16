@@ -220,6 +220,7 @@ export default function ClienteHomeScreen() {
               <SummaryMetric label="Serie" value={String(totalSets)} divided={!compact} compact={compact} />
               <SummaryMetric label="Progresso" value={`${Math.round((completedCount / Math.max(1, purchasedTotal)) * 100)}%`} divided={!compact} compact={compact} />
             </View>
+            <AppButton label="Apri metriche" variant="outline" onPress={() => navigate('cliente-home-metriche', '/metriche')} fullWidth />
           </AppCard>
 
           <AppButton

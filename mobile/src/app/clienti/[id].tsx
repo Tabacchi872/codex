@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppScreen, BackHeader, UserAvatar, type AppBadgeTone } from '@/components/ui';
+import { ClientMetricsPanel } from '@/components/client-metrics-panel';
+import { ClientNotesPanel } from '@/components/client-notes-panel';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
 import { useCoachClients } from '@/hooks/use-coach-clients';
@@ -32,6 +34,14 @@ import {
 } from '@/types/subscription';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
+const DETAIL_TABS = ['panoramica', 'schede', 'metriche', 'note'] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
+const DETAIL_TAB_LABEL: Record<DetailTab, string> = {
+  panoramica: 'Panoramica',
+  schede: 'Schede',
+  metriche: 'Metriche',
+  note: 'Note',
+};
 
 export default function ClienteDettaglioScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +56,7 @@ export default function ClienteDettaglioScreen() {
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const appointments = useAppointmentStore((s) => s.appointments);
   const cliente = clients.find((c) => c.id === id);
+  const [activeTab, setActiveTab] = useState<DetailTab>('panoramica');
 
   if (!isCoach) {
     return <CoachOnlyNotice />;
@@ -166,6 +177,23 @@ export default function ClienteDettaglioScreen() {
         })}
       </View>
 
+      <View style={[styles.detailTabs, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
+        {DETAIL_TABS.map((tab) => {
+          const active = activeTab === tab;
+          return (
+            <Pressable
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              style={[styles.detailTab, { backgroundColor: active ? colors.moss : 'transparent' }]}
+              hitSlop={4}>
+              <Text style={[styles.detailTabLabel, { color: active ? colors.onMoss : colors.inkSoft }]}>{DETAIL_TAB_LABEL[tab]}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {activeTab === 'panoramica' ? (
+        <>
       <AppCard>
         <Text style={[styles.cardTitle, { color: colors.ink }]}>Contatti</Text>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.email}</Text>
@@ -221,25 +249,6 @@ export default function ClienteDettaglioScreen() {
       </AppCard>
 
       <AppCard>
-        <Text style={[styles.cardTitle, { color: colors.ink }]}>Schede assegnate ({sessions.length})</Text>
-        {sessions.length === 0 ? (
-          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessuna scheda assegnata.</Text>
-        ) : (
-          sessions.map((session) => (
-            <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => navigate('clienti-detail-scheda-row', `/schede/${session.id}`)} />
-          ))
-        )}
-        <AppButton
-          label="+ Nuova scheda"
-          onPress={() => {
-            logCoachNavPress('clienti-detail-scheda-new', `/schede/new?clientId=${cliente.id}`);
-            router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
-          }}
-          fullWidth
-        />
-      </AppCard>
-
-      <AppCard>
         <Text style={[styles.cardTitle, { color: colors.ink }]}>Appuntamenti</Text>
         {clientAppointments.length > 0 ? (
           clientAppointments.map((a) => (
@@ -260,13 +269,45 @@ export default function ClienteDettaglioScreen() {
         />
       </AppCard>
 
-      <AppCard style={styles.notesCard}>
-        <Text style={[styles.cardTitle, { color: colors.ink }]}>Note interne</Text>
-        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.notes || 'Nessuna nota.'}</Text>
-        <DisabledAction label="Modifica nota" note="Presto disponibile" />
-      </AppCard>
-
       <CredentialsSection client={cliente} account={account} onGenerate={handleGenerateAccount} />
+        </>
+      ) : null}
+
+      {activeTab === 'schede' ? (
+        <>
+      <AppCard>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Schede assegnate ({sessions.length})</Text>
+        {sessions.length === 0 ? (
+          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessuna scheda assegnata.</Text>
+        ) : (
+          sessions.map((session) => (
+            <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => navigate('clienti-detail-scheda-row', `/schede/${session.id}`)} />
+          ))
+        )}
+        <AppButton
+          label="+ Nuova scheda"
+          onPress={() => {
+            logCoachNavPress('clienti-detail-scheda-new', `/schede/new?clientId=${cliente.id}`);
+            router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
+          }}
+          fullWidth
+        />
+      </AppCard>
+        </>
+      ) : null}
+
+      {activeTab === 'metriche' ? <ClientMetricsPanel clientId={cliente.id} clientName={clientFullName(cliente)} /> : null}
+
+      {activeTab === 'note' ? (
+        <ClientNotesPanel
+          clientId={cliente.id}
+          clientName={clientFullName(cliente)}
+          plans={sessions}
+          appointments={clientAppointments}
+          onOpenPlan={(planId) => navigate('clienti-detail-note-scheda', `/schede/${planId}`)}
+          onOpenAppointment={() => navigate('clienti-detail-note-appuntamenti', '/appuntamenti')}
+        />
+      ) : null}
     </AppScreen>
   );
 }
@@ -495,6 +536,26 @@ const styles = StyleSheet.create({
   },
   statusChipLabel: {
     fontSize: AppFontSize.sm,
+    fontWeight: '700',
+  },
+  detailTabs: {
+    borderRadius: AppRadius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 4,
+    padding: 4,
+  },
+  detailTab: {
+    alignItems: 'center',
+    borderRadius: AppRadius.pill,
+    flex: 1,
+    minHeight: 34,
+    justifyContent: 'center',
+    minWidth: 0,
+    paddingHorizontal: 4,
+  },
+  detailTabLabel: {
+    fontSize: 11,
     fontWeight: '700',
   },
   cardTitle: {
