@@ -67,12 +67,11 @@ export default function ClienteProfiloScreen() {
     setAvatarUploading(false);
 
     if (uploaded.ok) {
-      updateClient({ ...client, avatarUrl: uploaded.signedUrl ?? asset.uri, avatarStoragePath: uploaded.path });
+      updateClient({ ...client, avatarUrl: uploaded.signedUrl ?? client.avatarUrl ?? null, avatarStoragePath: uploaded.path });
       setAvatarMessage('Foto profilo aggiornata.');
       return;
     }
 
-    updateClient({ ...client, avatarUrl: asset.uri });
     setAvatarMessage(uploaded.message);
   }
 

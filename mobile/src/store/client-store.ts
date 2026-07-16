@@ -37,7 +37,12 @@ export const useClientStore = create<ClientState>()(
       addClient: (client) => set((s) => ({ clients: [...s.clients, client] })),
 
       updateClient: (client) =>
-        set((s) => ({ clients: s.clients.map((c) => (c.id === client.id ? client : c)) })),
+        set((s) => {
+          const exists = s.clients.some((c) => c.id === client.id);
+          return {
+            clients: exists ? s.clients.map((c) => (c.id === client.id ? client : c)) : [...s.clients, client],
+          };
+        }),
 
       addAccount: (account) => set((s) => ({ accounts: [...s.accounts, account] })),
 
