@@ -9,7 +9,7 @@ import { signOut } from '@/lib/auth-service';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { getUnreadSuperadminSupportCount, useSuperadminStore } from '@/store/superadmin-store';
-import { AppColors, AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
+import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 
 const NAV_ITEMS = [
   { href: '/superadmin' as Href, label: 'Dashboard', icon: House, activePrefix: '/superadmin' },
@@ -45,7 +45,7 @@ type SuperadminShellProps = {
 export function SuperadminShell({ title, description, children, contentStyle, hideHeader = false, refreshControl }: SuperadminShellProps) {
   const pathname = usePathname();
   const { colors, cardShadow } = useAppTheme();
-  const tabColors = AppColors.dark;
+  const tabColors = colors;
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
   const unreadNotifications = useSuperadminStore((s) => s.notifications.filter((notification) => !notification.read).length);

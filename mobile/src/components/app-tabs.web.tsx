@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { logCoachNavPress } from '@/lib/coach-navigation';
 import { useChatStore } from '@/store/chat-store';
-import { AppColors, AppRadius, AppSpacing } from '@/theme';
+import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/', label: 'Home', icon: House, source: 'coach-tab-home' },
@@ -22,7 +22,7 @@ const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = 
 export default function AppTabs() {
   const pathname = usePathname();
   const router = useRouter();
-  const colors = AppColors.dark;
+  const { colors } = useAppTheme();
   const unreadMessagesCount = useChatStore(
     (s) => s.messages.filter((message) => message.sender === 'client' && !message.readByCoachAt).length
   );

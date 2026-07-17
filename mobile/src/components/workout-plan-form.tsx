@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -6,14 +7,16 @@ import { AppButton } from './ui';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
 import { WorkoutExerciseEditor } from './workout-exercise-editor';
+import { ExerciseCatalogPicker } from './exercise-catalog-picker';
 import { YMoveExercisePicker } from './ymove-exercise-picker';
 
 import { DEFAULT_COACH_ID } from '@/constants/app-info';
 import { Radius, Spacing } from '@/constants/theme';
-import { EXERCISE_LIBRARY, MUSCLE_GROUPS, exercisesByMuscleGroup } from '@/data/exercise-library';
+import { EXERCISE_LIBRARY } from '@/data/exercise-library';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
+import { listCustomExercisesForCurrentCoach } from '@/lib/fitcoach-exercises-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { getActiveSubscription } from '@/lib/workout-progress';
 import { useClientStore } from '@/store/client-store';
@@ -46,6 +49,7 @@ export function WorkoutPlanForm({
   saveLabel: string;
 }) {
   const theme = useTheme();
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const clients = useClientStore((s) => s.clients);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
@@ -60,12 +64,15 @@ export function WorkoutPlanForm({
   const [exercises, setExercises] = useState<WorkoutExercise[]>(initialPlan?.exercises ?? []);
   const [showPicker, setShowPicker] = useState(false);
   const [showYMovePicker, setShowYMovePicker] = useState(false);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { resolve: resolveExercise, registerExercise } = useExerciseResolver();
 
   const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
   const activeSubscription = getActiveSubscription(subscriptions, clientId);
   const stackFieldPairs = width < 390;
+  const catalogExercises = [...EXERCISE_LIBRARY, ...customExercises];
 
   useEffect(() => {
     if (initialPlan?.subscriptionId) return;
@@ -76,9 +83,33 @@ export function WorkoutPlanForm({
     });
   }, [activeSubscription?.id, clientId, initialPlan?.subscriptionId]);
 
-  function addExercise(exerciseId: string) {
-    setExercises((prev) => [...prev, newWorkoutExercise(exerciseId, prev.length)]);
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured) return;
+    let cancelled = false;
+    listCustomExercisesForCurrentCoach().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setCatalogError(result.message);
+        return;
+      }
+      setCatalogError(null);
+      setCustomExercises(result.data);
+      result.data.forEach(registerExercise);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [registerExercise]);
+
+  function addExercise(exercise: Exercise, workoutExercise?: WorkoutExercise) {
+    registerExercise(exercise);
+    setExercises((prev) => [...prev, workoutExercise ? { ...workoutExercise, order: prev.length } : newWorkoutExercise(exercise.id, prev.length)]);
     setShowPicker(false);
+  }
+
+  function handleCustomExerciseCreated(exercise: Exercise) {
+    registerExercise(exercise);
+    setCustomExercises((prev) => [exercise, ...prev.filter((item) => item.id !== exercise.id)]);
   }
 
   // Esercizio creato/riusato dalla Libreria YMove (mobile/src/components/
@@ -275,32 +306,25 @@ export function WorkoutPlanForm({
       ) : showYMovePicker ? (
         <YMoveExercisePicker onExerciseAdded={handleYMoveExerciseAdded} onClose={() => setShowYMovePicker(false)} />
       ) : (
-        <Card style={styles.pickerContainer}>
-          <View style={styles.pickerHeader}>
-            <ThemedText type="smallBold">Scegli esercizio ({EXERCISE_LIBRARY.length} disponibili)</ThemedText>
-            <Pressable onPress={() => setShowPicker(false)} hitSlop={8}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Chiudi
-              </ThemedText>
-            </Pressable>
-          </View>
-          {MUSCLE_GROUPS.map((group) => (
-            <View key={group} style={styles.pickerGroup}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {group}
-              </ThemedText>
-              <View style={styles.chipsRow}>
-                {exercisesByMuscleGroup(group).map((ex) => (
-                  <Pressable key={ex.id} onPress={() => addExercise(ex.id)}>
-                    <View style={[styles.chip, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                      <ThemedText type="small">{ex.name}</ThemedText>
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ))}
-        </Card>
+        <>
+          {catalogError ? (
+            <ThemedText type="small" themeColor="statusExpired">
+              {catalogError}
+            </ThemedText>
+          ) : null}
+          <ExerciseCatalogPicker
+            exercises={catalogExercises}
+            existingExercises={exercises}
+            onAdd={addExercise}
+            onExerciseCreated={handleCustomExerciseCreated}
+            onOpenDetails={(exerciseId) =>
+              initialPlan?.id
+                ? router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: initialPlan.id } })
+                : router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId } })
+            }
+            onClose={() => setShowPicker(false)}
+          />
+        </>
       )}
 
       {error && (

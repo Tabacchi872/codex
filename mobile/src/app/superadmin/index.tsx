@@ -68,8 +68,8 @@ export default function SuperadminDashboard() {
         <View style={styles.headerGlow} pointerEvents="none" />
         <View style={styles.headerText}>
           <FitCoachLogo size="sm" style={styles.headerLogo} />
-          <Text style={styles.headerTitle}>Superadmin</Text>
-          <Text style={styles.headerSubtitle}>Controllo piattaforma</Text>
+          <Text style={[styles.headerTitle, { color: colors.ink }]}>Superadmin</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.inkSoft }]}>Controllo piattaforma</Text>
         </View>
         <Pressable
           onPress={() => navigate('superadmin-profile-notifiche', '/superadmin/notifications' as Href)}
@@ -118,7 +118,7 @@ export default function SuperadminDashboard() {
         )}
       </ScrollView>
 
-      <Text style={styles.sectionTitle}>Azioni rapide</Text>
+      <Text style={[styles.sectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
       <View style={styles.quickGrid}>
         <QuickAction title="Piani" subtitle="Gestisci piani" icon={Layers3} onPress={() => navigate('superadmin-action-piani', '/superadmin/plans' as Href)} />
         <QuickAction title="Pacchetti" subtitle="Gestisci pacchetti" icon={Package} onPress={() => navigate('superadmin-action-pacchetti', '/superadmin/pacchetti' as Href)} />
@@ -127,11 +127,11 @@ export default function SuperadminDashboard() {
       </View>
 
       <SectionHeader title="Attivita' recenti" action="Vedi tutte" onPress={() => navigate('superadmin-attivita', '/superadmin/notifications' as Href)} />
-      <View style={styles.activityCard}>
+      <View style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {loading ? (
           [0, 1, 2].map((item) => <ActivitySkeleton key={item} />)
         ) : recentActivities.length === 0 ? (
-          <Text style={styles.emptyActivity}>Nessuna attivita' recente disponibile.</Text>
+          <Text style={[styles.emptyActivity, { color: colors.inkSoft }]}>Nessuna attivita' recente disponibile.</Text>
         ) : (
           recentActivities.map((activity, index) => (
             <ActivityRow key={activity.id} item={activity} showBorder={index > 0} onPress={() => navigate(`superadmin-activity-${activity.id}`, activity.href)} />
@@ -143,39 +143,49 @@ export default function SuperadminDashboard() {
 }
 
 function KpiCard({ icon: Icon, label, value, tone, onPress }: { icon: LucideIcon; label: string; value: string; tone: Tone; onPress: () => void }) {
-  const palette = getTonePalette(tone);
+  const { colors } = useAppTheme();
+  const palette = getTonePalette(colors, tone);
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.kpiCard}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={[styles.kpiIcon, { backgroundColor: palette.soft }]}>
         <Icon size={19} color={palette.strong} strokeWidth={2.1} />
       </View>
-      <Text style={styles.kpiLabel} numberOfLines={2}>{label}</Text>
-      <Text style={styles.kpiValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      <Text style={[styles.kpiLabel, { color: colors.inkSoft }]} numberOfLines={2}>{label}</Text>
+      <Text style={[styles.kpiValue, { color: colors.ink }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       <View style={styles.kpiDeltaRow}>
         <ArrowUp size={11} color={palette.strong} />
         <Text style={[styles.kpiDelta, { color: palette.strong }]}>n/d</Text>
       </View>
-      <Text style={styles.kpiVs}>vs mese scorso</Text>
+      <Text style={[styles.kpiVs, { color: colors.inkFaint }]}>vs mese scorso</Text>
     </Pressable>
   );
 }
 
 function CoachCard({ coach, onPress }: { coach: SuperadminCoach; onPress: () => void }) {
-  const status = getStatusPresentation(coach.billingStatus);
+  const { colors } = useAppTheme();
+  const status = getStatusPresentation(colors, coach.billingStatus);
   const planName = coach.activePackageName ?? planCodeLabel(coach.planCode);
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Apri dettaglio coach ${coach.name}`} style={styles.coachCard}>
-      <ChevronRight size={19} color="#96A0A8" style={styles.cardChevron} />
-      <View style={styles.avatar}>
-        <Text style={styles.avatarInitial}>{getInitials(coach.name)}</Text>
-        <View style={[styles.avatarOnline, { backgroundColor: coach.blocked ? '#7A828A' : '#7BEA18' }]} />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Apri dettaglio coach ${coach.name}`}
+      style={[styles.coachCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <ChevronRight size={19} color={colors.inkFaint} style={styles.cardChevron} />
+      <View style={[styles.avatar, { backgroundColor: colors.surfaceSubtle }]}>
+        <Text style={[styles.avatarInitial, { color: colors.ink }]}>{getInitials(coach.name)}</Text>
+        <View style={[styles.avatarOnline, { backgroundColor: coach.blocked ? colors.inkFaint : colors.moss, borderColor: colors.surface }]} />
       </View>
-      <Text style={styles.coachName} numberOfLines={1}>{coach.name}</Text>
+      <Text style={[styles.coachName, { color: colors.ink }]} numberOfLines={1}>{coach.name}</Text>
       <Text style={[styles.coachPlan, { color: status.color }]} numberOfLines={1}>{planName}</Text>
-      <Text style={styles.coachMetaLabel}>Clienti</Text>
-      <Text style={styles.coachUsage}>{formatUsage(coach.clientsUsed, coach.activePackageMaxClients)}</Text>
-      <View style={styles.coachDivider} />
-      <Text style={styles.coachMetaLabel}>Abbonamento</Text>
+      <Text style={[styles.coachMetaLabel, { color: colors.inkFaint }]}>Clienti</Text>
+      <Text style={[styles.coachUsage, { color: colors.ink }]}>{formatUsage(coach.clientsUsed, coach.activePackageMaxClients)}</Text>
+      <View style={[styles.coachDivider, { backgroundColor: colors.border }]} />
+      <Text style={[styles.coachMetaLabel, { color: colors.inkFaint }]}>Abbonamento</Text>
       <View style={[styles.statusPill, { backgroundColor: status.soft }]}>
         {status.icon}
         <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
@@ -187,13 +197,17 @@ function CoachCard({ coach, onPress }: { coach: SuperadminCoach; onPress: () => 
 function QuickAction({ title, subtitle, icon: Icon, onPress }: { title: string; subtitle: string; icon: LucideIcon; onPress: () => void }) {
   const { colors } = useAppTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={styles.quickAction}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.quickIcon}>
         <Icon size={22} color={colors.moss} />
       </View>
-      <ChevronRight size={18} color="#7F8991" style={styles.quickChevron} />
-      <Text style={styles.quickTitle}>{title}</Text>
-      <Text style={styles.quickSubtitle}>{subtitle}</Text>
+      <ChevronRight size={18} color={colors.inkFaint} style={styles.quickChevron} />
+      <Text style={[styles.quickTitle, { color: colors.ink }]}>{title}</Text>
+      <Text style={[styles.quickSubtitle, { color: colors.inkSoft }]}>{subtitle}</Text>
     </Pressable>
   );
 }
@@ -211,22 +225,26 @@ type ActivityItem = {
 };
 
 function ActivityRow({ item, showBorder, onPress }: { item: ActivityItem; showBorder: boolean; onPress: () => void }) {
-  const palette = getTonePalette(item.tone);
+  const { colors } = useAppTheme();
+  const palette = getTonePalette(colors, item.tone);
   const Icon = item.icon;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.activityRow, showBorder && styles.activityBorder]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[styles.activityRow, showBorder && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
       <View style={[styles.activityIcon, { backgroundColor: palette.soft }]}>
         <Icon size={19} color={palette.strong} />
       </View>
       <View style={styles.activityCopy}>
-        <Text style={styles.activityTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.activityDetail} numberOfLines={1}>{item.detail}</Text>
+        <Text style={[styles.activityTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
+        <Text style={[styles.activityDetail, { color: colors.inkSoft }]} numberOfLines={1}>{item.detail}</Text>
       </View>
       <View style={styles.activityMeta}>
         <Text style={[styles.activityValue, { color: palette.strong }]} numberOfLines={1}>{item.value}</Text>
-        <Text style={styles.activityTime} numberOfLines={1}>{item.time}</Text>
+        <Text style={[styles.activityTime, { color: colors.inkFaint }]} numberOfLines={1}>{item.time}</Text>
       </View>
-      <ChevronRight size={20} color="#76818A" />
+      <ChevronRight size={20} color={colors.inkFaint} />
     </Pressable>
   );
 }
@@ -235,7 +253,7 @@ function SectionHeader({ title, action, onPress }: { title: string; action: stri
   const { colors } = useAppTheme();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.ink }]}>{title}</Text>
       <Pressable onPress={onPress} hitSlop={6} style={styles.sectionAction}>
         <Text style={[styles.sectionLink, { color: colors.moss }]}>{action}</Text>
         <ChevronRight size={16} color={colors.moss} />
@@ -261,10 +279,12 @@ function ActivitySkeleton() {
 }
 
 function EmptyPanel({ title, detail }: { title: string; detail: string }) {
+  const { colors } = useAppTheme();
+
   return (
-    <View style={styles.emptyPanel}>
-      <Text style={styles.emptyPanelTitle}>{title}</Text>
-      <Text style={styles.emptyPanelDetail}>{detail}</Text>
+    <View style={[styles.emptyPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.emptyPanelTitle, { color: colors.ink }]}>{title}</Text>
+      <Text style={[styles.emptyPanelDetail, { color: colors.inkSoft }]}>{detail}</Text>
     </View>
   );
 }
@@ -333,23 +353,23 @@ function getPaymentEventLabel(eventType: string) {
   return labels[eventType] ?? 'Evento';
 }
 
-function getStatusPresentation(status: AppBillingStatus) {
+function getStatusPresentation(colors: ReturnType<typeof useAppTheme>['colors'], status: AppBillingStatus) {
   const label = getBillingStatusLabel(status);
-  if (status === 'active') return { label: 'Attivo', color: '#7BEA18', soft: '#173516', icon: <CheckCircle2 size={12} color="#7BEA18" /> };
+  if (status === 'active') return { label: 'Attivo', color: colors.moss, soft: colors.mossSoft, icon: <CheckCircle2 size={12} color={colors.moss} /> };
   if (status === 'trial') return { label: 'Prova gratuita', color: '#B887FF', soft: '#2B1D42', icon: <Shield size={12} color="#B887FF" /> };
-  if (status === 'past_due') return { label: 'In scadenza', color: '#F2A43A', soft: '#3A2710', icon: <CalendarDays size={12} color="#F2A43A" /> };
-  if (status === 'blocked') return { label: 'Sospeso', color: '#A8B0B7', soft: '#242B31', icon: <XCircle size={12} color="#A8B0B7" /> };
-  return { label, color: '#FF6B73', soft: '#3B171D', icon: <XCircle size={12} color="#FF6B73" /> };
+  if (status === 'past_due') return { label: 'In scadenza', color: colors.amber, soft: colors.amberSoft, icon: <CalendarDays size={12} color={colors.amber} /> };
+  if (status === 'blocked') return { label: 'Sospeso', color: colors.inkFaint, soft: colors.surfaceSubtle, icon: <XCircle size={12} color={colors.inkFaint} /> };
+  return { label, color: colors.rust, soft: colors.rustSoft, icon: <XCircle size={12} color={colors.rust} /> };
 }
 
-function getTonePalette(tone: Tone) {
+function getTonePalette(colors: ReturnType<typeof useAppTheme>['colors'], tone: Tone) {
   const palettes = {
-    lime: { strong: '#7BEA18', soft: '#163715' },
-    green: { strong: '#72E22B', soft: '#123416' },
-    orange: { strong: '#F2A43A', soft: '#3A2710' },
+    lime: { strong: colors.moss, soft: colors.mossSoft },
+    green: { strong: colors.moss, soft: colors.mossSoft },
+    orange: { strong: colors.amber, soft: colors.amberSoft },
     purple: { strong: '#A55CFF', soft: '#291946' },
-    red: { strong: '#FF607A', soft: '#3A1720' },
-    muted: { strong: '#A7B0B8', soft: '#222B32' },
+    red: { strong: colors.rust, soft: colors.rustSoft },
+    muted: { strong: colors.inkFaint, soft: colors.surfaceSubtle },
   } satisfies Record<Tone, { strong: string; soft: string }>;
   return palettes[tone];
 }

@@ -273,6 +273,9 @@ export default function EsercizioDettaglioScreen() {
   const prevInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition - 1] : undefined;
   const explicitReturnHref = getExplicitReturnHref(returnTo, planId);
   const fallbackHref = (explicitReturnHref ?? (currentRole === 'cliente' ? '/workout' : '/esercizi')) as Href;
+  const hasYMoveVideo = Boolean((exercise.source === 'ymove' && exercise.ymoveExerciseId) || remoteYmoveExerciseId);
+  const hasStandardVideo = Boolean(remoteVideoUrl ?? exercise.videoUrl ?? exercise.videoFile);
+  const showVideoInHero = hasYMoveVideo || hasStandardVideo;
 
   function handleBack() {
     if (explicitReturnHref) {
@@ -303,8 +306,21 @@ export default function EsercizioDettaglioScreen() {
       />
 
       <Card style={styles.exerciseHero}>
-        <View style={[styles.exerciseMediaFrame, { backgroundColor: theme.backgroundSelected, borderColor: theme.border }]}>
-          <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compactLayout ? 112 : 128} />
+        <View
+          style={[
+            styles.exerciseMediaFrame,
+            showVideoInHero && styles.exerciseVideoFrame,
+            { backgroundColor: showVideoInHero ? '#000' : theme.backgroundSelected, borderColor: theme.border },
+          ]}>
+          {exercise.source === 'ymove' && exercise.ymoveExerciseId ? (
+            <YMoveVideoPlayer ymoveExerciseId={exercise.ymoveExerciseId} />
+          ) : remoteYmoveExerciseId ? (
+            <YMoveVideoPlayer ymoveExerciseId={remoteYmoveExerciseId} />
+          ) : hasStandardVideo ? (
+            <ExerciseVideoPlayer videoUrl={remoteVideoUrl ?? exercise.videoUrl} videoFile={exercise.videoFile} />
+          ) : (
+            <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={compactLayout ? 112 : 128} />
+          )}
         </View>
         <View style={styles.exerciseHeroCopy}>
           <ThemedText type="subtitle" style={styles.exerciseTitle} numberOfLines={3} ellipsizeMode="tail">
@@ -317,20 +333,6 @@ export default function EsercizioDettaglioScreen() {
           </View>
         </View>
       </Card>
-
-      {exercise.source === 'ymove' && exercise.ymoveExerciseId ? (
-        // Esercizio importato DA YMove: il suo video e' sempre quello
-        // dell'esercizio YMove di origine, mai sostituibile qui (per un
-        // video diverso il coach importa/collega un altro esercizio YMove).
-        <YMoveVideoPlayer ymoveExerciseId={exercise.ymoveExerciseId} />
-      ) : remoteYmoveExerciseId ? (
-        // Esercizio esistente (locale storico o FitCoach custom) con un
-        // video YMove ASSOCIATO (2026-07-13): stesso player live, mai un URL
-        // salvato, indipendentemente da dove viene l'id dell'esercizio.
-        <YMoveVideoPlayer ymoveExerciseId={remoteYmoveExerciseId} />
-      ) : (
-        <ExerciseVideoPlayer videoUrl={remoteVideoUrl ?? exercise.videoUrl} videoFile={exercise.videoFile} />
-      )}
 
       {currentRole === 'coach' && supabaseConfig.isConfigured && exercise.source !== 'ymove' ? (
         <Card style={styles.coachToolsCard}>
@@ -664,6 +666,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     width: '100%',
+  },
+  exerciseVideoFrame: {
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
   },
   exerciseHeroCopy: {
     gap: Spacing.two,

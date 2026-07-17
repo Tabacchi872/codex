@@ -1,69 +1,58 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AppCard } from './ui';
 
-import { useThemeStore, type ThemeMode } from '@/store/theme-store';
 import { AppFontSize, useAppTheme } from '@/theme';
 
-const OPTIONS: { mode: ThemeMode; label: string }[] = [
-  { mode: 'light', label: 'Chiaro' },
-  { mode: 'dark', label: 'Scuro' },
-  { mode: 'system', label: 'Sistema' },
-];
-
-// Preferenza tema: persistenza locale demo (AsyncStorage su questo dispositivo/
-// browser), non un profilo utente sincronizzato.
+// Tema bloccato su scuro: il selettore resta disattivato finche' il design
+// light non viene riaperto.
 export function ThemeSettings() {
   const { colors } = useAppTheme();
-  const mode = useThemeStore((s) => s.mode);
-  const setMode = useThemeStore((s) => s.setMode);
 
   return (
-    <AppCard padded={false}>
-      {OPTIONS.map((option, index) => {
-        const active = option.mode === mode;
-        return (
-          <View key={option.mode}>
-            <Pressable onPress={() => setMode(option.mode)} style={styles.row}>
-              <Text style={[styles.label, { color: colors.ink, fontWeight: active ? '700' : '500' }]}>{option.label}</Text>
-              <View style={[styles.radio, { borderColor: colors.moss }]}>
-                {active ? <View style={[styles.radioDot, { backgroundColor: colors.moss }]} /> : null}
-              </View>
-            </Pressable>
-            {index < OPTIONS.length - 1 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
-          </View>
-        );
-      })}
+    <AppCard>
+      <View style={styles.row}>
+        <View style={styles.copy}>
+          <Text style={[styles.label, { color: colors.ink }]}>Tema scuro</Text>
+          <Text style={[styles.description, { color: colors.inkSoft }]}>Selezione tema disattivata temporaneamente.</Text>
+        </View>
+        <View style={[styles.lockedBadge, { backgroundColor: colors.mossSoft, borderColor: colors.moss }]}>
+          <Text style={[styles.lockedBadgeText, { color: colors.moss }]}>Attivo</Text>
+        </View>
+      </View>
     </AppCard>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  copy: {
+    flex: 1,
+    minWidth: 0,
   },
   label: {
     fontSize: AppFontSize.md,
+    fontWeight: '700',
   },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+  description: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '500',
+    lineHeight: 18,
+    marginTop: 3,
   },
-  radioDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
+  lockedBadge: {
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 16,
+  lockedBadgeText: {
+    fontSize: AppFontSize.xs,
+    fontWeight: '800',
   },
 });

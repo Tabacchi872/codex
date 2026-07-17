@@ -4,6 +4,7 @@ import { AppFontSize, useAppTheme } from '@/theme';
 
 type FitCoachLogoProps = {
   size?: 'sm' | 'md' | 'lg';
+  variant?: 'theme' | 'onDark';
   style?: StyleProp<ViewStyle>;
 };
 
@@ -13,14 +14,15 @@ const SIZE = {
   lg: { main: 26, pro: AppFontSize.md },
 } as const;
 
-export function FitCoachLogo({ size = 'md', style }: FitCoachLogoProps) {
+export function FitCoachLogo({ size = 'md', variant = 'theme', style }: FitCoachLogoProps) {
   const { colors } = useAppTheme();
   const token = SIZE[size];
+  const fitColor = variant === 'onDark' ? '#F7F9FA' : colors.ink;
 
   return (
     <View style={[styles.root, style]} accessibilityRole="text">
       <View style={styles.textRow}>
-        <Text style={[styles.fit, { color: colors.ink, fontSize: token.main }]}>FitCoach</Text>
+        <Text style={[styles.fit, { color: fitColor, fontSize: token.main }]}>FitCoach</Text>
         <Text style={[styles.pro, { color: colors.coral, fontSize: token.pro }]}>Pro</Text>
       </View>
     </View>

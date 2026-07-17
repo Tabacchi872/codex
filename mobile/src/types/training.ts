@@ -14,6 +14,52 @@ export type MuscleGroup =
 
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 export type VideoStatus = 'available' | 'missing';
+export type ExerciseMuscleGroupId =
+  | 'petto'
+  | 'dorsali'
+  | 'trapezi'
+  | 'spalle'
+  | 'bicipiti'
+  | 'tricipiti'
+  | 'avambracci'
+  | 'quadricipiti'
+  | 'femorali'
+  | 'glutei'
+  | 'adduttori'
+  | 'abduttori'
+  | 'polpacci'
+  | 'addome'
+  | 'obliqui'
+  | 'lombari'
+  | 'full_body'
+  | 'cardio'
+  | 'mobilita'
+  | 'stretching';
+export type ExerciseType = 'forza' | 'cardio' | 'mobilita' | 'stretching';
+export type ExerciseVisibility = 'global' | 'coach_private';
+export type AnatomicalMuscleId =
+  | 'chest'
+  | 'upper_chest'
+  | 'lats'
+  | 'upper_back'
+  | 'traps'
+  | 'front_deltoids'
+  | 'side_deltoids'
+  | 'rear_deltoids'
+  | 'biceps'
+  | 'triceps'
+  | 'forearms'
+  | 'abs'
+  | 'obliques'
+  | 'lower_back'
+  | 'glutes'
+  | 'quadriceps'
+  | 'hamstrings'
+  | 'adductors'
+  | 'abductors'
+  | 'calves'
+  | 'hip_flexors'
+  | 'full_body';
 
 // Origine di un Exercise (2026-07-12): 'local'/assente = uno dei 44 esercizi
 // storici in data/exercise-library.ts (invariati). 'custom' = creato da un
@@ -27,15 +73,30 @@ export type ExerciseSource = 'local' | 'custom' | 'ymove';
 // Esercizio base: descrive il movimento, non come va eseguito da un cliente specifico.
 export type Exercise = {
   id: string;
+  slug?: string;
   name: string;
+  nameEn?: string;
   // Larga a stringa libera (oltre ai valori noti) perche' muscolo/difficolta'
   // di un esercizio YMove non sono garantiti combaciare con i valori usati
   // dai 44 esercizi storici.
   muscleGroup: MuscleGroup | (string & {});
+  primaryMuscleGroup?: ExerciseMuscleGroupId;
+  secondaryMuscleGroups?: ExerciseMuscleGroupId[];
+  primaryMuscles?: AnatomicalMuscleId[];
+  secondaryMuscles?: AnatomicalMuscleId[];
   description: string;
   technicalNotes: string;
+  commonMistakes?: string;
   difficulty: Difficulty | (string & {});
   equipment: string;
+  exerciseType?: ExerciseType;
+  aliases?: string[];
+  canonicalId?: string;
+  active?: boolean;
+  visibility?: ExerciseVisibility;
+  coachId?: string | null;
+  imageUrl?: string;
+  thumbnailUrl?: string;
   videoFile: string;
   videoStatus: VideoStatus;
   // Video guida remoto (fase 1, 2026-07-11): URL pubblico, mai un file nel

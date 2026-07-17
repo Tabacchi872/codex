@@ -17,10 +17,10 @@ type ThemeState = {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      mode: 'system',
+      mode: 'dark',
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
-      setMode: (mode) => set({ mode }),
+      setMode: () => set({ mode: 'dark' }),
     }),
     {
       name: 'coachdesk-theme-store',

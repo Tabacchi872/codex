@@ -3,7 +3,7 @@ import { Apple, Dumbbell, House, Menu, MessageCircle, type LucideIcon } from 'lu
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { logClientNavPress } from '@/lib/client-navigation';
-import { AppColors, AppRadius, AppSpacing } from '@/theme';
+import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
@@ -33,7 +33,7 @@ const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = 
 export default function ClientTabs() {
   const pathname = usePathname();
   const router = useRouter();
-  const colors = AppColors.dark;
+  const { colors } = useAppTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

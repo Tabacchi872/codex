@@ -75,7 +75,7 @@ export default function DashboardScreen() {
     return (
       <AppScreen scroll={false}>
         <View style={styles.loading}>
-          <Text style={styles.loadingText}>Caricamento...</Text>
+          <Text style={[styles.loadingText, { color: colors.inkSoft }]}>Caricamento...</Text>
         </View>
       </AppScreen>
     );
@@ -97,7 +97,7 @@ export default function DashboardScreen() {
         </Svg>
 
         <View style={styles.heroCopy}>
-          <FitCoachLogo size="md" />
+          <FitCoachLogo size="md" variant="onDark" />
           <Text style={styles.heroTitle}>
             Dashboard <Text style={styles.heroAccent}>Coach.</Text>
           </Text>
@@ -115,7 +115,7 @@ export default function DashboardScreen() {
       <YmoveAutoLinkBanner />
 
       <SectionHeader title="Clienti recenti" action="Vedi tutti" onPress={() => navigate('dashboard-clienti-tutti', '/clienti')} />
-      <View style={styles.clientsCard}>
+      <View style={[styles.clientsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {recentClients.length === 0 ? (
           <EmptyState text="Nessun cliente collegato." />
         ) : (
@@ -139,7 +139,7 @@ export default function DashboardScreen() {
       </View>
 
       <SectionHeader title="Agenda di oggi" action="Vedi calendario" onPress={() => navigate('dashboard-agenda-calendario', '/appuntamenti')} />
-      <View style={styles.agendaCard}>
+      <View style={[styles.agendaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {todayAppointments.length === 0 ? (
           <EmptyState text="Nessun appuntamento oggi." icon={CalendarDays} />
         ) : (
@@ -168,7 +168,7 @@ export default function DashboardScreen() {
         <Text style={styles.primaryActionLabel}>Nuovo cliente</Text>
       </Pressable>
 
-      <Text style={styles.quickSectionTitle}>Azioni rapide</Text>
+      <Text style={[styles.quickSectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
       <View style={styles.quickGrid}>
         <QuickActionCard icon={CalendarDays} title="Nuovo appuntamento" onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
         <QuickActionCard icon={ClipboardList} title="Assegna scheda" onPress={() => navigate('dashboard-assegna-scheda', '/schede/new')} />
@@ -211,27 +211,34 @@ function KpiCard({
 }
 
 function SectionHeader({ title, action, onPress }: { title: string; action: string; onPress: () => void }) {
+  const { colors } = useAppTheme();
+
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.ink }]}>{title}</Text>
       <Pressable onPress={onPress} hitSlop={6} style={styles.sectionAction} accessibilityRole="button">
-        <Text style={styles.sectionActionText}>{action}</Text>
-        <ChevronRight size={18} color="#7BEA18" strokeWidth={2.4} />
+        <Text style={[styles.sectionActionText, { color: colors.moss }]}>{action}</Text>
+        <ChevronRight size={18} color={colors.moss} strokeWidth={2.4} />
       </Pressable>
     </View>
   );
 }
 
 function QuickActionCard({ icon: Icon, title, onPress }: { icon: LucideIcon; title: string; onPress: () => void }) {
+  const { colors } = useAppTheme();
+
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.quickActionCard}>
-      <View style={styles.quickActionIcon}>
-        <Icon size={18} color="#7BEA18" strokeWidth={2.2} />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[styles.quickActionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.quickActionIcon, { backgroundColor: colors.mossSoft }]}>
+        <Icon size={18} color={colors.moss} strokeWidth={2.2} />
       </View>
-      <Text style={styles.quickActionTitle} numberOfLines={2}>
+      <Text style={[styles.quickActionTitle, { color: colors.ink }]} numberOfLines={2}>
         {title}
       </Text>
-      <ChevronRight size={18} color="#7F8991" strokeWidth={2.3} />
+      <ChevronRight size={18} color={colors.inkFaint} strokeWidth={2.3} />
     </Pressable>
   );
 }
@@ -251,31 +258,36 @@ function ClientRow({
   showBorder: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useAppTheme();
+
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.clientRow, showBorder && styles.rowBorder]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[styles.clientRow, showBorder && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
       <UserAvatar firstName={client.firstName} lastName={client.lastName} imageUrl={client.avatarUrl} preset={client.avatarPreset} size={48} />
       <View style={styles.clientCopy}>
-        <Text style={styles.clientName} numberOfLines={1}>
+        <Text style={[styles.clientName, { color: colors.ink }]} numberOfLines={1}>
           {clientFullName(client)}
         </Text>
-        <Text style={styles.clientPlan} numberOfLines={1}>
-          Piano <Text style={styles.limeText}>{client.status === 'attivo' ? 'Premium' : client.status === 'in_pausa' ? 'Basic' : 'Scaduto'}</Text>
+        <Text style={[styles.clientPlan, { color: colors.inkSoft }]} numberOfLines={1}>
+          Piano <Text style={{ color: colors.moss }}>{client.status === 'attivo' ? 'Premium' : client.status === 'in_pausa' ? 'Basic' : 'Scaduto'}</Text>
         </Text>
         <View style={styles.expiryRow}>
-          <CalendarDays size={13} color="#A8B0B7" />
-          <Text style={styles.expiryText} numberOfLines={1}>
+          <CalendarDays size={13} color={colors.inkFaint} />
+          <Text style={[styles.expiryText, { color: colors.inkFaint }]} numberOfLines={1}>
             {expiresAt ? `Scade il ${formatDayMonth(expiresAt)}` : 'Scadenza non impostata'}
           </Text>
         </View>
       </View>
       <View style={styles.clientProgress}>
-        <Text style={styles.clientCounter}>{counter}</Text>
-        <Text style={styles.clientCounterLabel}>Allenamenti</Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        <Text style={[styles.clientCounter, { color: colors.ink }]}>{counter}</Text>
+        <Text style={[styles.clientCounterLabel, { color: colors.inkSoft }]}>Allenamenti</Text>
+        <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSubtle }]}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: colors.moss }]} />
         </View>
       </View>
-      <ChevronRight size={24} color="#F7F9FA" strokeWidth={2.4} />
+      <ChevronRight size={24} color={colors.inkFaint} strokeWidth={2.4} />
     </Pressable>
   );
 }
@@ -297,10 +309,15 @@ function AgendaRow({
   showBorder: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useAppTheme();
+
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.agendaRow, showBorder && styles.rowBorder]}>
-      <View style={styles.timeMarker} />
-      <Text style={styles.agendaTime}>{time}</Text>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[styles.agendaRow, showBorder && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+      <View style={[styles.timeMarker, { backgroundColor: colors.moss }]} />
+      <Text style={[styles.agendaTime, { color: colors.ink }]}>{time}</Text>
       <UserAvatar
         firstName={client?.firstName}
         lastName={client?.lastName}
@@ -309,28 +326,30 @@ function AgendaRow({
         size={36}
       />
       <View style={styles.agendaCopy}>
-        <Text style={styles.agendaName} numberOfLines={1}>
+        <Text style={[styles.agendaName, { color: colors.ink }]} numberOfLines={1}>
           {title}
         </Text>
         <View style={styles.agendaDetailRow}>
-          <Dumbbell size={12} color="#A8B0B7" />
-          <Text style={styles.agendaDetail} numberOfLines={1}>
+          <Dumbbell size={12} color={colors.inkFaint} />
+          <Text style={[styles.agendaDetail, { color: colors.inkFaint }]} numberOfLines={1}>
             {detail}
           </Text>
         </View>
       </View>
-      <View style={[styles.agendaStatus, pending && styles.agendaStatusPending]}>
-        <Text style={[styles.agendaStatusText, pending && styles.agendaStatusTextPending]}>{pending ? 'In attesa' : 'Confermato'}</Text>
+      <View style={[styles.agendaStatus, { backgroundColor: pending ? colors.amberSoft : colors.mossSoft }]}>
+        <Text style={[styles.agendaStatusText, { color: pending ? colors.amber : colors.moss }]}>{pending ? 'In attesa' : 'Confermato'}</Text>
       </View>
     </Pressable>
   );
 }
 
 function EmptyState({ text, icon: Icon = CalendarDays }: { text: string; icon?: LucideIcon }) {
+  const { colors } = useAppTheme();
+
   return (
     <View style={styles.emptyState}>
-      <Icon size={24} color="#7F8991" />
-      <Text style={styles.emptyText}>{text}</Text>
+      <Icon size={24} color={colors.inkFaint} />
+      <Text style={[styles.emptyText, { color: colors.inkSoft }]}>{text}</Text>
     </View>
   );
 }

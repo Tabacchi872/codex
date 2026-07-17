@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logClientNavPress } from '@/lib/client-navigation';
-import { AppColors, AppRadius, AppSpacing } from '@/theme';
+import { AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 const TABS: { path: Href; label: string; icon: LucideIcon; source: string }[] = [
   { path: '/cliente-home', label: 'Home', icon: House, source: 'client-tab-home' },
@@ -21,7 +21,7 @@ export default function ClientTabs() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colors = AppColors.dark;
+  const { colors } = useAppTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

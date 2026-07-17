@@ -1,7 +1,11 @@
 import { supabase, supabaseConfig } from './supabase';
 import { translateYmoveTexts } from './ymove-service';
+import { getCurrentSession } from './auth-service';
 
-import type { Exercise } from '@/types/training';
+import { primaryGroupFromLegacy } from './exercise-catalog';
+import { MUSCLE_OPTIONS } from './muscle-map';
+import type { AnatomicalMuscleId, Exercise } from '@/types/training';
+import type { Difficulty, ExerciseMuscleGroupId, ExerciseType } from '@/types/training';
 import type { YmoveExerciseDetail } from './ymove-service';
 
 // Esercizi FitCoach su Supabase (public.exercises, docs/SUPABASE_SCHEMA.sql):
@@ -22,29 +26,45 @@ function notConfigured<T>(): FitCoachExerciseServiceResult<T> {
 
 type ExerciseRow = {
   id: string;
+  coach_id?: string | null;
   name: string;
   description: string | null;
   technical_notes: string | null;
   muscle_group: string | null;
+  primary_muscle_group?: string | null;
+  secondary_muscle_groups?: string[] | null;
+  primary_muscles?: string[] | null;
+  secondary_muscles?: string[] | null;
   equipment: string | null;
   difficulty: string | null;
   source: 'custom' | 'ymove';
   ymove_exercise_id: string | null;
   ymove_slug: string | null;
+  exercise_type: string | null;
 };
 
 const SELECT_COLUMNS =
-  'id,name,description,technical_notes,muscle_group,equipment,difficulty,source,ymove_exercise_id,ymove_slug';
+  'id,coach_id,name,description,technical_notes,muscle_group,primary_muscle_group,secondary_muscle_groups,primary_muscles,secondary_muscles,equipment,difficulty,exercise_type,source,ymove_exercise_id,ymove_slug';
 
 function mapRow(row: ExerciseRow): Exercise {
+  const primaryMuscleGroup = normalizeExerciseMuscleGroup(row.primary_muscle_group) ?? primaryGroupFromLegacy(row.muscle_group ?? '');
   return {
     id: row.id,
+    slug: row.id,
     name: row.name,
     muscleGroup: row.muscle_group ?? '',
+    primaryMuscleGroup,
+    secondaryMuscleGroups: normalizeExerciseMuscleGroups(row.secondary_muscle_groups),
+    primaryMuscles: normalizeAnatomicalMuscles(row.primary_muscles),
+    secondaryMuscles: normalizeAnatomicalMuscles(row.secondary_muscles),
     description: row.description ?? '',
     technicalNotes: row.technical_notes ?? '',
     difficulty: row.difficulty ?? 'beginner',
     equipment: row.equipment ?? '',
+    exerciseType: normalizeExerciseType(row.exercise_type),
+    active: true,
+    visibility: row.source === 'custom' ? 'coach_private' : 'global',
+    coachId: row.coach_id ?? null,
     // Nessun significato per un esercizio Supabase: il video 'ymove' e'
     // sempre live (mai salvato), il video 'custom' passa da exercise_videos
     // (gia' esistente, invariato) — mai da questi due campi legacy.
@@ -123,6 +143,80 @@ export async function listCustomExercisesForCoach(coachId: string): Promise<FitC
     return { ok: false, code: 'db_error', message: `Errore lettura esercizi custom: ${error.message}` };
   }
   return { ok: true, data: (data as ExerciseRow[]).map(mapRow) };
+}
+
+export async function listCustomExercisesForCurrentCoach(): Promise<FitCoachExerciseServiceResult<Exercise[]>> {
+  if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
+  const session = await getCurrentSession();
+  if (!session.ok || !session.data) {
+    return { ok: false, code: 'db_error', message: 'Sessione coach non disponibile. Esci e accedi nuovamente.' };
+  }
+  return listCustomExercisesForCoach(session.data.user.id);
+}
+
+export type CustomExerciseInput = {
+  name: string;
+  primaryMuscleGroup: ExerciseMuscleGroupId;
+  secondaryMuscleGroups?: ExerciseMuscleGroupId[];
+  primaryMuscles?: AnatomicalMuscleId[];
+  secondaryMuscles?: AnatomicalMuscleId[];
+  equipment: string;
+  difficulty: Difficulty;
+  exerciseType: ExerciseType;
+  instructions: string;
+  commonMistakes?: string;
+};
+
+export async function createCustomExerciseForCoach(input: CustomExerciseInput): Promise<FitCoachExerciseServiceResult<Exercise>> {
+  if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
+  const session = await getCurrentSession();
+  if (!session.ok || !session.data) {
+    return { ok: false, code: 'db_error', message: 'Sessione coach non disponibile. Esci e accedi nuovamente.' };
+  }
+  if (!input.name.trim()) {
+    return { ok: false, code: 'db_error', message: 'Inserisci il nome dell esercizio.' };
+  }
+
+  const technicalNotes = [input.instructions.trim(), input.commonMistakes?.trim() ? `Errori comuni: ${input.commonMistakes.trim()}` : '']
+    .filter(Boolean)
+    .join('\n\n');
+
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      coach_id: session.data.user.id,
+      name: input.name.trim(),
+      description: input.instructions.trim() || null,
+      technical_notes: technicalNotes || null,
+      muscle_group: input.primaryMuscleGroup,
+      primary_muscle_group: input.primaryMuscleGroup,
+      secondary_muscle_groups: input.secondaryMuscleGroups ?? [],
+      primary_muscles: input.primaryMuscles ?? [],
+      secondary_muscles: input.secondaryMuscles ?? [],
+      equipment: input.equipment.trim() || null,
+      difficulty: input.difficulty,
+      exercise_type: input.exerciseType,
+      source: 'custom',
+    })
+    .select(SELECT_COLUMNS)
+    .single();
+
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore creazione esercizio personalizzato: ${error.message}` };
+  }
+
+  return {
+    ok: true,
+    data: {
+      ...mapRow(data as ExerciseRow),
+      primaryMuscleGroup: input.primaryMuscleGroup,
+      secondaryMuscleGroups: input.secondaryMuscleGroups ?? [],
+      primaryMuscles: input.primaryMuscles ?? [],
+      secondaryMuscles: input.secondaryMuscles ?? [],
+      exerciseType: input.exerciseType,
+      commonMistakes: input.commonMistakes,
+    },
+  };
 }
 
 // "Aggiungi a FitCoach" (opzione B): controlla se esiste gia' un esercizio
@@ -216,6 +310,48 @@ export async function createOrReuseExerciseFromYmove(
   }
 
   return { ok: true, data: mapRow(inserted as ExerciseRow) };
+}
+
+function normalizeExerciseType(value: unknown): Exercise['exerciseType'] {
+  return value === 'cardio' || value === 'mobilita' || value === 'stretching' || value === 'forza' ? value : 'forza';
+}
+
+function normalizeExerciseMuscleGroup(value: unknown): ExerciseMuscleGroupId | null {
+  const valid: ExerciseMuscleGroupId[] = [
+    'petto',
+    'dorsali',
+    'trapezi',
+    'spalle',
+    'bicipiti',
+    'tricipiti',
+    'avambracci',
+    'quadricipiti',
+    'femorali',
+    'glutei',
+    'adduttori',
+    'abduttori',
+    'polpacci',
+    'addome',
+    'obliqui',
+    'lombari',
+    'full_body',
+    'cardio',
+    'mobilita',
+    'stretching',
+  ];
+  return typeof value === 'string' && valid.includes(value as ExerciseMuscleGroupId) ? (value as ExerciseMuscleGroupId) : null;
+}
+
+function normalizeExerciseMuscleGroups(value: unknown): ExerciseMuscleGroupId[] {
+  return Array.isArray(value)
+    ? value.map(normalizeExerciseMuscleGroup).filter((item): item is ExerciseMuscleGroupId => item !== null)
+    : [];
+}
+
+function normalizeAnatomicalMuscles(value: unknown): AnatomicalMuscleId[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is AnatomicalMuscleId => typeof item === 'string' && MUSCLE_OPTIONS.includes(item as AnatomicalMuscleId))
+    : [];
 }
 
 export type ExerciseItalianTextInput = {
