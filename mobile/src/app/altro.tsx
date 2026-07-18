@@ -10,22 +10,21 @@ type MenuItem = {
   key: string;
   icon: typeof User;
   title: string;
-  href: '/cliente-profilo' | '/progressi' | '/bacheca' | '/prenotazioni' | '/pacchetti-cliente';
+  href: '/cliente-profilo' | '/progressi' | '/metriche' | '/storico-carichi' | '/bacheca' | '/prenotazioni' | '/pacchetti-cliente';
 };
 
 // Menu "Altro": raccoglie le schermate cliente che non hanno una tab dedicata.
-// Profilo e Impostazioni puntano entrambe a cliente-profilo.tsx (le impostazioni
-// di tema vivono già lì): non è una voce "senza funzione", solo una destinazione
-// condivisa. Storico pesi/Metriche/Progressi puntano tutte a progressi.tsx per lo
-// stesso motivo (vedi commento in quel file). "Pacchetti" (2026-07-12) è distinta
-// da "Abbonamento": quest'ultima resta l'abbonamento sessioni assegnato dal
-// proprio coach (cliente-profilo.tsx), "Pacchetti" sono i pacchetti del
-// superadmin acquistabili direttamente (pacchetti-cliente.tsx).
+// Profilo e Impostazioni puntano entrambe a cliente-profilo.tsx: non sono voci
+// senza funzione, ma destinazioni condivise. Metriche, Progressi e Storico carichi
+// sono schermate distinte: Storico carichi legge le serie salvate durante gli
+// allenamenti. "Pacchetti" (2026-07-12) e' distinta da "Abbonamento": quest'ultima
+// resta l'abbonamento sessioni assegnato dal coach, mentre "Pacchetti" sono i
+// pacchetti del superadmin acquistabili direttamente.
 const MENU_ITEMS: MenuItem[] = [
   { key: 'profilo', icon: User, title: 'Profilo', href: '/cliente-profilo' },
   { key: 'impostazioni', icon: Settings, title: 'Impostazioni', href: '/cliente-profilo' },
-  { key: 'storico-pesi', icon: TrendingUp, title: 'Storico pesi', href: '/progressi' },
-  { key: 'metriche', icon: ChartColumn, title: 'Metriche', href: '/progressi' },
+  { key: 'storico-carichi', icon: TrendingUp, title: 'Storico carichi', href: '/storico-carichi' },
+  { key: 'metriche', icon: ChartColumn, title: 'Metriche', href: '/metriche' },
   { key: 'progressi', icon: Trophy, title: 'Progressi', href: '/progressi' },
   { key: 'abbonamento', icon: Ticket, title: 'Abbonamento', href: '/cliente-profilo' },
   { key: 'pacchetti', icon: Package, title: 'Pacchetti', href: '/pacchetti-cliente' },

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Slot, usePathname, useRouter, type Href } from 'expo-router';
+import { Pressable } from 'react-native';
 
 import AppTabs from './app-tabs';
 import { ChangePasswordScreen } from './change-password-screen';
@@ -15,11 +16,14 @@ import { ThemedView } from './themed-view';
 import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
 import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
+import { getCurrentSession } from '@/lib/auth-service';
+import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
 import { identifyRevenueCatUser, logoutRevenueCat } from '@/lib/revenuecat-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
+import { useClientOnboardingStore } from '@/store/client-onboarding-store';
 import { useClientStore } from '@/store/client-store';
 import { useYmoveAutoLinkStore } from '@/store/ymove-autolink-store';
 import type { UserRole } from '@/types/auth';
@@ -27,6 +31,7 @@ import type { UserRole } from '@/types/auth';
 const CLIENT_HOME = '/cliente-home';
 const COACH_HOME = '/';
 const SUPERADMIN_HOME = '/superadmin' as Href;
+const CLIENT_ONBOARDING = '/onboarding-cliente';
 
 const CLIENT_ONLY_ROUTES = [
   '/cliente-home',
@@ -36,10 +41,12 @@ const CLIENT_ONLY_ROUTES = [
   '/cliente-profilo',
   '/progressi',
   '/metriche',
+  '/storico-carichi',
   '/bacheca',
   '/prenotazioni',
   '/questionario',
   '/pacchetti-cliente',
+  CLIENT_ONBOARDING,
 ];
 
 const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto', '/abbonamento-coach'];
@@ -75,8 +82,59 @@ export function AuthGate() {
   const { refresh: refreshAppointments } = useAppointmentsRealtime();
   const { refresh: refreshMessages } = useMessagesRealtime();
   const revenueCatUserIdRef = useRef<string | null>(null);
+  const [clientOnboarding, setClientOnboarding] = useState({ loading: false, required: false, checked: false, error: null as string | null });
+  const [onboardingRetryKey, setOnboardingRetryKey] = useState(0);
+  const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
+  const localOnboardingCompletion = useClientOnboardingStore((s) => (currentClientId ? s.completedClients[currentClientId] : undefined));
+  const gateOnboarding =
+    currentRole === 'cliente' && localOnboardingCompletion && !clientOnboarding.error
+      ? { loading: false, required: false, checked: true, error: null }
+      : clientOnboarding;
 
-  const targetPath = getRoleRedirectTarget(currentRole, pathname);
+  const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
+  const targetPath = gateOnboarding.error
+    ? null
+    : currentRole === 'cliente' && gateOnboarding.required && pathname !== CLIENT_ONBOARDING
+      ? CLIENT_ONBOARDING
+      : currentRole === 'cliente' && supabaseConfig.isConfigured && gateOnboarding.checked && !gateOnboarding.required && pathname === CLIENT_ONBOARDING
+        ? CLIENT_HOME
+        : roleTargetPath;
+
+  useEffect(() => {
+    if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase) {
+      setClientOnboarding({ loading: false, required: false, checked: false, error: null });
+      return;
+    }
+    if (!supabaseConfig.isConfigured) {
+      setClientOnboarding({ loading: false, required: false, checked: true, error: null });
+      return;
+    }
+    let active = true;
+    setClientOnboarding({ loading: true, required: false, checked: false, error: null });
+    (async () => {
+      const sessionResult = await getCurrentSession();
+      if (!active) return;
+      const session = sessionResult.ok ? sessionResult.data : null;
+      if (!session?.user.id) {
+        if (__DEV__) {
+          console.error('CLIENT_ONBOARDING_SESSION_MISSING', sessionResult.ok ? 'missing session user' : sessionResult.message);
+        }
+        setClientOnboarding({ loading: false, required: false, checked: true, error: 'Non è stato possibile verificare il profilo.' });
+        return;
+      }
+      const result = await ensureClientOnboardingDraft(session.user.id, session.user.user_metadata ?? {});
+      if (!active) return;
+      if (!result.ok) {
+        if (__DEV__) console.error('CLIENT_ONBOARDING_GATE_ERROR', result.message);
+        setClientOnboarding({ loading: false, required: false, checked: true, error: 'Non è stato possibile verificare il profilo.' });
+        return;
+      }
+      setClientOnboarding({ loading: false, required: result.data.exists && !result.data.completed, checked: true, error: null });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [currentRole, currentClientId, isAuthenticated, mustChangePasswordSupabase, onboardingRetryKey, onboardingStatusRevision]);
 
   // Prima sincronizzazione schede/allenamenti con Supabase (2026-07-14):
   // avviata quando il ruolo diventa coach/cliente, cosi' la dashboard e le
@@ -203,8 +261,17 @@ export function AuthGate() {
     if (account?.mustChangePassword) {
       return <ChangePasswordScreen account={account} />;
     }
+    if (supabaseConfig.isConfigured && (gateOnboarding.loading || !gateOnboarding.checked)) {
+      return <LoadingGate />;
+    }
+    if (gateOnboarding.error) {
+      return <OnboardingCheckError onRetry={() => setOnboardingRetryKey((value) => value + 1)} />;
+    }
     if (targetPath) {
       return <LoadingGate />;
+    }
+    if (pathname === CLIENT_ONBOARDING) {
+      return <Slot />;
     }
     return <ClientTabs />;
   }
@@ -261,6 +328,25 @@ function LoadingGate() {
       <ThemedText type="default" themeColor="textSecondary">
         Caricamento...
       </ThemedText>
+    </ThemedView>
+  );
+}
+
+function OnboardingCheckError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+      <ThemedText type="default" themeColor="textSecondary">
+        Non è stato possibile verificare il profilo.
+      </ThemedText>
+      <Pressable
+        onPress={onRetry}
+        accessibilityRole="button"
+        accessibilityLabel="Riprova"
+        style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 18 }}>
+        <ThemedText type="default" themeColor="primary">
+          Riprova
+        </ThemedText>
+      </Pressable>
     </ThemedView>
   );
 }
