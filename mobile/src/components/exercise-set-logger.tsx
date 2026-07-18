@@ -8,11 +8,11 @@ import { AppButton } from './ui';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { createExerciseProgressEntries, listClientExerciseProgress, type ExerciseProgressEntryInput } from '@/lib/exercise-progress-service';
 import { useTrainingStore } from '@/store/training-store';
-import type { ExerciseProgressHistory } from '@/types/training';
 
 function formatRest(restSeconds: number) {
-  if (restSeconds <= 0) return 'Rec. —';
+  if (restSeconds <= 0) return 'Rec. -';
   if (restSeconds < 60) return `Rec. ${restSeconds}s`;
   const minutes = Math.round(restSeconds / 60);
   return `Rec. ${minutes}m`;
@@ -20,11 +20,6 @@ function formatRest(restSeconds: number) {
 
 type SetRow = { weight: string; reps: string };
 
-// Sezione "Serie": una riga precompilata per ogni serie prevista dal coach
-// (workoutExercise.sets), non un singolo campo libero — così il cliente registra
-// esattamente le serie assegnate, con la possibilità di aggiungerne altre
-// (es. serie extra fatte davvero) tramite "Serie +". Il bottone "Rec." avvia il
-// RestTimer già presente nella schermata invece di duplicarne la logica.
 export function ExerciseSetLogger({
   clientId,
   exerciseId,
@@ -44,44 +39,70 @@ export function ExerciseSetLogger({
   const { width } = useWindowDimensions();
   const compact = width < 350;
   const addProgressEntry = useTrainingStore((s) => s.addProgressEntry);
+  const replaceClientProgressHistory = useTrainingStore((s) => s.replaceClientProgressHistory);
   const [rows, setRows] = useState<SetRow[]>(() => Array.from({ length: Math.max(plannedSets, 1) }, () => ({ weight: '', reps: '' })));
   const [notes, setNotes] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function updateRow(index: number, field: keyof SetRow, value: string) {
     setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
     setSaved(false);
+    setError(null);
   }
 
   function addRow() {
     setRows((prev) => [...prev, { weight: '', reps: '' }]);
+    setSaved(false);
+    setError(null);
   }
 
-  function handleSave() {
-    const now = Date.now();
-    let saveIndex = 0;
-    rows.forEach((row) => {
+  async function handleSave() {
+    if (saving || saved) return;
+
+    const nowIso = new Date().toISOString();
+    const entries: ExerciseProgressEntryInput[] = [];
+    rows.forEach((row, index) => {
       const weightNum = Number(row.weight.replace(',', '.'));
       const repsNum = Number(row.reps);
       if (!row.weight || !row.reps || Number.isNaN(weightNum) || Number.isNaN(repsNum) || weightNum <= 0 || repsNum <= 0) {
         return;
       }
-      const entry: ExerciseProgressHistory = {
-        id: `hist-set-${now}-${saveIndex}`,
+      entries.push({
         clientId,
         exerciseId,
         workoutPlanId,
-        date: new Date().toISOString().slice(0, 10),
-        setsCompleted: 1,
+        performedAt: nowIso,
+        sessionDate: nowIso.slice(0, 10),
+        setNumber: index + 1,
         repsCompleted: repsNum,
-        weightUsed: weightNum,
-        restUsed: restSeconds,
+        weightKg: weightNum,
+        restSeconds,
         notes,
-        createdAt: new Date(now + saveIndex).toISOString(),
-      };
-      addProgressEntry(entry);
-      saveIndex += 1;
+      });
     });
+
+    if (entries.length === 0) {
+      setError('Inserisci almeno una serie valida.');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    const result = await createExerciseProgressEntries(entries);
+    setSaving(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    const refreshed = await listClientExerciseProgress(clientId);
+    if (refreshed.ok) {
+      replaceClientProgressHistory(clientId, refreshed.data);
+    } else {
+      result.data.forEach(addProgressEntry);
+    }
     setSaved(true);
   }
 
@@ -134,12 +155,19 @@ export function ExerciseSetLogger({
         onChangeText={(v) => {
           setNotes(v);
           setSaved(false);
+          setError(null);
         }}
         multiline
         style={styles.notesInput}
       />
 
-      <AppButton label={saved ? 'Serie salvate ✓' : 'Salva serie'} onPress={handleSave} fullWidth />
+      {error ? (
+        <ThemedText type="small" style={{ color: theme.statusExpired }}>
+          {error}
+        </ThemedText>
+      ) : null}
+
+      <AppButton label={saved ? 'Serie salvate' : 'Salva serie'} onPress={handleSave} loading={saving} disabled={saved} fullWidth />
     </Card>
   );
 }
@@ -163,10 +191,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: 3,
   },
-  // Etichetta "Serie N" sulla sua riga, Peso/Ripetizioni sotto: garantisce che i
-  // due input abbiano sempre metà larghezza disponibile a testa, senza dipendere
-  // dallo shrink dei flex item (che su web richiederebbe minWidth:0 e comunque
-  // resta fragile sotto i 360px) — più robusto che tagliare un input.
   setRow: {
     gap: 4,
   },

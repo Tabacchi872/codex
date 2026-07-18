@@ -191,16 +191,20 @@ export type WorkoutPlan = {
 // non solo cosa è "assegnato" (che è WorkoutExercise).
 export type ExerciseProgressHistory = {
   id: string;
+  coachId?: string;
   clientId: string;
   exerciseId: string;
   workoutPlanId: string;
   date: string;
+  setNumber?: number;
   setsCompleted: number;
   repsCompleted: number;
   weightUsed: number;
   restUsed: number;
   notes: string;
   perceivedEffort?: number;
+  createdBy?: string;
+  createdByRole?: 'coach' | 'client';
   createdAt: string;
 };
 

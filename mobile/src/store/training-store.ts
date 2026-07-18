@@ -29,6 +29,8 @@ type TrainingState = {
   // valida: se la lettura remota fallisce, l'ultimo valore noto qui resta
   // quello mostrato, invece di uno stato vuoto.
   setWorkoutPlans: (plans: WorkoutPlan[]) => void;
+  setProgressHistory: (entries: ExerciseProgressHistory[]) => void;
+  replaceClientProgressHistory: (clientId: string, entries: ExerciseProgressHistory[]) => void;
   // Sostituisce un piano con un ALTRO id (2026-07-14, bug reale corretto):
   // dopo il primo salvataggio remoto riuscito di un piano che aveva ancora
   // un id placeholder locale (es. "1"), Postgres restituisce un id UUID
@@ -73,6 +75,11 @@ export const useTrainingStore = create<TrainingState>()(
       deleteWorkoutPlan: (id) => set((s) => ({ workoutPlans: s.workoutPlans.filter((p) => p.id !== id) })),
 
       setWorkoutPlans: (plans) => set({ workoutPlans: plans }),
+
+      setProgressHistory: (entries) => set({ progressHistory: entries }),
+
+      replaceClientProgressHistory: (clientId, entries) =>
+        set((s) => ({ progressHistory: [...s.progressHistory.filter((entry) => entry.clientId !== clientId), ...entries] })),
 
       replaceWorkoutPlan: (oldId, newPlan) =>
         set((s) => ({ workoutPlans: [...s.workoutPlans.filter((p) => p.id !== oldId), newPlan] })),

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppScreen, BackHeader, UserAvatar, type AppBadgeTone } from '@/components/ui';
+import { ClientLoadHistory } from '@/components/client-load-history';
 import { ClientMetricsPanel } from '@/components/client-metrics-panel';
 import { ClientNotesPanel } from '@/components/client-notes-panel';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
@@ -34,12 +35,13 @@ import {
 } from '@/types/subscription';
 
 const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
-const DETAIL_TABS = ['panoramica', 'schede', 'metriche', 'note'] as const;
+const DETAIL_TABS = ['panoramica', 'schede', 'metriche', 'carichi', 'note'] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
 const DETAIL_TAB_LABEL: Record<DetailTab, string> = {
   panoramica: 'Panoramica',
   schede: 'Schede',
   metriche: 'Metriche',
+  carichi: 'Carichi',
   note: 'Note',
 };
 
@@ -297,6 +299,14 @@ export default function ClienteDettaglioScreen() {
       ) : null}
 
       {activeTab === 'metriche' ? <ClientMetricsPanel clientId={cliente.id} clientName={clientFullName(cliente)} /> : null}
+
+      {activeTab === 'carichi' ? (
+        <ClientLoadHistory
+          clientId={cliente.id}
+          readOnly={false}
+          emptyMessage="Nessun carico registrato per questo cliente."
+        />
+      ) : null}
 
       {activeTab === 'note' ? (
         <ClientNotesPanel
