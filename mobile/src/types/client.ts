@@ -22,6 +22,7 @@ export type Client = {
   createdAt: string;
   coachId?: string;
   linkedByCode?: string | null;
+  coachBusinessName?: string | null;
   avatarUrl?: string | null;
   avatarStoragePath?: string | null;
   avatarPreset?: ClientAvatarPreset;

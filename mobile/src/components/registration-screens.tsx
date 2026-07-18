@@ -4,8 +4,8 @@ import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type TextInput } from 'react-native';
 
 import { AppButton, AppCard, AppScreen, AppTextField, UserAvatar } from '@/components/ui';
-import { signUpClientWithCoachCode, signUpCoach } from '@/lib/auth-service';
-import { canCoachAcceptClients, generateCoachCode, normalizeCoachCode } from '@/lib/coach-code';
+import { signUpClient, signUpCoach } from '@/lib/auth-service';
+import { generateCoachCode } from '@/lib/coach-code';
 import { supabaseConfig } from '@/lib/supabase';
 import { DEMO_USERS, useAuthStore, type CoachAuthAccount } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
@@ -382,15 +382,11 @@ export function CoachRegistrationScreen() {
 
 export function ClientRegistrationScreen() {
   const { colors } = useAppTheme();
-  const plans = useSuperadminStore((s) => s.plans);
-  const findCoachByCode = useSuperadminStore((s) => s.findCoachByCode);
-  const addCoachClient = useSuperadminStore((s) => s.addCoachClient);
   const addClient = useClientStore((s) => s.addClient);
   const addAccount = useClientStore((s) => s.addAccount);
   const accounts = useClientStore((s) => s.accounts);
   const coachAccounts = useAuthStore((s) => s.coachAccounts);
   const loginAsClient = useAuthStore((s) => s.loginAsClient);
-  const [coachCode, setCoachCode] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -399,18 +395,16 @@ export function ClientRegistrationScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
-  // Chaining tastiera "Avanti" (fix APK Android): codice -> nome -> email ->
-  // password -> conferma; l'ultimo campo ha il "Fine" di default che chiude.
-  const fullNameRef = useRef<TextInput>(null);
+  // Chaining tastiera "Avanti" (fix APK Android): nome -> email -> password
+  // -> conferma; l'ultimo campo ha il "Fine" di default che chiude.
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
   async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedCode = normalizeCoachCode(coachCode);
-    if (!normalizedCode || !fullName.trim() || !normalizedEmail || !password || !confirmPassword) {
-      setError('Tutti i campi sono obbligatori, incluso il codice coach.');
+    if (!fullName.trim() || !normalizedEmail || !password || !confirmPassword) {
+      setError('Inserisci nome, email e password.');
       return;
     }
     if (password !== confirmPassword) {
@@ -430,7 +424,6 @@ export function ClientRegistrationScreen() {
       return;
     }
 
-    const coach = findCoachByCode(normalizedCode);
     let clientId = `client-${Date.now()}`;
 
     // Se Supabase e' configurato, la validazione di codice/coach bloccato/
@@ -445,8 +438,7 @@ export function ClientRegistrationScreen() {
     // di doverne ricostruire uno nuovo con un id diverso.
     if (supabaseConfig.isConfigured) {
       setSubmitting(true);
-      const result = await signUpClientWithCoachCode({
-        coachCode: normalizedCode,
+      const result = await signUpClient({
         fullName: fullName.trim(),
         email: normalizedEmail,
         password,
@@ -467,17 +459,6 @@ export function ClientRegistrationScreen() {
         setPendingEmailConfirmation(true);
         return;
       }
-    } else {
-      if (!coach) {
-        setError('Codice coach non valido.');
-        return;
-      }
-      const plan = plans.find((item) => item.code === coach.planCode);
-      const eligibility = canCoachAcceptClients(coach, plan);
-      if (!eligibility.allowed) {
-        setError(eligibility.reason);
-        return;
-      }
     }
 
     const now = new Date().toISOString();
@@ -491,8 +472,6 @@ export function ClientRegistrationScreen() {
       notes: '',
       status: 'attivo',
       createdAt: now,
-      coachId: coach?.id,
-      linkedByCode: coach?.coachCode ?? normalizedCode,
       avatarPreset,
     };
     const account: ClientAccount = {
@@ -509,20 +488,8 @@ export function ClientRegistrationScreen() {
 
     addClient(client);
     addAccount(account);
-    if (coach) {
-      addCoachClient({
-        id: `coach_client_${Date.now()}`,
-        coachId: coach.id,
-        clientId,
-        name: `${firstName} ${lastName}`.trim(),
-        contact: normalizedEmail,
-        status: 'active',
-        createdAt: now,
-        linkedByCode: coach.coachCode,
-      });
-    }
     loginAsClient(clientId, normalizedEmail);
-    router.replace('/cliente-home');
+    router.replace('/onboarding-cliente' as Href);
   }
 
   if (pendingEmailConfirmation) {
@@ -545,17 +512,6 @@ export function ClientRegistrationScreen() {
       <AppCard style={styles.form}>
         <Text style={[AppTextStyle.hero, styles.title, { color: colors.ink }]}>Registrati come cliente</Text>
         <AppTextField
-          label="Codice coach"
-          value={coachCode}
-          onChangeText={(value) => setCoachCode(normalizeCoachCode(value))}
-          placeholder="FC-8KQ4-MR2P"
-          autoCapitalize="characters"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => fullNameRef.current?.focus()}
-        />
-        <AppTextField
-          ref={fullNameRef}
           label="Nome e cognome"
           value={fullName}
           onChangeText={setFullName}

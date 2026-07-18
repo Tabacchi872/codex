@@ -106,7 +106,11 @@ export function LoginScreen() {
           // locale: quest'ultimo puo' non esistere se la registrazione e'
           // avvenuta su un altro device/browser (AsyncStorage web e Expo Go non
           // condividono lo storage) — vedi lib/auth-service.ts, loadClientProfile.
-          await ensureClientOnboarding(metadata);
+          const onboardingResult = await ensureClientOnboarding(metadata);
+          if (!onboardingResult.ok) {
+            setError(onboardingResult.message);
+            return;
+          }
           const profileResult = await loadClientProfile(userId, normalized);
           if (!profileResult.ok) {
             setError(profileResult.message);

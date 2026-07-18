@@ -1,6 +1,7 @@
 import { FunctionsHttpError, type Session } from '@supabase/supabase-js';
 
 import { generateCoachCode, normalizeCoachCode } from './coach-code';
+import { createPendingClientOnboarding, ensureClientOnboardingDraft } from './client-onboarding-service';
 import { createClientAvatarSignedUrl } from './client-avatar-service';
 import { getWebRedirectUrl } from './redirect-url';
 import { getSupabaseClientStatus, supabase } from './supabase';
@@ -61,9 +62,11 @@ export type ClientSignUpInput = {
   avatarPreset?: ClientAvatarPreset;
 };
 
+export type ClientSelfSignUpInput = Omit<ClientSignUpInput, 'coachCode'>;
+
 export type ClientSignUpData = {
   userId: string;
-  coachId: string;
+  coachId: string | null;
   session: Session | null;
 };
 
@@ -412,6 +415,36 @@ export async function signUpClientWithCoachCode(
   return { ok: true, data: { userId, coachId: codeRow.coach_id, session: signUpData.session } };
 }
 
+export async function signUpClient(input: ClientSelfSignUpInput): Promise<AuthServiceResult<ClientSignUpData>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const email = input.email.trim().toLowerCase();
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password: input.password,
+    options: {
+      data: {
+        role: 'cliente',
+        full_name: input.fullName.trim(),
+        avatar_preset: input.avatarPreset ?? 'neutral',
+        requires_client_onboarding: true,
+      },
+      emailRedirectTo: getWebRedirectUrl('/'),
+    },
+  });
+
+  if (signUpError) {
+    return { ok: false, code: mapAuthErrorCode(signUpError.message), message: signUpError.message };
+  }
+
+  const userId = signUpData.user?.id;
+  if (!userId) {
+    return { ok: false, code: 'auth_error', message: 'Registrazione non riuscita: utente non creato.' };
+  }
+
+  return { ok: true, data: { userId, coachId: null, session: signUpData.session } };
+}
+
 // Collega il cliente gia' autenticato al proprio coach tramite la RPC atomica
 // register_client_with_code (docs/SUPABASE_SCHEMA.sql, sezione "Limite
 // clienti coach"): verifica codice + abbonamento coach attivo + limite
@@ -430,6 +463,53 @@ async function completeClientOnboarding(linkedByCode: string): Promise<AuthServi
   const { error } = await supabase.rpc('register_client_with_code', { p_code: linkedByCode });
   if (error) {
     return { ok: false, code: mapRegisterClientError(error.message), message: humanizeRegisterClientError(error.message) };
+  }
+
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const clientId = sessionData.session?.user.id ?? null;
+  if (sessionError || !clientId) {
+    return { ok: false, code: 'auth_error', message: 'Sessione cliente non disponibile.' };
+  }
+
+  const { data: coachLink, error: coachLinkError } = await supabase
+    .from('coach_clients')
+    .select('coach_id')
+    .eq('client_id', clientId)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (coachLinkError || !coachLink?.coach_id) {
+    return { ok: false, code: 'no_coach_link', message: 'Collegamento coach non disponibile.' };
+  }
+
+  const draft = await createPendingClientOnboarding(clientId);
+  if (!draft.ok) return { ok: false, code: 'db_error', message: draft.message };
+
+  const { data: existingOnboarding, error: existingOnboardingError } = await supabase
+    .from('client_onboarding')
+    .select('onboarding_completed,client_mode')
+    .eq('client_id', clientId)
+    .maybeSingle();
+  if (existingOnboardingError) {
+    return { ok: false, code: 'db_error', message: `Errore verifica onboarding cliente: ${existingOnboardingError.message}` };
+  }
+  if (existingOnboarding?.onboarding_completed === true) {
+    return { ok: true, data: null };
+  }
+
+  const { data: onboardingRow, error: onboardingError } = await supabase
+    .from('client_onboarding')
+    .update({
+      client_mode: 'coach_guided',
+      onboarding_completed: true,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('client_id', clientId)
+    .select('client_id,onboarding_completed,client_mode')
+    .maybeSingle();
+  if (onboardingError || !onboardingRow?.client_id || onboardingRow.onboarding_completed !== true || onboardingRow.client_mode !== 'coach_guided') {
+    return { ok: false, code: 'db_error', message: 'Collegamento completato ma onboarding non aggiornato.' };
   }
 
   return { ok: true, data: null };
@@ -465,7 +545,15 @@ export async function ensureClientOnboarding(metadata: Record<string, unknown>):
 
   const linkedByCode = (metadata.coach_code as string | undefined) ?? '';
   if (!linkedByCode) {
-    return { ok: false, code: 'no_coach_link', message: 'Nessun codice coach trovato per completare la registrazione.' };
+    if (metadata.requires_client_onboarding === true) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session?.user.id) {
+        return { ok: false, code: 'auth_error', message: 'Sessione cliente non disponibile.' };
+      }
+      const draft = await ensureClientOnboardingDraft(data.session.user.id, metadata);
+      if (!draft.ok) return { ok: false, code: 'db_error', message: draft.message };
+    }
+    return { ok: true, data: null };
   }
 
   return completeClientOnboarding(linkedByCode);
@@ -497,14 +585,6 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
   if (clientProfileError) {
     return { ok: false, code: 'db_error', message: `Errore caricamento dati cliente: ${clientProfileError.message}` };
   }
-  if (!clientProfile) {
-    return {
-      ok: false,
-      code: 'no_client_profile',
-      message: 'Profilo cliente non completato. Contatta il coach o l\'assistenza.',
-    };
-  }
-
   const { data: coachClient, error: coachClientError } = await supabase
     .from('coach_clients')
     .select('coach_id,status,linked_by_code')
@@ -513,19 +593,18 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
   if (coachClientError) {
     return { ok: false, code: 'db_error', message: `Errore caricamento collegamento coach: ${coachClientError.message}` };
   }
-  if (!coachClient) {
-    return { ok: false, code: 'no_coach_link', message: 'Cliente non collegato a nessun coach.' };
-  }
 
   // Lettura del coach collegato: solo coach_profiles (letto pubblicamente, vedi
   // coach_profiles_public_read in docs/SUPABASE_SCHEMA.sql), non profiles del
   // coach — un cliente non ha policy per leggere il profiles altrui, quindi
   // resta un dato opzionale/best-effort, non un dato mancante bloccante.
-  const { data: coachProfile } = await supabase
-    .from('coach_profiles')
-    .select('business_name')
-    .eq('user_id', coachClient.coach_id)
-    .maybeSingle();
+  const { data: coachProfile } = coachClient
+    ? await supabase
+        .from('coach_profiles')
+        .select('business_name')
+        .eq('user_id', coachClient.coach_id)
+        .maybeSingle()
+    : { data: null };
 
   const { firstName, lastName } = splitFullName(profile?.full_name ?? '');
   const signedAvatarUrl = await createClientAvatarSignedUrl(profile?.avatar_url);
@@ -534,12 +613,13 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
     firstName,
     lastName,
     email: profile?.email ?? fallbackEmail,
-    goal: clientProfile.goal ?? '',
-    notes: clientProfile.notes ?? '',
-    status: coachClient.status === 'active' ? 'attivo' : 'in_pausa',
+    goal: clientProfile?.goal ?? '',
+    notes: clientProfile?.notes ?? '',
+    status: coachClient?.status === 'active' || !coachClient ? 'attivo' : 'in_pausa',
     createdAt: profile?.created_at ?? new Date().toISOString(),
-    coachId: coachClient.coach_id,
-    linkedByCode: coachClient.linked_by_code ?? null,
+    coachId: coachClient?.coach_id,
+    linkedByCode: coachClient?.linked_by_code ?? null,
+    coachBusinessName: coachProfile?.business_name ?? null,
     avatarStoragePath: profile?.avatar_url ?? null,
     avatarUrl: signedAvatarUrl ?? profile?.avatar_url ?? null,
   };

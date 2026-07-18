@@ -85,18 +85,13 @@ export function AuthGate() {
   const [clientOnboarding, setClientOnboarding] = useState({ loading: false, required: false, checked: false, error: null as string | null });
   const [onboardingRetryKey, setOnboardingRetryKey] = useState(0);
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
-  const localOnboardingCompletion = useClientOnboardingStore((s) => (currentClientId ? s.completedClients[currentClientId] : undefined));
-  const gateOnboarding =
-    currentRole === 'cliente' && localOnboardingCompletion && !clientOnboarding.error
-      ? { loading: false, required: false, checked: true, error: null }
-      : clientOnboarding;
 
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
-  const targetPath = gateOnboarding.error
+  const targetPath = clientOnboarding.error
     ? null
-    : currentRole === 'cliente' && gateOnboarding.required && pathname !== CLIENT_ONBOARDING
+    : currentRole === 'cliente' && clientOnboarding.required && pathname !== CLIENT_ONBOARDING
       ? CLIENT_ONBOARDING
-      : currentRole === 'cliente' && supabaseConfig.isConfigured && gateOnboarding.checked && !gateOnboarding.required && pathname === CLIENT_ONBOARDING
+      : currentRole === 'cliente' && supabaseConfig.isConfigured && clientOnboarding.checked && !clientOnboarding.required && pathname === CLIENT_ONBOARDING
         ? CLIENT_HOME
         : roleTargetPath;
 
@@ -261,10 +256,10 @@ export function AuthGate() {
     if (account?.mustChangePassword) {
       return <ChangePasswordScreen account={account} />;
     }
-    if (supabaseConfig.isConfigured && (gateOnboarding.loading || !gateOnboarding.checked)) {
+    if (supabaseConfig.isConfigured && (clientOnboarding.loading || !clientOnboarding.checked)) {
       return <LoadingGate />;
     }
-    if (gateOnboarding.error) {
+    if (clientOnboarding.error) {
       return <OnboardingCheckError onRetry={() => setOnboardingRetryKey((value) => value + 1)} />;
     }
     if (targetPath) {
