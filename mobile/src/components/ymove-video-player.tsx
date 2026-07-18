@@ -1,10 +1,9 @@
-import { useEvent } from 'expo';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { Play, RefreshCw, TriangleAlert } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FullscreenVideoModal, VideoPreviewButton } from '@/components/fullscreen-video-modal';
 import { getYmoveExerciseDetail, type YmoveExerciseDetail } from '@/lib/ymove-service';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
@@ -12,12 +11,6 @@ type YMoveVideoPlayerProps = {
   ymoveExerciseId: string;
 };
 
-// Video live dal catalogo YMove: NESSUN url viene mai salvato nel database
-// (scadono, sono firmati) — richiesto ogni volta che questo componente viene
-// montato (cioe' ogni volta che il video viene "aperto") e ri-richiedibile
-// manualmente ("Riprova") se il player segnala un errore, tipicamente un URL
-// scaduto. Fallback distinti per limite YMove raggiunto (429), account non
-// autorizzato, esercizio non trovato, o nessun video disponibile.
 export function YMoveVideoPlayer({ ymoveExerciseId }: YMoveVideoPlayerProps) {
   const [detail, setDetail] = useState<YmoveExerciseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +43,7 @@ export function YMoveVideoPlayer({ ymoveExerciseId }: YMoveVideoPlayerProps) {
 
   if (loading) {
     return (
-      <StatusCard icon={<ActivityIndicator />} title="Caricamento video…" text="Richiesta in corso al catalogo YMove." />
+      <StatusCard icon={<ActivityIndicator />} title="Caricamento video..." text="Richiesta in corso al catalogo YMove." />
     );
   }
 
@@ -59,36 +52,28 @@ export function YMoveVideoPlayer({ ymoveExerciseId }: YMoveVideoPlayerProps) {
   }
 
   if (!detail || (!detail.videoUrl && !detail.videoHlsUrl)) {
-    return (
-      <StatusCard title="Nessun video disponibile" text="YMove non ha ancora un video per questo esercizio." />
-    );
+    return <StatusCard title="Nessun video disponibile" text="YMove non ha ancora un video per questo esercizio." />;
   }
 
   return <LoadedYMoveVideo detail={detail} onError={retry} />;
 }
 
 function LoadedYMoveVideo({ detail, onError }: { detail: YmoveExerciseDetail; onError: () => void }) {
-  const { colors } = useAppTheme();
+  const [isFullscreenVisible, setFullscreenVisible] = useState(false);
   const source = detail.videoUrl ?? detail.videoHlsUrl ?? '';
-  const player = useVideoPlayer(source, (p) => {
-    p.loop = false;
-  });
-  const { status } = useEvent(player, 'statusChange', { status: player.status });
-
-  if (status === 'error') {
-    return (
-      <YMoveErrorCard
-        code="expired_url"
-        message="Il link del video potrebbe essere scaduto o non piu' raggiungibile."
-        onRetry={onError}
-      />
-    );
-  }
 
   return (
     <View style={styles.wrapper}>
-      <VideoView player={player} style={styles.video} nativeControls />
-      {status === 'loading' ? <Text style={[styles.loadingLabel, { color: colors.inkSoft }]}>Caricamento video…</Text> : null}
+      <VideoPreviewButton onPress={() => setFullscreenVisible(true)} />
+      <FullscreenVideoModal
+        visible={isFullscreenVisible}
+        source={source}
+        onClose={() => setFullscreenVisible(false)}
+        onPlaybackError={() => {
+          setFullscreenVisible(false);
+          onError();
+        }}
+      />
     </View>
   );
 }
@@ -147,12 +132,6 @@ const styles = StyleSheet.create({
   wrapper: {
     gap: AppSpacing[1],
   },
-  video: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: AppRadius.xl,
-    backgroundColor: '#000',
-  },
   fallback: {
     borderRadius: AppRadius.xl,
     aspectRatio: 16 / 9,
@@ -173,10 +152,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   fallbackText: {
-    fontSize: AppFontSize.sm,
-    textAlign: 'center',
-  },
-  loadingLabel: {
     fontSize: AppFontSize.sm,
     textAlign: 'center',
   },

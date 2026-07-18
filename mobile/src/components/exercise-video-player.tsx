@@ -1,60 +1,53 @@
-import { useEvent } from 'expo';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { Play } from 'lucide-react-native';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { FullscreenVideoModal, VideoPreviewButton } from '@/components/fullscreen-video-modal';
 import { resolveVideoSource } from '@/data/video-registry';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 type ExerciseVideoPlayerProps = {
-  // Video guida remoto (fase 1): URL pubblico, mai un file nel repo. Ha
-  // priorità su videoFile se presente.
   videoUrl?: string;
-  // Sistema locale precedente (require() statico + video-registry.ts): resta
-  // come fallback per compatibilità, oggi non popolato per nessun esercizio.
   videoFile?: string;
 };
 
-// Video guida: preferisce sempre un URL remoto (videoUrl, fase 1 — nessun
-// file bundlato nel repo) e ricade sul sistema locale precedente (videoFile +
-// video-registry.ts) solo se l'URL manca. Se nessuna delle due sorgenti è
-// disponibile, mostra un fallback onesto con icona Play (mai un player rotto
-// o un embed esterno). useVideoPlayer richiede una sorgente non nulla, quindi
-// il player viene creato SOLO nel sottocomponente montato quando una sorgente
-// reale esiste (mai in modo condizionale nello stesso componente, per
-// rispettare le regole degli hook).
 export function ExerciseVideoPlayer({ videoUrl, videoFile }: ExerciseVideoPlayerProps) {
   const localSource = videoUrl ? null : videoFile ? resolveVideoSource(videoFile) : null;
   const source = videoUrl ?? localSource;
 
   if (!source) {
-    return <FallbackCard title="Nessun video disponibile" text="Il video guida per questo esercizio non è ancora disponibile." />;
+    return <FallbackCard title="Nessun video disponibile" text="Il video guida per questo esercizio non e' ancora disponibile." />;
   }
 
   return <LoadedExerciseVideo source={source} label={videoUrl ?? videoFile ?? ''} />;
 }
 
 function LoadedExerciseVideo({ source, label }: { source: string | number; label: string }) {
-  const { colors } = useAppTheme();
-  const player = useVideoPlayer(source, (p) => {
-    p.loop = false;
-  });
-  const { status } = useEvent(player, 'statusChange', { status: player.status });
+  const [isFullscreenVisible, setFullscreenVisible] = useState(false);
+  const [hasPlaybackError, setHasPlaybackError] = useState(false);
 
-  if (status === 'error') {
+  if (hasPlaybackError) {
     return (
       <FallbackCard
         tone="rust"
         title="Errore di caricamento video"
-        text={`Il video "${label}" è registrato ma non è stato possibile riprodurlo (formato non valido, file danneggiato o URL non raggiungibile).`}
+        text={`Il video "${label}" e' registrato ma non e' stato possibile riprodurlo (formato non valido, file danneggiato o URL non raggiungibile).`}
       />
     );
   }
 
   return (
     <View style={styles.wrapper}>
-      <VideoView player={player} style={styles.video} nativeControls />
-      {status === 'loading' ? <Text style={[styles.loadingLabel, { color: colors.inkSoft }]}>Caricamento video…</Text> : null}
+      <VideoPreviewButton onPress={() => setFullscreenVisible(true)} />
+      <FullscreenVideoModal
+        visible={isFullscreenVisible}
+        source={source}
+        onClose={() => setFullscreenVisible(false)}
+        onPlaybackError={() => {
+          setFullscreenVisible(false);
+          setHasPlaybackError(true);
+        }}
+      />
     </View>
   );
 }
@@ -79,12 +72,6 @@ const styles = StyleSheet.create({
   wrapper: {
     gap: AppSpacing[1],
   },
-  video: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: AppRadius.xl,
-    backgroundColor: '#000',
-  },
   fallback: {
     borderRadius: AppRadius.xl,
     aspectRatio: 16 / 9,
@@ -105,10 +92,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   fallbackText: {
-    fontSize: AppFontSize.sm,
-    textAlign: 'center',
-  },
-  loadingLabel: {
     fontSize: AppFontSize.sm,
     textAlign: 'center',
   },
