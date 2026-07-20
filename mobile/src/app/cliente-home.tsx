@@ -5,8 +5,10 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
 import { AppButton, AppCard, AppEmptyState, AppPressableCard, AppRingProgress, AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
+import { useMyCoach } from '@/hooks/use-my-coach';
 import { logClientNavPress } from '@/lib/client-navigation';
 import { getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatFullDateEyebrow } from '@/lib/format-date';
@@ -18,7 +20,6 @@ import { useBookingStore } from '@/store/booking-store';
 import { useCheckinStore } from '@/store/checkin-store';
 import { useClientStore } from '@/store/client-store';
 import { useNutritionStore } from '@/store/nutrition-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { Difficulty, Exercise, WorkoutPlan } from '@/types/training';
@@ -47,8 +48,8 @@ export default function ClienteHomeScreen() {
   const checkins = useCheckinStore((s) => s.checkins);
   const bookings = useBookingStore((s) => s.bookings);
   const boardPosts = useBoardStore((s) => s.posts);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const { resolve: resolveExercise } = useExerciseResolver();
+  const myCoach = useMyCoach();
 
   const client = getClientById(clients, currentClientId);
 
@@ -69,7 +70,7 @@ export default function ClienteHomeScreen() {
     );
   }
 
-  const { completed: completedCount, total: purchasedTotal } = getWorkoutCounter(subscriptions, workoutPlans, client, currentClientId);
+  const { completed: completedCount, total: workoutTotal } = getWorkoutCounter([], workoutPlans, client, currentClientId);
   const nextPlan = getNextWorkoutPlan(workoutPlans, currentClientId);
   const nutritionPlan = nutritionPlans.find((p) => p.clientId === currentClientId) ?? null;
   const lastCheckin = checkins
@@ -121,10 +122,12 @@ export default function ClienteHomeScreen() {
             <View style={styles.glowWrap} pointerEvents="none">
               <View style={[styles.heroBeam, { backgroundColor: colors.moss }]} />
             </View>
-            <AppRingProgress value={completedCount} max={purchasedTotal} label="WORKOUT" size={compact ? 92 : narrow ? 100 : 106} strokeWidth={9} />
+            <AppRingProgress value={completedCount} max={workoutTotal} label="WORKOUT" size={compact ? 92 : narrow ? 100 : 106} strokeWidth={9} />
             <View style={styles.progressCopy}>
               <Text style={[styles.progressTitle, { color: colors.ink }]}>Allenamenti completati</Text>
-              <Text style={[styles.remainingText, { color: colors.moss }]}>{Math.max(0, purchasedTotal - completedCount)} rimanenti</Text>
+              <Text style={[styles.remainingText, { color: colors.moss }]}>
+                {workoutTotal > 0 ? `${Math.max(0, workoutTotal - completedCount)} da completare` : 'Nessuna scheda attiva'}
+              </Text>
               <View style={styles.progressMetaRow}>
                 <Calendar size={15} color={colors.inkSoft} />
                 <Text style={[styles.progressMeta, { color: colors.inkSoft }]} numberOfLines={2}>
@@ -133,6 +136,8 @@ export default function ClienteHomeScreen() {
               </View>
             </View>
           </AppCard>
+
+          <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
 
           <AppCard
             padded={false}
@@ -225,14 +230,14 @@ export default function ClienteHomeScreen() {
           <AppCard style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <TrendingUp size={21} color={colors.moss} />
-              <Text style={[styles.summaryTitle, { color: colors.ink }]}>I tuoi progressi</Text>
+              <Text style={[styles.summaryTitle, { color: colors.ink }]}>Storico carichi</Text>
             </View>
             <View style={[styles.summaryStats, compact && styles.summaryStatsCompact]}>
               <SummaryMetric label="Workout" value={String(completedCount)} compact={compact} />
               <SummaryMetric label="Serie" value={String(totalSets)} divided={!compact} compact={compact} />
-              <SummaryMetric label="Progresso" value={`${Math.round((completedCount / Math.max(1, purchasedTotal)) * 100)}%`} divided={!compact} compact={compact} />
+              <SummaryMetric label="Progresso" value={`${Math.round((completedCount / Math.max(1, workoutTotal)) * 100)}%`} divided={!compact} compact={compact} />
             </View>
-            <AppButton label="Apri metriche" variant="outline" onPress={() => navigate('cliente-home-metriche', '/metriche')} fullWidth />
+            <AppButton label="I tuoi pesi" variant="outline" onPress={() => navigate('cliente-home-storico-carichi', '/storico-carichi')} fullWidth />
           </AppCard>
 
           <AppButton

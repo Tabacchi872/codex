@@ -2,16 +2,17 @@ import { LogOut } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
 import { AppCard, AppScreen, AppSectionTitle, BackHeader, UserAvatar } from '@/components/ui';
 import { DeveloperInfoSection } from '@/components/developer-info-section';
 import { ThemeSettings } from '@/components/theme-settings';
+import { useMyCoach } from '@/hooks/use-my-coach';
 import { signOut } from '@/lib/auth-service';
 import { pickClientAvatarImage, saveClientAvatarPresetRemote, uploadClientAvatar } from '@/lib/client-avatar-service';
 import { getClientById } from '@/lib/client-helpers';
 import { getNextWorkoutPlan, getWorkoutCounter } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import { CLIENT_STATUS_LABEL, type ClientAvatarPreset } from '@/types/client';
@@ -28,6 +29,7 @@ export default function ClienteProfiloScreen() {
   const logout = useAuthStore((s) => s.logout);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const myCoach = useMyCoach();
 
   async function handleLogout() {
     await signOut();
@@ -36,11 +38,10 @@ export default function ClienteProfiloScreen() {
   const clients = useClientStore((s) => s.clients);
   const updateClient = useClientStore((s) => s.updateClient);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const client = getClientById(clients, currentClientId);
   const nextPlan = getNextWorkoutPlan(workoutPlans, currentClientId);
-  const { completed: completedCount, total: purchasedTotal } = getWorkoutCounter(
-    subscriptions,
+  const { completed: completedCount, total: workoutTotal } = getWorkoutCounter(
+    [],
     workoutPlans,
     client,
     currentClientId
@@ -125,13 +126,16 @@ export default function ClienteProfiloScreen() {
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>Stato: {CLIENT_STATUS_LABEL[client.status]}</Text>
       </AppCard>
 
+      <AppSectionTitle>IL TUO COACH</AppSectionTitle>
+      <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
+
       <AppSectionTitle>IL TUO PIANO</AppSectionTitle>
       <AppCard style={styles.section}>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>
           Piano attivo: <Text style={{ color: colors.ink, fontWeight: '600' }}>{nextPlan ? nextPlan.name : 'Nessuno in programma'}</Text>
         </Text>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-          Allenamenti acquistati: <Text style={{ color: colors.ink, fontWeight: '600' }}>{purchasedTotal}</Text>
+          Avanzamento schede: <Text style={{ color: colors.ink, fontWeight: '600' }}>{completedCount}/{workoutTotal}</Text>
         </Text>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>
           Allenamenti completati: <Text style={{ color: colors.ink, fontWeight: '600' }}>{completedCount}</Text>

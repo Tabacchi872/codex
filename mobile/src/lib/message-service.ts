@@ -79,7 +79,7 @@ export async function getLinkedCoachIdForCurrentClient(): Promise<MessageService
     .from('coach_clients')
     .select('coach_id')
     .eq('client_id', session.data.user.id)
-    .in('status', ['active', 'invited'])
+    .eq('status', 'active')
     .maybeSingle();
   if (error || !data) {
     return { ok: false, code: 'no_coach', message: 'Nessun coach collegato a questo account.' };

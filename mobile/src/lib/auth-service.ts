@@ -589,6 +589,7 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
     .from('coach_clients')
     .select('coach_id,status,linked_by_code')
     .eq('client_id', userId)
+    .in('status', ['active', 'suspended'])
     .maybeSingle();
   if (coachClientError) {
     return { ok: false, code: 'db_error', message: `Errore caricamento collegamento coach: ${coachClientError.message}` };
@@ -620,6 +621,7 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
     coachId: coachClient?.coach_id,
     linkedByCode: coachClient?.linked_by_code ?? null,
     coachBusinessName: coachProfile?.business_name ?? null,
+    connectionStatus: coachClient?.status === 'suspended' ? 'suspended' : coachClient?.status === 'active' ? 'active' : undefined,
     avatarStoragePath: profile?.avatar_url ?? null,
     avatarUrl: signedAvatarUrl ?? profile?.avatar_url ?? null,
   };
