@@ -509,8 +509,8 @@ export default function SchedaDettaglioScreen() {
                         workoutExercise={we}
                         compact
                         onPress={() => openExerciseDetail(exercise.id)}
-                        completed={!isCoach ? isExerciseLocked : undefined}
-                        onToggleComplete={!isCoach && !isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
+                        completed={isExerciseLocked}
+                        onToggleComplete={!isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
                       />
                     );
                   })}
@@ -527,8 +527,8 @@ export default function SchedaDettaglioScreen() {
                 exercise={exercise}
                 workoutExercise={we}
                 onPress={() => openExerciseDetail(exercise.id)}
-                completed={!isCoach ? isExerciseLocked : undefined}
-                onToggleComplete={!isCoach && !isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
+                completed={isExerciseLocked}
+                onToggleComplete={!isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
               />
             );
           })}

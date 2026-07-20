@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -59,6 +59,14 @@ export default function EsercizioDettaglioScreen() {
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Il coach puo' avere lo stesso esercizio assegnato a piu' clienti: senza
+  // questo, arrivando da una scheda specifica (schede/[id].tsx -> planId
+  // nell'URL) la schermata mostrava di default il PRIMO assignment trovato in
+  // assoluto, non necessariamente quello del cliente da cui si e' navigato —
+  // bug reale trovato durante l'implementazione dei carichi lato coach. Il
+  // ref traccia una scelta manuale successiva (chip) cosi' da non
+  // sovrascriverla piu' una volta fatta.
+  const userSelectedAssignmentRef = useRef(false);
   const [infoTab, setInfoTab] = useState<InfoTab>('esecuzione');
   const [restToken, setRestToken] = useState<number>();
   // Video reale caricato su Supabase Storage (fase 2026-07-11): null finche'
@@ -260,7 +268,9 @@ export default function EsercizioDettaglioScreen() {
   const assignments =
     currentRole === 'cliente' ? allAssignments.filter((a) => a.plan.clientId === currentClientId) : allAssignments;
 
-  const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
+  const planMatchIndex = currentRole === 'coach' && planId ? assignments.findIndex((a) => a.plan.id === planId) : -1;
+  const effectiveSelectedIndex = !userSelectedAssignmentRef.current && planMatchIndex >= 0 ? planMatchIndex : selectedIndex;
+  const selected = assignments[effectiveSelectedIndex] ?? assignments[0] ?? null;
   const selectedClient = selected ? getClientById(clients, selected.plan.clientId) : null;
   const selectedSessionLocked = selected ? isWorkoutSessionCompleted(selected.plan) : false;
   const selectedExerciseLocked = selected ? isWorkoutExerciseCompleted(selected.plan, selected.workoutExercise.id) : false;
@@ -491,9 +501,14 @@ export default function EsercizioDettaglioScreen() {
             <View style={styles.chipsRow}>
               {assignments.map((a, index) => {
                 const client = getClientById(clients, a.plan.clientId);
-                const active = index === selectedIndex;
+                const active = index === effectiveSelectedIndex;
                 return (
-                  <Pressable key={a.workoutExercise.id} onPress={() => setSelectedIndex(index)}>
+                  <Pressable
+                    key={a.workoutExercise.id}
+                    onPress={() => {
+                      userSelectedAssignmentRef.current = true;
+                      setSelectedIndex(index);
+                    }}>
                     <View
                       style={[
                         styles.chip,
@@ -549,7 +564,7 @@ export default function EsercizioDettaglioScreen() {
                 <ExerciseHistory clientId={selectedClient.id} exerciseId={exercise.id} workoutPlanId={selected.plan.id} />
               )}
 
-              {currentRole === 'cliente' && selectedClient && (
+              {(currentRole === 'cliente' || currentRole === 'coach') && selectedClient && (
                 <>
                   {selectedExerciseLocked ? (
                     <Card style={styles.lockedStateCard}>
@@ -569,7 +584,9 @@ export default function EsercizioDettaglioScreen() {
                         restSeconds={selected.workoutExercise.restSeconds}
                         onRequestRest={() => setRestToken(Date.now())}
                       />
-                      <ExerciseAttachments clientId={selectedClient.id} workoutExerciseId={selected.workoutExercise.id} />
+                      {currentRole === 'cliente' ? (
+                        <ExerciseAttachments clientId={selectedClient.id} workoutExerciseId={selected.workoutExercise.id} />
+                      ) : null}
                     </>
                   )}
                 </>

@@ -29,6 +29,7 @@ type ProgressRow = {
   coach_id: string;
   exercise_id: string;
   workout_plan_id: string;
+  workout_exercise_id: string | null;
   performed_at: string;
   session_date: string;
   set_number: number;
@@ -50,7 +51,7 @@ type WorkoutPlanOwnerRow = {
 };
 
 const SELECT_PROGRESS_COLUMNS =
-  'id,client_id,coach_id,exercise_id,workout_plan_id,performed_at,session_date,set_number,reps_completed,weight_kg,rest_seconds,notes,perceived_effort,created_by,created_by_role,created_at,updated_at';
+  'id,client_id,coach_id,exercise_id,workout_plan_id,workout_exercise_id,performed_at,session_date,set_number,reps_completed,weight_kg,rest_seconds,notes,perceived_effort,created_by,created_by_role,created_at,updated_at';
 
 export async function listClientExerciseProgress(clientId: string): Promise<ServiceResult<ExerciseProgressHistory[]>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
@@ -106,6 +107,7 @@ export async function createExerciseProgressEntries(
     coach_id: actor.data.coachId,
     exercise_id: entry.exerciseId,
     workout_plan_id: entry.workoutPlanId || null,
+    workout_exercise_id: entry.workoutExerciseId || null,
     performed_at: entry.performedAt ?? nowIso,
     session_date: entry.sessionDate ?? nowIso.slice(0, 10),
     set_number: entry.setNumber,
@@ -213,6 +215,7 @@ function mapProgressRow(row: ProgressRow): ExerciseProgressHistory {
     clientId: row.client_id,
     exerciseId: row.exercise_id,
     workoutPlanId: row.workout_plan_id,
+    workoutExerciseId: row.workout_exercise_id ?? undefined,
     date: row.session_date,
     setNumber: row.set_number,
     setsCompleted: 1,

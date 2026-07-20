@@ -195,6 +195,7 @@ export type ExerciseProgressHistory = {
   clientId: string;
   exerciseId: string;
   workoutPlanId: string;
+  workoutExerciseId?: string;
   date: string;
   setNumber?: number;
   setsCompleted: number;

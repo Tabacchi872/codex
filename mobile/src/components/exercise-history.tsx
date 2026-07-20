@@ -14,10 +14,10 @@ import type { ExerciseProgressHistory } from '@/types/training';
 // un riepilogo dell'intera sessione): più record con la stessa data sono le
 // serie di quella sessione, mostrate come righe "Serie 1, 2, 3…" della tabella.
 // Nessun cambio al tipo dati: è solo il modo in cui questo componente raggruppa
-// e visualizza i record esistenti. L'inserimento di nuove serie vive ora in
-// ExerciseSetLogger (sezione "Serie" del dettaglio esercizio, solo lato
-// cliente): questo componente resta la sola vista storica, con un toggle per
-// non mostrare sempre tutte le sessioni passate.
+// e visualizza i record esistenti. L'inserimento di nuove serie vive in
+// ExerciseSetLogger (sezione "Serie" del dettaglio esercizio, cliente e coach):
+// questo componente resta la sola vista storica, con un toggle per non
+// mostrare sempre tutte le sessioni passate.
 export function ExerciseHistory({
   clientId,
   exerciseId,

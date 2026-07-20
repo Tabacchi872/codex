@@ -316,6 +316,9 @@ export async function updateWorkoutSessionProgress(
     p_completed_exercise_ids: update.completedExerciseIds ? update.completedExerciseIds.filter(isValidUuid) : null,
   });
   if (error) {
+    if (error.message.includes('WORKOUT_LOCKED')) {
+      return { ok: false, code: 'workout_locked', message: 'Questo workout è già completato e non può essere modificato.' };
+    }
     return { ok: false, code: 'db_error', message: `Errore aggiornamento sessione: ${error.message}` };
   }
   return { ok: true, data: null };
