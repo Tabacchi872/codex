@@ -125,6 +125,13 @@ export function pickCurrentSubscription(subscriptions: UserSubscription[]): User
   );
 }
 
+export function pickCurrentSubscriptionForRole(
+  subscriptions: UserSubscription[],
+  targetRole: SubscriptionPackage['targetRole'],
+): UserSubscription | null {
+  return pickCurrentSubscription(subscriptions.filter((item) => item.package?.targetRole === targetRole));
+}
+
 function isActiveAndValid(item: UserSubscription) {
   return item.status === 'active' && (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now());
 }

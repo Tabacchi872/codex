@@ -137,7 +137,9 @@ export default function ClienteHomeScreen() {
             </View>
           </AppCard>
 
-          <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
+          {myCoach.clientMode !== 'self_guided' ? (
+            <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
+          ) : null}
 
           <AppCard
             padded={false}

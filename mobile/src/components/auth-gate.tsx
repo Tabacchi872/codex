@@ -19,6 +19,7 @@ import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { getCurrentSession, signOut } from '@/lib/auth-service';
 import { getAssignedCoachStatusLabel, getMyAssignedCoach, type AssignedCoachSummary } from '@/lib/client-coach-service';
 import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
+import { getMySelfGuidedPlanAccess } from '@/lib/client-plan-access-service';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
 import { identifyRevenueCatUser, logoutRevenueCat } from '@/lib/revenuecat-service';
 import { supabaseConfig } from '@/lib/supabase';
@@ -34,6 +35,8 @@ const COACH_HOME = '/';
 const SUPERADMIN_HOME = '/superadmin' as Href;
 const CLIENT_ONBOARDING = '/onboarding-cliente';
 const CLIENT_CONNECT_COACH = '/collega-coach';
+const CLIENT_SELF_GUIDED_PLANS = '/abbonamento-cliente';
+const SELF_GUIDED_COACH_ONLY_ROUTES = ['/chat', '/bacheca', '/prenotazioni', '/questionario'];
 
 const CLIENT_ONLY_ROUTES = [
   '/cliente-home',
@@ -45,6 +48,7 @@ const CLIENT_ONLY_ROUTES = [
   '/metriche',
   '/storico-carichi',
   CLIENT_CONNECT_COACH,
+  CLIENT_SELF_GUIDED_PLANS,
   '/bacheca',
   '/prenotazioni',
   '/questionario',
@@ -86,7 +90,13 @@ export function AuthGate() {
   const { refresh: refreshAppointments } = useAppointmentsRealtime();
   const { refresh: refreshMessages } = useMessagesRealtime();
   const revenueCatUserIdRef = useRef<string | null>(null);
-  const [clientOnboarding, setClientOnboarding] = useState({ loading: false, required: false, checked: false, error: null as string | null });
+  const [clientOnboarding, setClientOnboarding] = useState({
+    loading: false,
+    required: false,
+    checked: false,
+    mode: null as 'coach_guided' | 'self_guided' | null,
+    error: null as string | null,
+  });
   const [onboardingRetryKey, setOnboardingRetryKey] = useState(0);
   const [clientCoachAccess, setClientCoachAccess] = useState({
     loading: false,
@@ -95,46 +105,32 @@ export function AuthGate() {
     error: null as string | null,
   });
   const [coachAccessRetryKey, setCoachAccessRetryKey] = useState(0);
+  const [clientPlanAccess, setClientPlanAccess] = useState({ loading: false, checked: false, active: false, error: null as string | null });
+  const [clientPlanRetryKey, setClientPlanRetryKey] = useState(0);
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
 
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
-  const targetPath = clientOnboarding.error
-    ? null
-    : currentRole === 'cliente' && clientOnboarding.required && pathname !== CLIENT_ONBOARDING
-      ? CLIENT_ONBOARDING
-      : currentRole === 'cliente' && supabaseConfig.isConfigured && clientOnboarding.checked && !clientOnboarding.required && pathname === CLIENT_ONBOARDING
-        ? CLIENT_HOME
-        : currentRole === 'cliente' &&
-            supabaseConfig.isConfigured &&
-            clientOnboarding.checked &&
-            !clientOnboarding.required &&
-            clientCoachAccess.checked &&
-            !clientCoachAccess.error &&
-            !clientCoachAccess.loading &&
-            !clientCoachAccess.coach &&
-            pathname !== CLIENT_CONNECT_COACH
-          ? CLIENT_CONNECT_COACH
-          : currentRole === 'cliente' &&
-              supabaseConfig.isConfigured &&
-              clientOnboarding.checked &&
-              !clientOnboarding.required &&
-              clientCoachAccess.checked &&
-              clientCoachAccess.coach?.connectionStatus === 'active' &&
-              pathname === CLIENT_CONNECT_COACH
-            ? CLIENT_HOME
-            : roleTargetPath;
+  const clientTargetPath = getClientRedirectTarget({
+    role: currentRole,
+    pathname,
+    supabaseConfigured: supabaseConfig.isConfigured,
+    onboarding: clientOnboarding,
+    coachAccess: clientCoachAccess,
+    planAccess: clientPlanAccess,
+  });
+  const targetPath = clientOnboarding.error ? null : clientTargetPath ?? roleTargetPath;
 
   useEffect(() => {
     if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase) {
-      setClientOnboarding({ loading: false, required: false, checked: false, error: null });
+      setClientOnboarding({ loading: false, required: false, checked: false, mode: null, error: null });
       return;
     }
     if (!supabaseConfig.isConfigured) {
-      setClientOnboarding({ loading: false, required: false, checked: true, error: null });
+      setClientOnboarding({ loading: false, required: false, checked: true, mode: null, error: null });
       return;
     }
     let active = true;
-    setClientOnboarding({ loading: true, required: false, checked: false, error: null });
+    setClientOnboarding({ loading: true, required: false, checked: false, mode: null, error: null });
     (async () => {
       const sessionResult = await getCurrentSession();
       if (!active) return;
@@ -143,17 +139,23 @@ export function AuthGate() {
         if (__DEV__) {
           console.error('CLIENT_ONBOARDING_SESSION_MISSING', sessionResult.ok ? 'missing session user' : sessionResult.message);
         }
-        setClientOnboarding({ loading: false, required: false, checked: true, error: 'Non è stato possibile verificare il profilo.' });
+        setClientOnboarding({ loading: false, required: false, checked: true, mode: null, error: 'Non è stato possibile verificare il profilo.' });
         return;
       }
       const result = await ensureClientOnboardingDraft(session.user.id, session.user.user_metadata ?? {});
       if (!active) return;
       if (!result.ok) {
         if (__DEV__) console.error('CLIENT_ONBOARDING_GATE_ERROR', result.message);
-        setClientOnboarding({ loading: false, required: false, checked: true, error: 'Non è stato possibile verificare il profilo.' });
+        setClientOnboarding({ loading: false, required: false, checked: true, mode: null, error: 'Non è stato possibile verificare il profilo.' });
         return;
       }
-      setClientOnboarding({ loading: false, required: result.data.exists && !result.data.completed, checked: true, error: null });
+      setClientOnboarding({
+        loading: false,
+        required: result.data.exists && !result.data.completed,
+        checked: true,
+        mode: result.data.mode,
+        error: null,
+      });
     })();
     return () => {
       active = false;
@@ -161,7 +163,13 @@ export function AuthGate() {
   }, [currentRole, currentClientId, isAuthenticated, mustChangePasswordSupabase, onboardingRetryKey, onboardingStatusRevision]);
 
   useEffect(() => {
-    if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase || !supabaseConfig.isConfigured) {
+    if (
+      !isAuthenticated ||
+      currentRole !== 'cliente' ||
+      mustChangePasswordSupabase ||
+      !supabaseConfig.isConfigured ||
+      clientOnboarding.mode === 'self_guided'
+    ) {
       setClientCoachAccess({ loading: false, checked: false, coach: null, error: null });
       return;
     }
@@ -194,8 +202,54 @@ export function AuthGate() {
     clientOnboarding.loading,
     clientOnboarding.checked,
     clientOnboarding.required,
+    clientOnboarding.mode,
     clientOnboarding.error,
     coachAccessRetryKey,
+    onboardingStatusRevision,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      currentRole !== 'cliente' ||
+      mustChangePasswordSupabase ||
+      !supabaseConfig.isConfigured ||
+      clientOnboarding.mode !== 'self_guided'
+    ) {
+      setClientPlanAccess({ loading: false, checked: false, active: false, error: null });
+      return;
+    }
+    if (clientOnboarding.loading || !clientOnboarding.checked || clientOnboarding.required || clientOnboarding.error) {
+      setClientPlanAccess({ loading: false, checked: false, active: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setClientPlanAccess((current) => ({ ...current, loading: true, checked: false, error: null }));
+    (async () => {
+      const result = await getMySelfGuidedPlanAccess();
+      if (!active) return;
+      if (!result.ok) {
+        if (__DEV__) console.error('CLIENT_SELF_GUIDED_PLAN_GATE_ERROR', result.message);
+        setClientPlanAccess({ loading: false, checked: true, active: false, error: 'Non e stato possibile verificare il piano cliente.' });
+        return;
+      }
+      setClientPlanAccess({ loading: false, checked: true, active: result.data.active, error: null });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    currentRole,
+    isAuthenticated,
+    mustChangePasswordSupabase,
+    clientOnboarding.loading,
+    clientOnboarding.checked,
+    clientOnboarding.required,
+    clientOnboarding.mode,
+    clientOnboarding.error,
+    clientPlanRetryKey,
     onboardingStatusRevision,
   ]);
 
@@ -330,19 +384,35 @@ export function AuthGate() {
     if (clientOnboarding.error) {
       return <OnboardingCheckError onRetry={() => setOnboardingRetryKey((value) => value + 1)} />;
     }
-    if (supabaseConfig.isConfigured && !clientOnboarding.required && (clientCoachAccess.loading || !clientCoachAccess.checked)) {
+    if (
+      supabaseConfig.isConfigured &&
+      !clientOnboarding.required &&
+      clientOnboarding.mode === 'self_guided' &&
+      (clientPlanAccess.loading || !clientPlanAccess.checked)
+    ) {
       return <LoadingGate />;
     }
-    if (clientCoachAccess.error) {
+    if (clientOnboarding.mode === 'self_guided' && clientPlanAccess.error) {
+      return <OnboardingCheckError onRetry={() => setClientPlanRetryKey((value) => value + 1)} />;
+    }
+    if (
+      supabaseConfig.isConfigured &&
+      !clientOnboarding.required &&
+      clientOnboarding.mode !== 'self_guided' &&
+      (clientCoachAccess.loading || !clientCoachAccess.checked)
+    ) {
+      return <LoadingGate />;
+    }
+    if (clientOnboarding.mode !== 'self_guided' && clientCoachAccess.error) {
       return <OnboardingCheckError onRetry={() => setCoachAccessRetryKey((value) => value + 1)} />;
     }
-    if (clientCoachAccess.coach?.connectionStatus === 'suspended') {
+    if (clientOnboarding.mode !== 'self_guided' && clientCoachAccess.coach?.connectionStatus === 'suspended') {
       return <ClientSuspendedGate coach={clientCoachAccess.coach} onLogout={async () => { await signOut(); logout(); }} />;
     }
     if (targetPath) {
       return <LoadingGate />;
     }
-    if (pathname === CLIENT_ONBOARDING || pathname === CLIENT_CONNECT_COACH) {
+    if (pathname === CLIENT_ONBOARDING || pathname === CLIENT_CONNECT_COACH || pathname === CLIENT_SELF_GUIDED_PLANS) {
       return <Slot />;
     }
     return <ClientTabs />;
@@ -367,6 +437,50 @@ export function AuthGate() {
   }
 
   return <AppTabs />;
+}
+
+function getClientRedirectTarget({
+  role,
+  pathname,
+  supabaseConfigured,
+  onboarding,
+  coachAccess,
+  planAccess,
+}: {
+  role: UserRole | null;
+  pathname: string;
+  supabaseConfigured: boolean;
+  onboarding: { loading: boolean; required: boolean; checked: boolean; mode: 'coach_guided' | 'self_guided' | null; error: string | null };
+  coachAccess: { loading: boolean; checked: boolean; coach: AssignedCoachSummary | null; error: string | null };
+  planAccess: { loading: boolean; checked: boolean; active: boolean; error: string | null };
+}): Href | null {
+  if (role !== 'cliente' || !supabaseConfigured || onboarding.error || onboarding.loading || !onboarding.checked) return null;
+  if (onboarding.required) return pathname === CLIENT_ONBOARDING ? null : CLIENT_ONBOARDING;
+
+  if (onboarding.mode === 'self_guided') {
+    if (planAccess.loading || !planAccess.checked || planAccess.error) return null;
+    if (!planAccess.active) return pathname === CLIENT_SELF_GUIDED_PLANS ? null : CLIENT_SELF_GUIDED_PLANS;
+    return pathname === CLIENT_SELF_GUIDED_PLANS ||
+      pathname === CLIENT_CONNECT_COACH ||
+      pathname === CLIENT_ONBOARDING ||
+      SELF_GUIDED_COACH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+      ? CLIENT_HOME
+      : null;
+  }
+
+  // mode null is retained only as a compatibility path for pre-onboarding
+  // accounts. Supabase remains authoritative through the assigned-coach RPC.
+  if (coachAccess.loading || !coachAccess.checked || coachAccess.error) return null;
+  if (!coachAccess.coach) return pathname === CLIENT_CONNECT_COACH ? null : CLIENT_CONNECT_COACH;
+  if (coachAccess.coach.connectionStatus === 'active') {
+    return pathname === CLIENT_CONNECT_COACH ||
+      pathname === CLIENT_SELF_GUIDED_PLANS ||
+      pathname === '/pacchetti-cliente' ||
+      pathname === CLIENT_ONBOARDING
+      ? CLIENT_HOME
+      : null;
+  }
+  return null;
 }
 
 function getRoleRedirectTarget(role: UserRole | null, pathname: string) {

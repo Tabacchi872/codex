@@ -133,19 +133,19 @@ export async function completeCoachGuidedOnboarding(coachCode: string): Promise<
   if (!clientId) return { ok: false, message: GENERIC_SAVE_ERROR };
 
   const normalizedCode = normalizeCoachCode(coachCode);
-  let linkedToCoach = false;
-  if (normalizedCode.length > 0) {
-    const linkResult = await joinCoachByInviteCode(normalizedCode);
-    if (!linkResult.ok) return { ok: false, message: linkResult.message };
-    linkedToCoach = true;
-
-    const linkCheck = await verifyActiveCoachLink(clientId);
-    if (!linkCheck.ok) return linkCheck;
+  if (!normalizedCode) {
+    return { ok: false, message: 'Inserisci il codice ricevuto dal tuo coach.' };
   }
+
+  const linkResult = await joinCoachByInviteCode(normalizedCode);
+  if (!linkResult.ok) return { ok: false, message: linkResult.message };
+
+  const linkCheck = await verifyActiveCoachLink(clientId);
+  if (!linkCheck.ok) return linkCheck;
 
   const existing = await getClientOnboardingStatus(clientId);
   if (!existing.ok) return existing;
-  if (existing.data.completed) return { ok: true, data: { linked: linkedToCoach } };
+  if (existing.data.completed) return { ok: true, data: { linked: true } };
 
   const draft = await createPendingClientOnboarding(clientId);
   if (!draft.ok) return draft;
@@ -167,7 +167,7 @@ export async function completeCoachGuidedOnboarding(coachCode: string): Promise<
     return { ok: false, message: GENERIC_SAVE_ERROR };
   }
 
-  return { ok: true, data: { linked: linkedToCoach } };
+  return { ok: true, data: { linked: true } };
 }
 
 export async function saveSelfGuidedOnboarding(payload: SelfGuidedOnboardingPayload): Promise<ServiceResult<null>> {

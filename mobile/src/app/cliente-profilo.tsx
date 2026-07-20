@@ -126,8 +126,12 @@ export default function ClienteProfiloScreen() {
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>Stato: {CLIENT_STATUS_LABEL[client.status]}</Text>
       </AppCard>
 
-      <AppSectionTitle>IL TUO COACH</AppSectionTitle>
-      <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
+      {myCoach.clientMode !== 'self_guided' ? (
+        <>
+          <AppSectionTitle>IL TUO COACH</AppSectionTitle>
+          <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
+        </>
+      ) : null}
 
       <AppSectionTitle>IL TUO PIANO</AppSectionTitle>
       <AppCard style={styles.section}>

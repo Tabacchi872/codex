@@ -166,7 +166,7 @@ export default function ClientOnboardingScreen() {
       }
       markOnboardingCompleted(clientId);
       clearDraft(clientId);
-      router.replace(result.data.linked ? '/cliente-home' : '/collega-coach');
+      router.replace('/cliente-home');
       return;
     }
 
@@ -196,7 +196,7 @@ export default function ClientOnboardingScreen() {
     }
     markOnboardingCompleted(clientId);
     clearDraft(clientId);
-    router.replace('/cliente-home');
+    router.replace('/abbonamento-cliente');
   }
 
   return (
@@ -208,7 +208,13 @@ export default function ClientOnboardingScreen() {
         <View style={[styles.footer, { backgroundColor: colors.background }]}>
           {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
           <AppButton
-            label={mode === 'self_guided' && step === 9 ? 'Conferma e inizia il mio percorso' : 'Continua'}
+            label={
+              mode === 'coach_guided'
+                ? 'Collegati e continua'
+                : mode === 'self_guided' && step === 9
+                  ? 'Conferma e scopri i piani'
+                  : 'Continua'
+            }
             onPress={continueFlow}
             disabled={!valid || submitting}
             loading={submitting}
@@ -257,12 +263,12 @@ function IntroStep({ onSelect }: { onSelect: (mode: ClientOnboardingMode) => voi
     <StepShell title="Come vuoi iniziare?">
       <ChoiceCard
         title="Ho un coach"
-        detail="Inserisci il codice del tuo coach per collegarti e iniziare."
+        detail="Inserisci il codice ricevuto dal tuo coach."
         onPress={() => onSelect('coach_guided')}
       />
       <ChoiceCard
-        title="Mi alleno da solo"
-        detail="Rispondi a poche domande e prepareremo il tuo percorso."
+        title="Non ho un coach"
+        detail="Allenati in autonomia acquistando un piano FitCoach."
         onPress={() => onSelect('self_guided')}
       />
     </StepShell>
@@ -272,7 +278,7 @@ function IntroStep({ onSelect }: { onSelect: (mode: ClientOnboardingMode) => voi
 function CoachCodeStep({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const { colors } = useAppTheme();
   return (
-    <StepShell title="Codice coach" subtitle="Puoi inserirlo anche successivamente.">
+    <StepShell title="Codice coach" subtitle="Inserisci il codice ricevuto dal tuo coach.">
       <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TextInput
           value={value}
@@ -578,7 +584,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function isStepValid(draft: ReturnType<typeof useClientOnboardingStore.getState>['drafts'][string]) {
   if (!draft.mode) return false;
-  if (draft.mode === 'coach_guided') return true;
+  if (draft.mode === 'coach_guided') return normalizeCoachCode(draft.coachCode ?? '').length > 0;
   switch (draft.currentStep) {
     case 1:
       return !!draft.gender;
