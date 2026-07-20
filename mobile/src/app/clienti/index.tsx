@@ -1,5 +1,5 @@
 import { router, useRouter, type Href } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +34,23 @@ export default function ClientiListScreen() {
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [statusFilter, setStatusFilter] = useState<ClientStatusFilter>('all');
 
+  const visibleClients = clients.filter((client) => {
+    if (client.connectionStatus === 'removed') return false;
+    const status = getConnectionStatus(client.connectionStatus);
+    return statusFilter === 'all' || status === statusFilter;
+  });
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('CLIENTI_LIST_FILTER', {
+      tab: statusFilter,
+      totalClients: clients.length,
+      activeCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'active' && c.connectionStatus !== 'removed').length,
+      suspendedCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'suspended').length,
+      visibleCount: visibleClients.length,
+    });
+  }, [statusFilter, clients, visibleClients]);
+
   if (!isCoach) {
     return <CoachOnlyNotice />;
   }
@@ -42,12 +59,6 @@ export default function ClientiListScreen() {
     logCoachNavPress(source, target);
     router.push(target as Href);
   }
-
-  const visibleClients = clients.filter((client) => {
-    if (client.connectionStatus === 'removed') return false;
-    const status = getConnectionStatus(client.connectionStatus);
-    return statusFilter === 'all' || status === statusFilter;
-  });
 
   if (clientsLoading && clients.length === 0) {
     return (

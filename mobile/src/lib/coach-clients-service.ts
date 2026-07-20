@@ -61,6 +61,12 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
 
   const uniqueLinks = dedupeLinks((links ?? []) as CoachClientRow[]);
   const clientIds = uniqueLinks.map((link) => link.client_id);
+  if (__DEV__) {
+    console.log('COACH_CLIENTS_LINKS_LOADED', {
+      count: uniqueLinks.length,
+      links: uniqueLinks.map((l) => ({ clientId: l.client_id, status: l.status })),
+    });
+  }
   if (clientIds.length === 0) {
     return { ok: true, data: DEMO_DATA_ENABLED ? SEED_CLIENTS : [], coachId };
   }
@@ -81,6 +87,13 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
 
   const profiles = ((profilesRes.data ?? []) as ProfileRow[]).filter((profile) => clientIds.includes(profile.id));
   const clientProfiles = (clientProfilesRes.data ?? []) as ClientProfileRow[];
+  if (__DEV__) {
+    console.log('COACH_CLIENTS_PROFILES_LOADED', { count: profiles.length, profileIds: profiles.map((p) => p.id) });
+    const missing = uniqueLinks.filter((link) => !profiles.some((p) => p.id === link.client_id));
+    if (missing.length > 0) {
+      console.warn('COACH_CLIENTS_PROFILE_MISSING_FOR_LINK', missing.map((l) => ({ clientId: l.client_id, status: l.status })));
+    }
+  }
 
   const clients = (
     await Promise.all(
@@ -93,6 +106,14 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
     )
   )
     .filter((client): client is Client => client !== null);
+
+  if (__DEV__) {
+    console.log('COACH_CLIENTS_MAPPED', {
+      total: clients.length,
+      activeCount: clients.filter((c) => c.connectionStatus !== 'suspended').length,
+      suspendedCount: clients.filter((c) => c.connectionStatus === 'suspended').length,
+    });
+  }
 
   return { ok: true, data: DEMO_DATA_ENABLED ? [...SEED_CLIENTS, ...clients] : clients, coachId };
 }
