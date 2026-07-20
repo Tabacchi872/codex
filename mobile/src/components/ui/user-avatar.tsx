@@ -32,14 +32,16 @@ export function UserAvatar({
   style,
 }: UserAvatarProps) {
   const { colors } = useAppTheme();
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const hasPreset = preset === 'male' || preset === 'female';
   const safePreset = preset ?? 'neutral';
   const initials = getInitials(firstName, lastName);
   const accent = PRESET_ACCENTS[safePreset];
   const radius = size / 2;
+  const showImage = Boolean(imageUrl && failedUrl !== imageUrl);
 
   useEffect(() => {
-    setFailed(false);
+    setFailedUrl(null);
   }, [imageUrl]);
 
   return (
@@ -50,13 +52,24 @@ export function UserAvatar({
           width: size,
           height: size,
           borderRadius: radius,
-          borderColor: imageUrl && !failed ? colors.moss : accent.fg,
-          backgroundColor: imageUrl && !failed ? colors.surfaceSubtle : accent.bg,
+          borderColor: showImage ? colors.moss : accent.fg,
+          backgroundColor: showImage ? colors.surfaceSubtle : accent.bg,
         },
         style,
       ]}>
-      {imageUrl && !failed ? (
-        <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setFailed(true)} />
+      {imageUrl && showImage ? (
+        <Image
+          key={imageUrl}
+          source={{ uri: imageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          onError={() => {
+            if (__DEV__) console.warn('USER_AVATAR_IMAGE_LOAD_ERROR');
+            setFailedUrl(imageUrl);
+          }}
+        />
+      ) : hasPreset ? (
+        <UserRound size={size * 0.44} color={accent.fg} strokeWidth={2.2} />
       ) : initials ? (
         <Text style={[styles.initials, { color: accent.fg, fontSize: Math.max(14, size * 0.34) }]}>{initials}</Text>
       ) : (

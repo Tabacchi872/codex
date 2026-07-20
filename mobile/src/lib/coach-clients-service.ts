@@ -25,7 +25,9 @@ type ProfileRow = {
   email: string;
   phone: string | null;
   avatar_url: string | null;
+  avatar_preset: Client['avatarPreset'] | null;
   created_at: string;
+  updated_at: string | null;
 };
 
 type ClientProfileRow = {
@@ -64,7 +66,7 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
   }
 
   const [profilesRes, clientProfilesRes] = await Promise.all([
-    supabase.from('profiles').select('id,full_name,email,phone,avatar_url,created_at').in('id', clientIds),
+    loadClientProfiles(clientIds),
     supabase.from('client_profiles').select('user_id,goal,notes,created_at').in('user_id', clientIds),
   ]);
 
@@ -86,13 +88,34 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
       const profile = profiles.find((item) => item.id === link.client_id);
       if (!profile) return null;
       const clientProfile = clientProfiles.find((item) => item.user_id === link.client_id);
-      return mapCoachClient(link, profile, clientProfile, coachId, await createClientAvatarSignedUrl(profile.avatar_url));
+      return mapCoachClient(link, profile, clientProfile, coachId, await resolveCoachClientAvatarUrl(profile));
     })
     )
   )
     .filter((client): client is Client => client !== null);
 
   return { ok: true, data: DEMO_DATA_ENABLED ? [...SEED_CLIENTS, ...clients] : clients, coachId };
+}
+
+async function loadClientProfiles(clientIds: string[]) {
+  const client = supabase!;
+  const extended = await client
+    .from('profiles')
+    .select('id,full_name,email,phone,avatar_url,avatar_preset,created_at,updated_at')
+    .in('id', clientIds);
+
+  if (!extended?.error) return extended;
+
+  if (__DEV__) console.warn('COACH_CLIENTS_PROFILE_EXTENDED_SELECT_ERROR', extended.error.message);
+  const fallback = await client
+    .from('profiles')
+    .select('id,full_name,email,phone,avatar_url,created_at')
+    .in('id', clientIds);
+
+  return {
+    data: (fallback.data ?? []).map((profile) => ({ ...profile, avatar_preset: null, updated_at: null })),
+    error: fallback.error,
+  };
 }
 
 function dedupeLinks(links: CoachClientRow[]) {
@@ -132,8 +155,19 @@ function mapCoachClient(
     removedAt: link.removed_at,
     reactivatedAt: link.reactivated_at,
     avatarStoragePath: profile.avatar_url,
-    avatarUrl: signedAvatarUrl ?? profile.avatar_url,
+    avatarUrl: signedAvatarUrl,
+    avatarPreset: profile.avatar_preset ?? 'neutral',
   };
+}
+
+async function resolveCoachClientAvatarUrl(profile: ProfileRow): Promise<string | null> {
+  if (!profile.avatar_url) return null;
+  const cacheKey = profile.updated_at ?? Date.now();
+  const signedUrl = await createClientAvatarSignedUrl(profile.avatar_url, cacheKey);
+  if (signedUrl) return signedUrl;
+  if (/^https?:\/\//i.test(profile.avatar_url)) return profile.avatar_url;
+  if (__DEV__) console.warn('COACH_CLIENT_AVATAR_SIGNED_URL_MISSING', profile.id);
+  return null;
 }
 
 function splitFullName(fullName: string) {
