@@ -1,6 +1,11 @@
-// Tema temporaneamente bloccato su scuro: useTheme(), useAppTheme(), tab bar e
-// ThemeProvider leggono tutti da qui, quindi nessuna area puo' rientrare in
-// light mode tramite preferenze salvate o impostazioni di sistema.
+import { useColorScheme } from './use-color-scheme';
+
+import { useThemeStore } from '@/store/theme-store';
+
 export function useEffectiveColorScheme(): 'light' | 'dark' {
-  return 'dark';
+  const mode = useThemeStore((state) => state.mode);
+  const systemScheme = useColorScheme();
+
+  if (mode === 'light' || mode === 'dark') return mode;
+  return systemScheme === 'dark' ? 'dark' : 'light';
 }

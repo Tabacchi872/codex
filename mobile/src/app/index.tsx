@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { Redirect, useRouter, type Href } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import {
   CalendarDays,
   CheckCircle2,
@@ -36,11 +37,24 @@ import {
   type SubscriptionPackage,
 } from '@/types/subscription';
 
-const COACH_HERO_IMAGE = require('../../assets/images/coach-dashboard-hero.png');
+const COACH_HERO_IMAGE_DARK = require('../../assets/images/coach-dashboard-hero.png');
+const COACH_HERO_IMAGE_LIGHT = require('../../assets/images/coach-dashboard-hero-light.png');
+
+function withAlpha(hex: string, alpha: number) {
+  const normalized = hex.replace('#', '');
+  const value = parseInt(normalized, 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, scheme, cardShadow } = useAppTheme();
+  const isLight = scheme === 'light';
+  const heroImage = isLight ? COACH_HERO_IMAGE_LIGHT : COACH_HERO_IMAGE_DARK;
+  const heroOverlayColor = isLight ? colors.surface : colors.background;
   const currentRole = useAuthStore((s) => s.currentRole);
   const { clients, loading: clientsLoading } = useCoachClients();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
@@ -83,25 +97,34 @@ export default function DashboardScreen() {
 
   return (
     <AppScreen contentStyle={styles.screenContent}>
-      <View style={styles.hero}>
-        <Image source={COACH_HERO_IMAGE} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={{ left: '70%', top: '42%' }} />
-        <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient id="coachHeroBottom" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#05090D" stopOpacity="0" />
-              <Stop offset="70%" stopColor="#05090D" stopOpacity="0" />
-              <Stop offset="100%" stopColor="#05090D" stopOpacity="0.9" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#coachHeroBottom)" />
-        </Svg>
+      <StatusBar style={isLight ? 'dark' : 'light'} />
+      <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.border }, isLight && cardShadow]}>
+        <Image source={heroImage} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={{ left: '70%', top: '42%' }} />
+        {!isLight ? (
+          <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id="coachHeroBottom" x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor={heroOverlayColor} stopOpacity="0" />
+                <Stop offset="68%" stopColor={heroOverlayColor} stopOpacity="0" />
+                <Stop offset="100%" stopColor={heroOverlayColor} stopOpacity="0.9" />
+              </LinearGradient>
+              <LinearGradient id="coachHeroLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor={heroOverlayColor} stopOpacity="0.05" />
+                <Stop offset="52%" stopColor={heroOverlayColor} stopOpacity="0" />
+                <Stop offset="100%" stopColor={heroOverlayColor} stopOpacity="0" />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#coachHeroLeft)" />
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#coachHeroBottom)" />
+          </Svg>
+        ) : null}
 
         <View style={styles.heroCopy}>
-          <FitCoachLogo size="md" variant="onDark" />
-          <Text style={styles.heroTitle}>
-            Dashboard <Text style={styles.heroAccent}>Coach.</Text>
+          <FitCoachLogo size="md" variant={isLight ? 'theme' : 'onDark'} />
+          <Text style={[styles.heroTitle, { color: colors.ink }]}>
+            Dashboard <Text style={{ color: colors.moss }}>Coach.</Text>
           </Text>
-          <Text style={styles.heroSubtitle}>Gestisci i tuoi clienti, schede e appuntamenti.</Text>
+          <Text style={[styles.heroSubtitle, { color: colors.inkSoft }]}>Gestisci i tuoi clienti, schede e appuntamenti.</Text>
         </View>
 
         <View style={styles.kpiRow}>
@@ -161,11 +184,21 @@ export default function DashboardScreen() {
         )}
       </View>
 
-      <Pressable onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')} accessibilityRole="button" style={styles.primaryAction}>
-        <View style={styles.primaryIcon}>
-          <Plus size={22} color="#7BEA18" strokeWidth={2.6} />
+      <Pressable
+        onPress={() => navigate('dashboard-nuovo-cliente', '/clienti/new')}
+        accessibilityRole="button"
+        style={[
+          styles.primaryAction,
+          {
+            backgroundColor: colors.moss,
+            borderColor: withAlpha(colors.moss, isLight ? 0.48 : 0.82),
+            shadowColor: colors.moss,
+          },
+        ]}>
+        <View style={[styles.primaryIcon, { backgroundColor: colors.onMoss }]}>
+          <Plus size={22} color={colors.moss} strokeWidth={2.6} />
         </View>
-        <Text style={styles.primaryActionLabel}>Nuovo cliente</Text>
+        <Text style={[styles.primaryActionLabel, { color: colors.onMoss }]}>Nuovo cliente</Text>
       </Pressable>
 
       <Text style={[styles.quickSectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
@@ -194,17 +227,34 @@ function KpiCard({
   detail: string;
   featured?: boolean;
 }) {
+  const { colors, scheme, cardShadow } = useAppTheme();
+  const isLight = scheme === 'light';
+
   return (
-    <View style={[styles.kpiCard, featured && styles.kpiCardFeatured]}>
-      <Icon size={20} color="#7BEA18" strokeWidth={2.2} />
-      <Text style={styles.kpiLabel} numberOfLines={2}>
+    <View
+      style={[
+        styles.kpiCard,
+        {
+          backgroundColor: isLight ? withAlpha(colors.surface, 0.94) : withAlpha(colors.surface, 0.88),
+          borderColor: featured ? colors.moss : colors.border,
+        },
+        isLight && cardShadow,
+        featured && {
+          shadowColor: colors.moss,
+          shadowOpacity: isLight ? 0.16 : 0.32,
+          shadowRadius: isLight ? 10 : 12,
+          elevation: 3,
+        },
+      ]}>
+      <Icon size={20} color={colors.moss} strokeWidth={2.2} />
+      <Text style={[styles.kpiLabel, { color: colors.inkSoft }]} numberOfLines={2}>
         {label}
       </Text>
-      <Text style={[styles.kpiValue, featured && styles.kpiValueFeatured]} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={[styles.kpiValue, { color: featured ? colors.moss : colors.ink }, featured && styles.kpiValueFeatured]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      <Text style={styles.kpiDelta} numberOfLines={2}>
-        <Text style={styles.kpiDeltaStrong}>{delta}</Text> {detail}
+      <Text style={[styles.kpiDelta, { color: colors.inkSoft }]} numberOfLines={2}>
+        <Text style={{ color: colors.moss, fontWeight: '800' }}>{delta}</Text> {detail}
       </Text>
     </View>
   );
@@ -367,7 +417,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: AppSpacing[4],
   },
   hero: {
-    borderColor: '#1B2B35',
     borderRadius: 30,
     borderWidth: 1,
     height: 322,
@@ -381,17 +430,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   heroTitle: {
-    color: '#F7F9FA',
     fontSize: 28,
     fontWeight: '800',
     letterSpacing: 0,
     lineHeight: 33,
   },
-  heroAccent: {
-    color: '#7BEA18',
-  },
   heroSubtitle: {
-    color: '#C6CCD2',
     fontSize: 11,
     fontWeight: '500',
     lineHeight: 16,
@@ -406,8 +450,6 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     alignItems: 'center',
-    backgroundColor: 'rgba(12, 21, 28, 0.88)',
-    borderColor: '#24313A',
     borderRadius: 14,
     borderWidth: 1,
     flex: 1,
@@ -418,14 +460,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 7,
   },
-  kpiCardFeatured: {
-    borderColor: '#7BEA18',
-    shadowColor: '#7BEA18',
-    shadowOpacity: 0.32,
-    shadowRadius: 12,
-  },
   kpiLabel: {
-    color: '#C6CCD2',
     fontSize: 9,
     fontWeight: '600',
     lineHeight: 11,
@@ -433,26 +468,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   kpiValue: {
-    color: '#F7F9FA',
     fontSize: 19,
     fontWeight: '800',
     lineHeight: 23,
     textAlign: 'center',
   },
   kpiValueFeatured: {
-    color: '#7BEA18',
     fontSize: 18,
   },
   kpiDelta: {
-    color: '#C6CCD2',
     fontSize: 8,
     fontWeight: '500',
     lineHeight: 11,
     textAlign: 'center',
-  },
-  kpiDeltaStrong: {
-    color: '#7BEA18',
-    fontWeight: '800',
   },
   sectionHeader: {
     alignItems: 'center',
@@ -461,7 +489,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionTitle: {
-    color: '#F7F9FA',
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 25,
@@ -472,13 +499,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sectionActionText: {
-    color: '#7BEA18',
     fontSize: 13,
     fontWeight: '700',
   },
   clientsCard: {
-    backgroundColor: 'rgba(10, 18, 24, 0.96)',
-    borderColor: '#24313A',
     borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
@@ -491,28 +515,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  rowBorder: {
-    borderTopColor: '#172631',
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
   clientCopy: {
     flex: 1,
     minWidth: 0,
   },
   clientName: {
-    color: '#F7F9FA',
     fontSize: 16,
     fontWeight: '800',
     lineHeight: 20,
   },
   clientPlan: {
-    color: '#C6CCD2',
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
-  },
-  limeText: {
-    color: '#7BEA18',
   },
   expiryRow: {
     alignItems: 'center',
@@ -521,7 +536,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   expiryText: {
-    color: '#A8B0B7',
     flex: 1,
     fontSize: 10,
     fontWeight: '500',
@@ -532,18 +546,15 @@ const styles = StyleSheet.create({
     width: 92,
   },
   clientCounter: {
-    color: '#F7F9FA',
     fontSize: 18,
     fontWeight: '800',
     lineHeight: 22,
   },
   clientCounterLabel: {
-    color: '#A8B0B7',
     fontSize: 10,
     fontWeight: '500',
   },
   progressTrack: {
-    backgroundColor: '#1F2A31',
     borderRadius: AppRadius.pill,
     height: 7,
     marginTop: 7,
@@ -551,14 +562,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   progressFill: {
-    backgroundColor: '#7BEA18',
     borderRadius: AppRadius.pill,
     height: '100%',
     minWidth: 4,
   },
   agendaCard: {
-    backgroundColor: 'rgba(10, 18, 24, 0.96)',
-    borderColor: '#24313A',
     borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
@@ -572,13 +580,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   timeMarker: {
-    backgroundColor: '#7BEA18',
     borderRadius: AppRadius.pill,
     height: 32,
     width: 4,
   },
   agendaTime: {
-    color: '#F7F9FA',
     fontSize: 16,
     fontWeight: '700',
     width: 48,
@@ -588,7 +594,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   agendaName: {
-    color: '#F7F9FA',
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 17,
@@ -599,57 +604,42 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   agendaDetail: {
-    color: '#A8B0B7',
     flex: 1,
     fontSize: 10,
     fontWeight: '500',
   },
   agendaStatus: {
-    backgroundColor: '#173516',
     borderRadius: AppRadius.pill,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  agendaStatusPending: {
-    backgroundColor: '#3A2710',
-  },
   agendaStatusText: {
-    color: '#7BEA18',
     fontSize: 10,
     fontWeight: '800',
   },
-  agendaStatusTextPending: {
-    color: '#F2A43A',
-  },
   primaryAction: {
     alignItems: 'center',
-    backgroundColor: '#7BEA18',
-    borderColor: '#B8FF4F',
     borderRadius: 22,
     borderWidth: 1.5,
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'center',
     minHeight: 54,
-    shadowColor: '#7BEA18',
     shadowOpacity: 0.36,
     shadowRadius: 16,
   },
   primaryIcon: {
     alignItems: 'center',
-    backgroundColor: '#07110B',
     borderRadius: AppRadius.pill,
     height: 38,
     justifyContent: 'center',
     width: 38,
   },
   primaryActionLabel: {
-    color: '#07110B',
     fontSize: 16,
     fontWeight: '800',
   },
   quickSectionTitle: {
-    color: '#F7F9FA',
     fontSize: 16,
     fontWeight: '800',
     lineHeight: 20,
@@ -662,8 +652,6 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     alignItems: 'center',
-    backgroundColor: 'rgba(10, 18, 24, 0.96)',
-    borderColor: '#24313A',
     borderRadius: 16,
     borderWidth: 1,
     flexBasis: '48%',
@@ -676,14 +664,12 @@ const styles = StyleSheet.create({
   },
   quickActionIcon: {
     alignItems: 'center',
-    backgroundColor: '#173516',
     borderRadius: AppRadius.pill,
     height: 30,
     justifyContent: 'center',
     width: 30,
   },
   quickActionTitle: {
-    color: '#F7F9FA',
     flex: 1,
     fontSize: 12,
     fontWeight: '800',
@@ -697,7 +683,6 @@ const styles = StyleSheet.create({
     minHeight: 108,
   },
   emptyText: {
-    color: '#A8B0B7',
     fontSize: AppFontSize.sm,
     fontWeight: '700',
   },
@@ -707,7 +692,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: '#A8B0B7',
     fontSize: AppFontSize.sm,
   },
 });

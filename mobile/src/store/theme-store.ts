@@ -20,7 +20,7 @@ export const useThemeStore = create<ThemeState>()(
       mode: 'dark',
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
-      setMode: () => set({ mode: 'dark' }),
+      setMode: (mode) => set({ mode }),
     }),
     {
       name: 'coachdesk-theme-store',

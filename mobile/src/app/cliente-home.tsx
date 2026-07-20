@@ -24,6 +24,7 @@ import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { Difficulty, Exercise, WorkoutPlan } from '@/types/training';
 
 const DEFAULT_WORKOUT_HERO = require('../../assets/images/workouts/default-workout-hero.png');
+const DEFAULT_WORKOUT_HERO_LIGHT = require('../../assets/images/workouts/default-workout-hero-light.png');
 const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   beginner: 'Base',
   intermediate: 'Intermedio',
@@ -32,7 +33,8 @@ const DIFFICULTY_LABEL: Record<Difficulty, string> = {
 
 export default function ClienteHomeScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, scheme, cardShadow } = useAppTheme();
+  const isLight = scheme === 'light';
   const { width } = useWindowDimensions();
   const compact = width < 360;
   const narrow = width < 390;
@@ -79,7 +81,7 @@ export default function ClienteHomeScreen() {
   const relevantPosts = boardPosts.filter((p) => p.scope === 'globale' || p.clientId === currentClientId);
   const totalSets = nextPlan ? nextPlan.exercises.reduce((sum, item) => sum + item.sets, 0) : 0;
   const nextExercise = nextPlan?.exercises[0] ? resolveExercise(nextPlan.exercises[0].exerciseId) : null;
-  const workoutHeroSource = getWorkoutHeroSource(nextPlan, nextExercise ?? null);
+  const workoutHeroSource = getWorkoutHeroSource(nextPlan, nextExercise ?? null, scheme);
   const nextPlanMeta = nextPlan
     ? [
         { kind: 'exercises', label: `${nextPlan.exercises.length} esercizi` },
@@ -132,18 +134,28 @@ export default function ClienteHomeScreen() {
             </View>
           </AppCard>
 
-          <AppCard padded={false} style={[styles.workoutHero, compact && styles.workoutHeroCompact, { borderColor: colors.border }]}>
+          <AppCard
+            padded={false}
+            style={[
+              styles.workoutHero,
+              compact && styles.workoutHeroCompact,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              isLight && cardShadow,
+            ]}>
             <Image
               source={workoutHeroSource}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
-              contentPosition={compact ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
+              contentPosition={isLight ? { left: '50%', top: '50%' } : compact ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
             />
-            <WorkoutHeroOverlay />
+            {!isLight ? <WorkoutHeroOverlay overlayColor={colors.background} /> : null}
             <View style={[styles.workoutContent, compact && styles.workoutContentCompact]}>
               <View style={styles.workoutText}>
                 <Text style={[styles.kicker, { color: colors.moss }]}>PIANO ATTUALE</Text>
-                <Text style={[styles.workoutTitle, compact && styles.workoutTitleCompact]} numberOfLines={3} ellipsizeMode="tail">
+                <Text
+                  style={[styles.workoutTitle, compact && styles.workoutTitleCompact, { color: colors.ink }]}
+                  numberOfLines={3}
+                  ellipsizeMode="tail">
                   {nextPlan ? nextPlan.name : 'Allenamenti'}
                 </Text>
                 <View style={styles.workoutMetaWrap}>
@@ -157,7 +169,7 @@ export default function ClienteHomeScreen() {
                         ) : (
                           <Gauge size={15} color={colors.moss} />
                         )}
-                        <Text style={styles.workoutMeta} numberOfLines={1}>
+                        <Text style={[styles.workoutMeta, { color: colors.ink }]} numberOfLines={1}>
                           {item.label}
                         </Text>
                       </View>
@@ -165,7 +177,7 @@ export default function ClienteHomeScreen() {
                   ) : (
                     <View style={styles.workoutMetaPill}>
                       <Dumbbell size={15} color={colors.moss} />
-                      <Text style={styles.workoutMeta} numberOfLines={1}>
+                      <Text style={[styles.workoutMeta, { color: colors.ink }]} numberOfLines={1}>
                         Apri Workout
                       </Text>
                     </View>
@@ -236,21 +248,21 @@ export default function ClienteHomeScreen() {
   );
 }
 
-function WorkoutHeroOverlay() {
+function WorkoutHeroOverlay({ overlayColor }: { overlayColor: string }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg width="100%" height="100%" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="workoutLeftOverlay" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#050705" stopOpacity="0.96" />
-            <Stop offset="46%" stopColor="#050705" stopOpacity="0.78" />
-            <Stop offset="74%" stopColor="#050705" stopOpacity="0.24" />
-            <Stop offset="100%" stopColor="#050705" stopOpacity="0.04" />
+            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0.96" />
+            <Stop offset="32%" stopColor={overlayColor} stopOpacity="0.78" />
+            <Stop offset="50%" stopColor={overlayColor} stopOpacity="0.24" />
+            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.04" />
           </LinearGradient>
           <LinearGradient id="workoutBottomOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#050705" stopOpacity="0" />
-            <Stop offset="58%" stopColor="#050705" stopOpacity="0.62" />
-            <Stop offset="100%" stopColor="#050705" stopOpacity="0.92" />
+            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0" />
+            <Stop offset="58%" stopColor={overlayColor} stopOpacity="0.62" />
+            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.92" />
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#workoutLeftOverlay)" />
@@ -260,7 +272,7 @@ function WorkoutHeroOverlay() {
   );
 }
 
-function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Exercise | null): ImageProps['source'] {
+function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Exercise | null, scheme: 'light' | 'dark'): ImageProps['source'] {
   const planImageUri = getOptionalImageUri(plan);
   if (planImageUri) return { uri: planImageUri };
 
@@ -272,7 +284,7 @@ function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Ex
     if (catalogThumbnail.kind === 'image') return catalogThumbnail.source;
   }
 
-  return DEFAULT_WORKOUT_HERO;
+  return scheme === 'light' ? DEFAULT_WORKOUT_HERO_LIGHT : DEFAULT_WORKOUT_HERO;
 }
 
 function getOptionalImageUri(value: unknown) {
@@ -415,23 +427,23 @@ const styles = StyleSheet.create({
   workoutHero: {
     borderRadius: 20,
     justifyContent: 'space-between',
-    minHeight: 286,
+    minHeight: 224,
     overflow: 'hidden',
-    padding: 14,
+    padding: 12,
     position: 'relative',
     width: '100%',
   },
   workoutHeroCompact: {
     borderRadius: 20,
-    minHeight: 266,
-    padding: 13,
+    minHeight: 214,
+    padding: 11,
   },
   workoutContent: {
     flex: 1,
     justifyContent: 'center',
     minWidth: 0,
-    paddingBottom: AppSpacing[2],
-    paddingTop: AppSpacing[1],
+    paddingBottom: 0,
+    paddingTop: 0,
     width: '62%',
     zIndex: 1,
   },
@@ -440,7 +452,7 @@ const styles = StyleSheet.create({
   },
   workoutText: {
     flexShrink: 1,
-    gap: AppSpacing[2],
+    gap: 6,
     justifyContent: 'center',
     maxWidth: '100%',
     minWidth: 0,
@@ -451,15 +463,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   workoutTitle: {
-    color: '#F7F6EE',
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 27,
     minWidth: 0,
   },
   workoutTitleCompact: {
-    fontSize: 21,
-    lineHeight: 26,
+    fontSize: 20,
+    lineHeight: 25,
   },
   workoutMetaWrap: {
     alignItems: 'center',
@@ -475,7 +486,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   workoutMeta: {
-    color: '#E7E9DF',
     flexShrink: 1,
     fontSize: 12,
     fontWeight: '700',
@@ -486,9 +496,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: AppRadius.lg,
     flexDirection: 'row',
-    height: 46,
+    height: 42,
     justifyContent: 'center',
-    marginTop: AppSpacing[2],
+    marginTop: 0,
     paddingHorizontal: AppSpacing[4],
     position: 'relative',
     zIndex: 1,

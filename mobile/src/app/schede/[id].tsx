@@ -14,9 +14,10 @@ import { AppBadge, AppButton, AppCard, BackHeader } from '@/components/ui';
 import { WorkoutExerciseRow } from '@/components/workout-exercise-row';
 import { WorkoutPlanForm } from '@/components/workout-plan-form';
 import { WorkoutSessionControls } from '@/components/workout-session-controls';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, CardShadow, Radius, Spacing } from '@/constants/theme';
 import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
+import { useEffectiveColorScheme } from '@/hooks/use-effective-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { getCurrentSession } from '@/lib/auth-service';
@@ -33,6 +34,7 @@ import { SESSION_STATUS_LABEL, type Exercise, type WorkoutExercise, type Workout
 
 const SESSION_STATUSES: WorkoutSessionStatus[] = ['todo', 'completed', 'skipped', 'cancelled'];
 const DEFAULT_WORKOUT_HERO = require('../../../assets/images/workouts/default-workout-hero.png');
+const DEFAULT_WORKOUT_HERO_LIGHT = require('../../../assets/images/workouts/default-workout-hero-light.png');
 
 // Raggruppa gli esercizi consecutivi che condividono supersetGroupId in blocchi,
 // mantenendo l'ordine. Un esercizio senza gruppo resta un elemento standalone.
@@ -56,6 +58,8 @@ export default function SchedaDettaglioScreen() {
   const { width } = useWindowDimensions();
   const stackHero = width < 390;
   const theme = useTheme();
+  const colorScheme = useEffectiveColorScheme();
+  const isLight = colorScheme === 'light';
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const updateWorkoutPlanLocal = useTrainingStore((s) => s.updateWorkoutPlan);
   const replaceWorkoutPlanLocal = useTrainingStore((s) => s.replaceWorkoutPlan);
@@ -221,7 +225,7 @@ export default function SchedaDettaglioScreen() {
   const cardioDone = cardioExerciseIds.length > 0 && cardioExerciseIds.every((weId) => (plan.completedExerciseIds ?? []).includes(weId));
   const exerciseProgress = getExerciseCompletionProgress(plan);
   const primaryExercise = plan.exercises[0] ? (resolveExercise(plan.exercises[0].exerciseId) ?? null) : null;
-  const heroImageSource = getWorkoutHeroSource(plan, primaryExercise);
+  const heroImageSource = getWorkoutHeroSource(plan, primaryExercise, colorScheme);
   const isClientView = !isCoach;
   const isInProgress = isClientView && Boolean(plan.startedAt) && sessionStatus !== 'completed';
   const heroBadgeLabel =
@@ -335,21 +339,28 @@ export default function SchedaDettaglioScreen() {
           ) : null}
 
           {isClientView ? (
-            <AppCard padded={false} style={[styles.clientDetailHero, stackHero && styles.clientDetailHeroCompact, { borderColor: theme.border }]}>
+            <AppCard
+              padded={false}
+              style={[
+                styles.clientDetailHero,
+                stackHero && styles.clientDetailHeroCompact,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                isLight && CardShadow,
+              ]}>
               <Image
                 source={heroImageSource}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
-                contentPosition={stackHero ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
+                contentPosition={isLight ? { left: '50%', top: '50%' } : stackHero ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
               />
-              <WorkoutHeroOverlay />
+              {!isLight ? <WorkoutHeroOverlay overlayColor={theme.background} /> : null}
               <View style={styles.clientHeroContent}>
                 <View style={styles.clientHeroText}>
                   <AppBadge
                     label={heroBadgeLabel}
                     tone={sessionStatus === 'completed' || isInProgress ? 'moss' : sessionStatus === 'skipped' || sessionStatus === 'cancelled' ? 'amber' : 'neutral'}
                   />
-                  <Text style={styles.clientPlanTitle} numberOfLines={3} ellipsizeMode="tail">
+                  <Text style={[styles.clientPlanTitle, { color: theme.text }]} numberOfLines={3} ellipsizeMode="tail">
                     {plan.name}
                   </Text>
                   <View style={styles.clientHeroMetaGrid}>
@@ -358,19 +369,15 @@ export default function SchedaDettaglioScreen() {
                     <ClientHeroMeta label="Completati" value={`${exerciseProgress.completed}/${exerciseProgress.total}`} />
                   </View>
                 </View>
-                <View style={styles.clientExerciseBox}>
-                  <Text style={[styles.clientExerciseCount, { color: theme.primary }]}>{plan.exercises.length}</Text>
-                  <Text style={styles.clientExerciseLabel}>esercizi</Text>
-                </View>
               </View>
               <View style={styles.clientHeroBottom}>
                 <View style={styles.clientProgressRow}>
-                  <Text style={styles.clientProgressLabel}>Progresso</Text>
-                  <Text style={styles.clientProgressValue}>
+                  <Text style={[styles.clientProgressLabel, { color: theme.textSecondary }]}>Progresso</Text>
+                  <Text style={[styles.clientProgressValue, { color: theme.text }]}>
                     {exerciseProgress.completed}/{exerciseProgress.total}
                   </Text>
                 </View>
-                <View style={styles.clientProgressTrack}>
+                <View style={[styles.clientProgressTrack, { backgroundColor: isLight ? theme.backgroundSelected : 'rgba(255,255,255,0.22)' }]}>
                   <View
                     style={[
                       styles.clientProgressFill,
@@ -387,8 +394,8 @@ export default function SchedaDettaglioScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={heroCtaLabel}
                   style={({ pressed }) => [styles.clientHeroAction, { backgroundColor: theme.primary, opacity: sessionStatus === 'completed' ? 0.72 : pressed ? 0.9 : 1 }]}>
-                  <Text style={styles.clientHeroActionLabel}>{heroCtaLabel}</Text>
-                  <ArrowRight size={19} color="#11150D" strokeWidth={2.4} />
+                  <Text style={[styles.clientHeroActionLabel, { color: theme.onPrimary }]}>{heroCtaLabel}</Text>
+                  <ArrowRight size={19} color={theme.onPrimary} strokeWidth={2.4} />
                 </Pressable>
               </View>
             </AppCard>
@@ -547,33 +554,35 @@ function HeroMeta({ label, value }: { label: string; value: string }) {
 }
 
 function ClientHeroMeta({ label, value }: { label: string; value: string }) {
+  const theme = useTheme();
+
   return (
     <View style={styles.clientHeroMetaItem}>
-      <Text style={styles.clientHeroMetaLabel} numberOfLines={1}>
+      <Text style={[styles.clientHeroMetaLabel, { color: theme.textSecondary }]} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={styles.clientHeroMetaValue} numberOfLines={1} ellipsizeMode="tail">
+      <Text style={[styles.clientHeroMetaValue, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
         {value}
       </Text>
     </View>
   );
 }
 
-function WorkoutHeroOverlay() {
+function WorkoutHeroOverlay({ overlayColor }: { overlayColor: string }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg width="100%" height="100%" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="detailLeftOverlay" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#050705" stopOpacity="0.97" />
-            <Stop offset="46%" stopColor="#050705" stopOpacity="0.8" />
-            <Stop offset="74%" stopColor="#050705" stopOpacity="0.28" />
-            <Stop offset="100%" stopColor="#050705" stopOpacity="0.06" />
+            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0.97" />
+            <Stop offset="46%" stopColor={overlayColor} stopOpacity="0.8" />
+            <Stop offset="74%" stopColor={overlayColor} stopOpacity="0.28" />
+            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.06" />
           </LinearGradient>
           <LinearGradient id="detailBottomOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#050705" stopOpacity="0" />
-            <Stop offset="56%" stopColor="#050705" stopOpacity="0.64" />
-            <Stop offset="100%" stopColor="#050705" stopOpacity="0.94" />
+            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0" />
+            <Stop offset="56%" stopColor={overlayColor} stopOpacity="0.64" />
+            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.94" />
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#detailLeftOverlay)" />
@@ -583,7 +592,7 @@ function WorkoutHeroOverlay() {
   );
 }
 
-function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Exercise | null): ImageProps['source'] {
+function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Exercise | null, scheme: 'light' | 'dark'): ImageProps['source'] {
   const planImageUri = getOptionalImageUri(plan);
   if (planImageUri) return { uri: planImageUri };
 
@@ -595,7 +604,7 @@ function getWorkoutHeroSource(plan: WorkoutPlan | null | undefined, exercise: Ex
     if (catalogThumbnail.kind === 'image') return catalogThumbnail.source;
   }
 
-  return DEFAULT_WORKOUT_HERO;
+  return scheme === 'light' ? DEFAULT_WORKOUT_HERO_LIGHT : DEFAULT_WORKOUT_HERO;
 }
 
 function getOptionalImageUri(value: unknown) {
@@ -643,7 +652,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
   },
   clientPlanTitle: {
-    color: '#F7F6EE',
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 29,
@@ -658,41 +666,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   clientHeroMetaLabel: {
-    color: '#BFC6B7',
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 14,
   },
   clientHeroMetaValue: {
-    color: '#F1F3EA',
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 16,
     minWidth: 0,
-  },
-  clientExerciseBox: {
-    alignItems: 'center',
-    backgroundColor: '#050705B8',
-    borderColor: '#FFFFFF24',
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: 62,
-    minWidth: 64,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
-    zIndex: 1,
-  },
-  clientExerciseCount: {
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 26,
-  },
-  clientExerciseLabel: {
-    color: '#E7E9DF',
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 12,
   },
   clientHeroBottom: {
     gap: Spacing.two,
@@ -705,17 +687,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   clientProgressLabel: {
-    color: '#BFC6B7',
     fontSize: 11,
     fontWeight: '700',
   },
   clientProgressValue: {
-    color: '#F1F3EA',
     fontSize: 12,
     fontWeight: '800',
   },
   clientProgressTrack: {
-    backgroundColor: '#FFFFFF24',
     borderRadius: Radius.pill,
     height: 7,
     overflow: 'hidden',
@@ -734,7 +713,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   clientHeroActionLabel: {
-    color: '#11150D',
     flex: 1,
     fontSize: 13,
     fontWeight: '800',
