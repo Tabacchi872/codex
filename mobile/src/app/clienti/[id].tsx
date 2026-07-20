@@ -121,26 +121,22 @@ export default function ClienteDettaglioScreen() {
     setStatusSuccess(action === 'suspend' ? 'Cliente sospeso' : 'Cliente riattivato');
   }
 
-  function confirmSuspend() {
-    Alert.alert(
+  async function confirmSuspend() {
+    const confirmed = await confirmDestructive(
       'Sospendere questo cliente?',
       'Il cliente non potra accedere ai contenuti del coach, ma continuera a occupare un posto nel tuo pacchetto.',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        { text: 'Sospendi per rinnovo', style: 'destructive', onPress: () => runStatusAction('suspend') },
-      ],
+      'Sospendi per rinnovo',
     );
+    if (confirmed) await runStatusAction('suspend');
   }
 
-  function confirmRemove() {
-    Alert.alert(
+  async function confirmRemove() {
+    const confirmed = await confirmDestructive(
       'Rimuovere il cliente?',
       "Il cliente perdera l'accesso ai contenuti del coach. Lo storico restera conservato.",
-      [
-        { text: 'Annulla', style: 'cancel' },
-        { text: 'Rimuovi cliente', style: 'destructive', onPress: () => runStatusAction('remove') },
-      ],
+      'Rimuovi cliente',
     );
+    if (confirmed) await runStatusAction('remove');
   }
 
   function handleGenerateAccount() {
@@ -388,6 +384,22 @@ export default function ClienteDettaglioScreen() {
       ) : null}
     </AppScreen>
   );
+}
+
+// Su Expo Web react-native-web implementa Alert.alert come no-op (non mostra
+// nulla e non invoca alcun callback), quindi le conferme distruttive devono
+// passare da window.confirm sul web e da Alert.alert su nativo — stesso
+// pattern già usato in client-metrics-panel.tsx.
+async function confirmDestructive(title: string, message: string, confirmLabel: string): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    return globalThis.confirm(`${title}\n\n${message}`);
+  }
+  return new Promise<boolean>((resolve) => {
+    Alert.alert(title, message, [
+      { text: 'Annulla', style: 'cancel', onPress: () => resolve(false) },
+      { text: confirmLabel, style: 'destructive', onPress: () => resolve(true) },
+    ]);
+  });
 }
 
 function getConnectionStatus(status: CoachClientConnectionStatus | undefined): 'active' | 'suspended' {
