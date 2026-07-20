@@ -319,6 +319,9 @@ export async function updateWorkoutSessionProgress(
     if (error.message.includes('WORKOUT_LOCKED')) {
       return { ok: false, code: 'workout_locked', message: 'Questo workout è già completato e non può essere modificato.' };
     }
+    if (error.message.includes('CLIENT_NOT_ACTIVE')) {
+      return { ok: false, code: 'client_not_active', message: 'Questo cliente non è più attivo: non puoi modificare la sua scheda.' };
+    }
     return { ok: false, code: 'db_error', message: `Errore aggiornamento sessione: ${error.message}` };
   }
   return { ok: true, data: null };

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
-import { BackHeader } from '@/components/ui';
+import { BackHeader, UserAvatar } from '@/components/ui';
 import { YMoveExercisePicker, type YmoveVideoLinkSelection } from '@/components/ymove-exercise-picker';
 import { YMoveVideoPlayer } from '@/components/ymove-video-player';
 import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
@@ -48,7 +48,12 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 type InfoTab = 'esecuzione' | 'descrizione';
 
 export default function EsercizioDettaglioScreen() {
-  const { id, planId, returnTo } = useLocalSearchParams<{ id: string; planId?: string; returnTo?: string }>();
+  const { id, planId, clientId: clientIdParam, returnTo } = useLocalSearchParams<{
+    id: string;
+    planId?: string;
+    clientId?: string;
+    returnTo?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -59,14 +64,6 @@ export default function EsercizioDettaglioScreen() {
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  // Il coach puo' avere lo stesso esercizio assegnato a piu' clienti: senza
-  // questo, arrivando da una scheda specifica (schede/[id].tsx -> planId
-  // nell'URL) la schermata mostrava di default il PRIMO assignment trovato in
-  // assoluto, non necessariamente quello del cliente da cui si e' navigato —
-  // bug reale trovato durante l'implementazione dei carichi lato coach. Il
-  // ref traccia una scelta manuale successiva (chip) cosi' da non
-  // sovrascriverla piu' una volta fatta.
-  const userSelectedAssignmentRef = useRef(false);
   const [infoTab, setInfoTab] = useState<InfoTab>('esecuzione');
   const [restToken, setRestToken] = useState<number>();
   // Video reale caricato su Supabase Storage (fase 2026-07-11): null finche'
@@ -265,15 +262,64 @@ export default function EsercizioDettaglioScreen() {
   const allAssignments = workoutPlans.flatMap((plan) =>
     plan.exercises.filter((we) => we.exerciseId === exercise.id).map((we) => ({ plan, workoutExercise: we }))
   );
-  const assignments =
-    currentRole === 'cliente' ? allAssignments.filter((a) => a.plan.clientId === currentClientId) : allAssignments;
 
-  const planMatchIndex = currentRole === 'coach' && planId ? assignments.findIndex((a) => a.plan.id === planId) : -1;
-  const effectiveSelectedIndex = !userSelectedAssignmentRef.current && planMatchIndex >= 0 ? planMatchIndex : selectedIndex;
-  const selected = assignments[effectiveSelectedIndex] ?? assignments[0] ?? null;
+  // Il coach entra qui in due modi distinti:
+  // - da una sessione/cliente specifico (Clienti -> Dettaglio -> Schede ->
+  //   esercizio, planId+clientId nell'URL): la schermata deve mostrare SOLO
+  //   quel cliente, MAI un selettore con altri clienti (rischio reale di
+  //   inserire carichi/completare la scheda della persona sbagliata — bug
+  //   segnalato dall'utente). clientId da solo non e' mai attendibile: deve
+  //   corrispondere al client_id REALE della scheda (planId), gia' caricata
+  //   da Supabase con RLS scoped al coach autenticato (workout_plans_coach_scope,
+  //   coach_id = auth.uid()) — un id manomesso in URL verso una scheda di un
+  //   altro coach semplicemente non e' presente in workoutPlans.
+  // - dal catalogo esercizi generico (/esercizi, nessun planId): nessuna
+  //   sessione da proteggere, resta la vista "chi ce l'ha assegnato" gia'
+  //   esistente, ma senza aprire mai il logger dei carichi da li' (vedi sotto).
+  const isCoachSessionContext = currentRole === 'coach' && Boolean(planId);
+  let assignments = allAssignments;
+  let sessionContextInvalid = false;
+
+  if (currentRole === 'cliente') {
+    assignments = allAssignments.filter((a) => a.plan.clientId === currentClientId);
+  } else if (isCoachSessionContext) {
+    const coachSessionPlan = workoutPlans.find((p) => p.id === planId);
+    const coachSessionExercise = coachSessionPlan?.exercises.find((we) => we.exerciseId === exercise.id);
+    if (coachSessionPlan && coachSessionExercise && clientIdParam && coachSessionPlan.clientId === clientIdParam) {
+      assignments = [{ plan: coachSessionPlan, workoutExercise: coachSessionExercise }];
+    } else {
+      assignments = [];
+      sessionContextInvalid = true;
+    }
+  }
+
+  const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
   const selectedClient = selected ? getClientById(clients, selected.plan.clientId) : null;
   const selectedSessionLocked = selected ? isWorkoutSessionCompleted(selected.plan) : false;
   const selectedExerciseLocked = selected ? isWorkoutExerciseCompleted(selected.plan, selected.workoutExercise.id) : false;
+
+  // clientId mancante/non valido per la sessione richiesta: blocca la
+  // schermata e riporta alla lista clienti, MAI una scelta automatica del
+  // primo cliente/assignment disponibile.
+  if (sessionContextInvalid) {
+    return (
+      <ScreenBackground>
+        <ThemedView style={styles.notFound}>
+          <ThemedText type="default">Cliente non valido per questa sessione.</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.blockingSubtext}>
+            Torna alla lista clienti e riapri la scheda da li'.
+          </ThemedText>
+          <Pressable onPress={() => router.replace('/clienti')} hitSlop={6}>
+            <View style={[styles.blockingButton, { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" themeColor="onPrimary">
+                Torna alla lista clienti
+              </ThemedText>
+            </View>
+          </Pressable>
+        </ThemedView>
+      </ScreenBackground>
+    );
+  }
 
   // Navigazione sequenziale tra gli esercizi della STESSA scheda: attiva solo
   // quando si arriva qui da schede/[id].tsx (client, planId nell'URL), mai per
@@ -497,18 +543,13 @@ export default function EsercizioDettaglioScreen() {
         <PlaceholderBanner text="Esercizio non ancora assegnato in nessuna scheda cliente: timer e storico si attivano quando fa parte di una scheda." />
       ) : (
         <>
-          {assignments.length > 1 && (
+          {!isCoachSessionContext && assignments.length > 1 && (
             <View style={styles.chipsRow}>
               {assignments.map((a, index) => {
                 const client = getClientById(clients, a.plan.clientId);
-                const active = index === effectiveSelectedIndex;
+                const active = index === selectedIndex;
                 return (
-                  <Pressable
-                    key={a.workoutExercise.id}
-                    onPress={() => {
-                      userSelectedAssignmentRef.current = true;
-                      setSelectedIndex(index);
-                    }}>
+                  <Pressable key={a.workoutExercise.id} onPress={() => setSelectedIndex(index)}>
                     <View
                       style={[
                         styles.chip,
@@ -530,9 +571,29 @@ export default function EsercizioDettaglioScreen() {
           {selected && (
             <>
               <Card>
-                <ThemedText type="smallBold">
-                  Assegnato a {selectedClient ? clientFullName(selectedClient) : 'cliente'}
-                </ThemedText>
+                {isCoachSessionContext && selectedClient ? (
+                  <View style={styles.sessionClientHeader}>
+                    <UserAvatar
+                      firstName={selectedClient.firstName}
+                      lastName={selectedClient.lastName}
+                      imageUrl={selectedClient.avatarUrl}
+                      preset={selectedClient.avatarPreset}
+                      size={40}
+                    />
+                    <View style={styles.sessionClientHeaderText}>
+                      <ThemedText type="smallBold">{clientFullName(selectedClient)}</ThemedText>
+                      <Pressable onPress={() => router.push(`/clienti/${selectedClient.id}`)} hitSlop={6}>
+                        <ThemedText type="small" style={{ color: theme.primary }}>
+                          Torna al cliente
+                        </ThemedText>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : (
+                  <ThemedText type="smallBold">
+                    Assegnato a {selectedClient ? clientFullName(selectedClient) : 'cliente'}
+                  </ThemedText>
+                )}
                 <View style={[styles.summaryRow, compactLayout && styles.summaryRowCompact]}>
                   <SummaryStat icon="▦" label="Serie" value={String(selected.workoutExercise.sets)} />
                   <SummaryStat
@@ -564,7 +625,7 @@ export default function EsercizioDettaglioScreen() {
                 <ExerciseHistory clientId={selectedClient.id} exerciseId={exercise.id} workoutPlanId={selected.plan.id} />
               )}
 
-              {(currentRole === 'cliente' || currentRole === 'coach') && selectedClient && (
+              {(currentRole === 'cliente' || isCoachSessionContext) && selectedClient && (
                 <>
                   {selectedExerciseLocked ? (
                     <Card style={styles.lockedStateCard}>
@@ -786,10 +847,31 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 18,
   },
+  sessionClientHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  sessionClientHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  blockingSubtext: {
+    textAlign: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  blockingButton: {
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.three,
+    marginTop: Spacing.two,
+  },
   notFound: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.two,
   },
   chipsRow: {
     flexDirection: 'row',

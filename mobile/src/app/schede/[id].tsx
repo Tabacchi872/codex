@@ -289,8 +289,12 @@ export default function SchedaDettaglioScreen() {
     sessionStatus === 'completed' ? 'Workout completato' : sessionStatus === 'skipped' ? 'Workout saltato' : 'Workout da fare';
   const isSessionLocked = isWorkoutSessionCompleted(plan);
 
+  // clientId passato esplicitamente (autorevole: plan.clientId viene dalla riga
+  // Supabase gia' caricata con RLS scoped al coach, mai da un nome o da un
+  // indice) cosi' esercizi/[id].tsx puo' bloccare la schermata su questo solo
+  // cliente, senza mai mostrare un selettore con altri clienti.
   function openExerciseDetail(exerciseId: string) {
-    router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: plan!.id } });
+    router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: plan!.id, clientId: plan!.clientId } });
   }
 
   return (
