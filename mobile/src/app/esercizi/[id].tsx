@@ -34,6 +34,7 @@ import {
 } from '@/lib/exercise-video-service';
 import { updateCustomExerciseText, upsertExerciseTextOverride } from '@/lib/fitcoach-exercises-service';
 import { supabaseConfig } from '@/lib/supabase';
+import { getWorkoutEntryLockLabel, isWorkoutExerciseCompleted, isWorkoutSessionCompleted } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
@@ -261,6 +262,8 @@ export default function EsercizioDettaglioScreen() {
 
   const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
   const selectedClient = selected ? getClientById(clients, selected.plan.clientId) : null;
+  const selectedSessionLocked = selected ? isWorkoutSessionCompleted(selected.plan) : false;
+  const selectedExerciseLocked = selected ? isWorkoutExerciseCompleted(selected.plan, selected.workoutExercise.id) : false;
 
   // Navigazione sequenziale tra gli esercizi della STESSA scheda: attiva solo
   // quando si arriva qui da schede/[id].tsx (client, planId nell'URL), mai per
@@ -548,15 +551,27 @@ export default function EsercizioDettaglioScreen() {
 
               {currentRole === 'cliente' && selectedClient && (
                 <>
-                  <ExerciseSetLogger
-                    clientId={selectedClient.id}
-                    exerciseId={exercise.id}
-                    workoutPlanId={selected.plan.id}
-                    plannedSets={selected.workoutExercise.sets}
-                    restSeconds={selected.workoutExercise.restSeconds}
-                    onRequestRest={() => setRestToken(Date.now())}
-                  />
-                  <ExerciseAttachments clientId={selectedClient.id} workoutExerciseId={selected.workoutExercise.id} />
+                  {selectedExerciseLocked ? (
+                    <Card style={styles.lockedStateCard}>
+                      <Pill label={getWorkoutEntryLockLabel(selected.plan, selected.workoutExercise.id)} />
+                      <ThemedText type="small" themeColor="textSecondary">
+                        I dati di questo {selectedSessionLocked ? 'workout' : 'esercizio'} completato non possono essere modificati.
+                      </ThemedText>
+                    </Card>
+                  ) : (
+                    <>
+                      <ExerciseSetLogger
+                        clientId={selectedClient.id}
+                        exerciseId={exercise.id}
+                        workoutExerciseId={selected.workoutExercise.id}
+                        workoutPlanId={selected.plan.id}
+                        plannedSets={selected.workoutExercise.sets}
+                        restSeconds={selected.workoutExercise.restSeconds}
+                        onRequestRest={() => setRestToken(Date.now())}
+                      />
+                      <ExerciseAttachments clientId={selectedClient.id} workoutExerciseId={selected.workoutExercise.id} />
+                    </>
+                  )}
                 </>
               )}
             </>
@@ -574,10 +589,13 @@ export default function EsercizioDettaglioScreen() {
             </ThemedText>
           </Pressable>
 
-          <Pressable onPress={() => router.push(`/schede/${sessionPlan.id}`)} style={styles.sessionNavCenter}>
-            <View style={[styles.sessionNavButton, { backgroundColor: theme.primary }]}>
+          <Pressable
+            onPress={sessionPlan.sessionStatus === 'completed' ? undefined : () => router.push(`/schede/${sessionPlan.id}`)}
+            disabled={sessionPlan.sessionStatus === 'completed'}
+            style={styles.sessionNavCenter}>
+            <View style={[styles.sessionNavButton, { backgroundColor: theme.primary, opacity: sessionPlan.sessionStatus === 'completed' ? 0.72 : 1 }]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
-                {sessionPlan.startedAt ? 'Continua' : 'Inizia allenamento'}
+                {sessionPlan.sessionStatus === 'completed' ? 'Workout completato' : sessionPlan.startedAt ? 'Continua' : 'Inizia allenamento'}
               </ThemedText>
             </View>
             <ThemedText type="small" themeColor="textSecondary">
@@ -706,6 +724,9 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     padding: Spacing.three,
     alignItems: 'center',
+  },
+  lockedStateCard: {
+    gap: Spacing.one,
   },
   saveTextButton: {
     borderRadius: Radius.md,

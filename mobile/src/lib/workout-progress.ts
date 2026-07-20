@@ -71,6 +71,29 @@ export function getExerciseCompletionProgress(plan: WorkoutPlan): { completed: n
   };
 }
 
+export function isWorkoutSessionCompleted(plan: WorkoutPlan | null | undefined): boolean {
+  if (!plan) return false;
+  return (plan.sessionStatus ?? 'todo') === 'completed' || Boolean(plan.completedAt);
+}
+
+export function isWorkoutExerciseCompleted(plan: WorkoutPlan | null | undefined, workoutExerciseId: string | null | undefined): boolean {
+  if (!plan || !workoutExerciseId) return false;
+  return isWorkoutSessionCompleted(plan) || (plan.completedExerciseIds ?? []).includes(workoutExerciseId);
+}
+
+export function getWorkoutEntryLockLabel(plan: WorkoutPlan | null | undefined, workoutExerciseId: string | null | undefined): string {
+  return isWorkoutSessionCompleted(plan) || !workoutExerciseId || (plan?.completedExerciseIds ?? []).includes(workoutExerciseId)
+    ? 'Workout completato'
+    : 'Esercizio completato';
+}
+
+export function isWorkoutExerciseLockedByLibraryId(plan: WorkoutPlan | null | undefined, exerciseId: string | null | undefined): boolean {
+  if (!plan || !exerciseId) return false;
+  if (isWorkoutSessionCompleted(plan)) return true;
+  const completedIds = new Set(plan.completedExerciseIds ?? []);
+  return plan.exercises.some((workoutExercise) => workoutExercise.exerciseId === exerciseId && completedIds.has(workoutExercise.id));
+}
+
 // Gli esercizi cardio non sono un campo a parte sulla scheda: sono WorkoutExercise
 // il cui Exercise di libreria ha muscleGroup 'Cardio/Funzionale'. Il bottone
 // "Cardio da fare" mostrato nel dettaglio scheda esiste solo se questo elenco

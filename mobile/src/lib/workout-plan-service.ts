@@ -1,4 +1,5 @@
 import { supabase, supabaseConfig } from './supabase';
+import { isWorkoutSessionCompleted } from './workout-progress';
 
 import type { TechniqueType, WorkoutExercise, WorkoutPlan, WorkoutSessionStatus } from '@/types/training';
 
@@ -291,6 +292,17 @@ export async function updateWorkoutSessionProgress(
     // remotamente: successo no-op, l'aggiornamento ottimistico locale
     // (mobile/src/app/schede/[id].tsx) resta comunque valido.
     return { ok: true, data: null };
+  }
+
+  const { data: planRow, error: loadError } = await supabase.from('workout_plans').select(SELECT_WORKOUT_PLAN).eq('id', planId).maybeSingle();
+  if (loadError) {
+    return { ok: false, code: 'db_error', message: `Errore caricamento scheda: ${loadError.message}` };
+  }
+  if (!planRow) {
+    return { ok: false, code: 'not_found', message: 'Scheda non trovata o non accessibile.' };
+  }
+  if (isWorkoutSessionCompleted(mapRowToPlan(planRow as unknown as WorkoutPlanRow))) {
+    return { ok: false, code: 'workout_locked', message: 'Questo workout è già completato e non può essere modificato.' };
   }
 
   const clearStartedAt = update.startedAt === null;

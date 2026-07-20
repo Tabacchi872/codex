@@ -1,11 +1,13 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { getCurrentSession } from '@/lib/auth-service';
 import { listClientExerciseProgress } from '@/lib/exercise-progress-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import { useTrainingStore } from '@/store/training-store';
 import type { ExerciseProgressHistory } from '@/types/training';
+import { supabase } from '@/lib/supabase';
 
 type UseExerciseProgressHistoryResult = {
   entries: ExerciseProgressHistory[];
@@ -13,6 +15,48 @@ type UseExerciseProgressHistoryResult = {
   error: string | null;
   reload: () => Promise<void>;
 };
+
+type Role = 'coach' | 'cliente';
+
+let activeChannel: ReturnType<NonNullable<typeof supabase>['channel']> | null = null;
+let activeKey: string | null = null;
+let listeners = new Set<() => void>();
+
+function teardownChannel(): void {
+  if (activeChannel && supabase) supabase.removeChannel(activeChannel);
+  activeChannel = null;
+  activeKey = null;
+  listeners = new Set();
+}
+
+function subscribeExerciseProgressRealtime(userId: string, clientId: string, role: Role, onChange: () => void): () => void {
+  if (!supabaseConfig.isConfigured || !supabase) return () => {};
+
+  const key = `${role}:${userId}:${clientId}`;
+  if (activeKey !== key) {
+    teardownChannel();
+    activeChannel = supabase
+      .channel(`exercise-progress-${key}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'exercise_progress_history', filter: `client_id=eq.${clientId}` },
+        (payload: { eventType: string }) => {
+          console.log('EXERCISE_PROGRESS_REALTIME_EVENT', { eventType: payload.eventType });
+          listeners.forEach((listener) => listener());
+        },
+      )
+      .subscribe();
+    activeKey = key;
+  }
+
+  listeners.add(onChange);
+  return () => {
+    listeners.delete(onChange);
+    if (listeners.size === 0) {
+      teardownChannel();
+    }
+  };
+}
 
 export function useExerciseProgressHistory(clientId: string | null | undefined): UseExerciseProgressHistoryResult {
   const currentRole = useAuthStore((s) => s.currentRole);
@@ -57,6 +101,25 @@ export function useExerciseProgressHistory(clientId: string | null | undefined):
     setEntries(result.data);
     replaceClientProgressHistory(clientId, result.data);
   }, [clientId, currentRole, replaceClientProgressHistory]);
+
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured || !clientId || (currentRole !== 'coach' && currentRole !== 'cliente')) return;
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+
+    getCurrentSession().then((session) => {
+      if (cancelled || !session.ok || !session.data) return;
+      unsubscribe = subscribeExerciseProgressRealtime(session.data.user.id, clientId, currentRole, () => loadRef.current());
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [clientId, currentRole]);
 
   useFocusEffect(
     useCallback(() => {

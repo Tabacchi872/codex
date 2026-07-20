@@ -26,6 +26,7 @@ import { formatDayMonth } from '@/lib/format-date';
 import { supabaseConfig } from '@/lib/supabase';
 import { getCardioExerciseIds, getExerciseCompletionProgress } from '@/lib/workout-progress';
 import { deleteWorkoutPlan as deleteWorkoutPlanRemote, updateWorkoutPlan as updateWorkoutPlanRemote, updateWorkoutSessionProgress } from '@/lib/workout-plan-service';
+import { isWorkoutSessionCompleted } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
@@ -133,6 +134,10 @@ export default function SchedaDettaglioScreen() {
   // aggiornamenti di sessione sotto (toggle stato/completamento), che restano
   // ottimistici per non appesantire interazioni frequenti e a basso rischio.
   async function handleSave(updated: WorkoutPlan) {
+    if (isSessionLocked) {
+      setSaveError('Questa sessione è completata e non può essere modificata.');
+      return;
+    }
     // Se la sessione era "Saltato" e il coach ha cambiato data o ora, la
     // riprogrammazione implicita riporta lo stato a "Da fare" (Programmato):
     // altrimenti restava bloccata su "Saltato" per sempre dopo qualunque
@@ -180,6 +185,10 @@ export default function SchedaDettaglioScreen() {
   }
 
   async function handleDelete() {
+    if (isSessionLocked) {
+      setSaveError('Questa sessione è completata e non può essere eliminata.');
+      return;
+    }
     if (!supabaseConfig.isConfigured) {
       deleteWorkoutPlanLocal(plan!.id);
       router.replace('/schede');
@@ -214,6 +223,7 @@ export default function SchedaDettaglioScreen() {
   }
 
   function setSessionStatus(status: WorkoutSessionStatus) {
+    if (isSessionLocked) return;
     const completedAt = status === 'completed' ? (plan!.completedAt ?? new Date().toISOString()) : undefined;
     updateWorkoutPlanLocal({ ...plan!, sessionStatus: status, completedAt: completedAt ?? plan!.completedAt });
     syncSessionProgress(plan!.id, completedAt ? { sessionStatus: status, completedAt } : { sessionStatus: status });
@@ -237,30 +247,33 @@ export default function SchedaDettaglioScreen() {
   const heroCtaLabel = isInProgress ? 'Continua' : sessionStatus === 'completed' ? 'Completata' : 'Inizia';
 
   function toggleExerciseCompleted(workoutExerciseId: string) {
+    if (isSessionLocked) return;
     const current = plan!.completedExerciseIds ?? [];
-    const next = current.includes(workoutExerciseId)
-      ? current.filter((wid) => wid !== workoutExerciseId)
-      : [...current, workoutExerciseId];
+    if (current.includes(workoutExerciseId)) return;
+    const next = [...current, workoutExerciseId];
     updateWorkoutPlanLocal({ ...plan!, completedExerciseIds: next });
     syncSessionProgress(plan!.id, { completedExerciseIds: next });
   }
 
   function toggleCardioDone() {
+    if (isSessionLocked || cardioDone) return;
     const current = plan!.completedExerciseIds ?? [];
-    const next = cardioDone
-      ? current.filter((wid) => !cardioExerciseIds.includes(wid))
-      : Array.from(new Set([...current, ...cardioExerciseIds]));
+    const missingCardioIds = cardioExerciseIds.filter((wid) => !current.includes(wid));
+    if (missingCardioIds.length === 0) return;
+    const next = Array.from(new Set([...current, ...missingCardioIds]));
     updateWorkoutPlanLocal({ ...plan!, completedExerciseIds: next });
     syncSessionProgress(plan!.id, { completedExerciseIds: next });
   }
 
   function handleStartSession() {
+    if (isSessionLocked) return;
     const startedAt = new Date().toISOString();
     updateWorkoutPlanLocal({ ...plan!, startedAt });
     syncSessionProgress(plan!.id, { startedAt });
   }
 
   function handleFinishSession(durationSeconds: number) {
+    if (isSessionLocked) return;
     const completedAt = new Date().toISOString();
     updateWorkoutPlanLocal({
       ...plan!,
@@ -274,6 +287,7 @@ export default function SchedaDettaglioScreen() {
 
   const badgeLabel =
     sessionStatus === 'completed' ? 'Workout completato' : sessionStatus === 'skipped' ? 'Workout saltato' : 'Workout da fare';
+  const isSessionLocked = isWorkoutSessionCompleted(plan);
 
   function openExerciseDetail(exerciseId: string) {
     router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: plan!.id } });
@@ -291,7 +305,7 @@ export default function SchedaDettaglioScreen() {
       ]}>
       <BackHeader title="Dettaglio scheda" fallbackHref={(isCoach ? '/schede' : '/workout') as Href} />
 
-      {mode === 'edit' && isCoach ? (
+      {mode === 'edit' && isCoach && !isSessionLocked ? (
         <>
           <WorkoutPlanForm initialPlan={plan} onSave={handleSave} saveLabel="Salva modifiche" />
           {saving ? (
@@ -437,7 +451,7 @@ export default function SchedaDettaglioScreen() {
           </AppCard>
           )}
 
-          {isCoach && (
+          {isCoach && !isSessionLocked && (
             <View style={styles.statusChipsRow}>
               {SESSION_STATUSES.map((status) => {
                 const active = status === sessionStatus;
@@ -463,11 +477,12 @@ export default function SchedaDettaglioScreen() {
               label={cardioDone ? 'Cardio completato' : 'Cardio da fare'}
               onPress={toggleCardioDone}
               variant={cardioDone ? 'outline' : 'secondary'}
+              disabled={cardioDone || isSessionLocked}
               fullWidth
             />
           ) : null}
 
-          {isCoach ? <AppButton label="Modifica scheda" onPress={() => setMode('edit')} variant="outline" fullWidth /> : null}
+          {isCoach && !isSessionLocked ? <AppButton label="Modifica scheda" onPress={() => setMode('edit')} variant="outline" fullWidth /> : null}
 
           <View style={styles.exercisesLabelRow}>
             <ThemedText type="smallBold">Esercizi</ThemedText>
@@ -486,6 +501,7 @@ export default function SchedaDettaglioScreen() {
                   {group.items.map((we) => {
                     const exercise = resolveExercise(we.exerciseId);
                     if (!exercise) return null;
+                    const isExerciseLocked = isSessionLocked || (plan.completedExerciseIds ?? []).includes(we.id);
                     return (
                       <WorkoutExerciseRow
                         key={we.id}
@@ -493,8 +509,8 @@ export default function SchedaDettaglioScreen() {
                         workoutExercise={we}
                         compact
                         onPress={() => openExerciseDetail(exercise.id)}
-                        completed={!isCoach ? (plan.completedExerciseIds ?? []).includes(we.id) : undefined}
-                        onToggleComplete={!isCoach ? () => toggleExerciseCompleted(we.id) : undefined}
+                        completed={!isCoach ? isExerciseLocked : undefined}
+                        onToggleComplete={!isCoach && !isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
                       />
                     );
                   })}
@@ -504,14 +520,15 @@ export default function SchedaDettaglioScreen() {
             const we = group.items[0];
             const exercise = resolveExercise(we.exerciseId);
             if (!exercise) return null;
+            const isExerciseLocked = isSessionLocked || (plan.completedExerciseIds ?? []).includes(we.id);
             return (
               <WorkoutExerciseRow
                 key={we.id}
                 exercise={exercise}
                 workoutExercise={we}
                 onPress={() => openExerciseDetail(exercise.id)}
-                completed={!isCoach ? (plan.completedExerciseIds ?? []).includes(we.id) : undefined}
-                onToggleComplete={!isCoach ? () => toggleExerciseCompleted(we.id) : undefined}
+                completed={!isCoach ? isExerciseLocked : undefined}
+                onToggleComplete={!isCoach && !isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
               />
             );
           })}

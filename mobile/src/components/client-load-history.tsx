@@ -9,6 +9,7 @@ import { createExerciseProgressEntries, deleteExerciseProgressEntry } from '@/li
 import { formatDayMonth } from '@/lib/format-date';
 import { useAuthStore } from '@/store/auth-store';
 import { useTrainingStore } from '@/store/training-store';
+import { isWorkoutExerciseCompleted, isWorkoutExerciseLockedByLibraryId, isWorkoutSessionCompleted } from '@/lib/workout-progress';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { ExerciseProgressHistory, WorkoutPlan } from '@/types/training';
 
@@ -44,6 +45,7 @@ export function ClientLoadHistory({
   const currentRole = useAuthStore((s) => s.currentRole);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const currentCoachId = useAuthStore((s) => s.currentCoachId);
+  const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const { entries, loading, error, reload } = useExerciseProgressHistory(clientId);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -230,7 +232,8 @@ export function ClientLoadHistory({
                     <View key={session.date} style={[styles.session, { borderColor: colors.border }]}>
                       <Text style={[styles.sessionDate, { color: colors.ink }]}>{formatDayMonth(session.date)}</Text>
                       {session.sets.map((set, index) => {
-                        const canDelete = canManageEntry(set, currentRole, currentClientId, currentCoachId);
+                        const relatedPlan = workoutPlans.find((plan) => plan.id === set.workoutPlanId);
+                        const canDelete = canManageEntry(set, relatedPlan, currentRole, currentClientId, currentCoachId);
                         return (
                           <View key={set.id} style={styles.setRow}>
                             <View style={styles.setTopRow}>
@@ -316,6 +319,7 @@ function CoachLoadEntryForm({
   const selectedExerciseOption = exerciseOptions.find((option) => option.id === exerciseOptionId) ?? exerciseOptions[0] ?? null;
   const selectedExercise =
     selectedPlan?.exercises.find((item) => item.id === selectedExerciseOption?.workoutExerciseId) ?? selectedPlan?.exercises[0] ?? null;
+  const selectedExerciseLocked = selectedPlan ? isWorkoutExerciseCompleted(selectedPlan, selectedExerciseOption?.workoutExerciseId ?? null) : false;
   const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rows, setRows] = useState<SetDraft[]>([createSetDraft(1)]);
   const [nextDraftId, setNextDraftId] = useState(2);
@@ -335,6 +339,10 @@ function CoachLoadEntryForm({
 
   async function handleSave() {
     if (!selectedPlan || !selectedExercise || !selectedExerciseOption || saving) return;
+    if (selectedExerciseLocked) {
+      setError(isWorkoutSessionCompleted(selectedPlan) ? 'Workout completato: questa sessione non è più modificabile.' : 'Esercizio completato: non è più modificabile.');
+      return;
+    }
     const validRows = rows
       .map((row, index) => ({
         index,
@@ -356,6 +364,7 @@ function CoachLoadEntryForm({
         clientId,
         workoutPlanId: selectedExerciseOption.workoutPlanId,
         exerciseId: selectedExerciseOption.exerciseId,
+        workoutExerciseId: selectedExerciseOption.workoutExerciseId,
         setNumber: row.index + 1,
         weightKg: row.weight,
         repsCompleted: row.reps,
@@ -412,59 +421,70 @@ function CoachLoadEntryForm({
         onChange={setExerciseOptionId}
       />
       <AppTextField label="Data" value={sessionDate} onChangeText={setSessionDate} placeholder="YYYY-MM-DD" />
-      {rows.map((row, index) => (
-        <View key={row.id} style={[styles.seriesCard, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
-          <View style={styles.seriesHeader}>
-            <Text style={[styles.seriesTitle, { color: colors.ink }]}>Serie {index + 1}</Text>
-            {rows.length > 1 ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Elimina serie ${index + 1}`}
-                onPress={() => setRows((current) => current.filter((item) => item.id !== row.id))}
-                hitSlop={8}
-                style={styles.removeSeriesButton}>
-                <Trash2 size={15} color={colors.rust} />
-                <Text style={[styles.deleteLabel, { color: colors.rust }]}>Elimina</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          <View style={[styles.formRow, compactFields && styles.formRowStacked]}>
-            <View style={styles.fieldCell}>
-              <AppTextField
-                label="Kg"
-                value={row.weight}
-                onChangeText={(value) => setRows((current) => current.map((item) => (item.id === row.id ? { ...item, weight: value } : item)))}
-                keyboardType="decimal-pad"
-              />
+      {selectedExerciseLocked ? (
+        <AppCard style={styles.lockedCard}>
+          <Text style={[styles.warningText, { color: colors.ink }]}>
+            {isWorkoutSessionCompleted(selectedPlan) ? 'Workout completato' : 'Esercizio completato'}
+          </Text>
+          <Text style={[styles.warningText, { color: colors.inkSoft }]}>Le serie di questa sessione non possono essere modificate.</Text>
+        </AppCard>
+      ) : (
+        <>
+          {rows.map((row, index) => (
+            <View key={row.id} style={[styles.seriesCard, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
+              <View style={styles.seriesHeader}>
+                <Text style={[styles.seriesTitle, { color: colors.ink }]}>Serie {index + 1}</Text>
+                {rows.length > 1 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Elimina serie ${index + 1}`}
+                    onPress={() => setRows((current) => current.filter((item) => item.id !== row.id))}
+                    hitSlop={8}
+                    style={styles.removeSeriesButton}>
+                    <Trash2 size={15} color={colors.rust} />
+                    <Text style={[styles.deleteLabel, { color: colors.rust }]}>Elimina</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <View style={[styles.formRow, compactFields && styles.formRowStacked]}>
+                <View style={styles.fieldCell}>
+                  <AppTextField
+                    label="Kg"
+                    value={row.weight}
+                    onChangeText={(value) => setRows((current) => current.map((item) => (item.id === row.id ? { ...item, weight: value } : item)))}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+                <View style={styles.fieldCell}>
+                  <AppTextField
+                    label="Ripetizioni"
+                    value={row.reps}
+                    onChangeText={(value) => setRows((current) => current.map((item) => (item.id === row.id ? { ...item, reps: value } : item)))}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
             </View>
-            <View style={styles.fieldCell}>
-              <AppTextField
-                label="Ripetizioni"
-                value={row.reps}
-                onChangeText={(value) => setRows((current) => current.map((item) => (item.id === row.id ? { ...item, reps: value } : item)))}
-                keyboardType="number-pad"
-              />
-            </View>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Aggiungi serie"
+            onPress={() => {
+              setRows((current) => [...current, createSetDraft(nextDraftId)]);
+              setNextDraftId((current) => current + 1);
+            }}
+            style={styles.addSetButton}>
+            <Plus size={16} color={colors.moss} />
+            <Text style={[styles.addSetLabel, { color: colors.moss }]}>Aggiungi serie</Text>
+          </Pressable>
+          <AppTextField label="Note" value={notes} onChangeText={setNotes} multiline />
+          {error ? <Text style={[styles.warningText, { color: colors.rust }]}>{error}</Text> : null}
+          <View style={styles.formActions}>
+            <AppButton label="Salva carichi" onPress={handleSave} loading={saving} disabled={saving} fullWidth />
+            <AppButton label="Annulla" onPress={onCancel} variant="outline" disabled={saving} fullWidth />
           </View>
-        </View>
-      ))}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Aggiungi serie"
-        onPress={() => {
-          setRows((current) => [...current, createSetDraft(nextDraftId)]);
-          setNextDraftId((current) => current + 1);
-        }}
-        style={styles.addSetButton}>
-        <Plus size={16} color={colors.moss} />
-        <Text style={[styles.addSetLabel, { color: colors.moss }]}>Aggiungi serie</Text>
-      </Pressable>
-      <AppTextField label="Note" value={notes} onChangeText={setNotes} multiline />
-      {error ? <Text style={[styles.warningText, { color: colors.rust }]}>{error}</Text> : null}
-      <View style={styles.formActions}>
-        <AppButton label="Salva carichi" onPress={handleSave} loading={saving} disabled={saving} fullWidth />
-        <AppButton label="Annulla" onPress={onCancel} variant="outline" disabled={saving} fullWidth />
-      </View>
+        </>
+      )}
     </AppCard>
   );
 }
@@ -582,7 +602,14 @@ function LoadStat({ label, value, highlighted = false }: { label: string; value:
   );
 }
 
-function canManageEntry(entry: ExerciseProgressHistory, role: string | null, currentClientId: string | null, currentCoachId: string | null) {
+function canManageEntry(
+  entry: ExerciseProgressHistory,
+  plan: WorkoutPlan | null | undefined,
+  role: string | null,
+  currentClientId: string | null,
+  currentCoachId: string | null,
+) {
+  if (!plan || isWorkoutSessionCompleted(plan) || isWorkoutExerciseLockedByLibraryId(plan, entry.exerciseId)) return false;
   if (role === 'cliente') return entry.createdByRole === 'client' && entry.createdBy === currentClientId;
   if (role === 'coach') return entry.createdByRole === 'coach' && entry.createdBy === currentCoachId;
   return false;
@@ -652,6 +679,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   warningCard: {
+    gap: AppSpacing[2],
+  },
+  lockedCard: {
     gap: AppSpacing[2],
   },
   successCard: {

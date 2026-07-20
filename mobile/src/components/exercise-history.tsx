@@ -5,9 +5,9 @@ import { Card } from './card';
 import { ThemedText } from './themed-text';
 
 import { Radius, Spacing } from '@/constants/theme';
+import { useExerciseProgressHistory } from '@/hooks/use-exercise-progress-history';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDayMonth } from '@/lib/format-date';
-import { useTrainingStore } from '@/store/training-store';
 import type { ExerciseProgressHistory } from '@/types/training';
 
 // Ogni record di ExerciseProgressHistory rappresenta UNA serie eseguita (non
@@ -31,8 +31,7 @@ export function ExerciseHistory({
   const { width } = useWindowDimensions();
   const compact = width < 360;
   const [showAll, setShowAll] = useState(false);
-
-  const progressHistory = useTrainingStore((s) => s.progressHistory);
+  const { entries: progressHistory } = useExerciseProgressHistory(clientId);
 
   const entries = useMemo(
     () =>

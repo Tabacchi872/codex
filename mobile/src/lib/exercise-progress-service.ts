@@ -1,6 +1,8 @@
 import { getCurrentSession } from './auth-service';
 import { supabase, supabaseConfig } from './supabase';
 import { isValidUuid } from './workout-plan-service';
+import { isWorkoutExerciseCompleted, isWorkoutExerciseLockedByLibraryId, isWorkoutSessionCompleted } from './workout-progress';
+import { getWorkoutPlanById } from './workout-plan-service';
 
 import type { ExerciseProgressHistory } from '@/types/training';
 
@@ -9,6 +11,7 @@ type ServiceResult<T> = { ok: true; data: T } | { ok: false; code: string; messa
 export type ExerciseProgressEntryInput = {
   clientId: string;
   exerciseId: string;
+  workoutExerciseId: string;
   workoutPlanId: string;
   setNumber: number;
   repsCompleted: number;
@@ -80,9 +83,22 @@ export async function createExerciseProgressEntries(
   if (entries.some((entry) => entry.clientId !== first.clientId || entry.workoutPlanId !== first.workoutPlanId)) {
     return { ok: false, code: 'mixed_entries', message: 'Le serie devono appartenere alla stessa scheda.' };
   }
+  if (!isValidUuid(first.workoutExerciseId)) {
+    return { ok: false, code: 'invalid_payload', message: 'Esercizio non valido: riapri la scheda e riprova.' };
+  }
 
   const actor = await resolveProgressActor(authUserId, first.clientId, first.workoutPlanId || null);
   if (!actor.ok) return actor;
+
+  const workoutPlan = await getWorkoutPlanById(first.workoutPlanId);
+  if (!workoutPlan.ok) return { ok: false, code: workoutPlan.code, message: workoutPlan.message };
+  if (!workoutPlan.data) return { ok: false, code: 'workout_not_found', message: 'Scheda non trovata o non accessibile.' };
+  if (isWorkoutSessionCompleted(workoutPlan.data)) {
+    return { ok: false, code: 'workout_locked', message: 'Questo workout è già completato e non può essere modificato.' };
+  }
+  if (isWorkoutExerciseCompleted(workoutPlan.data, first.workoutExerciseId)) {
+    return { ok: false, code: 'exercise_locked', message: 'Questo esercizio è già completato e non può essere modificato.' };
+  }
 
   const nowIso = new Date().toISOString();
   const payload = entries.map((entry) => ({
@@ -114,6 +130,36 @@ export async function createExerciseProgressEntries(
 export async function deleteExerciseProgressEntry(id: string): Promise<ServiceResult<null>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
   if (!isValidUuid(id)) return { ok: true, data: null };
+
+  const { data: entry, error: loadError } = await supabase
+    .from('exercise_progress_history')
+    .select('id,client_id,coach_id,exercise_id,workout_plan_id,created_by,created_by_role')
+    .eq('id', id)
+    .maybeSingle();
+  if (loadError) return dbError('progress_delete_load_failed', 'Impossibile verificare il carico da eliminare.', loadError);
+  if (!entry) return { ok: true, data: null };
+  if (!entry.workout_plan_id) return { ok: false, code: 'workout_not_found', message: 'Scheda non trovata o non accessibile.' };
+
+  const session = await getCurrentSession();
+  const authUserId = session.ok ? (session.data?.user.id ?? null) : null;
+  if (!authUserId) return { ok: false, code: 'not_authenticated', message: 'Sessione non valida. Rifai il login.' };
+
+  const actor = await resolveProgressActor(authUserId, String(entry.client_id), String(entry.workout_plan_id));
+  if (!actor.ok) return actor;
+
+  if (String(entry.created_by) !== authUserId || String(entry.created_by_role) !== actor.data.role) {
+    return { ok: false, code: 'forbidden', message: 'Non sei autorizzato a eliminare questo carico.' };
+  }
+
+  const workoutPlan = await getWorkoutPlanById(String(entry.workout_plan_id));
+  if (!workoutPlan.ok) return { ok: false, code: workoutPlan.code, message: workoutPlan.message };
+  if (!workoutPlan.data) return { ok: false, code: 'workout_not_found', message: 'Scheda non trovata o non accessibile.' };
+  if (isWorkoutSessionCompleted(workoutPlan.data)) {
+    return { ok: false, code: 'workout_locked', message: 'Questo workout è già completato e non può essere modificato.' };
+  }
+  if (isWorkoutExerciseLockedByLibraryId(workoutPlan.data, String(entry.exercise_id))) {
+    return { ok: false, code: 'exercise_locked', message: 'Questo esercizio è già completato e non può essere modificato.' };
+  }
 
   const { error } = await supabase.from('exercise_progress_history').delete().eq('id', id);
   if (error) return dbError('progress_delete_failed', 'Impossibile eliminare il carico.', error);

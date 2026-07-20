@@ -23,17 +23,25 @@ type SetRow = { weight: string; reps: string };
 export function ExerciseSetLogger({
   clientId,
   exerciseId,
+  workoutExerciseId,
   workoutPlanId,
   plannedSets,
   restSeconds,
   onRequestRest,
+  readOnly = false,
+  lockedTitle = 'Esercizio completato',
+  lockedDescription = 'I dati dell’esercizio completato non possono essere modificati.',
 }: {
   clientId: string;
   exerciseId: string;
+  workoutExerciseId: string;
   workoutPlanId: string;
   plannedSets: number;
   restSeconds: number;
   onRequestRest: () => void;
+  readOnly?: boolean;
+  lockedTitle?: string;
+  lockedDescription?: string;
 }) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
@@ -45,6 +53,19 @@ export function ExerciseSetLogger({
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (readOnly) {
+    return (
+      <Card style={styles.container}>
+        <View style={styles.headerRow}>
+          <ThemedText type="smallBold">{lockedTitle}</ThemedText>
+        </View>
+        <ThemedText type="small" themeColor="textSecondary">
+          {lockedDescription}
+        </ThemedText>
+      </Card>
+    );
+  }
 
   function updateRow(index: number, field: keyof SetRow, value: string) {
     setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
@@ -72,6 +93,7 @@ export function ExerciseSetLogger({
       entries.push({
         clientId,
         exerciseId,
+        workoutExerciseId,
         workoutPlanId,
         performedAt: nowIso,
         sessionDate: nowIso.slice(0, 10),
