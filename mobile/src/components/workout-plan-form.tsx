@@ -18,10 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
 import { listCustomExercisesForCurrentCoach } from '@/lib/fitcoach-exercises-service';
 import { supabaseConfig } from '@/lib/supabase';
-import { getActiveSubscription } from '@/lib/workout-progress';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
-import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
 import type { Exercise, WorkoutExercise, WorkoutPlan } from '@/types/training';
 
 function newWorkoutExercise(exerciseId: string, order: number): WorkoutExercise {
@@ -52,7 +49,6 @@ export function WorkoutPlanForm({
   const router = useRouter();
   const { width } = useWindowDimensions();
   const clients = useClientStore((s) => s.clients);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const [name, setName] = useState(initialPlan?.name ?? '');
   const [clientId, setClientId] = useState(initialPlan?.clientId ?? initialClientId ?? clients[0]?.id ?? '');
   const [startDate, setStartDate] = useState(initialPlan?.startDate ?? new Date().toISOString().slice(0, 10));
@@ -60,7 +56,6 @@ export function WorkoutPlanForm({
   const [scheduledTime, setScheduledTime] = useState(initialPlan?.scheduledTime ?? '');
   const [dayLabel, setDayLabel] = useState(initialPlan?.dayLabel ?? '');
   const [weekLabel, setWeekLabel] = useState(initialPlan?.weekLabel ?? '');
-  const [subscriptionId, setSubscriptionId] = useState(initialPlan?.subscriptionId ?? '');
   const [exercises, setExercises] = useState<WorkoutExercise[]>(initialPlan?.exercises ?? []);
   const [showPicker, setShowPicker] = useState(false);
   const [showYMovePicker, setShowYMovePicker] = useState(false);
@@ -69,19 +64,8 @@ export function WorkoutPlanForm({
   const [error, setError] = useState<string | null>(null);
   const { resolve: resolveExercise, registerExercise } = useExerciseResolver();
 
-  const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
-  const activeSubscription = getActiveSubscription(subscriptions, clientId);
   const stackFieldPairs = width < 390;
   const catalogExercises = [...EXERCISE_LIBRARY, ...customExercises];
-
-  useEffect(() => {
-    if (initialPlan?.subscriptionId) return;
-    if (!clientId) return;
-    setSubscriptionId((current) => {
-      if (current && clientSubscriptions.some((subscription) => subscription.id === current)) return current;
-      return activeSubscription?.id ?? '';
-    });
-  }, [activeSubscription?.id, clientId, initialPlan?.subscriptionId]);
 
   useEffect(() => {
     if (!supabaseConfig.isConfigured) return;
@@ -173,7 +157,7 @@ export function WorkoutPlanForm({
       scheduledTime: scheduledTime.trim() || undefined,
       dayLabel: dayLabel.trim() || undefined,
       weekLabel: weekLabel.trim() || undefined,
-      subscriptionId: subscriptionId || undefined,
+      subscriptionId: undefined,
       exercises,
       sessionStatus: initialPlan?.sessionStatus,
       startedAt: initialPlan?.startedAt,
@@ -233,35 +217,6 @@ export function WorkoutPlanForm({
             <ThemedTextInput value={weekLabel} onChangeText={setWeekLabel} placeholder="Derivata automaticamente" />
           </Field>
         </View>
-
-        <Field label="Abbonamento collegato (opzionale)">
-          {clientSubscriptions.length === 0 ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Questo cliente non ha ancora un abbonamento. Crealo da "Aggiorna abbonamento" nel suo profilo.
-            </ThemedText>
-          ) : (
-            <View style={styles.chipsRow}>
-              {clientSubscriptions.map((subscription) => {
-                const active = subscription.id === subscriptionId;
-                return (
-                  <Pressable
-                    key={subscription.id}
-                    onPress={() => setSubscriptionId(active ? '' : subscription.id)}>
-                    <View
-                      style={[
-                        styles.chip,
-                        { backgroundColor: active ? theme.primary : theme.background, borderColor: active ? theme.primary : theme.border },
-                      ]}>
-                      <ThemedText type="small" themeColor={active ? 'onPrimary' : 'text'}>
-                        {subscription.packageName} ({SUBSCRIPTION_STATUS_LABEL[subscription.status]})
-                      </ThemedText>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-        </Field>
       </Card>
 
       <ThemedText type="smallBold" style={styles.exercisesLabel}>

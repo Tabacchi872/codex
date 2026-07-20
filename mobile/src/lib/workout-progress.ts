@@ -1,53 +1,20 @@
 import { getExerciseById } from '@/data/exercise-library';
 import type { Client } from '@/types/client';
-import type { SubscriptionPackage } from '@/types/subscription';
 import type { WorkoutPlan } from '@/types/training';
 
-// Totale allenamenti del pacchetto quando il cliente non ha ancora un valore
-// esplicito (clienti creati prima dell'introduzione del campo, vedi types/client.ts).
-// Non è "il numero vero" per quel cliente: è un default dichiarato, sostituito
-// non appena il coach imposta un valore reale.
-export const DEFAULT_PURCHASED_WORKOUTS = 12;
-
-export function getPurchasedWorkoutsTotal(client: Client | null | undefined): number {
-  return client?.purchasedWorkoutsTotal ?? DEFAULT_PURCHASED_WORKOUTS;
-}
-
-// Abbonamento "corrente" del cliente: quello attivo più recente (per startDate).
-// Se non c'è nessun abbonamento attivo, null — il chiamante ricade sul vecchio
-// meccanismo (Client.purchasedWorkoutsTotal + conteggio sessioni completate),
-// così i clienti creati prima di questo sistema restano validi senza migrazione.
-export function getActiveSubscription(
-  subscriptions: SubscriptionPackage[],
-  clientId: string | null | undefined
-): SubscriptionPackage | null {
-  if (!clientId) return null;
-  const active = subscriptions
-    .filter((s) => s.clientId === clientId && s.status === 'active')
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  return active[0] ?? null;
-}
-
-// Contatore "completati/acquistati" mostrato al cliente (mai "rimanenti").
-// Preferisce l'abbonamento reale se esiste; altrimenti usa il vecchio calcolo
-// derivato dalle sessioni completate, per non rompere i clienti senza
-// abbonamento esplicito.
+// Contatore schede: misura esclusivamente le schede reali assegnate al cliente.
+// Il parametro subscriptions resta per compatibilita' con chiamanti legacy, ma
+// non e' piu' fonte di verita' per il progresso cliente.
 export function getWorkoutCounter(
-  subscriptions: SubscriptionPackage[],
+  _subscriptions: unknown[],
   plans: WorkoutPlan[],
   client: Client | null | undefined,
   clientId: string | null | undefined
 ): { completed: number; total: number } {
-  const subscription = getActiveSubscription(subscriptions, clientId);
-  if (subscription) {
-    return {
-      completed: getCompletedWorkoutsForSubscription(plans, clientId ?? null, subscription),
-      total: subscription.totalWorkoutsPurchased,
-    };
-  }
+  const clientPlans = getClientPlans(plans, clientId ?? null);
   return {
-    completed: getCompletedWorkoutsCount(plans, clientId ?? null),
-    total: getPurchasedWorkoutsTotal(client),
+    completed: countUniqueCompletedPlans(clientPlans),
+    total: client ? clientPlans.length : 0,
   };
 }
 
@@ -58,35 +25,12 @@ export function getClientPlans(plans: WorkoutPlan[], clientId: string | null): W
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 }
 
-// Solo completati/totale acquistati, mai "rimanenti" (regola esplicita del prodotto).
+// Solo schede completate tra quelle assegnate al cliente.
 export function getCompletedWorkoutsCount(plans: WorkoutPlan[], clientId: string | null): number {
   return countUniqueCompletedPlans(getClientPlans(plans, clientId));
 }
 
-export function getCompletedWorkoutsForSubscription(
-  plans: WorkoutPlan[],
-  clientId: string | null,
-  subscription: SubscriptionPackage | null | undefined
-): number {
-  if (!subscription) return getCompletedWorkoutsCount(plans, clientId);
-
-  const start = parsePlanDate(subscription.startDate);
-  const end = subscription.endDate ? parsePlanDate(subscription.endDate) : null;
-
-  return countUniqueCompletedPlans(
-    getClientPlans(plans, clientId).filter((plan) => {
-      if (plan.subscriptionId) return plan.subscriptionId === subscription.id;
-
-      const planDate = parsePlanDate(plan.completedAt ?? plan.startDate);
-      if (!planDate || !start) return false;
-      if (planDate.getTime() < start.getTime()) return false;
-      if (end && planDate.getTime() > end.getTime()) return false;
-      return true;
-    })
-  );
-}
-
-// Il prossimo allenamento da fare: il più vicino nel tempo tra quelli non ancora
+// Il prossimo allenamento da fare: il piu' vicino nel tempo tra quelli non ancora
 // completati/saltati, non semplicemente il primo della lista.
 export function getNextWorkoutPlan(plans: WorkoutPlan[], clientId: string | null): WorkoutPlan | null {
   const todo = getClientPlans(plans, clientId).filter((p) => (p.sessionStatus ?? 'todo') === 'todo');
@@ -94,8 +38,7 @@ export function getNextWorkoutPlan(plans: WorkoutPlan[], clientId: string | null
 }
 
 // "Settimana" della sessione: posizione (1-based) della scheda tra tutte quelle
-// del cliente ordinate per data, non un campo salvato a parte — evita di
-// duplicare un'informazione già derivabile da startDate.
+// del cliente ordinate per data, non un campo salvato a parte.
 export function getSessionWeekNumber(plans: WorkoutPlan[], plan: WorkoutPlan): number {
   const ordered = getClientPlans(plans, plan.clientId);
   const index = ordered.findIndex((p) => p.id === plan.id);
@@ -103,7 +46,7 @@ export function getSessionWeekNumber(plans: WorkoutPlan[], plan: WorkoutPlan): n
 }
 
 // "Giorno N" mostrato come badge: il numero del giorno della settimana di
-// startDate (Lunedì = 1 ... Domenica = 7), non un contatore salvato a parte.
+// startDate (Lunedi' = 1 ... Domenica = 7), non un contatore salvato a parte.
 export function getSessionDayNumber(plan: WorkoutPlan): number {
   const jsDay = new Date(plan.startDate).getDay();
   return jsDay === 0 ? 7 : jsDay;
@@ -111,7 +54,7 @@ export function getSessionDayNumber(plan: WorkoutPlan): number {
 
 // Etichetta mostrata per "giorno"/"settimana": usa l'override esplicito del
 // coach (plan.dayLabel/weekLabel, impostabile in creazione scheda) se presente,
-// altrimenti ricade sul valore derivato automaticamente come già accadeva.
+// altrimenti ricade sul valore derivato automaticamente come gia' accadeva.
 export function getSessionDayLabel(plan: WorkoutPlan): string {
   return plan.dayLabel ?? String(getSessionDayNumber(plan));
 }
@@ -131,7 +74,7 @@ export function getExerciseCompletionProgress(plan: WorkoutPlan): { completed: n
 // Gli esercizi cardio non sono un campo a parte sulla scheda: sono WorkoutExercise
 // il cui Exercise di libreria ha muscleGroup 'Cardio/Funzionale'. Il bottone
 // "Cardio da fare" mostrato nel dettaglio scheda esiste solo se questo elenco
-// non è vuoto (nessun bottone finto quando la scheda non ha cardio).
+// non e' vuoto.
 export function getCardioExerciseIds(plan: WorkoutPlan): string[] {
   return plan.exercises
     .filter((we) => getExerciseById(we.exerciseId)?.muscleGroup === 'Cardio/Funzionale')
@@ -145,11 +88,4 @@ function countUniqueCompletedPlans(plans: WorkoutPlan[]): number {
     completedIds.add(plan.id);
   }
   return completedIds.size;
-}
-
-function parsePlanDate(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date;
 }

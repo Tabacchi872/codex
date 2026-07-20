@@ -12,7 +12,6 @@ import { getWorkoutCounter } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
 import { useCheckinStore } from '@/store/checkin-store';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { getClientById } from '@/lib/client-helpers';
 
@@ -26,11 +25,10 @@ export default function ProgressiScreen() {
   const clients = useClientStore((s) => s.clients);
   const checkins = useCheckinStore((s) => s.checkins);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
 
   const client = getClientById(clients, currentClientId);
-  const { completed: completedCount, total: purchasedTotal } = getWorkoutCounter(
-    subscriptions,
+  const { completed: completedCount, total: workoutTotal } = getWorkoutCounter(
+    [],
     workoutPlans,
     client,
     currentClientId
@@ -55,10 +53,10 @@ export default function ProgressiScreen() {
         <Card style={styles.kpiRow}>
           <View style={styles.kpiStat}>
             <ThemedText type="title" style={styles.kpiNumber}>
-              {completedCount}/{purchasedTotal}
+              {completedCount}/{workoutTotal}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              workout completati
+              schede completate
             </ThemedText>
           </View>
         </Card>

@@ -22,20 +22,12 @@ import { YmoveAutoLinkBanner } from '@/components/ymove-autolink-banner';
 import { useCoachClients } from '@/hooks/use-coach-clients';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
 import { logCoachNavPress } from '@/lib/coach-navigation';
-import { formatDayMonth } from '@/lib/format-date';
 import { getWorkoutCounter } from '@/lib/workout-progress';
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import type { Client } from '@/types/client';
-import {
-  computeSubscriptionStatus,
-  getCurrentSubscription,
-  type ComputedSubscriptionStatus,
-  type SubscriptionPackage,
-} from '@/types/subscription';
+import type { Client, CoachClientConnectionStatus } from '@/types/client';
 
 const COACH_HERO_IMAGE_DARK = require('../../assets/images/coach-dashboard-hero.png');
 const COACH_HERO_IMAGE_LIGHT = require('../../assets/images/coach-dashboard-hero-light.png');
@@ -57,15 +49,11 @@ export default function DashboardScreen() {
   const heroOverlayColor = isLight ? colors.surface : colors.background;
   const currentRole = useAuthStore((s) => s.currentRole);
   const { clients, loading: clientsLoading } = useCoachClients();
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
-  const subscriptionsHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const appointments = useAppointmentStore((s) => s.appointments);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
 
-  const statuses = clients.map((client) => getDashboardClientStatus(client, getCurrentSubscription(subscriptions, client.id)));
-  const activeClients = statuses.filter((s) => s === 'active').length;
-  const expiringClients = statuses.filter((s) => s === 'expiring').length;
-  const expiredClients = statuses.filter((s) => s === 'expired').length;
+  const activeClients = clients.filter((client) => getDashboardClientStatus(client) === 'active').length;
+  const suspendedClients = clients.filter((client) => getDashboardClientStatus(client) === 'suspended').length;
   const nowKey = new Date().toISOString().slice(0, 10);
   const todayAppointments = appointments
     .filter((a) => a.status === 'scheduled' && a.date === nowKey)
@@ -85,7 +73,7 @@ export default function DashboardScreen() {
     return <Redirect href="/cliente-home" />;
   }
 
-  if (clientsLoading || !subscriptionsHydrated) {
+  if (clientsLoading) {
     return (
       <AppScreen scroll={false}>
         <View style={styles.loading}>
@@ -128,8 +116,8 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.kpiRow}>
-          <KpiCard icon={Users} label="Clienti attivi" value={String(activeClients)} delta={`+${expiringClients}`} detail="in scadenza" />
-          <KpiCard icon={ClipboardList} label="Schede attive" value={String(activeWorkoutPlans)} delta={`+${expiredClients}`} detail="da rivedere" />
+          <KpiCard icon={Users} label="Clienti attivi" value={String(activeClients)} delta={`${suspendedClients}`} detail="sospesi" />
+          <KpiCard icon={ClipboardList} label="Schede attive" value={String(activeWorkoutPlans)} delta="+0" detail="da rivedere" />
           <KpiCard icon={CheckCircle2} label="Check-in oggi" value={String(todayAppointments.length)} delta="+0" detail="vs ieri" />
           <KpiCard icon={TrendingUp} label="Fatturato" value="-" delta="n/d" detail="dato non disponibile" featured />
         </View>
@@ -143,16 +131,17 @@ export default function DashboardScreen() {
           <EmptyState text="Nessun cliente collegato." />
         ) : (
           recentClients.map((client, index) => {
-            const counter = getWorkoutCounter(subscriptions, workoutPlans, client, client.id);
+            const counter = getWorkoutCounter([], workoutPlans, client, client.id);
             const progress = counter.total > 0 ? Math.min(counter.completed / counter.total, 1) : 0;
-            const subscription = getCurrentSubscription(subscriptions, client.id);
+            const status = getDashboardClientStatus(client);
             return (
               <ClientRow
                 key={client.id}
                 client={client}
                 counter={`${counter.completed}/${counter.total}`}
                 progress={progress}
-                expiresAt={subscription?.endDate}
+                status={status}
+                assignedPlans={counter.total}
                 showBorder={index > 0}
                 onPress={() => navigate('dashboard-cliente-recente', `/clienti/${client.id}`)}
               />
@@ -297,14 +286,16 @@ function ClientRow({
   client,
   counter,
   progress,
-  expiresAt,
+  status,
+  assignedPlans,
   showBorder,
   onPress,
 }: {
   client: Client;
   counter: string;
   progress: number;
-  expiresAt?: string;
+  status: Exclude<CoachClientConnectionStatus, 'removed'>;
+  assignedPlans: number;
   showBorder: boolean;
   onPress: () => void;
 }) {
@@ -321,18 +312,18 @@ function ClientRow({
           {clientFullName(client)}
         </Text>
         <Text style={[styles.clientPlan, { color: colors.inkSoft }]} numberOfLines={1}>
-          Piano <Text style={{ color: colors.moss }}>{client.status === 'attivo' ? 'Premium' : client.status === 'in_pausa' ? 'Basic' : 'Scaduto'}</Text>
+          Stato cliente <Text style={{ color: status === 'suspended' ? colors.amber : colors.moss }}>{status === 'suspended' ? 'Sospeso' : 'Attivo'}</Text>
         </Text>
         <View style={styles.expiryRow}>
           <CalendarDays size={13} color={colors.inkFaint} />
           <Text style={[styles.expiryText, { color: colors.inkFaint }]} numberOfLines={1}>
-            {expiresAt ? `Scade il ${formatDayMonth(expiresAt)}` : 'Scadenza non impostata'}
+            {assignedPlans === 1 ? '1 scheda assegnata' : `${assignedPlans} schede assegnate`}
           </Text>
         </View>
       </View>
       <View style={styles.clientProgress}>
         <Text style={[styles.clientCounter, { color: colors.ink }]}>{counter}</Text>
-        <Text style={[styles.clientCounterLabel, { color: colors.inkSoft }]}>Allenamenti</Text>
+        <Text style={[styles.clientCounterLabel, { color: colors.inkSoft }]}>Schede</Text>
         <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSubtle }]}>
           <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: colors.moss }]} />
         </View>
@@ -404,11 +395,8 @@ function EmptyState({ text, icon: Icon = CalendarDays }: { text: string; icon?: 
   );
 }
 
-function getDashboardClientStatus(client: Client, subscription: SubscriptionPackage | null): ComputedSubscriptionStatus {
-  if (subscription) return computeSubscriptionStatus(subscription);
-  if (client.status === 'attivo') return 'active';
-  if (client.status === 'in_pausa') return 'expiring';
-  return 'expired';
+function getDashboardClientStatus(client: Client): Exclude<CoachClientConnectionStatus, 'removed'> {
+  return client.connectionStatus === 'suspended' ? 'suspended' : 'active';
 }
 
 const styles = StyleSheet.create({

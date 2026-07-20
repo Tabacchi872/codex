@@ -28,7 +28,6 @@ import { getCardioExerciseIds, getExerciseCompletionProgress } from '@/lib/worko
 import { deleteWorkoutPlan as deleteWorkoutPlanRemote, updateWorkoutPlan as updateWorkoutPlanRemote, updateWorkoutSessionProgress } from '@/lib/workout-plan-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { SESSION_STATUS_LABEL, type Exercise, type WorkoutExercise, type WorkoutPlan, type WorkoutSessionStatus } from '@/types/training';
 
@@ -65,7 +64,6 @@ export default function SchedaDettaglioScreen() {
   const replaceWorkoutPlanLocal = useTrainingStore((s) => s.replaceWorkoutPlan);
   const deleteWorkoutPlanLocal = useTrainingStore((s) => s.deleteWorkoutPlan);
   const clients = useClientStore((s) => s.clients);
-  const incrementSubscriptionCompletedWorkouts = useSubscriptionStore((s) => s.incrementCompletedWorkouts);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [saving, setSaving] = useState(false);
@@ -263,11 +261,6 @@ export default function SchedaDettaglioScreen() {
   }
 
   function handleFinishSession(durationSeconds: number) {
-    // Guard esplicito: se per qualche motivo questa funzione venisse invocata
-    // due volte sulla stessa sessione (non dovrebbe accadere, vedi
-    // WorkoutSessionControls: i controlli "Fine allenamento" spariscono a
-    // sessione completata), non incrementare due volte il contatore abbonamento.
-    const alreadyCompleted = plan!.sessionStatus === 'completed';
     const completedAt = new Date().toISOString();
     updateWorkoutPlanLocal({
       ...plan!,
@@ -277,9 +270,6 @@ export default function SchedaDettaglioScreen() {
       completedAt,
     });
     syncSessionProgress(plan!.id, { startedAt: null, durationSeconds, sessionStatus: 'completed', completedAt });
-    if (!alreadyCompleted && plan!.subscriptionId) {
-      incrementSubscriptionCompletedWorkouts(plan!.subscriptionId);
-    }
   }
 
   const badgeLabel =
