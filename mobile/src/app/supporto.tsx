@@ -1,15 +1,15 @@
-import * as Clipboard from 'expo-clipboard';
 import { Redirect } from 'expo-router';
 import { Send } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, AppCard, AppIconButton, AppTextField, BackHeader } from '@/components/ui';
+import { CoachInviteCodeCard } from '@/components/coach-invite-code-card';
+import { AppCard, AppIconButton, AppTextField, BackHeader } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useSuperadminStore } from '@/store/superadmin-store';
-import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { CoachSupportMessage } from '@/types/superadmin';
 
 export default function CoachSupportScreen() {
@@ -23,7 +23,6 @@ export default function CoachSupportScreen() {
   const sendSupportMessageAsCoach = useSuperadminStore((s) => s.sendSupportMessageAsCoach);
   const markCoachSupportReadByCoach = useSuperadminStore((s) => s.markCoachSupportReadByCoach);
   const [draft, setDraft] = useState('');
-  const [copyFeedback, setCopyFeedback] = useState('');
 
   const coach = coaches.find((item) => item.id === currentCoachId) ?? coaches.find((item) => item.email === currentUserEmail) ?? coaches[0];
   const conversationMessages = useMemo(
@@ -49,12 +48,6 @@ export default function CoachSupportScreen() {
     setDraft('');
   }
 
-  async function copyCoachCode() {
-    if (!coach?.coachCode) return;
-    await Clipboard.setStringAsync(coach.coachCode);
-    setCopyFeedback('Codice copiato.');
-  }
-
   const sendDisabled = !draft.trim();
 
   return (
@@ -72,18 +65,9 @@ export default function CoachSupportScreen() {
             </Text>
           </View>
 
+          <CoachInviteCodeCard title="Codice coach" copyLabel="Copia" />
+
           <AppCard style={styles.messagesCard}>
-            <View style={[styles.codeBox, { borderColor: colors.border }]}>
-              <View style={styles.codeText}>
-                <Text style={[styles.codeLabel, { color: colors.ink }]}>Codice coach</Text>
-                <Text style={[styles.codeValue, { color: colors.coral }]}>{coach.coachCode}</Text>
-                <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-                  {coach.coachCodeActive ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
-                </Text>
-              </View>
-              <AppButton label="Copia" onPress={copyCoachCode} variant="outline" size="sm" />
-            </View>
-            {copyFeedback ? <Text style={[styles.smallText, { color: colors.moss, fontWeight: '600' }]}>{copyFeedback}</Text> : null}
             {conversationMessages.length === 0 ? (
               <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun messaggio ancora. Scrivi al superadmin qui sotto.</Text>
             ) : (
@@ -160,28 +144,6 @@ const styles = StyleSheet.create({
   messagesCard: {
     gap: AppSpacing[2],
     minHeight: 320,
-  },
-  codeBox: {
-    alignItems: 'center',
-    borderRadius: AppRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-    justifyContent: 'space-between',
-    padding: AppSpacing[2],
-  },
-  codeText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  codeLabel: {
-    fontSize: AppFontSize.base,
-    fontWeight: '700',
-  },
-  codeValue: {
-    fontSize: AppFontSize.base,
-    fontWeight: '700',
-    marginTop: 1,
   },
   smallText: {
     fontSize: AppFontSize.sm,

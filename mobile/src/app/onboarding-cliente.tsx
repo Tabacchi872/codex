@@ -277,7 +277,7 @@ function CoachCodeStep({ value, onChange }: { value: string; onChange: (value: s
         <TextInput
           value={value}
           onChangeText={onChange}
-          placeholder="FC-8KQ4-MR2P"
+          placeholder="FC-XXXX-XXXX"
           placeholderTextColor={colors.inkFaint}
           autoCapitalize="characters"
           style={[styles.codeInput, { color: colors.ink }]}

@@ -15,6 +15,7 @@ type AppButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  accessibilityLabel?: string;
 };
 
 const HEIGHT: Record<AppButtonSize, number> = { sm: 36, md: 42, lg: 52 };
@@ -34,6 +35,7 @@ export function AppButton({
   disabled = false,
   loading = false,
   fullWidth = false,
+  accessibilityLabel,
 }: AppButtonProps) {
   const { colors } = useAppTheme();
 
@@ -50,7 +52,7 @@ export function AppButton({
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [
         styles.base,
         {

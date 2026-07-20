@@ -100,7 +100,7 @@ const demoCoaches: DemoCoachAccount[] = [
       sdiCode: '0000000',
       billingEmail: 'fatture@fitcoach.it',
     },
-    coachCode: 'FC-8KQ4-MR2P',
+    coachCode: 'FC-DEMO-0001',
     coachCodeActive: true,
     planCode: 'pro',
     billingStatus: 'active',
@@ -181,8 +181,8 @@ const demoCoaches: DemoCoachAccount[] = [
 ];
 
 const demoCoachClients: DemoCoachClient[] = [
-  { id: 'client_demo_1', coachId: 'coach_demo_1', name: 'Anna Rossi', contact: 'anna.rossi@email.it', status: 'active', createdAt: '2026-06-01', linkedByCode: 'FC-8KQ4-MR2P' },
-  { id: 'client_demo_2', coachId: 'coach_demo_1', name: 'Davide Neri', contact: '+39 320 111 2200', status: 'active', createdAt: '2026-06-10', linkedByCode: 'FC-8KQ4-MR2P' },
+  { id: 'client_demo_1', coachId: 'coach_demo_1', name: 'Anna Rossi', contact: 'anna.rossi@email.it', status: 'active', createdAt: '2026-06-01', linkedByCode: 'FC-DEMO-0001' },
+  { id: 'client_demo_2', coachId: 'coach_demo_1', name: 'Davide Neri', contact: '+39 320 111 2200', status: 'active', createdAt: '2026-06-10', linkedByCode: 'FC-DEMO-0001' },
   { id: 'client_demo_3', coachId: 'coach_demo_2', name: 'Elena Bianchi', contact: 'elena.bianchi@email.it', status: 'trial', createdAt: '2026-07-05', linkedByCode: 'FC-5VHD-9NTA' },
   { id: 'client_demo_4', coachId: 'coach_demo_3', name: 'Matteo Gallo', contact: '+39 320 111 2201', status: 'past_due', createdAt: '2026-05-28', linkedByCode: 'FC-P7LM-42QK' },
 ];
