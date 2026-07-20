@@ -1,52 +1,36 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect } from 'react';
+import { Text, View } from 'react-native';
 
-import { AppScreen, BackHeader } from '@/components/ui';
-import { SubscriptionForm } from '@/components/subscription-form';
-import { useSubscriptionStore } from '@/store/subscription-store';
-import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import { computeSubscriptionStatus, getCurrentSubscription, type SubscriptionPackage } from '@/types/subscription';
+import { AppButton, AppScreen, BackHeader } from '@/components/ui';
+import { AppSpacing, useAppTheme } from '@/theme';
 
 export default function NuovoAbbonamentoScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { clientId } = useLocalSearchParams<{ clientId: string }>();
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
-  const addSubscription = useSubscriptionStore((s) => s.addSubscription);
+  const { clientId } = useLocalSearchParams<{ clientId?: string }>();
 
-  const existingSubscription = getCurrentSubscription(subscriptions, clientId);
-  const existingValidSubscription = computeSubscriptionStatus(existingSubscription) !== 'expired' ? existingSubscription : null;
+  const goBackToClient = useCallback(() => {
+    if (clientId) {
+      router.replace({ pathname: '/clienti/[id]', params: { id: clientId } });
+      return;
+    }
+    router.replace('/clienti');
+  }, [clientId, router]);
 
-  function handleSave(subscription: SubscriptionPackage) {
-    addSubscription(subscription);
-    router.back();
-  }
+  useEffect(() => {
+    goBackToClient();
+  }, [goBackToClient]);
 
   return (
     <AppScreen>
-      <BackHeader title="Nuovo abbonamento" fallbackHref={`/clienti/${clientId}`} />
-      {existingValidSubscription ? (
-        <View style={[styles.notice, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
-          <Text style={[styles.noticeText, { color: colors.inkSoft }]}>
-            Questo cliente ha già un abbonamento valido (&quot;{existingValidSubscription.packageName}&quot;). Crearne uno nuovo
-            non lo modifica: se è un rinnovo, valuta prima di impostarlo su Completato/Scaduto da &quot;Aggiorna abbonamento&quot;.
-          </Text>
-        </View>
-      ) : null}
-      <SubscriptionForm clientId={clientId} onSave={handleSave} saveLabel="Crea abbonamento" />
+      <BackHeader title="Percorso cliente" fallbackHref="/clienti" onBack={goBackToClient} />
+      <View style={{ gap: AppSpacing[3] }}>
+        <Text style={{ color: colors.inkSoft }}>
+          Il pacchetto commerciale appartiene al coach. Gestisci schede e stato cliente dal dettaglio.
+        </Text>
+        <AppButton label="Torna al cliente" onPress={goBackToClient} fullWidth />
+      </View>
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  notice: {
-    borderRadius: AppRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: AppSpacing[2],
-    paddingHorizontal: AppSpacing[3],
-    marginBottom: AppSpacing[1],
-  },
-  noticeText: {
-    fontSize: AppFontSize.sm,
-  },
-});

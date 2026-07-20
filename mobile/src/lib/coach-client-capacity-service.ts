@@ -5,7 +5,8 @@ import type { CoachClientCapacity } from '@/types/subscription-packages';
 // Contatore "Clienti utilizzati: X su Y / Posti disponibili: Z" — legge
 // SEMPRE dal server tramite la RPC get_coach_client_capacity (docs/
 // SUPABASE_SCHEMA.sql, sezione "Limite clienti coach"), mai da uno store
-// locale: X e' il conteggio reale di coach_clients con status='active', Y e'
+// locale: X e' il conteggio reale di coach_clients con status in
+// ('active','suspended'), Y e'
 // max_clients del pacchetto coach attivo corrente (subscription_packages via
 // user_subscriptions), Z = Y - X. La RPC rifiuta chiunque non sia il coach
 // stesso o il superadmin per il p_coach_id richiesto.
@@ -38,7 +39,7 @@ export async function getCoachClientCapacity(coachId: string): Promise<CoachClie
 
   if (error) {
     if (__DEV__) console.error('COACH_CLIENT_CAPACITY_ERROR', error.message);
-    return { ok: false, code: 'db_error', message: `Errore lettura capacita' clienti: ${error.message}` };
+    return { ok: false, code: 'db_error', message: 'Non e stato possibile caricare la capacita clienti. Riprova.' };
   }
   if (!data) {
     return {

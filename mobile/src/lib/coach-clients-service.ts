@@ -13,6 +13,10 @@ type CoachClientRow = {
   created_at: string;
   status: string;
   linked_by_code: string | null;
+  suspended_at: string | null;
+  suspension_reason: string | null;
+  removed_at: string | null;
+  reactivated_at: string | null;
 };
 
 type ProfileRow = {
@@ -44,13 +48,13 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
 
   const { data: links, error: linksError } = await supabase
     .from('coach_clients')
-    .select('client_id,created_at,status,linked_by_code')
+    .select('client_id,created_at,status,linked_by_code,suspended_at,suspension_reason,removed_at,reactivated_at')
     .eq('coach_id', coachId)
-    .eq('status', 'active');
+    .in('status', ['active', 'suspended']);
 
   if (linksError) {
     if (__DEV__) console.error('COACH_CLIENTS_LINKS_ERROR', linksError.message);
-    return { ok: false, message: `Errore caricamento collegamenti clienti: ${linksError.message}` };
+    return { ok: false, message: 'Non e stato possibile caricare i clienti. Riprova.' };
   }
 
   const uniqueLinks = dedupeLinks((links ?? []) as CoachClientRow[]);
@@ -66,11 +70,11 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
 
   if (profilesRes.error) {
     if (__DEV__) console.error('COACH_CLIENTS_PROFILES_ERROR', profilesRes.error.message);
-    return { ok: false, message: `Errore caricamento profili clienti: ${profilesRes.error.message}` };
+    return { ok: false, message: 'Non e stato possibile caricare i clienti. Riprova.' };
   }
   if (clientProfilesRes.error) {
     if (__DEV__) console.error('COACH_CLIENTS_CLIENT_PROFILES_ERROR', clientProfilesRes.error.message);
-    return { ok: false, message: `Errore caricamento profili cliente: ${clientProfilesRes.error.message}` };
+    return { ok: false, message: 'Non e stato possibile caricare i clienti. Riprova.' };
   }
 
   const profiles = ((profilesRes.data ?? []) as ProfileRow[]).filter((profile) => clientIds.includes(profile.id));
@@ -118,10 +122,15 @@ function mapCoachClient(
     phone: profile.phone ?? undefined,
     goal: clientProfile?.goal ?? '',
     notes: clientProfile?.notes ?? '',
-    status: link.status === 'active' ? 'attivo' : 'in_pausa',
+    status: link.status === 'suspended' ? 'in_pausa' : 'attivo',
     createdAt: link.created_at || clientProfile?.created_at || profile.created_at,
     coachId,
     linkedByCode: link.linked_by_code,
+    connectionStatus: link.status === 'suspended' ? 'suspended' : 'active',
+    suspendedAt: link.suspended_at,
+    suspensionReason: link.suspension_reason,
+    removedAt: link.removed_at,
+    reactivatedAt: link.reactivated_at,
     avatarStoragePath: profile.avatar_url,
     avatarUrl: signedAvatarUrl ?? profile.avatar_url,
   };

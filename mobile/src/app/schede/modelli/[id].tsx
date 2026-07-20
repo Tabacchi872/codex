@@ -16,10 +16,8 @@ import { supabaseConfig } from '@/lib/supabase';
 import { instantiateSessionExercises } from '@/lib/workout-template-copy';
 import { createWorkoutPlan } from '@/lib/workout-plan-service';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import { SUBSCRIPTION_STATUS_LABEL } from '@/types/subscription';
 import type { WorkoutPlan } from '@/types/training';
 
 export default function ModelloDettaglioScreen() {
@@ -31,11 +29,9 @@ export default function ModelloDettaglioScreen() {
   const { colors } = useAppTheme();
   const { resolve: resolveExercise } = useExerciseResolver();
   const clients = useClientStore((s) => s.clients);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const addWorkoutPlan = useTrainingStore((s) => s.addWorkoutPlan);
   const [mode, setMode] = useState<'view' | 'assign'>('view');
   const [clientId, setClientId] = useState('');
-  const [subscriptionId, setSubscriptionId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -50,7 +46,6 @@ export default function ModelloDettaglioScreen() {
   }
 
   const selectedTemplate = template;
-  const clientSubscriptions = subscriptions.filter((s) => s.clientId === clientId);
   const totalExercises = selectedTemplate.sessions.reduce((sum, session) => sum + session.exercises.length, 0);
   const firstTemplateExercise = selectedTemplate.sessions[0]?.exercises[0];
   const firstExercise = firstTemplateExercise ? resolveExercise(firstTemplateExercise.exerciseId) : null;
@@ -69,7 +64,6 @@ export default function ModelloDettaglioScreen() {
         name: `${selectedTemplate.title} — ${session.title}`,
         clientId,
         coachId: DEFAULT_COACH_ID,
-        subscriptionId: subscriptionId || undefined,
         startDate: today.toISOString().slice(0, 10),
         expiryDate: expiry.toISOString().slice(0, 10),
         exercises: instantiateSessionExercises(session),
@@ -203,7 +197,6 @@ export default function ModelloDettaglioScreen() {
                     key={client.id}
                     onPress={() => {
                       setClientId(client.id);
-                      setSubscriptionId('');
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={`Seleziona ${clientFullName(client)}`}
@@ -219,38 +212,6 @@ export default function ModelloDettaglioScreen() {
                 );
               })}
             </View>
-
-            {clientId ? (
-              <>
-                <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>Abbonamento opzionale</Text>
-                {clientSubscriptions.length === 0 ? (
-                  <Text style={[styles.helper, { color: colors.inkSoft }]}>Nessun abbonamento disponibile. Puoi comunque creare le schede senza collegamento.</Text>
-                ) : (
-                  <View style={styles.chipsRow}>
-                    {clientSubscriptions.map((subscription) => {
-                      const active = subscription.id === subscriptionId;
-                      return (
-                        <Pressable
-                          key={subscription.id}
-                          onPress={() => setSubscriptionId(active ? '' : subscription.id)}
-                          accessibilityRole="button"
-                          style={[
-                            styles.chip,
-                            {
-                              backgroundColor: active ? colors.moss : colors.surfaceSubtle,
-                              borderColor: active ? colors.moss : colors.border,
-                            },
-                          ]}>
-                          <Text style={[styles.chipText, { color: active ? colors.onMoss : colors.ink }]} numberOfLines={2}>
-                            {subscription.packageName} · {SUBSCRIPTION_STATUS_LABEL[subscription.status]}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                )}
-              </>
-            ) : null}
 
             <Text style={[styles.helper, { color: colors.inkSoft }]}>
               Verranno create {selectedTemplate.sessions.length} schede reali con data odierna e scadenza tra {selectedTemplate.durationWeeks} settimane. Ogni scheda potrà poi essere modificata separatamente.

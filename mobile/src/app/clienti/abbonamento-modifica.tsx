@@ -1,40 +1,36 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
 
-import { AppScreen, BackHeader } from '@/components/ui';
-import { SubscriptionForm } from '@/components/subscription-form';
-import { useSubscriptionStore } from '@/store/subscription-store';
-import { useAppTheme } from '@/theme';
-import type { SubscriptionPackage } from '@/types/subscription';
+import { AppButton, AppScreen, BackHeader } from '@/components/ui';
+import { AppSpacing, useAppTheme } from '@/theme';
 
 export default function AggiornaAbbonamentoScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { subscriptionId } = useLocalSearchParams<{ subscriptionId: string }>();
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
-  const updateSubscription = useSubscriptionStore((s) => s.updateSubscription);
+  const { clientId } = useLocalSearchParams<{ clientId?: string }>();
 
-  const subscription = subscriptions.find((s) => s.id === subscriptionId);
+  const goBackToClient = useCallback(() => {
+    if (clientId) {
+      router.replace({ pathname: '/clienti/[id]', params: { id: clientId } });
+      return;
+    }
+    router.replace('/clienti');
+  }, [clientId, router]);
 
-  if (!subscription) {
-    return (
-      <AppScreen scroll={false}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: colors.ink }}>Abbonamento non trovato.</Text>
-        </View>
-      </AppScreen>
-    );
-  }
-
-  function handleSave(updated: SubscriptionPackage) {
-    updateSubscription(updated);
-    router.back();
-  }
+  useEffect(() => {
+    goBackToClient();
+  }, [goBackToClient]);
 
   return (
     <AppScreen>
-      <BackHeader title="Aggiorna abbonamento" fallbackHref={`/clienti/${subscription.clientId}`} />
-      <SubscriptionForm initialSubscription={subscription} clientId={subscription.clientId} onSave={handleSave} saveLabel="Salva abbonamento" />
+      <BackHeader title="Percorso cliente" fallbackHref="/clienti" onBack={goBackToClient} />
+      <View style={{ gap: AppSpacing[3] }}>
+        <Text style={{ color: colors.inkSoft }}>
+          Il pacchetto commerciale appartiene al coach. Gestisci schede e stato cliente dal dettaglio.
+        </Text>
+        <AppButton label="Torna al cliente" onPress={goBackToClient} fullWidth />
+      </View>
     </AppScreen>
   );
 }

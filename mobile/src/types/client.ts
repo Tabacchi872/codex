@@ -8,6 +8,7 @@
 
 export type ClientStatus = 'attivo' | 'in_pausa' | 'scaduto';
 export type ClientAvatarPreset = 'male' | 'female' | 'neutral';
+export type CoachClientConnectionStatus = 'active' | 'suspended' | 'removed';
 
 export type Client = {
   id: string;
@@ -23,6 +24,11 @@ export type Client = {
   coachId?: string;
   linkedByCode?: string | null;
   coachBusinessName?: string | null;
+  connectionStatus?: CoachClientConnectionStatus;
+  suspendedAt?: string | null;
+  suspensionReason?: string | null;
+  removedAt?: string | null;
+  reactivatedAt?: string | null;
   avatarUrl?: string | null;
   avatarStoragePath?: string | null;
   avatarPreset?: ClientAvatarPreset;
@@ -36,6 +42,12 @@ export const CLIENT_STATUS_LABEL: Record<ClientStatus, string> = {
   attivo: 'Attivo',
   in_pausa: 'In pausa',
   scaduto: 'Scaduto',
+};
+
+export const COACH_CLIENT_CONNECTION_STATUS_LABEL: Record<CoachClientConnectionStatus, string> = {
+  active: 'Attivo',
+  suspended: 'Sospeso temporaneamente',
+  removed: 'Rimosso',
 };
 
 // ATTENZIONE — demo locale: `temporaryPassword` è salvata in chiaro nello store

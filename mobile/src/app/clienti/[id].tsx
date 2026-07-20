@@ -1,10 +1,10 @@
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { ChevronRight } from 'lucide-react-native';
-import { useState } from 'react';
-import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
-import { AppBadge, AppButton, AppCard, AppScreen, BackHeader, UserAvatar, type AppBadgeTone } from '@/components/ui';
+import { AppBadge, AppButton, AppCard, AppScreen, BackHeader, UserAvatar } from '@/components/ui';
 import { ClientLoadHistory } from '@/components/client-load-history';
 import { ClientMetricsPanel } from '@/components/client-metrics-panel';
 import { ClientNotesPanel } from '@/components/client-notes-panel';
@@ -12,6 +12,7 @@ import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { DisabledAction } from '@/components/disabled-action';
 import { useCoachClients } from '@/hooks/use-coach-clients';
 import { sendTemporaryCredentials } from '@/lib/auth-service';
+import { reactivateClient, removeClient, suspendClient } from '@/lib/coach-client-status-service';
 import { logCoachNavPress } from '@/lib/coach-navigation';
 import { buildCredentialsMessage, generateTemporaryPassword, generateUsername } from '@/lib/credentials';
 import { clientFullName } from '@/lib/client-helpers';
@@ -21,20 +22,17 @@ import { getClientPlans, getSessionDayLabel, getSessionWeekLabel, getWorkoutCoun
 import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { APPOINTMENT_TYPE_LABEL } from '@/types/appointment';
-import { CLIENT_STATUS_LABEL, type Client, type ClientAccount, type ClientStatus } from '@/types/client';
-import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
 import {
-  COMPUTED_SUBSCRIPTION_STATUS_LABEL,
-  computeSubscriptionStatus,
-  getCurrentSubscription,
-  type ComputedSubscriptionStatus,
-} from '@/types/subscription';
+  COACH_CLIENT_CONNECTION_STATUS_LABEL,
+  type Client,
+  type ClientAccount,
+  type CoachClientConnectionStatus,
+} from '@/types/client';
+import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
 
-const STATUS_OPTIONS: ClientStatus[] = ['attivo', 'in_pausa', 'scaduto'];
 const DETAIL_TABS = ['panoramica', 'schede', 'metriche', 'carichi', 'note'] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
 const DETAIL_TAB_LABEL: Record<DetailTab, string> = {
@@ -53,12 +51,19 @@ export default function ClienteDettaglioScreen() {
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const { clients, loading: clientsLoading, error: clientsError, reload: reloadClients } = useCoachClients();
   const accounts = useClientStore((s) => s.accounts);
-  const updateClient = useClientStore((s) => s.updateClient);
   const addAccount = useClientStore((s) => s.addAccount);
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const appointments = useAppointmentStore((s) => s.appointments);
-  const cliente = clients.find((c) => c.id === id);
+  const cliente = clients.find((c) => c.id === id && c.connectionStatus !== 'removed');
   const [activeTab, setActiveTab] = useState<DetailTab>('panoramica');
+  const [statusBusy, setStatusBusy] = useState<'suspend' | 'reactivate' | 'remove' | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!clientsLoading && !clientsError && !cliente) {
+      router.replace('/clienti');
+    }
+  }, [cliente, clientsError, clientsLoading, router]);
 
   if (!isCoach) {
     return <CoachOnlyNotice />;
@@ -78,9 +83,8 @@ export default function ClienteDettaglioScreen() {
   }
 
   const sessions = getClientPlans(workoutPlans, cliente.id);
-  const displaySubscription = getCurrentSubscription(subscriptions, cliente.id);
-  const displaySubscriptionStatus = computeSubscriptionStatus(displaySubscription);
-  const workoutCounter = getWorkoutCounter(subscriptions, workoutPlans, cliente, cliente.id);
+  const connectionStatus = getConnectionStatus(cliente.connectionStatus);
+  const workoutCounter = getWorkoutCounter([], workoutPlans, cliente, cliente.id);
   // Sempre lo stesso abbonamento scelto dalla logica condivisa: corrente se valido,
   // altrimenti il più recente, così lista e dettaglio non divergono.
   const clientAppointments = appointments
@@ -93,8 +97,50 @@ export default function ClienteDettaglioScreen() {
     router.push(target as Href);
   }
 
-  function setClientStatus(status: ClientStatus) {
-    updateClient({ ...cliente!, status });
+  async function runStatusAction(action: 'suspend' | 'reactivate' | 'remove') {
+    if (statusBusy) return;
+    setStatusBusy(action);
+    setStatusError(null);
+    setStatusSuccess(null);
+    const result =
+      action === 'suspend'
+        ? await suspendClient(cliente!.id, 'In attesa di rinnovo')
+        : action === 'reactivate'
+          ? await reactivateClient(cliente!.id)
+          : await removeClient(cliente!.id);
+    setStatusBusy(null);
+    if (!result.ok) {
+      setStatusError(result.message);
+      return;
+    }
+    await reloadClients();
+    if (action === 'remove') {
+      router.replace('/clienti');
+      return;
+    }
+    setStatusSuccess(action === 'suspend' ? 'Cliente sospeso' : 'Cliente riattivato');
+  }
+
+  function confirmSuspend() {
+    Alert.alert(
+      'Sospendere questo cliente?',
+      'Il cliente non potra accedere ai contenuti del coach, ma continuera a occupare un posto nel tuo pacchetto.',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        { text: 'Sospendi per rinnovo', style: 'destructive', onPress: () => runStatusAction('suspend') },
+      ],
+    );
+  }
+
+  function confirmRemove() {
+    Alert.alert(
+      'Rimuovere il cliente?',
+      "Il cliente perdera l'accesso ai contenuti del coach. Lo storico restera conservato.",
+      [
+        { text: 'Annulla', style: 'cancel' },
+        { text: 'Rimuovi cliente', style: 'destructive', onPress: () => runStatusAction('remove') },
+      ],
+    );
   }
 
   function handleGenerateAccount() {
@@ -143,11 +189,20 @@ export default function ClienteDettaglioScreen() {
             </Text>
           </View>
           <View style={styles.heroMetric}>
-            <Text style={[styles.metricLabel, { color: colors.inkSoft }]}>Pacchetto</Text>
+            <Text style={[styles.metricLabel, { color: colors.inkSoft }]}>Schede</Text>
             <Text style={[styles.metricValueSmall, { color: colors.ink }]} numberOfLines={1}>
-              {displaySubscription ? displaySubscription.packageName : 'Nessuno'}
+              {sessions.length}
             </Text>
           </View>
+        </View>
+        <View style={styles.sectionHeaderRow}>
+          <AppBadge
+            label={getConnectionStatusLabel(connectionStatus, cliente.suspensionReason)}
+            tone={connectionStatus === 'suspended' ? 'amber' : 'moss'}
+          />
+          {connectionStatus === 'suspended' && cliente.suspendedAt ? (
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>Dal {formatDayMonth(cliente.suspendedAt)}</Text>
+          ) : null}
         </View>
         <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSubtle }]}>
           <View
@@ -161,23 +216,6 @@ export default function ClienteDettaglioScreen() {
           />
         </View>
       </AppCard>
-
-      <View style={styles.statusChipsRow}>
-        {STATUS_OPTIONS.map((option) => {
-          const active = option === cliente.status;
-          return (
-            <Pressable
-              key={option}
-              onPress={() => setClientStatus(option)}
-              hitSlop={6}
-              style={[styles.statusChip, { borderColor: colors.moss, backgroundColor: active ? colors.moss : 'transparent' }]}>
-              <Text style={[styles.statusChipLabel, { color: active ? colors.onMoss : colors.moss }]}>
-                {CLIENT_STATUS_LABEL[option]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
 
       <View style={[styles.detailTabs, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
         {DETAIL_TABS.map((tab) => {
@@ -208,48 +246,74 @@ export default function ClienteDettaglioScreen() {
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>{cliente.goal || 'Non specificato'}</Text>
       </AppCard>
 
-      <AppCard>
-        <Text style={[styles.cardTitle, { color: colors.ink }]}>Abbonamento</Text>
-        {displaySubscription ? (
-          <>
-            <Text style={[styles.planName, { color: colors.ink }]}>{displaySubscription.packageName}</Text>
-            <Text style={[styles.counterText, { color: colors.ink }]}>
-              {workoutCounter.completed}/{workoutCounter.total}
+      <AppCard style={styles.statusActionsCard}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Percorso coach</Text>
+        <View style={styles.sectionHeaderRow}>
+          <AppBadge
+            label={getConnectionStatusLabel(connectionStatus, cliente.suspensionReason)}
+            tone={connectionStatus === 'suspended' ? 'amber' : 'moss'}
+          />
+          {connectionStatus === 'suspended' ? (
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+              {cliente.suspensionReason || 'In attesa di rinnovo'}
             </Text>
-            <View style={styles.sectionHeaderRow}>
-              <AppBadge label={COMPUTED_SUBSCRIPTION_STATUS_LABEL[displaySubscriptionStatus]} tone={subscriptionTone(displaySubscriptionStatus)} />
-              <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-                Inizio {formatDayMonth(displaySubscription.startDate)}
-                {displaySubscription.endDate ? ` · Fine ${formatDayMonth(displaySubscription.endDate)}` : ''}
-              </Text>
-            </View>
+          ) : null}
+        </View>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Schede assegnate: <Text style={{ color: colors.ink, fontWeight: '700' }}>{sessions.length}</Text>
+        </Text>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          Allenamenti completati: <Text style={{ color: colors.ink, fontWeight: '700' }}>{workoutCounter.completed}</Text>
+        </Text>
+        {statusError ? <Text style={[styles.smallText, { color: colors.rust, fontWeight: '700' }]}>{statusError}</Text> : null}
+        {statusSuccess ? <Text style={[styles.smallText, { color: colors.moss, fontWeight: '700' }]}>{statusSuccess}</Text> : null}
+        {connectionStatus === 'active' ? (
+          <>
+            <AppButton
+              label="Assegna scheda"
+              onPress={() => {
+                logCoachNavPress('clienti-detail-assegna-scheda', `/schede/new?clientId=${cliente.id}`);
+                router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
+              }}
+              fullWidth
+            />
+            <AppButton
+              label="Sospendi per rinnovo"
+              onPress={confirmSuspend}
+              variant="outline"
+              loading={statusBusy === 'suspend'}
+              disabled={statusBusy !== null}
+              fullWidth
+            />
+            <AppButton
+              label="Rimuovi cliente"
+              onPress={confirmRemove}
+              variant="outline"
+              loading={statusBusy === 'remove'}
+              disabled={statusBusy !== null}
+              fullWidth
+            />
           </>
         ) : (
-          <Text style={[styles.planName, { color: colors.ink }]}>Nessun abbonamento</Text>
+          <>
+            <AppButton
+              label="Riattiva cliente"
+              onPress={() => runStatusAction('reactivate')}
+              loading={statusBusy === 'reactivate'}
+              disabled={statusBusy !== null}
+              fullWidth
+            />
+            <AppButton
+              label="Rimuovi cliente"
+              onPress={confirmRemove}
+              variant="outline"
+              loading={statusBusy === 'remove'}
+              disabled={statusBusy !== null}
+              fullWidth
+            />
+          </>
         )}
-        <AppButton
-          label={displaySubscription ? 'Aggiorna abbonamento' : 'Crea abbonamento'}
-          onPress={() =>
-            displaySubscription
-              ? (logCoachNavPress('clienti-detail-abbonamento-modifica', `/clienti/abbonamento-modifica?subscriptionId=${displaySubscription.id}`),
-                router.push({ pathname: '/clienti/abbonamento-modifica', params: { subscriptionId: displaySubscription.id } }))
-              : (logCoachNavPress('clienti-detail-abbonamento-nuovo', `/clienti/abbonamento-nuovo?clientId=${cliente.id}`),
-                router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } }))
-          }
-          fullWidth
-        />
-        {displaySubscription ? (
-          <Pressable
-            onPress={() => {
-              logCoachNavPress('clienti-detail-abbonamento-nuovo-link', `/clienti/abbonamento-nuovo?clientId=${cliente.id}`);
-              router.push({ pathname: '/clienti/abbonamento-nuovo', params: { clientId: cliente.id } });
-            }}
-            hitSlop={6}>
-            <Text style={[styles.secondaryLink, { color: colors.moss }]}>+ Crea un nuovo abbonamento</Text>
-          </Pressable>
-        ) : null}
       </AppCard>
-
       <AppCard>
         <Text style={[styles.cardTitle, { color: colors.ink }]}>Appuntamenti</Text>
         {clientAppointments.length > 0 ? (
@@ -261,14 +325,16 @@ export default function ClienteDettaglioScreen() {
         ) : (
           <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun appuntamento in programma.</Text>
         )}
-        <AppButton
-          label="+ Nuovo appuntamento"
-          onPress={() => {
-            logCoachNavPress('clienti-detail-appuntamento-new', `/appuntamenti/new?clientId=${cliente.id}`);
-            router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } });
-          }}
-          fullWidth
-        />
+        {connectionStatus === 'active' ? (
+          <AppButton
+            label="+ Nuovo appuntamento"
+            onPress={() => {
+              logCoachNavPress('clienti-detail-appuntamento-new', `/appuntamenti/new?clientId=${cliente.id}`);
+              router.push({ pathname: '/appuntamenti/new', params: { clientId: cliente.id } });
+            }}
+            fullWidth
+          />
+        ) : null}
       </AppCard>
 
       <CredentialsSection client={cliente} account={account} onGenerate={handleGenerateAccount} />
@@ -286,14 +352,16 @@ export default function ClienteDettaglioScreen() {
             <SessionRow key={session.id} session={session} sessions={sessions} onPress={() => navigate('clienti-detail-scheda-row', `/schede/${session.id}`)} />
           ))
         )}
-        <AppButton
-          label="+ Nuova scheda"
-          onPress={() => {
-            logCoachNavPress('clienti-detail-scheda-new', `/schede/new?clientId=${cliente.id}`);
-            router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
-          }}
-          fullWidth
-        />
+        {connectionStatus === 'active' ? (
+          <AppButton
+            label="+ Nuova scheda"
+            onPress={() => {
+              logCoachNavPress('clienti-detail-scheda-new', `/schede/new?clientId=${cliente.id}`);
+              router.push({ pathname: '/schede/new', params: { clientId: cliente.id } });
+            }}
+            fullWidth
+          />
+        ) : null}
       </AppCard>
         </>
       ) : null}
@@ -322,10 +390,13 @@ export default function ClienteDettaglioScreen() {
   );
 }
 
-function subscriptionTone(status: ComputedSubscriptionStatus): AppBadgeTone {
-  if (status === 'active') return 'moss';
-  if (status === 'expiring') return 'amber';
-  return 'rust';
+function getConnectionStatus(status: CoachClientConnectionStatus | undefined): 'active' | 'suspended' {
+  return status === 'suspended' ? 'suspended' : 'active';
+}
+
+function getConnectionStatusLabel(status: 'active' | 'suspended', reason?: string | null) {
+  if (status === 'active') return COACH_CLIENT_CONNECTION_STATUS_LABEL.active;
+  return 'Sospeso';
 }
 
 function SessionRow({ session, sessions, onPress }: { session: WorkoutPlan; sessions: WorkoutPlan[]; onPress: () => void }) {
@@ -571,6 +642,9 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: AppFontSize.base,
     fontWeight: '700',
+  },
+  statusActionsCard: {
+    gap: AppSpacing[2],
   },
   smallText: {
     fontSize: AppFontSize.sm,

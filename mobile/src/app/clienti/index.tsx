@@ -1,8 +1,9 @@
 import { router, useRouter, type Href } from 'expo-router';
-import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppBadge, AppButton, AppCard, AppErrorState, AppPressableCard, FitCoachLogo, UserAvatar, type AppBadgeTone } from '@/components/ui';
+import { AppBadge, AppButton, AppCard, AppErrorState, AppPressableCard, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
 import { useCoachClients } from '@/hooks/use-coach-clients';
@@ -11,26 +12,27 @@ import { clientFullName } from '@/lib/client-helpers';
 import { logCoachNavPress } from '@/lib/coach-navigation';
 import { isSeedClientId } from '@/lib/demo-data';
 import { supabaseConfig } from '@/lib/supabase';
-import { getWorkoutCounter } from '@/lib/workout-progress';
+import { getClientPlans, getWorkoutCounter } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
-import { useSubscriptionStore } from '@/store/subscription-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import {
-  COMPUTED_SUBSCRIPTION_STATUS_LABEL,
-  computeSubscriptionStatus,
-  getCurrentSubscription,
-  type ComputedSubscriptionStatus,
-} from '@/types/subscription';
+import { COACH_CLIENT_CONNECTION_STATUS_LABEL, type CoachClientConnectionStatus } from '@/types/client';
+
+type ClientStatusFilter = 'all' | 'active' | 'suspended';
+const FILTERS: { value: ClientStatusFilter; label: string }[] = [
+  { value: 'all', label: 'Tutti' },
+  { value: 'active', label: 'Attivi' },
+  { value: 'suspended', label: 'Sospesi' },
+];
 
 export default function ClientiListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   const { clients, loading: clientsLoading, error: clientsError, reload: reloadClients } = useCoachClients();
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
+  const [statusFilter, setStatusFilter] = useState<ClientStatusFilter>('all');
 
   if (!isCoach) {
     return <CoachOnlyNotice />;
@@ -40,6 +42,12 @@ export default function ClientiListScreen() {
     logCoachNavPress(source, target);
     router.push(target as Href);
   }
+
+  const visibleClients = clients.filter((client) => {
+    if (client.connectionStatus === 'removed') return false;
+    const status = getConnectionStatus(client.connectionStatus);
+    return statusFilter === 'all' || status === statusFilter;
+  });
 
   if (clientsLoading && clients.length === 0) {
     return (
@@ -52,8 +60,10 @@ export default function ClientiListScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
-        data={clients}
+        data={visibleClients}
         keyExtractor={(item) => item.id}
+        refreshing={clientsLoading && clients.length > 0}
+        onRefresh={reloadClients}
         contentContainerStyle={[
           styles.content,
           {
@@ -74,6 +84,27 @@ export default function ClientiListScreen() {
               </View>
               <AppButton label="Nuovo cliente" onPress={() => navigate('clienti-new', '/clienti/new')} size="lg" />
             </View>
+            <View style={styles.filterRow}>
+              {FILTERS.map((filter) => {
+                const active = statusFilter === filter.value;
+                return (
+                  <Pressable
+                    key={filter.value}
+                    onPress={() => setStatusFilter(filter.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filtro ${filter.label}`}
+                    style={[
+                      styles.filterChip,
+                      {
+                        backgroundColor: active ? colors.moss : colors.surface,
+                        borderColor: active ? colors.moss : colors.border,
+                      },
+                    ]}>
+                    <Text style={[styles.filterChipLabel, { color: active ? colors.onMoss : colors.inkSoft }]}>{filter.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             {clientsError ? (
               <AppCard>
                 <AppErrorState message={clientsError} onRetry={reloadClients} />
@@ -85,9 +116,10 @@ export default function ClientiListScreen() {
         }
         ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
         renderItem={({ item }) => {
-          const subscription = getCurrentSubscription(subscriptions, item.id);
-          const status = computeSubscriptionStatus(subscription);
-          const counter = getWorkoutCounter(subscriptions, workoutPlans, item, item.id);
+          const connectionStatus = getConnectionStatus(item.connectionStatus);
+          const statusLabel = getConnectionStatusCardLabel(connectionStatus, item.suspensionReason);
+          const sessions = getClientPlans(workoutPlans, item.id);
+          const counter = getWorkoutCounter([], workoutPlans, item, item.id);
           const progress = counter.total > 0 ? Math.min(counter.completed / counter.total, 1) : 0;
           return (
             <AppPressableCard onPress={() => navigate('clienti-card', `/clienti/${item.id}`)} accessibilityLabel={`Apri cliente ${clientFullName(item)}`} style={styles.row}>
@@ -104,7 +136,7 @@ export default function ClientiListScreen() {
                     {clientFullName(item)}
                   </Text>
                   <Text style={[styles.planText, { color: colors.inkSoft }]} numberOfLines={1}>
-                    {subscription ? subscription.packageName : 'Nessun abbonamento'}
+                    {sessions.length === 1 ? '1 scheda assegnata' : `${sessions.length} schede assegnate`}
                   </Text>
                   <View style={styles.progressLine}>
                     <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSubtle }]}>
@@ -116,7 +148,7 @@ export default function ClientiListScreen() {
                   </View>
                 </View>
                 <View style={styles.badgeStack}>
-                  <AppBadge label={COMPUTED_SUBSCRIPTION_STATUS_LABEL[status]} tone={subscriptionTone(status)} />
+                  <AppBadge label={statusLabel} tone={connectionStatus === 'suspended' ? 'amber' : 'moss'} />
                   {isSeedClientId(item.id) ? <AppBadge label="Demo" tone="neutral" /> : null}
                 </View>
               </View>
@@ -128,10 +160,13 @@ export default function ClientiListScreen() {
   );
 }
 
-function subscriptionTone(status: ComputedSubscriptionStatus): AppBadgeTone {
-  if (status === 'active') return 'moss';
-  if (status === 'expiring') return 'amber';
-  return 'rust';
+function getConnectionStatus(status: CoachClientConnectionStatus | undefined): 'active' | 'suspended' {
+  return status === 'suspended' ? 'suspended' : 'active';
+}
+
+function getConnectionStatusCardLabel(status: 'active' | 'suspended', reason?: string | null) {
+  if (status === 'active') return COACH_CLIENT_CONNECTION_STATUS_LABEL.active;
+  return 'Sospeso';
 }
 
 // Contatore "Clienti utilizzati: X su Y" / "Posti disponibili: Z", letto
@@ -243,6 +278,23 @@ const styles = StyleSheet.create({
   },
   capacityCard: {
     gap: AppSpacing[1],
+  },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
+  },
+  filterChip: {
+    alignItems: 'center',
+    borderRadius: AppRadius.pill,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: AppSpacing[3],
+  },
+  filterChipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '800',
   },
   capacityTitle: {
     fontSize: AppFontSize.base,
