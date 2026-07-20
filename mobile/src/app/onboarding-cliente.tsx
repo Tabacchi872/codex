@@ -166,7 +166,7 @@ export default function ClientOnboardingScreen() {
       }
       markOnboardingCompleted(clientId);
       clearDraft(clientId);
-      router.replace('/cliente-home');
+      router.replace(result.data.linked ? '/cliente-home' : '/collega-coach');
       return;
     }
 
@@ -272,7 +272,7 @@ function IntroStep({ onSelect }: { onSelect: (mode: ClientOnboardingMode) => voi
 function CoachCodeStep({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const { colors } = useAppTheme();
   return (
-    <StepShell title="Inserisci il codice coach" subtitle="Lo useremo per collegarti al tuo coach e attivare il percorso.">
+    <StepShell title="Codice coach" subtitle="Puoi inserirlo anche successivamente.">
       <View style={[styles.inputCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TextInput
           value={value}
@@ -578,7 +578,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function isStepValid(draft: ReturnType<typeof useClientOnboardingStore.getState>['drafts'][string]) {
   if (!draft.mode) return false;
-  if (draft.mode === 'coach_guided') return normalizeCoachCode(draft.coachCode ?? '').length >= 4;
+  if (draft.mode === 'coach_guided') return true;
   switch (draft.currentStep) {
     case 1:
       return !!draft.gender;

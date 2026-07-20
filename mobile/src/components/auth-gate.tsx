@@ -16,7 +16,8 @@ import { ThemedView } from './themed-view';
 import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
 import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
-import { getCurrentSession } from '@/lib/auth-service';
+import { getCurrentSession, signOut } from '@/lib/auth-service';
+import { getAssignedCoachStatusLabel, getMyAssignedCoach, type AssignedCoachSummary } from '@/lib/client-coach-service';
 import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
 import { identifyRevenueCatUser, logoutRevenueCat } from '@/lib/revenuecat-service';
@@ -32,6 +33,7 @@ const CLIENT_HOME = '/cliente-home';
 const COACH_HOME = '/';
 const SUPERADMIN_HOME = '/superadmin' as Href;
 const CLIENT_ONBOARDING = '/onboarding-cliente';
+const CLIENT_CONNECT_COACH = '/collega-coach';
 
 const CLIENT_ONLY_ROUTES = [
   '/cliente-home',
@@ -42,6 +44,7 @@ const CLIENT_ONLY_ROUTES = [
   '/progressi',
   '/metriche',
   '/storico-carichi',
+  CLIENT_CONNECT_COACH,
   '/bacheca',
   '/prenotazioni',
   '/questionario',
@@ -69,6 +72,7 @@ export function AuthGate() {
   const currentUserEmail = useAuthStore((s) => s.currentUserEmail);
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const mustChangePasswordSupabase = useAuthStore((s) => s.mustChangePasswordSupabase);
+  const logout = useAuthStore((s) => s.logout);
   const accounts = useClientStore((s) => s.accounts);
   const setAutoLinkRunning = useYmoveAutoLinkStore((s) => s.setRunning);
   const setAutoLinkDone = useYmoveAutoLinkStore((s) => s.setDone);
@@ -84,6 +88,13 @@ export function AuthGate() {
   const revenueCatUserIdRef = useRef<string | null>(null);
   const [clientOnboarding, setClientOnboarding] = useState({ loading: false, required: false, checked: false, error: null as string | null });
   const [onboardingRetryKey, setOnboardingRetryKey] = useState(0);
+  const [clientCoachAccess, setClientCoachAccess] = useState({
+    loading: false,
+    checked: false,
+    coach: null as AssignedCoachSummary | null,
+    error: null as string | null,
+  });
+  const [coachAccessRetryKey, setCoachAccessRetryKey] = useState(0);
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
 
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
@@ -93,7 +104,25 @@ export function AuthGate() {
       ? CLIENT_ONBOARDING
       : currentRole === 'cliente' && supabaseConfig.isConfigured && clientOnboarding.checked && !clientOnboarding.required && pathname === CLIENT_ONBOARDING
         ? CLIENT_HOME
-        : roleTargetPath;
+        : currentRole === 'cliente' &&
+            supabaseConfig.isConfigured &&
+            clientOnboarding.checked &&
+            !clientOnboarding.required &&
+            clientCoachAccess.checked &&
+            !clientCoachAccess.error &&
+            !clientCoachAccess.loading &&
+            !clientCoachAccess.coach &&
+            pathname !== CLIENT_CONNECT_COACH
+          ? CLIENT_CONNECT_COACH
+          : currentRole === 'cliente' &&
+              supabaseConfig.isConfigured &&
+              clientOnboarding.checked &&
+              !clientOnboarding.required &&
+              clientCoachAccess.checked &&
+              clientCoachAccess.coach?.connectionStatus === 'active' &&
+              pathname === CLIENT_CONNECT_COACH
+            ? CLIENT_HOME
+            : roleTargetPath;
 
   useEffect(() => {
     if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase) {
@@ -130,6 +159,45 @@ export function AuthGate() {
       active = false;
     };
   }, [currentRole, currentClientId, isAuthenticated, mustChangePasswordSupabase, onboardingRetryKey, onboardingStatusRevision]);
+
+  useEffect(() => {
+    if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase || !supabaseConfig.isConfigured) {
+      setClientCoachAccess({ loading: false, checked: false, coach: null, error: null });
+      return;
+    }
+    if (clientOnboarding.loading || !clientOnboarding.checked || clientOnboarding.required || clientOnboarding.error) {
+      setClientCoachAccess({ loading: false, checked: false, coach: null, error: null });
+      return;
+    }
+
+    let active = true;
+    setClientCoachAccess((current) => ({ ...current, loading: true, checked: false, error: null }));
+    (async () => {
+      const result = await getMyAssignedCoach();
+      if (!active) return;
+      if (!result.ok) {
+        if (__DEV__) console.error('CLIENT_ASSIGNED_COACH_GATE_ERROR', result.message);
+        setClientCoachAccess({ loading: false, checked: true, coach: null, error: 'Non e stato possibile verificare il profilo.' });
+        return;
+      }
+      setClientCoachAccess({ loading: false, checked: true, coach: result.data, error: null });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    currentRole,
+    currentClientId,
+    isAuthenticated,
+    mustChangePasswordSupabase,
+    clientOnboarding.loading,
+    clientOnboarding.checked,
+    clientOnboarding.required,
+    clientOnboarding.error,
+    coachAccessRetryKey,
+    onboardingStatusRevision,
+  ]);
 
   // Prima sincronizzazione schede/allenamenti con Supabase (2026-07-14):
   // avviata quando il ruolo diventa coach/cliente, cosi' la dashboard e le
@@ -262,10 +330,19 @@ export function AuthGate() {
     if (clientOnboarding.error) {
       return <OnboardingCheckError onRetry={() => setOnboardingRetryKey((value) => value + 1)} />;
     }
+    if (supabaseConfig.isConfigured && !clientOnboarding.required && (clientCoachAccess.loading || !clientCoachAccess.checked)) {
+      return <LoadingGate />;
+    }
+    if (clientCoachAccess.error) {
+      return <OnboardingCheckError onRetry={() => setCoachAccessRetryKey((value) => value + 1)} />;
+    }
+    if (clientCoachAccess.coach?.connectionStatus === 'suspended') {
+      return <ClientSuspendedGate coach={clientCoachAccess.coach} onLogout={async () => { await signOut(); logout(); }} />;
+    }
     if (targetPath) {
       return <LoadingGate />;
     }
-    if (pathname === CLIENT_ONBOARDING) {
+    if (pathname === CLIENT_ONBOARDING || pathname === CLIENT_CONNECT_COACH) {
       return <Slot />;
     }
     return <ClientTabs />;
@@ -340,6 +417,37 @@ function OnboardingCheckError({ onRetry }: { onRetry: () => void }) {
         style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 18 }}>
         <ThemedText type="default" themeColor="primary">
           Riprova
+        </ThemedText>
+      </Pressable>
+    </ThemedView>
+  );
+}
+
+function ClientSuspendedGate({ coach, onLogout }: { coach: AssignedCoachSummary; onLogout: () => void }) {
+  return (
+    <ThemedView style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 16 }}>
+      <ThemedText type="title">Accesso sospeso</ThemedText>
+      <ThemedText type="default" themeColor="textSecondary">
+        Il tuo coach ha sospeso temporaneamente l'accesso in attesa del rinnovo.
+      </ThemedText>
+      <ThemedText type="default">
+        Il tuo coach: {coach.fullName || 'Coach'}
+      </ThemedText>
+      {coach.businessName ? (
+        <ThemedText type="default" themeColor="textSecondary">
+          {coach.businessName}
+        </ThemedText>
+      ) : null}
+      <ThemedText type="default" themeColor="primary">
+        {getAssignedCoachStatusLabel(coach.connectionStatus)}
+      </ThemedText>
+      <Pressable
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="Esci"
+        style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, alignSelf: 'flex-start' }}>
+        <ThemedText type="default" themeColor="primary">
+          Esci
         </ThemedText>
       </Pressable>
     </ThemedView>

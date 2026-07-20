@@ -1,4 +1,5 @@
 import { normalizeCoachCode } from './coach-code';
+import { joinCoachByInviteCode } from './client-coach-service';
 import { supabase, supabaseConfig } from './supabase';
 
 import type { BmiCategory, ClientOnboardingExperience, ClientOnboardingGender, ClientOnboardingMode, CompletedClientOnboardingProfile, SelfGuidedOnboardingPayload } from '@/types/client-onboarding';
@@ -125,29 +126,26 @@ export async function getCompletedClientOnboardingProfile(): Promise<ServiceResu
   };
 }
 
-export async function completeCoachGuidedOnboarding(coachCode: string): Promise<ServiceResult<null>> {
+export async function completeCoachGuidedOnboarding(coachCode: string): Promise<ServiceResult<{ linked: boolean }>> {
   if (!supabaseConfig.isConfigured || !supabase) return { ok: false, message: GENERIC_SAVE_ERROR };
 
   const clientId = await getAuthenticatedClientId();
   if (!clientId) return { ok: false, message: GENERIC_SAVE_ERROR };
 
   const normalizedCode = normalizeCoachCode(coachCode);
-  if (normalizedCode.length < 4) {
-    return { ok: false, message: 'Codice coach non valido. Controlla e riprova.' };
-  }
+  let linkedToCoach = false;
+  if (normalizedCode.length > 0) {
+    const linkResult = await joinCoachByInviteCode(normalizedCode);
+    if (!linkResult.ok) return { ok: false, message: linkResult.message };
+    linkedToCoach = true;
 
-  const linked = await supabase.rpc('register_client_with_code', { p_code: normalizedCode });
-  if (linked.error) {
-    if (__DEV__) console.warn('CLIENT_ONBOARDING_COACH_CODE_ERROR', linked.error.message);
-    return { ok: false, message: 'Codice coach non valido. Controlla e riprova.' };
+    const linkCheck = await verifyActiveCoachLink(clientId);
+    if (!linkCheck.ok) return linkCheck;
   }
-
-  const linkCheck = await verifyActiveCoachLink(clientId);
-  if (!linkCheck.ok) return linkCheck;
 
   const existing = await getClientOnboardingStatus(clientId);
   if (!existing.ok) return existing;
-  if (existing.data.completed) return { ok: true, data: null };
+  if (existing.data.completed) return { ok: true, data: { linked: linkedToCoach } };
 
   const draft = await createPendingClientOnboarding(clientId);
   if (!draft.ok) return draft;
@@ -169,7 +167,7 @@ export async function completeCoachGuidedOnboarding(coachCode: string): Promise<
     return { ok: false, message: GENERIC_SAVE_ERROR };
   }
 
-  return { ok: true, data: null };
+  return { ok: true, data: { linked: linkedToCoach } };
 }
 
 export async function saveSelfGuidedOnboarding(payload: SelfGuidedOnboardingPayload): Promise<ServiceResult<null>> {
