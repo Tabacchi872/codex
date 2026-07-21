@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ChevronRight, Dumbbell, Filter, Folder, Pencil, Search, Trash2, X } from 'lucide-react-native';
+import { ChevronRight, Dumbbell, Filter, Folder, Pencil, Search, Sparkles, Trash2, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +31,7 @@ import type { TemplateFolder, TemplateFolderDeleteMode, WorkoutTemplateSummary }
 // esercizio (via exerciseIds -> exercise-library) e un match aggregato su
 // obiettivo/stile/focus muscolare/attrezzatura/luogo/intensita, che insieme
 // fungono da "tag" liberi del modello.
-type LibraryFilters = {
+export type LibraryFilters = {
   kind: 'all' | 'system' | 'personal';
   goal: string | null;
   level: string | null;
@@ -45,7 +45,7 @@ type LibraryFilters = {
   folderId: string | null;
 };
 
-const EMPTY_FILTERS: LibraryFilters = {
+export const EMPTY_FILTERS: LibraryFilters = {
   kind: 'all',
   goal: null,
   level: null,
@@ -59,15 +59,15 @@ const EMPTY_FILTERS: LibraryFilters = {
   folderId: null,
 };
 
-function uniqueSorted(values: (string | undefined)[]): string[] {
+export function uniqueSorted(values: (string | undefined)[]): string[] {
   return [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b));
 }
 
-function uniqueSortedNumbers(values: (number | undefined)[]): number[] {
+export function uniqueSortedNumbers(values: (number | undefined)[]): number[] {
   return [...new Set(values.filter((v): v is number => v !== undefined))].sort((a, b) => a - b);
 }
 
-function templateSearchHaystack(template: WorkoutTemplateSummary): string {
+export function templateSearchHaystack(template: WorkoutTemplateSummary): string {
   const exerciseNames = template.exerciseIds.map((id) => getExerciseById(id)?.name ?? '');
   return [
     template.name,
@@ -84,7 +84,7 @@ function templateSearchHaystack(template: WorkoutTemplateSummary): string {
     .toLowerCase();
 }
 
-function matchesLibraryFilters(template: WorkoutTemplateSummary, filters: LibraryFilters): boolean {
+export function matchesLibraryFilters(template: WorkoutTemplateSummary, filters: LibraryFilters): boolean {
   if (filters.kind === 'system' && !template.isSystem) return false;
   if (filters.kind === 'personal' && template.isSystem) return false;
   if (filters.goal && template.goal !== filters.goal) return false;
@@ -151,6 +151,18 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
   const [filters, setFilters] = useState<LibraryFilters>(EMPTY_FILTERS);
   const activeFilterCount = Object.values(filters).filter((v) => v !== null && v !== 'all').length;
   const searchOrFiltersActive = searchQuery.trim().length > 0 || activeFilterCount > 0;
+  // Esclude filters.folderId di proposito: quel filtro e' un salto rapido
+  // dentro "La mia libreria" (vedi effectivePersonalFolderId sotto) e non
+  // deve MAI, da solo, far scomparire la cartella virtuale "Allenamenti
+  // professionali" ne' riversare le sue 18 card in radice — altrimenti
+  // scegliere una cartella personale nel pannello filtri (nessun testo di
+  // ricerca, nessun altro filtro) le mostrerebbe tutte comunque, dato che
+  // matchesLibraryFilters non esclude mai un modello di sistema per
+  // folderId. Guida solo la rivelazione dei modelli di sistema in radice.
+  const nonFolderFilterCount = (Object.keys(filters) as (keyof LibraryFilters)[]).filter(
+    (key) => key !== 'folderId' && filters[key] !== null && filters[key] !== 'all',
+  ).length;
+  const systemResultsActive = searchQuery.trim().length > 0 || nonFolderFilterCount > 0;
 
   const filterOptions = useMemo(
     () => ({
@@ -344,9 +356,18 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
   // qualunque: fuori dalla radice la cartella e' gia' decisa dalla route
   // (folderId), quindi il filtro cartella non si applica mai li'.
   const effectivePersonalFolderId = isRoot && filters.folderId ? filters.folderId : folderId;
-  const systemTemplates = isRoot
-    ? templates.filter((t) => t.isSystem && matchesSearchAndFilters(t)).sort((a, b) => a.name.localeCompare(b.name))
-    : [];
+  // I modelli di sistema vivono ora dietro la cartella virtuale "Allenamenti
+  // professionali" (schede/professionali) e non occupano piu' la radice per
+  // default. Ricompaiono qui SOLO durante una ricerca/filtro attivi, come
+  // righe piatte — "la ricerca puo' trovare anche modelli professionali;
+  // selezionando un risultato professionale apre il suo dettaglio" — mai
+  // annidati dentro un'altra sezione da aprire.
+  const systemTemplateCount = templates.filter((t) => t.isSystem).length;
+  const showProfessionalFolder = isRoot && !systemResultsActive;
+  const systemTemplates =
+    isRoot && systemResultsActive
+      ? templates.filter((t) => t.isSystem && matchesSearchAndFilters(t)).sort((a, b) => a.name.localeCompare(b.name))
+      : [];
   const subfolders = isRoot && filters.folderId ? [] : folders.filter((f) => f.parentFolderId === folderId).sort((a, b) => a.name.localeCompare(b.name));
   const personalItems = templates
     .filter((t) => !t.isSystem && t.folderId === effectivePersonalFolderId && matchesSearchAndFilters(t))
@@ -354,13 +375,15 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
 
   type Row =
     | { key: string; kind: 'section'; title: string; subtitle?: string }
+    | { key: string; kind: 'professional-folder' }
     | { key: string; kind: 'folder'; folder: TemplateFolder }
     | { key: string; kind: 'template'; template: WorkoutTemplateSummary };
 
   const rows: Row[] = [
-    ...(isRoot && systemTemplates.length > 0
+    ...(showProfessionalFolder ? [{ key: 'professional-folder', kind: 'professional-folder' as const }] : []),
+    ...(systemTemplates.length > 0
       ? [
-          { key: 'section-pro', kind: 'section' as const, title: 'Professionali', subtitle: 'Modelli completi pronti da assegnare, non modificabili' },
+          { key: 'section-pro', kind: 'section' as const, title: 'Professionali', subtitle: 'Risultati tra i modelli professionali, pronti da assegnare' },
           ...systemTemplates.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
         ]
       : []),
@@ -389,7 +412,7 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
             ) : (
               <View style={styles.titleBlock}>
                 <Text style={[AppTextStyle.title, { color: colors.ink }]}>Modelli allenamento</Text>
-                <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Modelli professionali e la tua libreria personale</Text>
+                <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Cartella professionale e la tua libreria personale</Text>
               </View>
             )}
             <View style={styles.actionsRow}>
@@ -405,125 +428,18 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
               </View>
             </View>
 
-            <View style={styles.searchRow}>
-              <View style={styles.searchInputWrap}>
-                <View style={styles.searchIcon}>
-                  <Search size={16} color={colors.inkFaint} />
-                </View>
-                <AppTextField
-                  placeholder="Cerca per nome, esercizio o categoria"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  style={styles.searchInput}
-                  returnKeyType="search"
-                />
-              </View>
-              <Pressable
-                onPress={() => setShowFilters((v) => !v)}
-                accessibilityRole="button"
-                accessibilityLabel="Mostra o nascondi i filtri"
-                style={[
-                  styles.filterToggle,
-                  { borderColor: activeFilterCount > 0 ? colors.coral : colors.border, backgroundColor: showFilters ? colors.coralSoft : colors.surface },
-                ]}>
-                <Filter size={18} color={activeFilterCount > 0 ? colors.coral : colors.inkSoft} />
-                {activeFilterCount > 0 ? (
-                  <View style={[styles.filterCountBadge, { backgroundColor: colors.coral }]}>
-                    <Text style={styles.filterCountText}>{activeFilterCount}</Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            </View>
-
-            {showFilters ? (
-              <View style={[styles.filterPanel, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                <FilterChipGroup
-                  label="Tipo"
-                  options={[
-                    { value: 'all', label: 'Tutti' },
-                    { value: 'system', label: 'Professionali' },
-                    { value: 'personal', label: 'Personali' },
-                  ]}
-                  selected={filters.kind}
-                  onSelect={(value) => setFilters((f) => ({ ...f, kind: value as LibraryFilters['kind'] }))}
-                />
-                <FilterChipGroup
-                  label="Obiettivo"
-                  options={filterOptions.goals.map((v) => ({ value: v, label: v }))}
-                  selected={filters.goal}
-                  onSelect={(value) => setFilters((f) => ({ ...f, goal: f.goal === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Livello"
-                  options={filterOptions.levels.map((v) => ({ value: v, label: v }))}
-                  selected={filters.level}
-                  onSelect={(value) => setFilters((f) => ({ ...f, level: f.level === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Sessioni a settimana"
-                  options={filterOptions.sessionsPerWeek.map((v) => ({ value: String(v), label: `${v}x` }))}
-                  selected={filters.sessionsPerWeek !== null ? String(filters.sessionsPerWeek) : null}
-                  onSelect={(value) => setFilters((f) => ({ ...f, sessionsPerWeek: f.sessionsPerWeek === Number(value) ? null : Number(value) }))}
-                />
-                <FilterChipGroup
-                  label="Durata programma"
-                  options={filterOptions.durationWeeks.map((v) => ({ value: String(v), label: `${v} sett.` }))}
-                  selected={filters.durationWeeks !== null ? String(filters.durationWeeks) : null}
-                  onSelect={(value) => setFilters((f) => ({ ...f, durationWeeks: f.durationWeeks === Number(value) ? null : Number(value) }))}
-                />
-                <FilterChipGroup
-                  label="Attrezzatura"
-                  options={filterOptions.equipment.map((v) => ({ value: v, label: v }))}
-                  selected={filters.equipment}
-                  onSelect={(value) => setFilters((f) => ({ ...f, equipment: f.equipment === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Luogo"
-                  options={filterOptions.locations.map((v) => ({ value: v, label: v }))}
-                  selected={filters.location}
-                  onSelect={(value) => setFilters((f) => ({ ...f, location: f.location === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Stile"
-                  options={filterOptions.trainingStyles.map((v) => ({ value: v, label: v }))}
-                  selected={filters.trainingStyle}
-                  onSelect={(value) => setFilters((f) => ({ ...f, trainingStyle: f.trainingStyle === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Focus muscolare"
-                  options={filterOptions.muscleFocus.map((v) => ({ value: v, label: v }))}
-                  selected={filters.muscleFocus}
-                  onSelect={(value) => setFilters((f) => ({ ...f, muscleFocus: f.muscleFocus === value ? null : value }))}
-                />
-                <FilterChipGroup
-                  label="Intensita"
-                  options={filterOptions.intensity.map((v) => ({ value: v, label: v }))}
-                  selected={filters.intensity}
-                  onSelect={(value) => setFilters((f) => ({ ...f, intensity: f.intensity === value ? null : value }))}
-                />
-                {isRoot && filterOptions.folders.length > 0 ? (
-                  <FilterChipGroup
-                    label="Cartella (solo la mia libreria)"
-                    options={filterOptions.folders.map((f) => ({ value: f.id, label: f.name }))}
-                    selected={filters.folderId}
-                    onSelect={(value) => setFilters((f) => ({ ...f, folderId: f.folderId === value ? null : value }))}
-                  />
-                ) : null}
-                {activeFilterCount > 0 || searchQuery ? (
-                  <Pressable
-                    onPress={() => {
-                      setFilters(EMPTY_FILTERS);
-                      setSearchQuery('');
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Cancella filtri e ricerca"
-                    style={styles.clearFiltersButton}>
-                    <X size={14} color={colors.coral} />
-                    <Text style={[styles.clearFiltersText, { color: colors.coral }]}>Cancella filtri</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
+            <LibraryFilterBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters((v) => !v)}
+              filters={filters}
+              onFiltersChange={setFilters}
+              filterOptions={filterOptions}
+              activeFilterCount={activeFilterCount}
+              showKindFilter
+              showFolderFilter={isRoot}
+            />
 
             {searchOrFiltersActive ? (
               <Text style={[styles.resultsCount, { color: colors.inkSoft }]}>
@@ -550,6 +466,9 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
                 {item.subtitle ? <Text style={[styles.sectionSubtitle, { color: colors.inkSoft }]}>{item.subtitle}</Text> : null}
               </View>
             );
+          }
+          if (item.kind === 'professional-folder') {
+            return <ProfessionalFolderRow modelCount={systemTemplateCount} onPress={() => router.push('/schede/professionali')} />;
           }
           if (item.kind === 'folder') {
             return (
@@ -646,6 +565,31 @@ function FolderRow({
   );
 }
 
+// Cartella VIRTUALE, non una riga di public.template_folders: nessun id,
+// nessun coach_id, non rinominabile/eliminabile/spostabile (mai un
+// AppIconButton di modifica, a differenza di FolderRow). Un solo Pressable
+// per l'intera riga (AppPressableCard, non FolderRow's AppCard+Pressable
+// interno) perche' qui non serve alcuna seconda azione affiancata.
+function ProfessionalFolderRow({ modelCount, onPress }: { modelCount: number; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <AppPressableCard onPress={onPress} accessibilityLabel="Apri Allenamenti professionali" style={styles.folderRow}>
+      <View style={[styles.folderRowMain, { flex: 1 }]}>
+        <View style={[styles.folderIcon, { backgroundColor: colors.mossSoft }]}>
+          <Sparkles size={22} color={colors.moss} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[styles.folderName, { color: colors.ink }]} numberOfLines={1}>
+            Allenamenti professionali
+          </Text>
+          <Text style={[styles.templateMeta, { color: colors.inkSoft }]}>{modelCount} modelli completi</Text>
+        </View>
+        <ChevronRight size={18} color={colors.inkFaint} />
+      </View>
+    </AppPressableCard>
+  );
+}
+
 // Gruppo di chip a selezione singola (tap su una chip gia' selezionata la
 // deseleziona): usato per ogni dimensione di filtro combinabile della
 // libreria. Le opzioni sono sempre derivate dai dati caricati (mai
@@ -691,7 +635,173 @@ function FilterChipGroup({
   );
 }
 
-function TemplateRow({ template, onPress }: { template: WorkoutTemplateSummary; onPress: () => void }) {
+export type LibraryFilterOptions = {
+  goals: string[];
+  levels: string[];
+  sessionsPerWeek: number[];
+  durationWeeks: number[];
+  equipment: string[];
+  locations: string[];
+  trainingStyles: string[];
+  muscleFocus: string[];
+  intensity: string[];
+  folders: TemplateFolder[];
+};
+
+// Barra ricerca + filtri combinabili, condivisa tra la libreria personale
+// (TemplateLibraryScreen) e la libreria professionale
+// (ProfessionalLibraryScreen, mobile/src/components/professional-library-screen.tsx):
+// showKindFilter/showFolderFilter permettono di nascondere dimensioni di
+// filtro senza senso nel contesto (dentro "Allenamenti professionali" tutto
+// e' gia' di sistema, quindi ne' "Tipo" ne' "Cartella" hanno significato).
+export function LibraryFilterBar({
+  searchQuery,
+  onSearchQueryChange,
+  showFilters,
+  onToggleFilters,
+  filters,
+  onFiltersChange,
+  filterOptions,
+  activeFilterCount,
+  showKindFilter = true,
+  showFolderFilter = true,
+  searchPlaceholder = 'Cerca per nome, esercizio o categoria',
+}: {
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
+  showFilters: boolean;
+  onToggleFilters: () => void;
+  filters: LibraryFilters;
+  onFiltersChange: (updater: (f: LibraryFilters) => LibraryFilters) => void;
+  filterOptions: LibraryFilterOptions;
+  activeFilterCount: number;
+  showKindFilter?: boolean;
+  showFolderFilter?: boolean;
+  searchPlaceholder?: string;
+}) {
+  const { colors } = useAppTheme();
+  return (
+    <>
+      <View style={styles.searchRow}>
+        <View style={styles.searchInputWrap}>
+          <View style={styles.searchIcon}>
+            <Search size={16} color={colors.inkFaint} />
+          </View>
+          <AppTextField placeholder={searchPlaceholder} value={searchQuery} onChangeText={onSearchQueryChange} style={styles.searchInput} returnKeyType="search" />
+        </View>
+        <Pressable
+          onPress={onToggleFilters}
+          accessibilityRole="button"
+          accessibilityLabel="Mostra o nascondi i filtri"
+          style={[
+            styles.filterToggle,
+            { borderColor: activeFilterCount > 0 ? colors.coral : colors.border, backgroundColor: showFilters ? colors.coralSoft : colors.surface },
+          ]}>
+          <Filter size={18} color={activeFilterCount > 0 ? colors.coral : colors.inkSoft} />
+          {activeFilterCount > 0 ? (
+            <View style={[styles.filterCountBadge, { backgroundColor: colors.coral }]}>
+              <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      </View>
+
+      {showFilters ? (
+        <View style={[styles.filterPanel, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          {showKindFilter ? (
+            <FilterChipGroup
+              label="Tipo"
+              options={[
+                { value: 'all', label: 'Tutti' },
+                { value: 'system', label: 'Professionali' },
+                { value: 'personal', label: 'Personali' },
+              ]}
+              selected={filters.kind}
+              onSelect={(value) => onFiltersChange((f) => ({ ...f, kind: value as LibraryFilters['kind'] }))}
+            />
+          ) : null}
+          <FilterChipGroup
+            label="Obiettivo"
+            options={filterOptions.goals.map((v) => ({ value: v, label: v }))}
+            selected={filters.goal}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, goal: f.goal === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Livello"
+            options={filterOptions.levels.map((v) => ({ value: v, label: v }))}
+            selected={filters.level}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, level: f.level === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Sessioni a settimana"
+            options={filterOptions.sessionsPerWeek.map((v) => ({ value: String(v), label: `${v}x` }))}
+            selected={filters.sessionsPerWeek !== null ? String(filters.sessionsPerWeek) : null}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, sessionsPerWeek: f.sessionsPerWeek === Number(value) ? null : Number(value) }))}
+          />
+          <FilterChipGroup
+            label="Durata programma"
+            options={filterOptions.durationWeeks.map((v) => ({ value: String(v), label: `${v} sett.` }))}
+            selected={filters.durationWeeks !== null ? String(filters.durationWeeks) : null}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, durationWeeks: f.durationWeeks === Number(value) ? null : Number(value) }))}
+          />
+          <FilterChipGroup
+            label="Attrezzatura"
+            options={filterOptions.equipment.map((v) => ({ value: v, label: v }))}
+            selected={filters.equipment}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, equipment: f.equipment === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Luogo"
+            options={filterOptions.locations.map((v) => ({ value: v, label: v }))}
+            selected={filters.location}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, location: f.location === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Stile"
+            options={filterOptions.trainingStyles.map((v) => ({ value: v, label: v }))}
+            selected={filters.trainingStyle}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, trainingStyle: f.trainingStyle === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Focus muscolare"
+            options={filterOptions.muscleFocus.map((v) => ({ value: v, label: v }))}
+            selected={filters.muscleFocus}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, muscleFocus: f.muscleFocus === value ? null : value }))}
+          />
+          <FilterChipGroup
+            label="Intensita"
+            options={filterOptions.intensity.map((v) => ({ value: v, label: v }))}
+            selected={filters.intensity}
+            onSelect={(value) => onFiltersChange((f) => ({ ...f, intensity: f.intensity === value ? null : value }))}
+          />
+          {showFolderFilter && filterOptions.folders.length > 0 ? (
+            <FilterChipGroup
+              label="Cartella (solo la mia libreria)"
+              options={filterOptions.folders.map((f) => ({ value: f.id, label: f.name }))}
+              selected={filters.folderId}
+              onSelect={(value) => onFiltersChange((f) => ({ ...f, folderId: f.folderId === value ? null : value }))}
+            />
+          ) : null}
+          {activeFilterCount > 0 || searchQuery ? (
+            <Pressable
+              onPress={() => {
+                onFiltersChange(() => EMPTY_FILTERS);
+                onSearchQueryChange('');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Cancella filtri e ricerca"
+              style={styles.clearFiltersButton}>
+              <X size={14} color={colors.coral} />
+              <Text style={[styles.clearFiltersText, { color: colors.coral }]}>Cancella filtri</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+export function TemplateRow({ template, onPress }: { template: WorkoutTemplateSummary; onPress: () => void }) {
   const { colors } = useAppTheme();
   const metaParts: string[] = [];
   if (template.durationWeeks) metaParts.push(`${template.durationWeeks} sett.`);

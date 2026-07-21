@@ -22,6 +22,8 @@ export default function SchedeLayout() {
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
       <Stack.Screen name="modelli" options={{ headerShown: false }} />
       <Stack.Screen name="cartella/[folderId]" options={{ headerShown: false }} />
+      <Stack.Screen name="professionali/index" options={{ headerShown: false }} />
+      <Stack.Screen name="professionali/[goal]" options={{ headerShown: false }} />
       <Stack.Screen name="modello/new" options={{ headerShown: false }} />
       <Stack.Screen name="modello/[templateId]" options={{ headerShown: false }} />
     </Stack>
