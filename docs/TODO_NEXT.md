@@ -477,3 +477,14 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   5. Navigazione indietro dallo storico completo → deve tornare esattamente alla stessa schermata/sessione esercizio da cui si e' partiti (stesso `planId`), non a una route generica.
   6. Coach e cliente: entrambi devono vedere lo stesso storico autorizzato per lo stesso esercizio/cliente (coach solo se il cliente e' realmente suo).
   7. Sessioni completate: lo storico deve restare in sola lettura (nessun bottone Elimina attivo su una serie di una sessione completata), sia per il coach sia per il cliente.
+
+- [x] **Fix: usa la riga esatta della sessione esercizio, workoutDayExerciseId (2026-07-21, continuazione 10):** il match precedente (`52c06c9`, planId+exerciseId) trovava sempre la prima occorrenza del piano che usa quel tipo di esercizio, non necessariamente la riga realmente cliccata — con lo stesso esercizio inserito due volte nella stessa scheda, i carichi finivano sulla riga sbagliata. `schede/[id].tsx` passa ora `workoutExerciseId` (= `workout_day_exercises.id` reale) come chiave di ricerca primaria; `esercizi/[id].tsx` valida incrociando planId/exerciseId/clientId e non usa piu' `assignments[0]` come fallback in contesto sessione. Vedi `docs/WORKLOG.md` (voce 2026-07-21 "Fix: usa la riga esatta della sessione esercizio"). Commit `08adfc9`.
+- [ ] **Verifica reale riga esatta sessione esercizio (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser disponibile in questo ambiente, 8 scenari richiesti esplicitamente dall'utente):**
+  1. Stesso esercizio presente in quattro schede diverse dello stesso cliente → aprendone una specifica, deve aprirsi esattamente quella scheda/riga, non un'altra a caso.
+  2. Stesso esercizio inserito due volte nella stessa scheda (es. due varianti/superserie) → ogni riga deve mantenere carichi separati, mai condivisi/sovrascritti a vicenda.
+  3. Modificare manualmente il parametro `workoutExerciseId` nell'URL con l'id di una riga di un ALTRO piano → l'accesso deve essere rifiutato (schermata di errore, mai `ExerciseSetLogger` montato).
+  4. Modificare manualmente il parametro con una riga valida ma di un ALTRO cliente → l'accesso deve essere rifiutato allo stesso modo.
+  5. Coach e cliente aprono la stessa riga (stesso `workoutExerciseId`) → devono vedere/loggare esattamente la stessa sessione.
+  6. "Indietro" dalla schermata esercizio deve tornare alla scheda/sessione corretta da cui si e' partiti.
+  7. Lo storico carichi (`/storico-carichi`, feature precedente) deve continuare a funzionare per clientId+exerciseId, non deve essere stato toccato da questo fix.
+  8. Verificare che non ci sia alcun fallback silenzioso: un parametro incoerente deve sempre mostrare l'errore di blocco, mai la prima assegnazione trovata a caso.
