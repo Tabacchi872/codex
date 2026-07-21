@@ -415,7 +415,7 @@ export default function SchedaDettaglioScreen() {
                   label={badgeLabel}
                   tone={sessionStatus === 'completed' ? 'moss' : sessionStatus === 'todo' ? 'neutral' : sessionStatus === 'skipped' ? 'amber' : 'rust'}
                 />
-                <Text style={[styles.planTitle, { color: theme.text }]} numberOfLines={3} ellipsizeMode="tail">
+                <Text style={[styles.planTitle, { color: theme.text }]} numberOfLines={2} ellipsizeMode="tail">
                   {plan.name}
                 </Text>
                 {isCoach ? (
@@ -745,14 +745,20 @@ const styles = StyleSheet.create({
   },
   heroCopy: {
     flex: 1,
+    flexShrink: 1,
     gap: Spacing.two,
     minWidth: 0,
   },
+  // Ridotto da 29/35 (bug reale: un titolo lungo tipo "Powerbuilding — Lower
+  // Hypertrophy" andava a capo su 3 righe disordinate accanto al blocco
+  // "N esercizi", sbilanciando la card) — ora coerente con numberOfLines={2}
+  // sul Text: qualunque titolo piu' lungo tronca con ellipsis invece di
+  // rompere su una terza riga.
   planTitle: {
-    fontSize: 29,
+    fontSize: 21,
     fontWeight: '700',
     letterSpacing: 0,
-    lineHeight: 35,
+    lineHeight: 26,
     minWidth: 0,
   },
   clientName: {
@@ -764,6 +770,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radius.lg,
     borderWidth: 1,
+    flexShrink: 0,
     height: 72,
     justifyContent: 'center',
     width: 78,
