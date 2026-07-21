@@ -76,8 +76,8 @@ export function ExerciseCatalogPicker({
   const [query, setQuery] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | Difficulty>('all');
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [openMenu, setOpenMenu] = useState<'exercise' | 'group' | 'equipment' | 'difficulty' | null>('group');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<'exercise' | 'group' | 'equipment' | 'difficulty' | null>(null);
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('10');
   const [duration, setDuration] = useState('');
