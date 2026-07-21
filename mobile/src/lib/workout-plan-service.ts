@@ -481,7 +481,7 @@ type WorkoutTemplateSummaryRow = {
   muscle_focus: string | null;
   intensity: string | null;
   is_system: boolean;
-  workout_template_days: { id: string; workout_template_exercises: { count: number }[] }[];
+  workout_template_days: { id: string; workout_template_exercises: { exercise_id: string }[] }[];
 };
 
 const TEMPLATE_METADATA_COLUMNS =
@@ -493,9 +493,13 @@ const SELECT_TEMPLATE_DETAIL =
   'workout_template_days(id,name,focus,sort_order,estimated_duration_minutes,' +
   'workout_template_exercises(id,exercise_id,exercise_order,sets,reps,reps_min,reps_max,target_weight,rest_seconds,notes,technique_type,superset_group_id,rpe_rir))';
 
+// workout_template_exercises(exercise_id) invece di (count): serve il
+// filtro/ricerca per esercizio nella libreria (template-library-screen.tsx),
+// che deve poter cercare per nome esercizio senza scaricare l'intero
+// modello (serie/reps/note) per ogni riga della lista.
 const SELECT_TEMPLATE_SUMMARY =
   'id,folder_id,name,description,goal,level,sort_order,duration_weeks,sessions_per_week,estimated_session_minutes,' +
-  'equipment,location,training_style,muscle_focus,intensity,is_system,workout_template_days(id,workout_template_exercises(count))';
+  'equipment,location,training_style,muscle_focus,intensity,is_system,workout_template_days(id,workout_template_exercises(exercise_id))';
 
 function mapTemplateExerciseRow(e: TemplateExerciseRow): TemplateExercise {
   return {
@@ -549,7 +553,7 @@ function mapTemplateRow(row: WorkoutTemplateRow): WorkoutTemplate {
 }
 
 function mapTemplateSummaryRow(row: WorkoutTemplateSummaryRow): WorkoutTemplateSummary {
-  const exerciseCount = row.workout_template_days.reduce((sum, day) => sum + (day.workout_template_exercises[0]?.count ?? 0), 0);
+  const exerciseIds = row.workout_template_days.flatMap((day) => day.workout_template_exercises.map((e) => e.exercise_id));
   return {
     id: row.id,
     folderId: row.folder_id,
@@ -568,7 +572,8 @@ function mapTemplateSummaryRow(row: WorkoutTemplateSummaryRow): WorkoutTemplateS
     intensity: row.intensity ?? '',
     isSystem: row.is_system,
     dayCount: row.workout_template_days.length,
-    exerciseCount,
+    exerciseCount: exerciseIds.length,
+    exerciseIds,
   };
 }
 

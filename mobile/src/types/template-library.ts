@@ -94,6 +94,10 @@ export type WorkoutTemplateSummary = {
   isSystem: boolean;
   dayCount: number;
   exerciseCount: number;
+  // Id degli esercizi contenuti nel modello (tutti i giorni, senza duplicati
+  // rimossi): serve solo alla ricerca lato client per nome esercizio
+  // (mobile/src/data/exercise-library.ts) — mai mostrato direttamente in UI.
+  exerciseIds: string[];
 };
 
 export type TemplateFolderDeleteMode = 'move_to_root' | 'delete_all';
