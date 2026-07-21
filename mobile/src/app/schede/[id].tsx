@@ -289,12 +289,22 @@ export default function SchedaDettaglioScreen() {
     sessionStatus === 'completed' ? 'Workout completato' : sessionStatus === 'skipped' ? 'Workout saltato' : 'Workout da fare';
   const isSessionLocked = isWorkoutSessionCompleted(plan);
 
-  // clientId passato esplicitamente (autorevole: plan.clientId viene dalla riga
-  // Supabase gia' caricata con RLS scoped al coach, mai da un nome o da un
-  // indice) cosi' esercizi/[id].tsx puo' bloccare la schermata su questo solo
-  // cliente, senza mai mostrare un selettore con altri clienti.
-  function openExerciseDetail(exerciseId: string) {
-    router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: plan!.id, clientId: plan!.clientId } });
+  // clientId ed exerciseId passati esplicitamente come dati di VALIDAZIONE
+  // (autorevole: plan.clientId viene dalla riga Supabase gia' caricata con
+  // RLS scoped al coach, mai da un nome o da un indice), ma la chiave che
+  // identifica davvero la riga aperta e' workoutExerciseId (we.id, la riga
+  // reale workout_day_exercise) — mai solo exerciseId: lo stesso esercizio
+  // puo' comparire due volte nella stessa scheda (es. due varianti/serie
+  // separate), e planId+exerciseId da soli non distinguerebbero le due righe.
+  // esercizi/[id].tsx trova ESCLUSIVAMENTE quella riga tramite
+  // workoutExerciseId, poi verifica che appartenga a planId, che il suo
+  // exerciseId corrisponda e che il clientId reale del piano combaci —
+  // mai un selettore, mai un fallback sulla prima assegnazione trovata.
+  function openExerciseDetail(workoutExerciseId: string, exerciseId: string) {
+    router.push({
+      pathname: '/esercizi/[id]',
+      params: { id: exerciseId, planId: plan!.id, clientId: plan!.clientId, workoutExerciseId },
+    });
   }
 
   return (
@@ -512,7 +522,7 @@ export default function SchedaDettaglioScreen() {
                         exercise={exercise}
                         workoutExercise={we}
                         compact
-                        onPress={() => openExerciseDetail(exercise.id)}
+                        onPress={() => openExerciseDetail(we.id, exercise.id)}
                         completed={isExerciseLocked}
                         onToggleComplete={!isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
                       />
@@ -530,7 +540,7 @@ export default function SchedaDettaglioScreen() {
                 key={we.id}
                 exercise={exercise}
                 workoutExercise={we}
-                onPress={() => openExerciseDetail(exercise.id)}
+                onPress={() => openExerciseDetail(we.id, exercise.id)}
                 completed={isExerciseLocked}
                 onToggleComplete={!isExerciseLocked ? () => toggleExerciseCompleted(we.id) : undefined}
               />

@@ -48,10 +48,17 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 type InfoTab = 'esecuzione' | 'descrizione';
 
 export default function EsercizioDettaglioScreen() {
-  const { id, planId, clientId: clientIdParam, returnTo } = useLocalSearchParams<{
+  const {
+    id,
+    planId,
+    clientId: clientIdParam,
+    workoutExerciseId,
+    returnTo,
+  } = useLocalSearchParams<{
     id: string;
     planId?: string;
     clientId?: string;
+    workoutExerciseId?: string;
     returnTo?: string;
   }>();
   const router = useRouter();
@@ -264,42 +271,59 @@ export default function EsercizioDettaglioScreen() {
   );
 
   // Si entra qui in due modi distinti, per ENTRAMBI i ruoli (schede/[id].tsx
-  // e' condivisa da coach e cliente e passa sempre planId+clientId dalla riga
-  // Supabase gia' caricata, mai da un nome o un indice — vedi openExerciseDetail
-  // li'):
+  // e' condivisa da coach e cliente e passa sempre planId+clientId+
+  // workoutExerciseId dalla riga Supabase gia' caricata, mai da un nome o un
+  // indice — vedi openExerciseDetail li'):
   // - da una sessione/scheda specifica (Clienti -> cliente -> Schede ->
   //   esercizio per il coach; Workout -> sessione -> esercizio per il
-  //   cliente): la schermata deve mostrare SOLO quella sessione, MAI un
+  //   cliente): la schermata deve mostrare SOLO quella riga esatta, MAI un
   //   selettore, MAI un'aggregazione di schede passate/future con lo stesso
-  //   esercizio — anche quando appartengono allo stesso identico cliente
-  //   (bug reale corretto qui: prima il ramo cliente ignorava planId e
-  //   filtrava `allAssignments` solo per clientId, mostrando un chip
-  //   duplicato con lo stesso nome per ogni scheda passata/attuale/futura
-  //   contenente l'esercizio, e "selected" poteva finire su una scheda
-  //   diversa da quella realmente aperta). La chiave autorevole e' la
-  //   combinazione piano+esercizio (ogni scheda ha un solo giorno,
-  //   day_order=1, quindi equivale a piano/giorno/esercizio). Per il coach
-  //   clientId resta verificato contro il client_id reale del piano
-  //   (clientIdParam da solo non e' mai attendibile); per il cliente si usa
-  //   sempre currentClientId (derivato dalla sessione autenticata), mai il
-  //   parametro URL.
-  // - dal catalogo esercizi generico (/esercizi, coach-only, nessun planId):
-  //   nessuna sessione da proteggere, resta la vista "chi ce l'ha assegnato"
-  //   — un chip per CLIENTE (deduplicato per clientId, mai per nome: due
-  //   clienti omonimi restano due chip distinti; un solo cliente con lo
-  //   stesso esercizio in piu' schede non deve generare piu' chip identici),
-  //   mai aprendo il logger dei carichi da li' (vedi sotto).
+  //   esercizio. La chiave autorevole e' workoutExerciseId (we.id, la riga
+  //   reale workout_day_exercise) — MAI solo exerciseId: lo stesso esercizio
+  //   puo' comparire due volte nella stessa scheda (due righe distinte con
+  //   carichi separati), e planId+exerciseId da soli non le distinguerebbero
+  //   (bug reale corretto in 52c06c9 con planId+exerciseId, reso qui
+  //   univoco). planId/exerciseId/clientId restano usati come dati di
+  //   VALIDAZIONE, non come chiave di ricerca: la riga trovata tramite
+  //   workoutExerciseId deve appartenere a quel planId (ricerca scoped
+  //   dentro sessionContextPlan.exercises, mai un find globale), il suo
+  //   exerciseId deve corrispondere all'id richiesto, e il client_id reale
+  //   del piano deve corrispondere al cliente atteso. Per il coach
+  //   clientIdParam da solo non e' mai attendibile (verificato contro
+  //   sessionContextPlan.clientId); per il cliente si usa sempre
+  //   currentClientId (dalla sessione autenticata), mai il parametro URL.
+  // - dal catalogo esercizi generico (/esercizi, coach-only, nessun planId,
+  //   o dall'editor scheda mentre si sfoglia il catalogo per aggiungere un
+  //   esercizio, workout-plan-form.tsx — mai una vera sessione: gli
+  //   esercizi in bozza possono avere id locali temporanei, mai un
+  //   workout_day_exercise reale finche' non si salva): nessuna sessione da
+  //   proteggere, resta la vista "chi ce l'ha assegnato" — un chip per
+  //   CLIENTE (deduplicato per clientId, mai per nome: due clienti omonimi
+  //   restano due chip distinti; un solo cliente con lo stesso esercizio in
+  //   piu' schede non deve generare piu' chip identici), mai aprendo il
+  //   logger dei carichi da li' (vedi sotto).
   const isSessionContext = Boolean(planId);
   const isCoachSessionContext = currentRole === 'coach' && isSessionContext;
   let assignments = allAssignments;
   let sessionContextInvalid = false;
+  // Riga esatta della sessione: MAI un indice/fallback su assignments[0] in
+  // contesto sessione. selected (sotto) legge direttamente questa variabile,
+  // non un array indicizzato, quando isSessionContext e' vero.
+  let sessionEntry: { plan: (typeof allAssignments)[number]['plan']; workoutExercise: (typeof allAssignments)[number]['workoutExercise'] } | null = null;
 
   if (isSessionContext) {
     const sessionContextPlan = workoutPlans.find((p) => p.id === planId);
-    const sessionContextExercise = sessionContextPlan?.exercises.find((we) => we.exerciseId === exercise.id);
+    const sessionContextExercise = sessionContextPlan?.exercises.find((we) => we.id === workoutExerciseId);
     const expectedClientId = currentRole === 'cliente' ? currentClientId : clientIdParam;
-    if (sessionContextPlan && sessionContextExercise && expectedClientId && sessionContextPlan.clientId === expectedClientId) {
-      assignments = [{ plan: sessionContextPlan, workoutExercise: sessionContextExercise }];
+    if (
+      sessionContextPlan &&
+      sessionContextExercise &&
+      sessionContextExercise.exerciseId === exercise.id &&
+      expectedClientId &&
+      sessionContextPlan.clientId === expectedClientId
+    ) {
+      sessionEntry = { plan: sessionContextPlan, workoutExercise: sessionContextExercise };
+      assignments = [sessionEntry];
     } else {
       assignments = [];
       sessionContextInvalid = true;
@@ -314,13 +338,15 @@ export default function EsercizioDettaglioScreen() {
     });
   }
 
-  const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
+  const selected = isSessionContext ? sessionEntry : (assignments[selectedIndex] ?? assignments[0] ?? null);
   const selectedClient = selected ? getClientById(clients, selected.plan.clientId) : null;
   const selectedSessionLocked = selected ? isWorkoutSessionCompleted(selected.plan) : false;
   const selectedExerciseLocked = selected ? isWorkoutExerciseCompleted(selected.plan, selected.workoutExercise.id) : false;
 
-  // Sessione richiesta non valida (piano non trovato, esercizio non presente
-  // nel piano, o client_id non corrispondente): blocca la schermata e riporta
+  // Sessione richiesta non valida (piano non trovato, workoutExerciseId
+  // mancante/non appartenente a quel piano, exerciseId non corrispondente
+  // alla riga trovata, o client_id non corrispondente): blocca la schermata
+  // e riporta
   // a una route consentita per il ruolo corrente, MAI una scelta automatica
   // del primo cliente/assignment disponibile. Per il coach questo resta
   // /clienti (route coach-only); per il cliente deve restare nel proprio
@@ -351,10 +377,14 @@ export default function EsercizioDettaglioScreen() {
   // Navigazione sequenziale tra gli esercizi della STESSA scheda: attiva solo
   // quando si arriva qui da schede/[id].tsx (client, planId nell'URL), mai per
   // il coach e mai se l'esercizio viene aperto da un altro punto dell'app
-  // (dove "avanti/indietro nella scheda" non avrebbe senso).
+  // (dove "avanti/indietro nella scheda" non avrebbe senso). Posizione
+  // individuata tramite workoutExerciseId (riga esatta), mai solo
+  // exerciseId: con lo stesso esercizio due volte nella scheda, un match per
+  // exerciseId troverebbe sempre la prima occorrenza, non necessariamente
+  // quella realmente aperta.
   const sessionPlan = currentRole === 'cliente' && planId ? workoutPlans.find((p) => p.id === planId) : null;
   const sessionOrder = sessionPlan ? [...sessionPlan.exercises].sort((a, b) => a.order - b.order) : [];
-  const sessionPosition = sessionOrder.findIndex((we) => we.exerciseId === exercise.id);
+  const sessionPosition = sessionOrder.findIndex((we) => we.id === workoutExerciseId);
   const nextInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition + 1] : undefined;
   const prevInSession = sessionPosition >= 0 ? sessionOrder[sessionPosition - 1] : undefined;
   const explicitReturnHref = getExplicitReturnHref(returnTo, planId);
@@ -687,7 +717,10 @@ export default function EsercizioDettaglioScreen() {
       {sessionPlan && sessionPosition >= 0 && (
         <View style={[styles.sessionNav, compactLayout && styles.sessionNavCompact, { borderTopColor: theme.border }]}>
           <Pressable
-            onPress={() => prevInSession && router.setParams({ id: prevInSession.exerciseId, planId: sessionPlan.id })}
+            onPress={() =>
+              prevInSession &&
+              router.setParams({ id: prevInSession.exerciseId, planId: sessionPlan.id, workoutExerciseId: prevInSession.id })
+            }
             disabled={!prevInSession}>
             <ThemedText type="title" style={[styles.navArrow, !prevInSession && styles.navArrowDisabled]}>
               ‹
@@ -709,7 +742,10 @@ export default function EsercizioDettaglioScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => nextInSession && router.setParams({ id: nextInSession.exerciseId, planId: sessionPlan.id })}
+            onPress={() =>
+              nextInSession &&
+              router.setParams({ id: nextInSession.exerciseId, planId: sessionPlan.id, workoutExerciseId: nextInSession.id })
+            }
             disabled={!nextInSession}>
             <ThemedText type="title" style={[styles.navArrow, { color: theme.primary }, !nextInSession && styles.navArrowDisabled]}>
               ›

@@ -272,11 +272,15 @@ export function WorkoutPlanForm({
             existingExercises={exercises}
             onAdd={addExercise}
             onExerciseCreated={handleCustomExerciseCreated}
-            onOpenDetails={(exerciseId) =>
-              initialPlan?.id
-                ? router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId, planId: initialPlan.id } })
-                : router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId } })
-            }
+            // Mai planId qui, anche quando initialPlan esiste: "exercises" e'
+            // la bozza LOCALE in editing (useState sopra), non necessariamente
+            // salvata su Supabase — un esercizio appena aggiunto ha un id
+            // temporaneo (`we-${Date.now()}-...`), mai un vero
+            // workout_day_exercise.id. Passare planId senza un
+            // workoutExerciseId reale renderebbe la vista un contesto
+            // sessione incoerente (esercizi/[id].tsx la bloccherebbe con un
+            // errore): resta sempre la vista informativa generica.
+            onOpenDetails={(exerciseId) => router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId } })}
             onClose={() => setShowPicker(false)}
           />
         </>
