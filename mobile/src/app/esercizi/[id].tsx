@@ -649,7 +649,7 @@ export default function EsercizioDettaglioScreen() {
               <RestTimer restSeconds={selected.workoutExercise.restSeconds} autoStartToken={restToken} />
 
               {selectedClient && (
-                <ExerciseHistory clientId={selectedClient.id} exerciseId={exercise.id} workoutPlanId={selected.plan.id} />
+                <ExerciseHistory clientId={selectedClient.id} exerciseId={exercise.id} exerciseName={exercise.name} />
               )}
 
               {(currentRole === 'cliente' || isCoachSessionContext) && selectedClient && (

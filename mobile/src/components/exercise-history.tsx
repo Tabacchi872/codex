@@ -1,189 +1,127 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from './card';
 import { ThemedText } from './themed-text';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useExerciseProgressHistory } from '@/hooks/use-exercise-progress-history';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDayMonth } from '@/lib/format-date';
-import type { ExerciseProgressHistory } from '@/types/training';
 
-// Ogni record di ExerciseProgressHistory rappresenta UNA serie eseguita (non
-// un riepilogo dell'intera sessione): più record con la stessa data sono le
-// serie di quella sessione, mostrate come righe "Serie 1, 2, 3…" della tabella.
-// Nessun cambio al tipo dati: è solo il modo in cui questo componente raggruppa
-// e visualizza i record esistenti. L'inserimento di nuove serie vive in
-// ExerciseSetLogger (sezione "Serie" del dettaglio esercizio, cliente e coach):
-// questo componente resta la sola vista storica, con un toggle per non
-// mostrare sempre tutte le sessioni passate.
+// Riepilogo compatto (mai la lista completa delle serie qui): "Ultimo
+// carico"/"Miglior carico" e la data dell'ultima registrazione, con l'intera
+// card cliccabile per aprire lo storico completo su /storico-carichi. "Miglior
+// carico" e' il massimo storico su TUTTE le registrazioni di questo esercizio
+// per questo cliente — mai limitato a una finestra "recente" ne' a un
+// workoutPlanId: lo storico deve includere anche schede passate/future con lo
+// stesso esercizio (chiave: clientId + exerciseId, mai workoutPlanId).
 export function ExerciseHistory({
   clientId,
   exerciseId,
-  workoutPlanId,
+  exerciseName,
 }: {
   clientId: string;
   exerciseId: string;
-  workoutPlanId: string;
+  exerciseName: string;
 }) {
   const theme = useTheme();
-  const { width } = useWindowDimensions();
-  const compact = width < 360;
-  const [showAll, setShowAll] = useState(false);
+  const router = useRouter();
   const { entries: progressHistory } = useExerciseProgressHistory(clientId);
 
-  const entries = useMemo(
+  const sortedEntries = useMemo(
     () =>
       progressHistory
         .filter((h) => h.clientId === clientId && h.exerciseId === exerciseId)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [progressHistory, clientId, exerciseId]
   );
+  const lastEntry = sortedEntries[0] ?? null;
+  const bestWeight = sortedEntries.length > 0 ? Math.max(...sortedEntries.map((entry) => entry.weightUsed)) : null;
 
-  const sessions = useMemo(() => {
-    const byDate = new Map<string, ExerciseProgressHistory[]>();
-    for (const entry of entries) {
-      const list = byDate.get(entry.date) ?? [];
-      list.push(entry);
-      byDate.set(entry.date, list);
-    }
-    return Array.from(byDate.entries())
-      .map(([date, sets]) => ({ date, sets: [...sets].reverse() }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [entries]);
-
-  const lastEntry = entries[0] ?? null;
-  const bestRecentWeight = entries.length > 0 ? Math.max(...entries.map((e) => e.weightUsed)) : null;
-  const visibleSessions = showAll ? sessions : sessions.slice(0, 1);
+  function openFullHistory() {
+    router.push({ pathname: '/storico-carichi', params: { clientId, exerciseId, exerciseName } });
+  }
 
   return (
-    <Card style={styles.container}>
-      <ThemedText type="smallBold">Storico pesi</ThemedText>
-
-      <View style={[styles.summaryRow, compact && styles.summaryStack]}>
-        <SummaryStat label="Ultimo peso" value={lastEntry ? `${lastEntry.weightUsed} kg` : '—'} />
-        <View style={[styles.summaryStat, styles.summaryStatHighlight, { backgroundColor: theme.backgroundSelected }]}>
-          <ThemedText type="small" themeColor="primary">
-            Miglior peso recente
-          </ThemedText>
-          <ThemedText type="smallBold" themeColor="primary">
-            {bestRecentWeight !== null ? `${bestRecentWeight} kg` : '—'}
-          </ThemedText>
-        </View>
-      </View>
-
-      {sessions.length === 0 ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          Nessun record ancora per questo cliente su questo esercizio.
-        </ThemedText>
-      ) : (
-        visibleSessions.map((session) => (
-          <View key={session.date} style={styles.session}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatDayMonth(session.date)}
-            </ThemedText>
-            <View style={[styles.table, { borderColor: theme.border }]}>
-              <View style={[styles.tableHeaderRow, { backgroundColor: theme.primary }]}>
-                <ThemedText type="smallBold" themeColor="onPrimary" style={[styles.cell, styles.cellSet]}>
-                  Serie
-                </ThemedText>
-                <ThemedText type="smallBold" themeColor="onPrimary" style={styles.cell}>
-                  Peso
-                </ThemedText>
-                <ThemedText type="smallBold" themeColor="onPrimary" style={styles.cell}>
-                  Ripetizioni
-                </ThemedText>
-              </View>
-              {session.sets.map((set, index) => (
-                <View
-                  key={set.id}
-                  style={[styles.tableRow, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                  <View style={[styles.cell, styles.cellSet, { backgroundColor: theme.softRed }]}>
-                    <ThemedText type="small" style={styles.cellText}>
-                      {index + 1}
-                    </ThemedText>
-                  </View>
-                  <ThemedText type="small" style={[styles.cell, styles.cellText]}>
-                    {set.weightUsed} Kg
-                  </ThemedText>
-                  <ThemedText type="small" style={[styles.cell, styles.cellText]}>
-                    {set.repsCompleted}
-                  </ThemedText>
-                </View>
-              ))}
+    <Pressable
+      onPress={openFullHistory}
+      accessibilityRole="button"
+      accessibilityLabel={`Vedi lo storico completo di ${exerciseName}`}>
+      {({ pressed }) => (
+        <Card style={[styles.container, pressed && styles.pressed]}>
+          <View style={styles.headerRow}>
+            <ThemedText type="smallBold">Storico carichi</ThemedText>
+            <View style={styles.linkRow}>
+              <ThemedText type="small" style={{ color: theme.primary }}>
+                Vedi storico completo
+              </ThemedText>
+              <ChevronRight size={16} color={theme.primary} />
             </View>
           </View>
-        ))
-      )}
 
-      {sessions.length > 1 && (
-        <Pressable onPress={() => setShowAll((prev) => !prev)}>
-          <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
-            {showAll ? 'Mostra solo l’ultimo' : 'Mostra tutti i carichi'}
-          </ThemedText>
-        </Pressable>
+          {sortedEntries.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Nessun carico registrato.
+            </ThemedText>
+          ) : (
+            <View style={styles.statsRow}>
+              <Stat label="Ultimo carico" value={lastEntry ? formatKg(lastEntry.weightUsed) : '—'} />
+              <Stat label="Miglior carico" value={bestWeight !== null ? formatKg(bestWeight) : '—'} highlighted />
+              <Stat label="Ultima registrazione" value={lastEntry ? formatDayMonth(lastEntry.date) : '—'} />
+            </View>
+          )}
+        </Card>
       )}
-    </Card>
+    </Pressable>
   );
 }
 
-function SummaryStat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, highlighted = false }: { label: string; value: string; highlighted?: boolean }) {
+  const theme = useTheme();
   return (
-    <View style={styles.summaryStat}>
+    <View style={styles.stat}>
       <ThemedText type="small" themeColor="textSecondary">
         {label}
       </ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <ThemedText type="smallBold" style={highlighted ? { color: theme.primary } : undefined}>
+        {value}
+      </ThemedText>
     </View>
   );
+}
+
+function formatKg(value: number) {
+  return `${Number.isInteger(value) ? value : value.toFixed(1).replace('.', ',')} kg`;
 }
 
 const styles = StyleSheet.create({
   container: {
     gap: Spacing.two,
   },
-  summaryRow: {
+  pressed: {
+    opacity: 0.82,
+  },
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Spacing.two,
   },
-  summaryStat: {
-    flex: 1,
-    minWidth: 0,
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+  },
+  stat: {
     gap: 2,
-  },
-  summaryStack: {
-    flexDirection: 'column',
-  },
-  summaryStatHighlight: {
-    borderRadius: Radius.sm,
-    padding: Spacing.two,
-  },
-  session: {
-    gap: Spacing.one,
-  },
-  table: {
-    borderRadius: Radius.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  tableHeaderRow: {
-    flexDirection: 'row',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-  },
-  cell: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two,
-  },
-  cellSet: {
-    flex: 0.6,
-  },
-  cellText: {
-    fontWeight: '600',
+    minWidth: 96,
   },
 });

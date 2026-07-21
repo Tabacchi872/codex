@@ -15,6 +15,12 @@ import type { ExerciseProgressHistory, WorkoutPlan } from '@/types/training';
 
 type ClientLoadHistoryProps = {
   clientId: string | null | undefined;
+  // Se presente, mostra SOLO questo esercizio (mai un accordion multi-
+  // esercizio): usato dalla card "Storico carichi" della schermata esercizio,
+  // aperta su /storico-carichi. Chiave: clientId + exerciseId, mai
+  // workoutPlanId (lo storico deve includere anche schede passate/future con
+  // lo stesso esercizio).
+  exerciseId?: string;
   readOnly?: boolean;
   emptyMessage?: string;
 };
@@ -37,9 +43,11 @@ type ExerciseOption = Option & {
 
 export function ClientLoadHistory({
   clientId,
+  exerciseId,
   readOnly = true,
   emptyMessage = 'Nessun carico registrato. I carichi salvati durante gli allenamenti appariranno qui.',
 }: ClientLoadHistoryProps) {
+  const singleExerciseMode = Boolean(exerciseId);
   const { colors } = useAppTheme();
   const { resolve } = useExerciseResolver();
   const currentRole = useAuthStore((s) => s.currentRole);
@@ -64,6 +72,7 @@ export function ClientLoadHistory({
     const byExercise = new Map<string, ExerciseProgressHistory[]>();
     for (const entry of entries) {
       if (entry.clientId !== clientId) continue;
+      if (exerciseId && entry.exerciseId !== exerciseId) continue;
       const exerciseEntries = byExercise.get(entry.exerciseId) ?? [];
       exerciseEntries.push(entry);
       byExercise.set(entry.exerciseId, exerciseEntries);
@@ -92,7 +101,7 @@ export function ClientLoadHistory({
       })
       .filter((group): group is ExerciseLoadGroup => Boolean(group.lastEntry))
       .sort((a, b) => compareEntriesDesc(a.lastEntry, b.lastEntry));
-  }, [clientId, entries, resolve]);
+  }, [clientId, exerciseId, entries, resolve]);
 
   async function confirmDelete(entry: ExerciseProgressHistory) {
     const run = async () => {
@@ -155,23 +164,25 @@ export function ClientLoadHistory({
 
   return (
     <View style={styles.list}>
-      <View style={styles.historyHeader}>
-        <View style={styles.historyTitleWrap}>
-          <Text style={[styles.historyTitle, { color: colors.ink }]}>{formOpen ? 'Nuova registrazione' : 'Storico carichi'}</Text>
-          {!formOpen ? (
-            <Text style={[styles.historySubtitle, { color: colors.inkSoft }]}>Carichi registrati per esercizio e data.</Text>
+      {!singleExerciseMode ? (
+        <View style={styles.historyHeader}>
+          <View style={styles.historyTitleWrap}>
+            <Text style={[styles.historyTitle, { color: colors.ink }]}>{formOpen ? 'Nuova registrazione' : 'Storico carichi'}</Text>
+            {!formOpen ? (
+              <Text style={[styles.historySubtitle, { color: colors.inkSoft }]}>Carichi registrati per esercizio e data.</Text>
+            ) : null}
+          </View>
+          {!readOnly ? (
+            <AppButton
+              label={formOpen ? 'Chiudi inserimento' : 'Aggiungi carichi'}
+              onPress={formOpen ? requestCloseForm : () => setFormOpen(true)}
+              variant={formOpen ? 'outline' : 'primary'}
+              size="md"
+              icon={formOpen ? <X size={16} color={colors.ink} /> : <Plus size={16} color={colors.onMoss} />}
+            />
           ) : null}
         </View>
-        {!readOnly ? (
-          <AppButton
-            label={formOpen ? 'Chiudi inserimento' : 'Aggiungi carichi'}
-            onPress={formOpen ? requestCloseForm : () => setFormOpen(true)}
-            variant={formOpen ? 'outline' : 'primary'}
-            size="md"
-            icon={formOpen ? <X size={16} color={colors.ink} /> : <Plus size={16} color={colors.onMoss} />}
-          />
-        ) : null}
-      </View>
+      ) : null}
 
       {savedMessage ? (
         <AppCard style={styles.successCard}>
@@ -202,24 +213,32 @@ export function ClientLoadHistory({
         </AppCard>
       ) : (
         groups.map((group) => {
-          const isOpen = Boolean(expanded[group.exerciseId]);
+          const isOpen = singleExerciseMode ? true : Boolean(expanded[group.exerciseId]);
+          const headerCopy = (
+            <View style={styles.cardTitleWrap}>
+              <Text style={[styles.exerciseName, { color: colors.ink }]} numberOfLines={2}>
+                {group.exerciseName}
+              </Text>
+              <Text style={[styles.subText, { color: colors.inkSoft }]}>
+                Ultima registrazione: {formatDayMonth(group.lastEntry.date)} - {group.sessions.length}{' '}
+                {group.sessions.length === 1 ? 'sessione' : 'sessioni'}
+              </Text>
+            </View>
+          );
           return (
             <AppCard key={group.exerciseId} style={styles.card}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: isOpen }}
-                onPress={() => setExpanded((current) => ({ ...current, [group.exerciseId]: !isOpen }))}
-                style={({ pressed }) => [styles.cardHeader, pressed && { opacity: 0.82 }]}>
-                <View style={styles.cardTitleWrap}>
-                  <Text style={[styles.exerciseName, { color: colors.ink }]} numberOfLines={2}>
-                    {group.exerciseName}
-                  </Text>
-                  <Text style={[styles.subText, { color: colors.inkSoft }]}>
-                    Ultima data: {formatDayMonth(group.lastEntry.date)} - {group.sessions.length} sessioni
-                  </Text>
-                </View>
-                {isOpen ? <ChevronDown size={20} color={colors.inkSoft} /> : <ChevronRight size={20} color={colors.inkSoft} />}
-              </Pressable>
+              {singleExerciseMode ? (
+                <View style={styles.cardHeader}>{headerCopy}</View>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: isOpen }}
+                  onPress={() => setExpanded((current) => ({ ...current, [group.exerciseId]: !isOpen }))}
+                  style={({ pressed }) => [styles.cardHeader, pressed && { opacity: 0.82 }]}>
+                  {headerCopy}
+                  {isOpen ? <ChevronDown size={20} color={colors.inkSoft} /> : <ChevronRight size={20} color={colors.inkSoft} />}
+                </Pressable>
+              )}
 
               <View style={styles.statsGrid}>
                 <LoadStat label="Ultimo carico" value={formatKg(group.lastEntry.weightUsed)} />
@@ -228,44 +247,71 @@ export function ClientLoadHistory({
 
               {isOpen ? (
                 <View style={styles.sessions}>
-                  {group.sessions.map((session) => (
-                    <View key={session.date} style={[styles.session, { borderColor: colors.border }]}>
-                      <Text style={[styles.sessionDate, { color: colors.ink }]}>{formatDayMonth(session.date)}</Text>
-                      {session.sets.map((set, index) => {
-                        const relatedPlan = workoutPlans.find((plan) => plan.id === set.workoutPlanId);
-                        const canDelete = canManageEntry(set, relatedPlan, currentRole, currentClientId, currentCoachId);
-                        return (
-                          <View key={set.id} style={styles.setRow}>
-                            <View style={styles.setTopRow}>
-                              <Text style={[styles.setLabel, { color: colors.inkSoft }]}>Serie {set.setNumber ?? index + 1}</Text>
-                              <Text style={[styles.authorLabel, { color: colors.moss }]}>{formatAuthorLabel(set, currentRole)}</Text>
-                            </View>
-                            <Text style={[styles.setValue, { color: colors.ink }]}>
-                              {formatKg(set.weightUsed)} - {set.repsCompleted} rip.
-                            </Text>
-                            {set.notes.trim() ? (
-                              <Text style={[styles.notes, { color: colors.inkSoft }]} numberOfLines={3}>
-                                {set.notes}
+                  {group.sessions.map((session) => {
+                    const relatedPlan = workoutPlans.find((plan) => plan.id === session.sets[0]?.workoutPlanId);
+                    const sessionHasPersonalBest = session.sets.some((set) => set.weightUsed === group.bestWeight);
+                    return (
+                      <View key={session.date} style={[styles.session, { borderColor: colors.border }]}>
+                        <View style={styles.sessionHeaderRow}>
+                          <View style={styles.sessionHeaderText}>
+                            <Text style={[styles.sessionDate, { color: colors.ink }]}>{formatDayMonth(session.date)}</Text>
+                            {relatedPlan ? (
+                              <Text style={[styles.sessionPlan, { color: colors.inkSoft }]} numberOfLines={1}>
+                                {formatPlanOptionLabel(relatedPlan)}
                               </Text>
                             ) : null}
-                            {canDelete ? (
-                              <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel="Elimina serie"
-                                disabled={deletingId === set.id}
-                                onPress={() => confirmDelete(set)}
-                                style={styles.deleteButton}>
-                                <Trash2 size={14} color={colors.rust} />
-                                <Text style={[styles.deleteLabel, { color: colors.rust }]}>
-                                  {deletingId === set.id ? 'Eliminazione...' : 'Elimina'}
-                                </Text>
-                              </Pressable>
-                            ) : null}
                           </View>
-                        );
-                      })}
-                    </View>
-                  ))}
+                          {sessionHasPersonalBest ? (
+                            <View style={[styles.prBadge, { backgroundColor: colors.mossSoft }]}>
+                              <Text style={[styles.prBadgeText, { color: colors.moss }]}>Record personale</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {session.sets.map((set, index) => {
+                          // Ricalcolato PER SERIE (non riusa il relatedPlan del
+                          // titolo sessione, quello e' sets[0] a scopo di sola
+                          // etichetta): due serie della stessa data possono in
+                          // teoria appartenere a workout_plan_id diversi
+                          // (backfill storico + sessione reale), e
+                          // canManageEntry deve valutare l'immutabilita' sulla
+                          // scheda REALE di quella singola serie, mai su quella
+                          // di un'altra serie dello stesso gruppo data.
+                          const setPlan = workoutPlans.find((plan) => plan.id === set.workoutPlanId);
+                          const canDelete = canManageEntry(set, setPlan, currentRole, currentClientId, currentCoachId);
+                          return (
+                            <View key={set.id} style={styles.setRow}>
+                              <View style={styles.setTopRow}>
+                                <Text style={[styles.setLabel, { color: colors.inkSoft }]}>Serie {set.setNumber ?? index + 1}</Text>
+                                <Text style={[styles.authorLabel, { color: colors.moss }]}>{formatAuthorLabel(set, currentRole)}</Text>
+                              </View>
+                              <Text style={[styles.setValue, { color: colors.ink }]}>
+                                {formatKg(set.weightUsed)} - {set.repsCompleted} rip.
+                                {set.restUsed ? ` - Recupero ${set.restUsed}s` : ''}
+                              </Text>
+                              {set.notes.trim() ? (
+                                <Text style={[styles.notes, { color: colors.inkSoft }]} numberOfLines={3}>
+                                  {set.notes}
+                                </Text>
+                              ) : null}
+                              {canDelete ? (
+                                <Pressable
+                                  accessibilityRole="button"
+                                  accessibilityLabel="Elimina serie"
+                                  disabled={deletingId === set.id}
+                                  onPress={() => confirmDelete(set)}
+                                  style={styles.deleteButton}>
+                                  <Trash2 size={14} color={colors.rust} />
+                                  <Text style={[styles.deleteLabel, { color: colors.rust }]}>
+                                    {deletingId === set.id ? 'Eliminazione...' : 'Elimina'}
+                                  </Text>
+                                </Pressable>
+                              ) : null}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    );
+                  })}
                 </View>
               ) : null}
             </AppCard>
@@ -746,8 +792,32 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
     paddingTop: AppSpacing[3],
   },
+  sessionHeaderRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    justifyContent: 'space-between',
+  },
+  sessionHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
   sessionDate: {
     fontSize: AppFontSize.sm,
+    fontWeight: '800',
+  },
+  sessionPlan: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  prBadge: {
+    borderRadius: AppRadius.pill,
+    paddingHorizontal: AppSpacing[2],
+    paddingVertical: 4,
+  },
+  prBadgeText: {
+    fontSize: 11,
     fontWeight: '800',
   },
   setRow: {

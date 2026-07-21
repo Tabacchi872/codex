@@ -46,7 +46,9 @@ const CLIENT_ONLY_ROUTES = [
   '/cliente-profilo',
   '/progressi',
   '/metriche',
-  '/storico-carichi',
+  // NON /storico-carichi: route condivisa (vedi storico-carichi.tsx) — un
+  // coach la apre dalla card "Storico carichi" della schermata esercizio per
+  // il cliente selezionato, la schermata stessa valida clientId per ruolo.
   CLIENT_CONNECT_COACH,
   CLIENT_SELF_GUIDED_PLANS,
   '/bacheca',
