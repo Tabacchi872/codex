@@ -812,6 +812,9 @@ export async function assignWorkoutTemplateToClient(
     p_template_id: templateId,
     p_client_id: clientId,
   });
+  if (__DEV__) {
+    console.log('TEMPLATE_ASSIGN_RPC_RESPONSE', { templateId, clientId, errorMessage: error?.message ?? null, planIds: error ? null : data });
+  }
   if (error) {
     const { code, friendly } = describeTemplateLibraryError(error.message, 'Errore assegnazione scheda modello');
     return { ok: false, code, message: friendly };

@@ -28,6 +28,7 @@ import {
 } from '@/lib/workout-plan-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
+import { useTrainingStore } from '@/store/training-store';
 import type { TemplateFolder, WorkoutTemplate } from '@/types/template-library';
 
 async function confirmDestructive(title: string, message: string, confirmLabel: string): Promise<boolean> {
@@ -58,6 +59,7 @@ export default function ModelloDettaglioScreen() {
   const { resolve: resolveExercise } = useExerciseResolver();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const clients = useClientStore((s) => s.clients);
+  const addWorkoutPlan = useTrainingStore((s) => s.addWorkoutPlan);
 
   const [template, setTemplate] = useState<WorkoutTemplate | null | undefined>(undefined);
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
@@ -164,8 +166,34 @@ export default function ModelloDettaglioScreen() {
     const result = await assignWorkoutTemplateToClient(template.id, assignClientId);
     setAssignBusy(false);
     if (!result.ok) {
+      if (__DEV__) {
+        console.error('TEMPLATE_ASSIGN_ERROR', { templateId: template.id, isSystem: template.isSystem, clientId: assignClientId, message: result.message });
+      }
       setAssignError(result.message);
       return;
+    }
+    // Bug reale corretto (2026-07-21): questa schermata leggeva le nuove
+    // schede solo per la conferma a video (getWorkoutPlanById dentro
+    // assignWorkoutTemplateToClient), senza mai scriverle nello store locale
+    // useTrainingStore — l'unica fonte letta da Clienti -> [id] -> Schede
+    // (clienti/[id].tsx). La scheda esisteva davvero su Supabase (l'RPC e la
+    // rilettura post-insert funzionavano), ma restava invisibile nella lista
+    // cliente finche' qualcos'altro non forzava un refresh completo (evento
+    // Realtime, se attivo, o il mount di un'altra schermata). Stesso pattern
+    // gia' usato da schede/new.tsx/schede/modelli/[id].tsx dopo un
+    // salvataggio riuscito: aggiornare subito lo store locale, mai fare
+    // affidamento solo su Realtime per il proprio salvataggio.
+    result.data.forEach((plan) => addWorkoutPlan(plan));
+    if (__DEV__) {
+      const exerciseCount = result.data.reduce((sum, plan) => sum + plan.exercises.length, 0);
+      console.log('TEMPLATE_ASSIGN_SUCCESS', {
+        templateId: template.id,
+        isSystem: template.isSystem,
+        clientId: assignClientId,
+        workoutPlanIds: result.data.map((plan) => plan.id),
+        dayCount: result.data.length,
+        exerciseCount,
+      });
     }
     const client = activeClients.find((c) => c.id === assignClientId);
     setAssigning(false);
@@ -253,7 +281,13 @@ export default function ModelloDettaglioScreen() {
                     <AppButton label="Resta qui" onPress={() => setAssignedConfirmation(null)} variant="outline" fullWidth />
                   </View>
                   <View style={styles.confirmationActionItem}>
-                    <AppButton label="Vai al cliente" onPress={() => router.push(`/clienti/${assignedConfirmation.clientId}`)} fullWidth />
+                    <AppButton
+                      label="Vai al cliente"
+                      onPress={() =>
+                        router.push({ pathname: '/clienti/[id]', params: { id: assignedConfirmation.clientId, tab: 'schede' } })
+                      }
+                      fullWidth
+                    />
                   </View>
                 </View>
               </AppCard>

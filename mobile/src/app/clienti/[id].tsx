@@ -35,6 +35,10 @@ import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
 
 const DETAIL_TABS = ['panoramica', 'schede', 'metriche', 'carichi', 'note'] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
+
+function isDetailTab(value: string | undefined): value is DetailTab {
+  return !!value && (DETAIL_TABS as readonly string[]).includes(value);
+}
 const DETAIL_TAB_LABEL: Record<DetailTab, string> = {
   panoramica: 'Panoramica',
   schede: 'Schede',
@@ -44,7 +48,12 @@ const DETAIL_TAB_LABEL: Record<DetailTab, string> = {
 };
 
 export default function ClienteDettaglioScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // "tab" e' opzionale, letto SOLO come stato iniziale (mai risincronizzato
+  // in un useEffect): un cambio di tab manuale del coach non deve tornare
+  // indietro se il param resta nell'URL. Usato oggi solo da "Vai al cliente"
+  // dopo un'assegnazione riuscita (schede/modello/[templateId].tsx), per
+  // aprire direttamente la scheda appena creata senza un tocco in piu'.
+  const { id, tab: initialTabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
@@ -54,7 +63,7 @@ export default function ClienteDettaglioScreen() {
   const addAccount = useClientStore((s) => s.addAccount);
   const appointments = useAppointmentStore((s) => s.appointments);
   const cliente = clients.find((c) => c.id === id && c.connectionStatus !== 'removed');
-  const [activeTab, setActiveTab] = useState<DetailTab>('panoramica');
+  const [activeTab, setActiveTab] = useState<DetailTab>(isDetailTab(initialTabParam) ? initialTabParam : 'panoramica');
   const [statusBusy, setStatusBusy] = useState<'suspend' | 'reactivate' | 'remove' | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
