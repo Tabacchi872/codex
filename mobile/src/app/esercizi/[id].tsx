@@ -263,34 +263,55 @@ export default function EsercizioDettaglioScreen() {
     plan.exercises.filter((we) => we.exerciseId === exercise.id).map((we) => ({ plan, workoutExercise: we }))
   );
 
-  // Il coach entra qui in due modi distinti:
-  // - da una sessione/cliente specifico (Clienti -> Dettaglio -> Schede ->
-  //   esercizio, planId+clientId nell'URL): la schermata deve mostrare SOLO
-  //   quel cliente, MAI un selettore con altri clienti (rischio reale di
-  //   inserire carichi/completare la scheda della persona sbagliata — bug
-  //   segnalato dall'utente). clientId da solo non e' mai attendibile: deve
-  //   corrispondere al client_id REALE della scheda (planId), gia' caricata
-  //   da Supabase con RLS scoped al coach autenticato (workout_plans_coach_scope,
-  //   coach_id = auth.uid()) — un id manomesso in URL verso una scheda di un
-  //   altro coach semplicemente non e' presente in workoutPlans.
-  // - dal catalogo esercizi generico (/esercizi, nessun planId): nessuna
-  //   sessione da proteggere, resta la vista "chi ce l'ha assegnato" gia'
-  //   esistente, ma senza aprire mai il logger dei carichi da li' (vedi sotto).
-  const isCoachSessionContext = currentRole === 'coach' && Boolean(planId);
+  // Si entra qui in due modi distinti, per ENTRAMBI i ruoli (schede/[id].tsx
+  // e' condivisa da coach e cliente e passa sempre planId+clientId dalla riga
+  // Supabase gia' caricata, mai da un nome o un indice — vedi openExerciseDetail
+  // li'):
+  // - da una sessione/scheda specifica (Clienti -> cliente -> Schede ->
+  //   esercizio per il coach; Workout -> sessione -> esercizio per il
+  //   cliente): la schermata deve mostrare SOLO quella sessione, MAI un
+  //   selettore, MAI un'aggregazione di schede passate/future con lo stesso
+  //   esercizio — anche quando appartengono allo stesso identico cliente
+  //   (bug reale corretto qui: prima il ramo cliente ignorava planId e
+  //   filtrava `allAssignments` solo per clientId, mostrando un chip
+  //   duplicato con lo stesso nome per ogni scheda passata/attuale/futura
+  //   contenente l'esercizio, e "selected" poteva finire su una scheda
+  //   diversa da quella realmente aperta). La chiave autorevole e' la
+  //   combinazione piano+esercizio (ogni scheda ha un solo giorno,
+  //   day_order=1, quindi equivale a piano/giorno/esercizio). Per il coach
+  //   clientId resta verificato contro il client_id reale del piano
+  //   (clientIdParam da solo non e' mai attendibile); per il cliente si usa
+  //   sempre currentClientId (derivato dalla sessione autenticata), mai il
+  //   parametro URL.
+  // - dal catalogo esercizi generico (/esercizi, coach-only, nessun planId):
+  //   nessuna sessione da proteggere, resta la vista "chi ce l'ha assegnato"
+  //   — un chip per CLIENTE (deduplicato per clientId, mai per nome: due
+  //   clienti omonimi restano due chip distinti; un solo cliente con lo
+  //   stesso esercizio in piu' schede non deve generare piu' chip identici),
+  //   mai aprendo il logger dei carichi da li' (vedi sotto).
+  const isSessionContext = Boolean(planId);
+  const isCoachSessionContext = currentRole === 'coach' && isSessionContext;
   let assignments = allAssignments;
   let sessionContextInvalid = false;
 
-  if (currentRole === 'cliente') {
-    assignments = allAssignments.filter((a) => a.plan.clientId === currentClientId);
-  } else if (isCoachSessionContext) {
-    const coachSessionPlan = workoutPlans.find((p) => p.id === planId);
-    const coachSessionExercise = coachSessionPlan?.exercises.find((we) => we.exerciseId === exercise.id);
-    if (coachSessionPlan && coachSessionExercise && clientIdParam && coachSessionPlan.clientId === clientIdParam) {
-      assignments = [{ plan: coachSessionPlan, workoutExercise: coachSessionExercise }];
+  if (isSessionContext) {
+    const sessionContextPlan = workoutPlans.find((p) => p.id === planId);
+    const sessionContextExercise = sessionContextPlan?.exercises.find((we) => we.exerciseId === exercise.id);
+    const expectedClientId = currentRole === 'cliente' ? currentClientId : clientIdParam;
+    if (sessionContextPlan && sessionContextExercise && expectedClientId && sessionContextPlan.clientId === expectedClientId) {
+      assignments = [{ plan: sessionContextPlan, workoutExercise: sessionContextExercise }];
     } else {
       assignments = [];
       sessionContextInvalid = true;
     }
+  } else {
+    const scoped = currentRole === 'cliente' ? allAssignments.filter((a) => a.plan.clientId === currentClientId) : allAssignments;
+    const seenClientIds = new Set<string>();
+    assignments = scoped.filter((a) => {
+      if (seenClientIds.has(a.plan.clientId)) return false;
+      seenClientIds.add(a.plan.clientId);
+      return true;
+    });
   }
 
   const selected = assignments[selectedIndex] ?? assignments[0] ?? null;
@@ -298,21 +319,27 @@ export default function EsercizioDettaglioScreen() {
   const selectedSessionLocked = selected ? isWorkoutSessionCompleted(selected.plan) : false;
   const selectedExerciseLocked = selected ? isWorkoutExerciseCompleted(selected.plan, selected.workoutExercise.id) : false;
 
-  // clientId mancante/non valido per la sessione richiesta: blocca la
-  // schermata e riporta alla lista clienti, MAI una scelta automatica del
-  // primo cliente/assignment disponibile.
+  // Sessione richiesta non valida (piano non trovato, esercizio non presente
+  // nel piano, o client_id non corrispondente): blocca la schermata e riporta
+  // a una route consentita per il ruolo corrente, MAI una scelta automatica
+  // del primo cliente/assignment disponibile. Per il coach questo resta
+  // /clienti (route coach-only); per il cliente deve restare nel proprio
+  // spazio (/workout, route cliente-only) — mai la stessa destinazione per
+  // entrambi, altrimenti l'uno o l'altro ruolo finirebbe su una route a cui
+  // AuthGate non gli consente accesso.
   if (sessionContextInvalid) {
+    const isClient = currentRole === 'cliente';
     return (
       <ScreenBackground>
         <ThemedView style={styles.notFound}>
-          <ThemedText type="default">Cliente non valido per questa sessione.</ThemedText>
+          <ThemedText type="default">{isClient ? 'Sessione non valida.' : 'Cliente non valido per questa sessione.'}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.blockingSubtext}>
-            Torna alla lista clienti e riapri la scheda da li'.
+            {isClient ? "Torna al tuo workout e riapri l'esercizio da li'." : "Torna alla lista clienti e riapri la scheda da li'."}
           </ThemedText>
-          <Pressable onPress={() => router.replace('/clienti')} hitSlop={6}>
+          <Pressable onPress={() => router.replace(isClient ? '/workout' : '/clienti')} hitSlop={6}>
             <View style={[styles.blockingButton, { backgroundColor: theme.primary }]}>
               <ThemedText type="smallBold" themeColor="onPrimary">
-                Torna alla lista clienti
+                {isClient ? 'Torna al workout' : 'Torna alla lista clienti'}
               </ThemedText>
             </View>
           </Pressable>
@@ -543,7 +570,7 @@ export default function EsercizioDettaglioScreen() {
         <PlaceholderBanner text="Esercizio non ancora assegnato in nessuna scheda cliente: timer e storico si attivano quando fa parte di una scheda." />
       ) : (
         <>
-          {!isCoachSessionContext && assignments.length > 1 && (
+          {!isSessionContext && assignments.length > 1 && (
             <View style={styles.chipsRow}>
               {assignments.map((a, index) => {
                 const client = getClientById(clients, a.plan.clientId);
