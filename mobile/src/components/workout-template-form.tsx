@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import { FolderOpen } from 'lucide-react-native';
+import { FolderOpen, Plus, Trash2 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Switch, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Card } from './card';
 import { ExerciseCatalogPicker } from './exercise-catalog-picker';
-import { AppButton } from './ui';
+import { AppButton, AppIconButton } from './ui';
 import { TemplateFolderPickerModal } from './template-folder-picker-modal';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
@@ -13,15 +13,34 @@ import { WorkoutExerciseEditor } from './workout-exercise-editor';
 import { YMoveExercisePicker } from './ymove-exercise-picker';
 
 import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { EXERCISE_LIBRARY } from '@/data/exercise-library';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
-import { useTheme } from '@/hooks/use-theme';
 import { listCustomExercisesForCurrentCoach } from '@/lib/fitcoach-exercises-service';
 import { supabaseConfig } from '@/lib/supabase';
 import type { Exercise, WorkoutExercise } from '@/types/training';
 import type { TemplateFolder, WorkoutTemplate } from '@/types/template-library';
+import type { WorkoutTemplateSaveInput } from '@/lib/workout-plan-service';
 
-function newTemplateExercise(exerciseId: string, order: number): WorkoutExercise {
+// Un esercizio del giorno, nello stato del form: stesso identico shape di
+// WorkoutExercise (riusato as-is da WorkoutExerciseEditor, componente
+// condiviso anche dall'editor delle schede REALI, mai modificato qui) con in
+// piu' rpeRir — campo esclusivo dei modelli, mostrato in un piccolo input
+// accanto, MAI dentro WorkoutExerciseEditor stesso.
+type TemplateExerciseFormState = WorkoutExercise & { rpeRir?: string };
+
+type TemplateDayFormState = {
+  id?: string;
+  key: string;
+  name: string;
+  focus: string;
+  estimatedDurationMinutes: string;
+  exercises: TemplateExerciseFormState[];
+};
+
+const DAY_LETTERS = 'ABCDEFGHIJ';
+
+function newExercise(exerciseId: string, order: number): TemplateExerciseFormState {
   return {
     id: `te-${Date.now()}-${order}`,
     exerciseId,
@@ -34,12 +53,22 @@ function newTemplateExercise(exerciseId: string, order: number): WorkoutExercise
   };
 }
 
-// Form della scheda modello: nome/descrizione/obiettivo/livello/cartella +
-// esercizi (stessa logica di aggiunta/riordino/superserie di WorkoutPlanForm,
-// riusata cosi' com'e' tramite WorkoutExerciseEditor/ExerciseCatalogPicker/
-// YMoveExercisePicker). Nessun campo cliente, nessuna data: un modello non ha
-// mai un destinatario ne' una data di validita' — quelle cose nascono SOLO al
-// momento dell'assegnazione (vedi schede/modello/[templateId].tsx).
+function newDay(index: number): TemplateDayFormState {
+  return {
+    key: `day-${Date.now()}-${index}`,
+    name: `Workout ${DAY_LETTERS[index] ?? index + 1}`,
+    focus: '',
+    estimatedDurationMinutes: '',
+    exercises: [],
+  };
+}
+
+// Form della scheda modello: metadati professionali + uno o piu' giorni
+// (Workout A/B/C...), ciascuno con i propri esercizi. Nessun campo cliente,
+// nessuna data: un modello non ha mai un destinatario ne' una data di
+// validita' — quelle cose nascono SOLO al momento dell'assegnazione (vedi
+// schede/modello/[templateId].tsx). Mai usato per un modello di sistema
+// (is_system): la schermata che lo monta lo esclude a monte.
 export function WorkoutTemplateForm({
   initialTemplate,
   initialFolderId,
@@ -50,14 +79,7 @@ export function WorkoutTemplateForm({
   initialTemplate?: WorkoutTemplate;
   initialFolderId: string | null;
   folders: TemplateFolder[];
-  onSave: (input: {
-    name: string;
-    description: string;
-    goal: string;
-    level: string;
-    folderId: string | null;
-    exercises: WorkoutExercise[];
-  }) => void;
+  onSave: (input: Omit<WorkoutTemplateSaveInput, 'id'>) => void;
   saveLabel: string;
 }) {
   const theme = useTheme();
@@ -69,24 +91,49 @@ export function WorkoutTemplateForm({
   const [level, setLevel] = useState(initialTemplate?.level ?? '');
   const [folderId, setFolderId] = useState<string | null>(initialTemplate?.folderId ?? initialFolderId);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
-  const [exercises, setExercises] = useState<WorkoutExercise[]>(
-    initialTemplate?.exercises.map((e) => ({
-      id: e.id,
-      exerciseId: e.exerciseId,
-      sets: e.sets,
-      reps: e.reps,
-      repsMin: e.repsMin,
-      repsMax: e.repsMax,
-      targetWeight: e.targetWeight,
-      restSeconds: e.restSeconds,
-      notes: e.notes,
-      order: e.order,
-      techniqueType: e.techniqueType,
-      supersetGroupId: e.supersetGroupId,
-    })) ?? [],
+
+  const [durationWeeks, setDurationWeeks] = useState(initialTemplate?.durationWeeks ? String(initialTemplate.durationWeeks) : '');
+  const [sessionsPerWeek, setSessionsPerWeek] = useState(initialTemplate?.sessionsPerWeek ? String(initialTemplate.sessionsPerWeek) : '');
+  const [estimatedSessionMinutes, setEstimatedSessionMinutes] = useState(
+    initialTemplate?.estimatedSessionMinutes ? String(initialTemplate.estimatedSessionMinutes) : '',
   );
-  const [showPicker, setShowPicker] = useState(false);
-  const [showYMovePicker, setShowYMovePicker] = useState(false);
+  const [equipment, setEquipment] = useState(initialTemplate?.equipment ?? '');
+  const [location, setLocation] = useState(initialTemplate?.location ?? '');
+  const [trainingStyle, setTrainingStyle] = useState(initialTemplate?.trainingStyle ?? '');
+  const [muscleFocus, setMuscleFocus] = useState(initialTemplate?.muscleFocus ?? '');
+  const [intensity, setIntensity] = useState(initialTemplate?.intensity ?? '');
+  const [progressionNotes, setProgressionNotes] = useState(initialTemplate?.progressionNotes ?? '');
+  const [deloadWeek, setDeloadWeek] = useState(initialTemplate?.deloadWeek ?? false);
+
+  const [days, setDays] = useState<TemplateDayFormState[]>(
+    initialTemplate && initialTemplate.days.length > 0
+      ? initialTemplate.days.map((d) => ({
+          id: d.id,
+          key: d.id,
+          name: d.name,
+          focus: d.focus ?? '',
+          estimatedDurationMinutes: d.estimatedDurationMinutes ? String(d.estimatedDurationMinutes) : '',
+          exercises: d.exercises.map((e) => ({
+            id: e.id,
+            exerciseId: e.exerciseId,
+            sets: e.sets,
+            reps: e.reps,
+            repsMin: e.repsMin,
+            repsMax: e.repsMax,
+            targetWeight: e.targetWeight,
+            restSeconds: e.restSeconds,
+            notes: e.notes,
+            order: e.order,
+            techniqueType: e.techniqueType,
+            supersetGroupId: e.supersetGroupId,
+            rpeRir: e.rpeRir,
+          })),
+        }))
+      : [newDay(0)],
+  );
+
+  const [pickerForDay, setPickerForDay] = useState<string | null>(null);
+  const [ymovePickerForDay, setYmovePickerForDay] = useState<string | null>(null);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,10 +161,28 @@ export function WorkoutTemplateForm({
     };
   }, [registerExercise]);
 
-  function addExercise(exercise: Exercise, workoutExercise?: WorkoutExercise) {
+  function updateDay(key: string, patch: Partial<TemplateDayFormState>) {
+    setDays((prev) => prev.map((d) => (d.key === key ? { ...d, ...patch } : d)));
+  }
+
+  function addDay() {
+    setDays((prev) => [...prev, newDay(prev.length)]);
+  }
+
+  function removeDay(key: string) {
+    setDays((prev) => prev.filter((d) => d.key !== key));
+  }
+
+  function addExerciseToDay(dayKey: string, exercise: Exercise, workoutExercise?: WorkoutExercise) {
     registerExercise(exercise);
-    setExercises((prev) => [...prev, workoutExercise ? { ...workoutExercise, order: prev.length } : newTemplateExercise(exercise.id, prev.length)]);
-    setShowPicker(false);
+    setDays((prev) =>
+      prev.map((d) =>
+        d.key === dayKey
+          ? { ...d, exercises: [...d.exercises, workoutExercise ? { ...workoutExercise, order: d.exercises.length } : newExercise(exercise.id, d.exercises.length)] }
+          : d,
+      ),
+    );
+    setPickerForDay(null);
   }
 
   function handleCustomExerciseCreated(exercise: Exercise) {
@@ -125,28 +190,35 @@ export function WorkoutTemplateForm({
     setCustomExercises((prev) => [exercise, ...prev.filter((item) => item.id !== exercise.id)]);
   }
 
-  function handleYMoveExerciseAdded(exercise: Exercise) {
+  function handleYMoveExerciseAdded(dayKey: string, exercise: Exercise) {
     registerExercise(exercise);
-    setExercises((prev) => [...prev, newTemplateExercise(exercise.id, prev.length)]);
-    setShowYMovePicker(false);
+    setDays((prev) => prev.map((d) => (d.key === dayKey ? { ...d, exercises: [...d.exercises, newExercise(exercise.id, d.exercises.length)] } : d)));
+    setYmovePickerForDay(null);
   }
 
-  function updateExercise(updated: WorkoutExercise) {
-    setExercises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+  function updateExercise(dayKey: string, updated: TemplateExerciseFormState) {
+    setDays((prev) => prev.map((d) => (d.key === dayKey ? { ...d, exercises: d.exercises.map((e) => (e.id === updated.id ? updated : e)) } : d)));
   }
 
-  function removeExercise(id: string) {
-    setExercises((prev) => prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, order: i })));
+  function removeExercise(dayKey: string, id: string) {
+    setDays((prev) =>
+      prev.map((d) =>
+        d.key === dayKey ? { ...d, exercises: d.exercises.filter((e) => e.id !== id).map((e, i) => ({ ...e, order: i })) } : d,
+      ),
+    );
   }
 
-  function moveExercise(index: number, direction: -1 | 1) {
-    setExercises((prev) => {
-      const next = [...prev];
-      const target = index + direction;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next.map((e, i) => ({ ...e, order: i }));
-    });
+  function moveExercise(dayKey: string, index: number, direction: -1 | 1) {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.key !== dayKey) return d;
+        const next = [...d.exercises];
+        const target = index + direction;
+        if (target < 0 || target >= next.length) return d;
+        [next[index], next[target]] = [next[target], next[index]];
+        return { ...d, exercises: next.map((e, i) => ({ ...e, order: i })) };
+      }),
+    );
   }
 
   function handleSave() {
@@ -154,12 +226,58 @@ export function WorkoutTemplateForm({
       setError('Inserisci un nome per la scheda modello.');
       return;
     }
-    if (exercises.length === 0) {
-      setError('Aggiungi almeno un esercizio.');
+    if (days.length === 0) {
+      setError('Aggiungi almeno un giorno (es. Workout A).');
+      return;
+    }
+    if (days.some((d) => !d.name.trim())) {
+      setError('Ogni giorno deve avere un nome (es. Workout A, Spinta, Giorno 1).');
+      return;
+    }
+    if (days.every((d) => d.exercises.length === 0)) {
+      setError('Aggiungi almeno un esercizio in almeno un giorno.');
       return;
     }
     setError(null);
-    onSave({ name: name.trim(), description: description.trim(), goal: goal.trim(), level: level.trim(), folderId, exercises });
+    onSave({
+      folderId,
+      name: name.trim(),
+      description: description.trim(),
+      goal: goal.trim(),
+      level: level.trim(),
+      durationWeeks: durationWeeks.trim() ? Number(durationWeeks) : undefined,
+      sessionsPerWeek: sessionsPerWeek.trim() ? Number(sessionsPerWeek) : undefined,
+      estimatedSessionMinutes: estimatedSessionMinutes.trim() ? Number(estimatedSessionMinutes) : undefined,
+      equipment: equipment.trim(),
+      location: location.trim(),
+      trainingStyle: trainingStyle.trim(),
+      muscleFocus: muscleFocus.trim(),
+      intensity: intensity.trim(),
+      progressionNotes: progressionNotes.trim(),
+      deloadWeek,
+      days: days.map((d, dayIndex) => ({
+        id: d.id,
+        name: d.name.trim(),
+        focus: d.focus.trim(),
+        sortOrder: dayIndex,
+        estimatedDurationMinutes: d.estimatedDurationMinutes.trim() ? Number(d.estimatedDurationMinutes) : undefined,
+        exercises: d.exercises.map((e) => ({
+          id: e.id,
+          exerciseId: e.exerciseId,
+          order: e.order,
+          sets: e.sets,
+          reps: e.reps,
+          repsMin: e.repsMin,
+          repsMax: e.repsMax,
+          targetWeight: e.targetWeight,
+          restSeconds: e.restSeconds,
+          notes: e.notes,
+          rpeRir: e.rpeRir,
+          techniqueType: e.techniqueType,
+          supersetGroupId: e.supersetGroupId,
+        })),
+      })),
+    });
   }
 
   return (
@@ -167,7 +285,7 @@ export function WorkoutTemplateForm({
       <Card style={styles.detailsCard}>
         <ThemedText type="subtitle" style={styles.detailsTitle}>Dettagli scheda modello</ThemedText>
         <Field label="Nome scheda modello">
-          <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Forza — Fase 2" />
+          <ThemedTextInput value={name} onChangeText={setName} placeholder="Es. Push Pull Legs" />
         </Field>
 
         <Field label="Cartella">
@@ -182,77 +300,160 @@ export function WorkoutTemplateForm({
         </Field>
 
         <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
-          <Field label="Obiettivo (opzionale)" style={styles.rowField}>
+          <Field label="Obiettivo" style={styles.rowField}>
             <ThemedTextInput value={goal} onChangeText={setGoal} placeholder="Es. Dimagrimento" />
           </Field>
-          <Field label="Livello (opzionale)" style={styles.rowField}>
+          <Field label="Livello" style={styles.rowField}>
             <ThemedTextInput value={level} onChangeText={setLevel} placeholder="Es. Intermedio" />
           </Field>
         </View>
 
+        <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+          <Field label="Durata (settimane)" style={styles.rowField}>
+            <ThemedTextInput value={durationWeeks} onChangeText={setDurationWeeks} placeholder="8" keyboardType="number-pad" />
+          </Field>
+          <Field label="Sedute/settimana" style={styles.rowField}>
+            <ThemedTextInput value={sessionsPerWeek} onChangeText={setSessionsPerWeek} placeholder="4" keyboardType="number-pad" />
+          </Field>
+          <Field label="Minuti/seduta" style={styles.rowField}>
+            <ThemedTextInput value={estimatedSessionMinutes} onChangeText={setEstimatedSessionMinutes} placeholder="60" keyboardType="number-pad" />
+          </Field>
+        </View>
+
+        <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+          <Field label="Attrezzatura" style={styles.rowField}>
+            <ThemedTextInput value={equipment} onChangeText={setEquipment} placeholder="Es. Palestra completa" />
+          </Field>
+          <Field label="Luogo" style={styles.rowField}>
+            <ThemedTextInput value={location} onChangeText={setLocation} placeholder="Es. Palestra, Casa" />
+          </Field>
+        </View>
+
+        <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+          <Field label="Stile" style={styles.rowField}>
+            <ThemedTextInput value={trainingStyle} onChangeText={setTrainingStyle} placeholder="Es. Push Pull Legs" />
+          </Field>
+          <Field label="Focus muscolare" style={styles.rowField}>
+            <ThemedTextInput value={muscleFocus} onChangeText={setMuscleFocus} placeholder="Es. Full body" />
+          </Field>
+          <Field label="Intensita'" style={styles.rowField}>
+            <ThemedTextInput value={intensity} onChangeText={setIntensity} placeholder="Es. Moderata" />
+          </Field>
+        </View>
+
+        <Field label="Note di progressione (opzionale)">
+          <ThemedTextInput value={progressionNotes} onChangeText={setProgressionNotes} placeholder="Come far progredire il cliente nelle settimane" multiline />
+        </Field>
+
         <Field label="Note/descrizione (opzionale)">
           <ThemedTextInput value={description} onChangeText={setDescription} placeholder="Indicazioni generali su questo modello" multiline />
         </Field>
+
+        <View style={styles.deloadRow}>
+          <ThemedText type="small" themeColor="textSecondary">Prevede una settimana di scarico</ThemedText>
+          <Switch value={deloadWeek} onValueChange={setDeloadWeek} trackColor={{ true: theme.primary }} />
+        </View>
       </Card>
 
-      <ThemedText type="smallBold" style={styles.exercisesLabel}>
-        Esercizi ({exercises.length})
-      </ThemedText>
-
-      {exercises.length === 0 && (
-        <ThemedText type="small" themeColor="textSecondary">
-          Nessun esercizio ancora aggiunto.
-        </ThemedText>
-      )}
-
-      {exercises.map((we, index) => {
-        const exercise = resolveExercise(we.exerciseId);
-        if (!exercise) return null;
-        return (
-          <WorkoutExerciseEditor
-            key={we.id}
-            exercise={exercise}
-            value={we}
-            onChange={updateExercise}
-            onRemove={() => removeExercise(we.id)}
-            onMoveUp={() => moveExercise(index, -1)}
-            onMoveDown={() => moveExercise(index, 1)}
-            canMoveUp={index > 0}
-            canMoveDown={index < exercises.length - 1}
-          />
-        );
-      })}
-
-      {!showPicker && !showYMovePicker ? (
-        <View style={[styles.addButtonsRow, stackFieldPairs && styles.addButtonsColumn]}>
-          <View style={styles.addButtonFlex}>
-            <AppButton label="+ Aggiungi esercizio" onPress={() => setShowPicker(true)} variant="outline" fullWidth />
-          </View>
-          {supabaseConfig.isConfigured ? (
-            <View style={styles.addButtonFlex}>
-              <AppButton label="Libreria YMove" onPress={() => setShowYMovePicker(true)} variant="outline" fullWidth />
+      {days.map((day, dayIndex) => (
+        <Card key={day.key} style={styles.dayCard}>
+          <View style={styles.dayHeader}>
+            <View style={styles.dayHeaderField}>
+              <ThemedTextInput value={day.name} onChangeText={(v) => updateDay(day.key, { name: v })} placeholder="Es. Workout A" />
             </View>
-          ) : null}
-        </View>
-      ) : showYMovePicker ? (
-        <YMoveExercisePicker onExerciseAdded={handleYMoveExerciseAdded} onClose={() => setShowYMovePicker(false)} />
-      ) : (
-        <>
-          {catalogError ? (
-            <ThemedText type="small" themeColor="statusExpired">
-              {catalogError}
+            {days.length > 1 ? (
+              <AppIconButton
+                icon={<Trash2 size={16} color={theme.statusExpired} />}
+                onPress={() => removeDay(day.key)}
+                accessibilityLabel={`Rimuovi ${day.name || 'giorno'}`}
+                size={38}
+              />
+            ) : null}
+          </View>
+          <View style={[styles.fieldsRow, stackFieldPairs && styles.fieldsColumn]}>
+            <Field label="Focus (opzionale)" style={styles.rowField}>
+              <ThemedTextInput value={day.focus} onChangeText={(v) => updateDay(day.key, { focus: v })} placeholder="Es. Petto/Tricipiti" />
+            </Field>
+            <Field label="Durata stimata (min)" style={styles.rowField}>
+              <ThemedTextInput
+                value={day.estimatedDurationMinutes}
+                onChangeText={(v) => updateDay(day.key, { estimatedDurationMinutes: v })}
+                placeholder="60"
+                keyboardType="number-pad"
+              />
+            </Field>
+          </View>
+
+          <ThemedText type="smallBold" style={styles.exercisesLabel}>
+            Esercizi ({day.exercises.length})
+          </ThemedText>
+
+          {day.exercises.length === 0 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              Nessun esercizio ancora aggiunto in questo giorno.
             </ThemedText>
-          ) : null}
-          <ExerciseCatalogPicker
-            exercises={catalogExercises}
-            existingExercises={exercises}
-            onAdd={addExercise}
-            onExerciseCreated={handleCustomExerciseCreated}
-            onOpenDetails={(exerciseId) => router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId } })}
-            onClose={() => setShowPicker(false)}
-          />
-        </>
-      )}
+          )}
+
+          {day.exercises.map((we, index) => {
+            const exercise = resolveExercise(we.exerciseId);
+            if (!exercise) return null;
+            return (
+              <View key={we.id} style={styles.exerciseBlock}>
+                <WorkoutExerciseEditor
+                  exercise={exercise}
+                  value={we}
+                  onChange={(updated) => updateExercise(day.key, { ...we, ...updated })}
+                  onRemove={() => removeExercise(day.key, we.id)}
+                  onMoveUp={() => moveExercise(day.key, index, -1)}
+                  onMoveDown={() => moveExercise(day.key, index, 1)}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < day.exercises.length - 1}
+                />
+                <Field label="RPE/RIR (opzionale)">
+                  <ThemedTextInput
+                    value={we.rpeRir ?? ''}
+                    onChangeText={(v) => updateExercise(day.key, { ...we, rpeRir: v })}
+                    placeholder="Es. RPE 8 oppure RIR 2"
+                  />
+                </Field>
+              </View>
+            );
+          })}
+
+          {pickerForDay !== day.key && ymovePickerForDay !== day.key ? (
+            <View style={[styles.addButtonsRow, stackFieldPairs && styles.addButtonsColumn]}>
+              <View style={styles.addButtonFlex}>
+                <AppButton label="+ Aggiungi esercizio" onPress={() => setPickerForDay(day.key)} variant="outline" fullWidth />
+              </View>
+              {supabaseConfig.isConfigured ? (
+                <View style={styles.addButtonFlex}>
+                  <AppButton label="Libreria YMove" onPress={() => setYmovePickerForDay(day.key)} variant="outline" fullWidth />
+                </View>
+              ) : null}
+            </View>
+          ) : ymovePickerForDay === day.key ? (
+            <YMoveExercisePicker onExerciseAdded={(exercise) => handleYMoveExerciseAdded(day.key, exercise)} onClose={() => setYmovePickerForDay(null)} />
+          ) : (
+            <>
+              {catalogError ? (
+                <ThemedText type="small" themeColor="statusExpired">
+                  {catalogError}
+                </ThemedText>
+              ) : null}
+              <ExerciseCatalogPicker
+                exercises={catalogExercises}
+                existingExercises={day.exercises}
+                onAdd={(exercise, workoutExercise) => addExerciseToDay(day.key, exercise, workoutExercise)}
+                onExerciseCreated={handleCustomExerciseCreated}
+                onOpenDetails={(exerciseId) => router.push({ pathname: '/esercizi/[id]', params: { id: exerciseId } })}
+                onClose={() => setPickerForDay(null)}
+              />
+            </>
+          )}
+        </Card>
+      ))}
+
+      <AppButton label="+ Nuovo giorno (Workout)" onPress={addDay} variant="outline" fullWidth icon={<Plus size={16} color={theme.primary} />} />
 
       {error && (
         <ThemedText type="small" themeColor="statusExpired">
@@ -336,6 +537,30 @@ const styles = StyleSheet.create({
   folderFieldText: {
     flex: 1,
     minWidth: 0,
+  },
+  deloadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  dayCard: {
+    gap: Spacing.three,
+    width: '100%',
+    minWidth: 0,
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minWidth: 0,
+  },
+  dayHeaderField: {
+    flex: 1,
+    minWidth: 0,
+  },
+  exerciseBlock: {
+    gap: 6,
   },
   exercisesLabel: {
     marginTop: Spacing.two,

@@ -24,11 +24,11 @@ import {
   listTemplateFolders,
   moveWorkoutTemplateToFolder,
   saveWorkoutTemplate,
+  type WorkoutTemplateSaveInput,
 } from '@/lib/workout-plan-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import type { TemplateFolder, WorkoutTemplate } from '@/types/template-library';
-import type { WorkoutExercise } from '@/types/training';
 
 async function confirmDestructive(title: string, message: string, confirmLabel: string): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -43,10 +43,13 @@ async function confirmDestructive(title: string, message: string, confirmLabel: 
 }
 
 // Dettaglio di UNA scheda modello della libreria globale: vista/modifica/
-// duplica/sposta/elimina + "Assegna a cliente". L'unico punto di tutta la
-// libreria modelli in cui e' legittimo leggere useClientStore — e SOLO per
-// popolare l'elenco di clienti active tra cui scegliere, mai per
-// pre-selezionare o aprire automaticamente qualcosa.
+// duplica/sposta/elimina + "Assegna a cliente". Per un modello DI SISTEMA
+// (isSystem, letto da tutti i coach) le uniche azioni disponibili sono
+// "Duplica nella mia libreria" e "Assegna a cliente" — mai modifica/sposta/
+// elimina, ne' lato UI ne' lato server (RLS le rifiuta comunque). L'unico
+// punto di tutta la libreria modelli in cui e' legittimo leggere
+// useClientStore — e SOLO per popolare l'elenco di clienti active tra cui
+// scegliere, mai per pre-selezionare o aprire automaticamente qualcosa.
 export default function ModelloDettaglioScreen() {
   const { templateId } = useLocalSearchParams<{ templateId: string }>();
   const router = useRouter();
@@ -67,7 +70,7 @@ export default function ModelloDettaglioScreen() {
   const [assignClientId, setAssignClientId] = useState<string | null>(null);
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignError, setAssignError] = useState('');
-  const [assignedConfirmation, setAssignedConfirmation] = useState<{ clientId: string; clientName: string; planId: string } | null>(null);
+  const [assignedConfirmation, setAssignedConfirmation] = useState<{ clientId: string; clientName: string; dayCount: number } | null>(null);
 
   const load = useCallback(async () => {
     if (!supabaseConfig.isConfigured) {
@@ -98,39 +101,11 @@ export default function ModelloDettaglioScreen() {
 
   const activeClients = clients.filter((c) => c.connectionStatus !== 'suspended' && c.connectionStatus !== 'removed');
 
-  async function handleSaveEdit(input: {
-    name: string;
-    description: string;
-    goal: string;
-    level: string;
-    folderId: string | null;
-    exercises: WorkoutExercise[];
-  }) {
+  async function handleSaveEdit(input: Omit<WorkoutTemplateSaveInput, 'id'>) {
     if (!template) return;
     setSaving(true);
     setError('');
-    const result = await saveWorkoutTemplate({
-      id: template.id,
-      folderId: input.folderId,
-      name: input.name,
-      description: input.description,
-      goal: input.goal,
-      level: input.level,
-      exercises: input.exercises.map((e) => ({
-        id: e.id,
-        exerciseId: e.exerciseId,
-        order: e.order,
-        sets: e.sets,
-        reps: e.reps,
-        repsMin: e.repsMin,
-        repsMax: e.repsMax,
-        targetWeight: e.targetWeight,
-        restSeconds: e.restSeconds,
-        notes: e.notes,
-        techniqueType: e.techniqueType,
-        supersetGroupId: e.supersetGroupId,
-      })),
-    });
+    const result = await saveWorkoutTemplate({ ...input, id: template.id });
     setSaving(false);
     if (!result.ok) {
       setError(result.message);
@@ -195,11 +170,12 @@ export default function ModelloDettaglioScreen() {
     const client = activeClients.find((c) => c.id === assignClientId);
     setAssigning(false);
     setAssignClientId(null);
-    setAssignedConfirmation({ clientId: assignClientId, clientName: client ? clientFullName(client) : 'cliente', planId: result.data.id });
+    setAssignedConfirmation({ clientId: assignClientId, clientName: client ? clientFullName(client) : 'cliente', dayCount: result.data.length });
   }
 
   const folderName = template?.folderId ? (folders.find((f) => f.id === template.folderId)?.name ?? 'Cartella') : 'Senza categoria';
   const backHref = template?.folderId ? (`/schede/cartella/${template.folderId}` as const) : '/schede';
+  const totalExercises = template ? template.days.reduce((sum, d) => sum + d.exercises.length, 0) : 0;
 
   return (
     <ScreenBackground>
@@ -224,7 +200,7 @@ export default function ModelloDettaglioScreen() {
           </View>
         ) : template === null ? (
           <ThemedText type="default">{error || 'Scheda modello non trovata.'}</ThemedText>
-        ) : mode === 'edit' ? (
+        ) : mode === 'edit' && !template.isSystem ? (
           <WorkoutTemplateForm
             initialTemplate={template}
             initialFolderId={template.folderId}
@@ -238,67 +214,87 @@ export default function ModelloDettaglioScreen() {
               <ThemedText type="title">{template.name}</ThemedText>
               {template.description ? <ThemedText type="default" themeColor="textSecondary">{template.description}</ThemedText> : null}
               <View style={styles.badges}>
+                <AppBadge label={template.isSystem ? 'Modello professionale' : 'Modello personale'} tone={template.isSystem ? 'coral' : 'moss'} />
                 {template.goal ? <AppBadge label={template.goal} tone="moss" /> : null}
                 {template.level ? <AppBadge label={template.level} /> : null}
-                <AppBadge label={folderName} />
+                {!template.isSystem ? <AppBadge label={folderName} /> : null}
               </View>
+              <View style={styles.metaGrid}>
+                {template.durationWeeks ? <MetaItem label="Durata" value={`${template.durationWeeks} settimane`} /> : null}
+                {template.sessionsPerWeek ? <MetaItem label="Frequenza" value={`${template.sessionsPerWeek}x/settimana`} /> : null}
+                {template.estimatedSessionMinutes ? <MetaItem label="Seduta" value={`${template.estimatedSessionMinutes} min`} /> : null}
+                {template.equipment ? <MetaItem label="Attrezzatura" value={template.equipment} /> : null}
+                {template.location ? <MetaItem label="Luogo" value={template.location} /> : null}
+                {template.trainingStyle ? <MetaItem label="Stile" value={template.trainingStyle} /> : null}
+                {template.muscleFocus ? <MetaItem label="Focus" value={template.muscleFocus} /> : null}
+                {template.intensity ? <MetaItem label="Intensita'" value={template.intensity} /> : null}
+              </View>
+              {template.deloadWeek ? (
+                <ThemedText type="small" themeColor="textSecondary">Include una settimana di scarico programmata.</ThemedText>
+              ) : null}
+              {template.progressionNotes ? (
+                <ThemedText type="small" themeColor="textSecondary">Progressione: {template.progressionNotes}</ThemedText>
+              ) : null}
               <ThemedText type="small" themeColor="textSecondary">
-                {template.exercises.length} esercizi
+                {template.days.length} {template.days.length === 1 ? 'giorno' : 'giorni'} · {totalExercises} esercizi
               </ThemedText>
             </AppCard>
 
             {assignedConfirmation ? (
               <AppCard style={styles.confirmationCard}>
-                <ThemedText type="smallBold">Scheda assegnata a {assignedConfirmation.clientName}</ThemedText>
+                <ThemedText type="smallBold">
+                  {assignedConfirmation.dayCount} {assignedConfirmation.dayCount === 1 ? 'scheda assegnata' : 'schede assegnate'} a {assignedConfirmation.clientName}
+                </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  E' stata creata una copia indipendente: modificare in futuro questo modello non cambierà la scheda del cliente.
+                  E' stata creata una copia indipendente di ogni giorno: modificare in futuro questo modello non cambierà le schede del cliente.
                 </ThemedText>
                 <View style={styles.confirmationActions}>
                   <View style={styles.confirmationActionItem}>
-                    <AppButton
-                      label="Resta qui"
-                      onPress={() => setAssignedConfirmation(null)}
-                      variant="outline"
-                      fullWidth
-                    />
+                    <AppButton label="Resta qui" onPress={() => setAssignedConfirmation(null)} variant="outline" fullWidth />
                   </View>
                   <View style={styles.confirmationActionItem}>
-                    <AppButton
-                      label="Vai al cliente"
-                      onPress={() => router.push(`/clienti/${assignedConfirmation.clientId}`)}
-                      fullWidth
-                    />
+                    <AppButton label="Vai al cliente" onPress={() => router.push(`/clienti/${assignedConfirmation.clientId}`)} fullWidth />
                   </View>
                 </View>
               </AppCard>
             ) : null}
 
-            <View style={styles.sectionHeader}>
-              <ThemedText type="subtitle">Esercizi</ThemedText>
-            </View>
-            {template.exercises.map((te) => {
-              const exercise = resolveExercise(te.exerciseId);
-              return (
-                <AppCard key={te.id} style={styles.exerciseRow}>
-                  {exercise ? (
-                    <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={52} />
-                  ) : (
-                    <View style={[styles.exercisePlaceholder, { backgroundColor: theme.backgroundElement }]}>
-                      <Dumbbell size={20} color={theme.textSecondary} />
-                    </View>
-                  )}
-                  <View style={styles.exerciseCopy}>
-                    <ThemedText type="smallBold" numberOfLines={2}>
-                      {exercise?.name ?? te.exerciseId}
+            {template.days.map((day) => (
+              <View key={day.id} style={styles.dayBlock}>
+                <View style={styles.sectionHeader}>
+                  <ThemedText type="subtitle">{day.name}</ThemedText>
+                  {day.focus ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {day.focus}
                     </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                      {te.sets} serie · {te.repsMin && te.repsMax ? `${te.repsMin}-${te.repsMax} rip.` : `${te.reps} rip.`} · recupero {te.restSeconds}s
-                      {te.notes ? ` · ${te.notes}` : ''}
-                    </ThemedText>
-                  </View>
-                </AppCard>
-              );
-            })}
+                  ) : null}
+                </View>
+                {day.exercises.map((te) => {
+                  const exercise = resolveExercise(te.exerciseId);
+                  return (
+                    <AppCard key={te.id} style={styles.exerciseRow}>
+                      {exercise ? (
+                        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={52} />
+                      ) : (
+                        <View style={[styles.exercisePlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                          <Dumbbell size={20} color={theme.textSecondary} />
+                        </View>
+                      )}
+                      <View style={styles.exerciseCopy}>
+                        <ThemedText type="smallBold" numberOfLines={2}>
+                          {exercise?.name ?? te.exerciseId}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                          {te.sets} serie · {te.repsMin && te.repsMax ? `${te.repsMin}-${te.repsMax} rip.` : `${te.reps} rip.`} · recupero {te.restSeconds}s
+                          {te.rpeRir ? ` · ${te.rpeRir}` : ''}
+                          {te.notes ? ` · ${te.notes}` : ''}
+                        </ThemedText>
+                      </View>
+                    </AppCard>
+                  );
+                })}
+              </View>
+            ))}
 
             {error ? (
               <ThemedText type="small" themeColor="statusExpired">
@@ -307,25 +303,33 @@ export default function ModelloDettaglioScreen() {
             ) : null}
 
             <View style={styles.actionsGrid}>
-              <View style={styles.actionItem}>
-                <AppButton label="Modifica" onPress={() => setMode('edit')} variant="outline" fullWidth disabled={saving} />
-              </View>
-              <View style={styles.actionItem}>
-                <AppButton label="Duplica" onPress={handleDuplicate} variant="outline" fullWidth disabled={saving} />
-              </View>
-              <View style={styles.actionItem}>
-                <AppButton label="Sposta in altra cartella" onPress={() => setShowMovePicker(true)} variant="outline" fullWidth disabled={saving} />
-              </View>
-              <View style={styles.actionItem}>
-                <AppButton label="Elimina" onPress={handleDelete} variant="outline" fullWidth disabled={saving} />
-              </View>
+              {template.isSystem ? (
+                <View style={styles.actionItem}>
+                  <AppButton label="Duplica nella mia libreria" onPress={handleDuplicate} variant="outline" fullWidth disabled={saving} />
+                </View>
+              ) : (
+                <>
+                  <View style={styles.actionItem}>
+                    <AppButton label="Modifica" onPress={() => setMode('edit')} variant="outline" fullWidth disabled={saving} />
+                  </View>
+                  <View style={styles.actionItem}>
+                    <AppButton label="Duplica" onPress={handleDuplicate} variant="outline" fullWidth disabled={saving} />
+                  </View>
+                  <View style={styles.actionItem}>
+                    <AppButton label="Sposta in altra cartella" onPress={() => setShowMovePicker(true)} variant="outline" fullWidth disabled={saving} />
+                  </View>
+                  <View style={styles.actionItem}>
+                    <AppButton label="Elimina" onPress={handleDelete} variant="outline" fullWidth disabled={saving} />
+                  </View>
+                </>
+              )}
             </View>
 
             {assigning ? (
               <AppCard style={styles.assignCard}>
                 <ThemedText type="smallBold">Assegna a cliente</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Solo i clienti active possono ricevere una nuova scheda. Verrà creata una copia indipendente di questo modello.
+                  Solo i clienti active possono ricevere una nuova scheda. Verrà creata una copia indipendente per ciascun giorno del modello.
                 </ThemedText>
                 {activeClients.length === 0 ? (
                   <ThemedText type="small" themeColor="textSecondary">
@@ -362,7 +366,7 @@ export default function ModelloDettaglioScreen() {
                   <View style={styles.loadingRow}>
                     <ActivityIndicator />
                     <ThemedText type="small" themeColor="textSecondary">
-                      Creazione scheda…
+                      Creazione schede…
                     </ThemedText>
                   </View>
                 ) : null}
@@ -413,6 +417,17 @@ export default function ModelloDettaglioScreen() {
   );
 }
 
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metaItem}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+      <ThemedText type="smallBold">{value}</ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   content: {
     gap: Spacing.three,
@@ -431,6 +446,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.one,
   },
+  metaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+  },
+  metaItem: {
+    minWidth: 100,
+    gap: 2,
+  },
   confirmationCard: {
     gap: Spacing.two,
   },
@@ -442,8 +466,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  dayBlock: {
+    gap: Spacing.two,
+  },
   sectionHeader: {
     marginTop: Spacing.two,
+    gap: 2,
   },
   exerciseRow: {
     flexDirection: 'row',

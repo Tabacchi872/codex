@@ -1,15 +1,16 @@
 import type { TechniqueType } from './training';
 
 // Libreria globale del coach: cartelle/sottocartelle -> schede modello ->
-// esercizi. Sistema DISTINTO da:
+// giorni (Workout A/B/C, mai giorni della settimana) -> esercizi. Sistema
+// DISTINTO da:
 // - WorkoutPlanTemplate (types/workout-template.ts): i 7 modelli statici
 //   predefiniti, non collegati a Supabase, non organizzabili in cartelle;
 // - WorkoutPlan (types/training.ts): una scheda REALMENTE assegnata a un
 //   cliente (sessione reale, con clientId/stato/storico carichi).
-// Assegnare una scheda modello a un cliente crea una COPIA indipendente come
-// WorkoutPlan: modificare il modello dopo l'assegnazione non tocca mai le
-// copie gia' create, e viceversa (vedi assignWorkoutTemplateToClient in
-// lib/workout-plan-service.ts).
+// Assegnare una scheda modello a un cliente crea, per OGNI giorno del
+// modello, una COPIA indipendente come WorkoutPlan: modificare il modello
+// dopo l'assegnazione non tocca mai le copie gia' create, e viceversa (vedi
+// assignWorkoutTemplateToClient in lib/workout-plan-service.ts).
 
 export type TemplateFolder = {
   id: string;
@@ -29,12 +30,26 @@ export type TemplateExercise = {
   targetWeight: number | null;
   restSeconds: number;
   notes: string;
+  rpeRir?: string;
   techniqueType?: TechniqueType;
   supersetGroupId?: string;
 };
 
+// Un giorno/workout del modello (es. "Workout A", "Spinta"). Mai un giorno
+// della settimana: nessun campo weekday qui di proposito, l'agenda/
+// disponibilita' e' un task separato.
+export type TemplateDay = {
+  id: string;
+  name: string;
+  focus?: string;
+  sortOrder: number;
+  estimatedDurationMinutes?: number;
+  exercises: TemplateExercise[];
+};
+
 // folderId null = cartella virtuale "Senza categoria" (mai una riga reale in
-// template_folders per questo caso).
+// template_folders per questo caso; sempre null per i modelli di sistema,
+// che non vivono in nessuna cartella di alcun coach).
 export type WorkoutTemplate = {
   id: string;
   folderId: string | null;
@@ -43,10 +58,23 @@ export type WorkoutTemplate = {
   goal: string;
   level: string;
   sortOrder: number;
-  exercises: TemplateExercise[];
+  durationWeeks?: number;
+  sessionsPerWeek?: number;
+  estimatedSessionMinutes?: number;
+  equipment: string;
+  location: string;
+  trainingStyle: string;
+  muscleFocus: string;
+  intensity: string;
+  progressionNotes: string;
+  deloadWeek: boolean;
+  isSystem: boolean;
+  sourceTemplateId?: string | null;
+  days: TemplateDay[];
 };
 
-// Usato nelle liste (senza esercizi, per non scaricare tutto ad ogni riga).
+// Usato nelle liste (senza esercizi/giorni, per non scaricare tutto ad ogni
+// riga) — porta comunque tutti i metadati usati per card/filtri.
 export type WorkoutTemplateSummary = {
   id: string;
   folderId: string | null;
@@ -55,6 +83,16 @@ export type WorkoutTemplateSummary = {
   goal: string;
   level: string;
   sortOrder: number;
+  durationWeeks?: number;
+  sessionsPerWeek?: number;
+  estimatedSessionMinutes?: number;
+  equipment: string;
+  location: string;
+  trainingStyle: string;
+  muscleFocus: string;
+  intensity: string;
+  isSystem: boolean;
+  dayCount: number;
   exerciseCount: number;
 };
 

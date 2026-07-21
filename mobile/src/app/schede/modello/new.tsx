@@ -8,10 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { BackHeader } from '@/components/ui';
 import { WorkoutTemplateForm } from '@/components/workout-template-form';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { listTemplateFolders, saveWorkoutTemplate } from '@/lib/workout-plan-service';
+import { listTemplateFolders, saveWorkoutTemplate, type WorkoutTemplateSaveInput } from '@/lib/workout-plan-service';
 import { supabaseConfig } from '@/lib/supabase';
 import type { TemplateFolder } from '@/types/template-library';
-import type { WorkoutExercise } from '@/types/training';
 
 // Nuova scheda modello nella libreria globale del coach. folderId (se
 // presente) e' la cartella da cui il coach ha premuto "+ Scheda modello" —
@@ -40,40 +39,14 @@ export default function NuovoModelloScreen() {
     }, []),
   );
 
-  async function handleSave(input: {
-    name: string;
-    description: string;
-    goal: string;
-    level: string;
-    folderId: string | null;
-    exercises: WorkoutExercise[];
-  }) {
+  async function handleSave(input: Omit<WorkoutTemplateSaveInput, 'id'>) {
     if (!supabaseConfig.isConfigured) {
       setError("Supabase non e' configurato: impossibile salvare la libreria modelli.");
       return;
     }
     setError('');
     setSaving(true);
-    const result = await saveWorkoutTemplate({
-      folderId: input.folderId,
-      name: input.name,
-      description: input.description,
-      goal: input.goal,
-      level: input.level,
-      exercises: input.exercises.map((e) => ({
-        exerciseId: e.exerciseId,
-        order: e.order,
-        sets: e.sets,
-        reps: e.reps,
-        repsMin: e.repsMin,
-        repsMax: e.repsMax,
-        targetWeight: e.targetWeight,
-        restSeconds: e.restSeconds,
-        notes: e.notes,
-        techniqueType: e.techniqueType,
-        supersetGroupId: e.supersetGroupId,
-      })),
-    });
+    const result = await saveWorkoutTemplate(input);
     setSaving(false);
     if (!result.ok) {
       setError(result.message);

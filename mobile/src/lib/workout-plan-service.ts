@@ -335,7 +335,7 @@ export async function updateWorkoutSessionProgress(
 // types/template-library.ts per la distinzione da WorkoutPlan (scheda reale
 // assegnata) e WorkoutPlanTemplate (i 7 modelli statici predefiniti,
 // invariati).
-import type { TemplateFolder, TemplateFolderDeleteMode, WorkoutTemplate, WorkoutTemplateSummary } from '@/types/template-library';
+import type { TemplateExercise, TemplateFolder, TemplateFolderDeleteMode, WorkoutTemplate, WorkoutTemplateSummary } from '@/types/template-library';
 
 type TemplateFolderRow = {
   id: string;
@@ -429,6 +429,16 @@ type TemplateExerciseRow = {
   notes: string | null;
   technique_type: string;
   superset_group_id: string | null;
+  rpe_rir: string | null;
+};
+
+type TemplateDayRow = {
+  id: string;
+  name: string;
+  focus: string | null;
+  sort_order: number;
+  estimated_duration_minutes: number | null;
+  workout_template_exercises: TemplateExerciseRow[];
 };
 
 type WorkoutTemplateRow = {
@@ -439,7 +449,19 @@ type WorkoutTemplateRow = {
   goal: string | null;
   level: string | null;
   sort_order: number;
-  workout_template_exercises: TemplateExerciseRow[];
+  duration_weeks: number | null;
+  sessions_per_week: number | null;
+  estimated_session_minutes: number | null;
+  equipment: string | null;
+  location: string | null;
+  training_style: string | null;
+  muscle_focus: string | null;
+  intensity: string | null;
+  progression_notes: string | null;
+  deload_week: boolean;
+  is_system: boolean;
+  source_template_id: string | null;
+  workout_template_days: TemplateDayRow[];
 };
 
 type WorkoutTemplateSummaryRow = {
@@ -450,17 +472,51 @@ type WorkoutTemplateSummaryRow = {
   goal: string | null;
   level: string | null;
   sort_order: number;
-  workout_template_exercises: { count: number }[];
+  duration_weeks: number | null;
+  sessions_per_week: number | null;
+  estimated_session_minutes: number | null;
+  equipment: string | null;
+  location: string | null;
+  training_style: string | null;
+  muscle_focus: string | null;
+  intensity: string | null;
+  is_system: boolean;
+  workout_template_days: { id: string; workout_template_exercises: { count: number }[] }[];
 };
 
-const SELECT_TEMPLATE_DETAIL =
-  'id,folder_id,name,description,goal,level,sort_order,' +
-  'workout_template_exercises(id,exercise_id,exercise_order,sets,reps,reps_min,reps_max,target_weight,rest_seconds,notes,technique_type,superset_group_id)';
+const TEMPLATE_METADATA_COLUMNS =
+  'id,folder_id,name,description,goal,level,sort_order,duration_weeks,sessions_per_week,estimated_session_minutes,' +
+  'equipment,location,training_style,muscle_focus,intensity,progression_notes,deload_week,is_system,source_template_id';
 
-const SELECT_TEMPLATE_SUMMARY = 'id,folder_id,name,description,goal,level,sort_order,workout_template_exercises(count)';
+const SELECT_TEMPLATE_DETAIL =
+  `${TEMPLATE_METADATA_COLUMNS},` +
+  'workout_template_days(id,name,focus,sort_order,estimated_duration_minutes,' +
+  'workout_template_exercises(id,exercise_id,exercise_order,sets,reps,reps_min,reps_max,target_weight,rest_seconds,notes,technique_type,superset_group_id,rpe_rir))';
+
+const SELECT_TEMPLATE_SUMMARY =
+  'id,folder_id,name,description,goal,level,sort_order,duration_weeks,sessions_per_week,estimated_session_minutes,' +
+  'equipment,location,training_style,muscle_focus,intensity,is_system,workout_template_days(id,workout_template_exercises(count))';
+
+function mapTemplateExerciseRow(e: TemplateExerciseRow): TemplateExercise {
+  return {
+    id: e.id,
+    exerciseId: e.exercise_id,
+    order: e.exercise_order,
+    sets: e.sets,
+    reps: e.reps,
+    repsMin: e.reps_min ?? undefined,
+    repsMax: e.reps_max ?? undefined,
+    targetWeight: e.target_weight,
+    restSeconds: e.rest_seconds,
+    notes: e.notes ?? '',
+    rpeRir: e.rpe_rir ?? undefined,
+    techniqueType: (e.technique_type as TechniqueType) || 'normal',
+    supersetGroupId: e.superset_group_id ?? undefined,
+  };
+}
 
 function mapTemplateRow(row: WorkoutTemplateRow): WorkoutTemplate {
-  const sorted = [...row.workout_template_exercises].sort((a, b) => a.exercise_order - b.exercise_order);
+  const sortedDays = [...row.workout_template_days].sort((a, b) => a.sort_order - b.sort_order);
   return {
     id: row.id,
     folderId: row.folder_id,
@@ -469,24 +525,31 @@ function mapTemplateRow(row: WorkoutTemplateRow): WorkoutTemplate {
     goal: row.goal ?? '',
     level: row.level ?? '',
     sortOrder: row.sort_order,
-    exercises: sorted.map((e) => ({
-      id: e.id,
-      exerciseId: e.exercise_id,
-      order: e.exercise_order,
-      sets: e.sets,
-      reps: e.reps,
-      repsMin: e.reps_min ?? undefined,
-      repsMax: e.reps_max ?? undefined,
-      targetWeight: e.target_weight,
-      restSeconds: e.rest_seconds,
-      notes: e.notes ?? '',
-      techniqueType: (e.technique_type as TechniqueType) || 'normal',
-      supersetGroupId: e.superset_group_id ?? undefined,
+    durationWeeks: row.duration_weeks ?? undefined,
+    sessionsPerWeek: row.sessions_per_week ?? undefined,
+    estimatedSessionMinutes: row.estimated_session_minutes ?? undefined,
+    equipment: row.equipment ?? '',
+    location: row.location ?? '',
+    trainingStyle: row.training_style ?? '',
+    muscleFocus: row.muscle_focus ?? '',
+    intensity: row.intensity ?? '',
+    progressionNotes: row.progression_notes ?? '',
+    deloadWeek: row.deload_week,
+    isSystem: row.is_system,
+    sourceTemplateId: row.source_template_id,
+    days: sortedDays.map((d) => ({
+      id: d.id,
+      name: d.name,
+      focus: d.focus ?? undefined,
+      sortOrder: d.sort_order,
+      estimatedDurationMinutes: d.estimated_duration_minutes ?? undefined,
+      exercises: [...d.workout_template_exercises].sort((a, b) => a.exercise_order - b.exercise_order).map(mapTemplateExerciseRow),
     })),
   };
 }
 
 function mapTemplateSummaryRow(row: WorkoutTemplateSummaryRow): WorkoutTemplateSummary {
+  const exerciseCount = row.workout_template_days.reduce((sum, day) => sum + (day.workout_template_exercises[0]?.count ?? 0), 0);
   return {
     id: row.id,
     folderId: row.folder_id,
@@ -495,14 +558,27 @@ function mapTemplateSummaryRow(row: WorkoutTemplateSummaryRow): WorkoutTemplateS
     goal: row.goal ?? '',
     level: row.level ?? '',
     sortOrder: row.sort_order,
-    exerciseCount: row.workout_template_exercises[0]?.count ?? 0,
+    durationWeeks: row.duration_weeks ?? undefined,
+    sessionsPerWeek: row.sessions_per_week ?? undefined,
+    estimatedSessionMinutes: row.estimated_session_minutes ?? undefined,
+    equipment: row.equipment ?? '',
+    location: row.location ?? '',
+    trainingStyle: row.training_style ?? '',
+    muscleFocus: row.muscle_focus ?? '',
+    intensity: row.intensity ?? '',
+    isSystem: row.is_system,
+    dayCount: row.workout_template_days.length,
+    exerciseCount,
   };
 }
 
-// Tutti i modelli del coach corrente (RLS-scoped), senza esercizi: le
-// schermate filtrano client-side per folderId (stesso pattern gia' usato per
-// workoutPlans in schede/index.tsx). Con folderId=null in un risultato, il
-// modello vive nella cartella virtuale "Senza categoria".
+// Tutti i modelli visibili al coach corrente (RLS-scoped: propri + tutti i
+// modelli di sistema), senza esercizi: le schermate filtrano client-side per
+// folderId/isSystem (stesso pattern gia' usato per workoutPlans in
+// schede/index.tsx). Con folderId=null in un risultato di un modello
+// personale, il modello vive nella cartella virtuale "Senza categoria" — i
+// modelli di sistema hanno sempre folderId null (non vivono in alcuna
+// cartella di alcun coach).
 export async function listWorkoutTemplateSummaries(): Promise<WorkoutPlanServiceResult<WorkoutTemplateSummary[]>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
   const { data, error } = await supabase.from('workout_templates').select(SELECT_TEMPLATE_SUMMARY).order('name');
@@ -529,25 +605,46 @@ export type WorkoutTemplateSaveInput = {
   description?: string;
   goal?: string;
   level?: string;
-  exercises: {
+  durationWeeks?: number;
+  sessionsPerWeek?: number;
+  estimatedSessionMinutes?: number;
+  equipment?: string;
+  location?: string;
+  trainingStyle?: string;
+  muscleFocus?: string;
+  intensity?: string;
+  progressionNotes?: string;
+  deloadWeek?: boolean;
+  sourceTemplateId?: string;
+  days: {
     id?: string;
-    exerciseId: string;
-    order: number;
-    sets: number;
-    reps: number;
-    repsMin?: number;
-    repsMax?: number;
-    targetWeight: number | null;
-    restSeconds: number;
-    notes: string;
-    techniqueType?: TechniqueType;
-    supersetGroupId?: string;
+    name: string;
+    focus?: string;
+    sortOrder: number;
+    estimatedDurationMinutes?: number;
+    exercises: {
+      id?: string;
+      exerciseId: string;
+      order: number;
+      sets: number;
+      reps: number;
+      repsMin?: number;
+      repsMax?: number;
+      targetWeight: number | null;
+      restSeconds: number;
+      notes: string;
+      rpeRir?: string;
+      techniqueType?: TechniqueType;
+      supersetGroupId?: string;
+    }[];
   }[];
 };
 
-// Salvataggio atomico (create o update) di un modello + i suoi esercizi via
-// RPC save_workout_template: coach_id NON viene mai inviato, la funzione lo
-// ricava sempre da auth.uid() lato server (vedi la migration).
+// Salvataggio atomico (create o update) di un modello + i suoi giorni + i
+// loro esercizi via RPC save_workout_template: coach_id NON viene mai
+// inviato, la funzione lo ricava sempre da auth.uid() lato server. Non puo'
+// mai creare o modificare un modello di sistema (is_system non e' un
+// parametro esposto qui: la RPC inserisce sempre is_system=false).
 export async function saveWorkoutTemplate(input: WorkoutTemplateSaveInput): Promise<WorkoutPlanServiceResult<WorkoutTemplate>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
   const payload = {
@@ -557,19 +654,38 @@ export async function saveWorkoutTemplate(input: WorkoutTemplateSaveInput): Prom
     description: input.description ?? '',
     goal: input.goal ?? '',
     level: input.level ?? '',
-    exercises: input.exercises.map((e) => ({
-      id: e.id && isValidUuid(e.id) ? e.id : null,
-      exercise_id: e.exerciseId,
-      exercise_order: e.order,
-      sets: e.sets,
-      reps: e.reps,
-      reps_min: e.repsMin ?? null,
-      reps_max: e.repsMax ?? null,
-      target_weight: e.targetWeight,
-      rest_seconds: e.restSeconds,
-      notes: e.notes ?? '',
-      technique_type: e.techniqueType ?? 'normal',
-      superset_group_id: e.supersetGroupId ?? null,
+    duration_weeks: input.durationWeeks ?? null,
+    sessions_per_week: input.sessionsPerWeek ?? null,
+    estimated_session_minutes: input.estimatedSessionMinutes ?? null,
+    equipment: input.equipment ?? '',
+    location: input.location ?? '',
+    training_style: input.trainingStyle ?? '',
+    muscle_focus: input.muscleFocus ?? '',
+    intensity: input.intensity ?? '',
+    progression_notes: input.progressionNotes ?? '',
+    deload_week: input.deloadWeek ?? false,
+    source_template_id: input.sourceTemplateId && isValidUuid(input.sourceTemplateId) ? input.sourceTemplateId : null,
+    days: input.days.map((d) => ({
+      id: d.id && isValidUuid(d.id) ? d.id : null,
+      name: d.name,
+      focus: d.focus ?? '',
+      sort_order: d.sortOrder,
+      estimated_duration_minutes: d.estimatedDurationMinutes ?? null,
+      exercises: d.exercises.map((e) => ({
+        id: e.id && isValidUuid(e.id) ? e.id : null,
+        exercise_id: e.exerciseId,
+        exercise_order: e.order,
+        sets: e.sets,
+        reps: e.reps,
+        reps_min: e.repsMin ?? null,
+        reps_max: e.repsMax ?? null,
+        target_weight: e.targetWeight,
+        rest_seconds: e.restSeconds,
+        notes: e.notes ?? '',
+        rpe_rir: e.rpeRir ?? null,
+        technique_type: e.techniqueType ?? 'normal',
+        superset_group_id: e.supersetGroupId ?? null,
+      })),
     })),
   };
   const { data, error } = await supabase.rpc('save_workout_template', { payload });
@@ -585,10 +701,15 @@ export async function saveWorkoutTemplate(input: WorkoutTemplateSaveInput): Prom
   return { ok: true, data: fetched.data };
 }
 
-// Duplica un modello (con tutti i suoi esercizi) come nuova scheda modello
-// indipendente, nella stessa cartella dell'originale — mai un riferimento
-// condiviso: gli esercizi vengono re-inseriti senza id, cosi' save_workout_template
-// li tratta come righe nuove.
+// Duplica un modello (con tutti i suoi giorni ed esercizi) come nuova scheda
+// modello indipendente di PROPRIETA' DEL COACH CHIAMANTE — mai un
+// riferimento condiviso: giorni/esercizi vengono re-inseriti senza id, cosi'
+// save_workout_template li tratta come righe nuove. Funziona identicamente
+// sia per duplicare un proprio modello personale sia per "Duplica nella mia
+// libreria" da un modello di sistema (save_workout_template imposta sempre
+// coach_id=auth.uid()/is_system=false sull'inserimento, indipendentemente
+// dalla provenienza) — source_template_id conserva il riferimento
+// all'originale.
 export async function duplicateWorkoutTemplate(id: string): Promise<WorkoutPlanServiceResult<WorkoutTemplate>> {
   const source = await getWorkoutTemplateById(id);
   if (!source.ok) return source;
@@ -597,23 +718,41 @@ export async function duplicateWorkoutTemplate(id: string): Promise<WorkoutPlanS
   }
   const original = source.data;
   return saveWorkoutTemplate({
-    folderId: original.folderId,
-    name: `${original.name} (copia)`,
+    folderId: original.isSystem ? null : original.folderId,
+    name: original.isSystem ? original.name : `${original.name} (copia)`,
     description: original.description,
     goal: original.goal,
     level: original.level,
-    exercises: original.exercises.map((e) => ({
-      exerciseId: e.exerciseId,
-      order: e.order,
-      sets: e.sets,
-      reps: e.reps,
-      repsMin: e.repsMin,
-      repsMax: e.repsMax,
-      targetWeight: e.targetWeight,
-      restSeconds: e.restSeconds,
-      notes: e.notes,
-      techniqueType: e.techniqueType,
-      supersetGroupId: e.supersetGroupId,
+    durationWeeks: original.durationWeeks,
+    sessionsPerWeek: original.sessionsPerWeek,
+    estimatedSessionMinutes: original.estimatedSessionMinutes,
+    equipment: original.equipment,
+    location: original.location,
+    trainingStyle: original.trainingStyle,
+    muscleFocus: original.muscleFocus,
+    intensity: original.intensity,
+    progressionNotes: original.progressionNotes,
+    deloadWeek: original.deloadWeek,
+    sourceTemplateId: original.id,
+    days: original.days.map((d) => ({
+      name: d.name,
+      focus: d.focus,
+      sortOrder: d.sortOrder,
+      estimatedDurationMinutes: d.estimatedDurationMinutes,
+      exercises: d.exercises.map((e) => ({
+        exerciseId: e.exerciseId,
+        order: e.order,
+        sets: e.sets,
+        reps: e.reps,
+        repsMin: e.repsMin,
+        repsMax: e.repsMax,
+        targetWeight: e.targetWeight,
+        restSeconds: e.restSeconds,
+        notes: e.notes,
+        rpeRir: e.rpeRir,
+        techniqueType: e.techniqueType,
+        supersetGroupId: e.supersetGroupId,
+      })),
     })),
   });
 }
@@ -627,6 +766,10 @@ export async function moveWorkoutTemplateToFolder(id: string, folderId: string |
   return { ok: true, data: null };
 }
 
+// RLS blocca comunque un tentativo su un modello di sistema (using clause
+// "not is_system"): questa chiamata su un id di sistema restituisce 0 righe
+// toccate, nessun errore esplicito — la UI non offre mai questa azione per
+// un modello di sistema (vedi schede/modello/[templateId].tsx).
 export async function deleteWorkoutTemplate(id: string): Promise<WorkoutPlanServiceResult<null>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
   const { error } = await supabase.from('workout_templates').delete().eq('id', id);
@@ -638,13 +781,15 @@ export async function deleteWorkoutTemplate(id: string): Promise<WorkoutPlanServ
 
 // Assegna una COPIA indipendente del modello a un cliente ACTIVE del coach
 // (mai 'invited'/'suspended'/'removed': controllo esplicito nella RPC, piu'
-// stretto di is_coach_for_client che accetta anche 'invited'). Ritorna la
-// scheda reale (WorkoutPlan) appena creata, gia' pronta per essere mostrata
-// come conferma — MAI aperta automaticamente sul logger dal chiamante.
+// stretto di is_coach_for_client che accetta anche 'invited'). Un modello
+// con piu' giorni (Workout A/B/C) crea una scheda reale PER OGNI giorno,
+// tutte assegnate in un colpo solo. Ritorna le schede reali (WorkoutPlan)
+// appena create, gia' pronte per essere mostrate come conferma — MAI aperte
+// automaticamente sul logger dal chiamante.
 export async function assignWorkoutTemplateToClient(
   templateId: string,
   clientId: string,
-): Promise<WorkoutPlanServiceResult<WorkoutPlan>> {
+): Promise<WorkoutPlanServiceResult<WorkoutPlan[]>> {
   if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
   const { data, error } = await supabase.rpc('assign_workout_template_to_client', {
     p_template_id: templateId,
@@ -654,10 +799,15 @@ export async function assignWorkoutTemplateToClient(
     const { code, friendly } = describeTemplateLibraryError(error.message, 'Errore assegnazione scheda modello');
     return { ok: false, code, message: friendly };
   }
-  const fetched = await getWorkoutPlanById(data as string);
-  if (!fetched.ok) return fetched;
-  if (!fetched.data) {
+  const planIds = data as string[];
+  const plans: WorkoutPlan[] = [];
+  for (const planId of planIds) {
+    const fetched = await getWorkoutPlanById(planId);
+    if (!fetched.ok) return fetched;
+    if (fetched.data) plans.push(fetched.data);
+  }
+  if (plans.length === 0) {
     return { ok: false, code: 'not_found', message: 'Scheda assegnata ma non piu\' leggibile subito dopo.' };
   }
-  return { ok: true, data: fetched.data };
+  return { ok: true, data: plans };
 }

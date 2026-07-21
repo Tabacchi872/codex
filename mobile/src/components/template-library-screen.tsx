@@ -35,12 +35,15 @@ async function confirmDestructive(title: string, message: string, confirmLabel: 
   });
 }
 
-// Libreria globale del coach: cartelle/sottocartelle -> schede modello.
-// NIENTE clientId qui, mai: questa schermata (e le sorelle
-// .../cartella/[folderId], .../modello/*) non deve MAI importare
-// useClientStore ne' leggere un parametro clientId dalla route. Per
-// assegnare una scheda a un cliente si passa SEMPRE dal dettaglio del
-// modello ("Assegna a cliente"), mai da qui — vedi schede/modello/[id].tsx.
+// Libreria globale del coach: due sezioni SOLO alla radice ("Professionali",
+// modelli di sistema, uguali per tutti i coach; "La mia libreria",
+// cartelle/sottocartelle -> schede modello personali del coach corrente) —
+// dentro una sottocartella si vede solo il contenuto di quella cartella
+// personale (i modelli di sistema non vivono in alcuna cartella). NIENTE
+// clientId qui, mai: questa schermata (e le sorelle .../cartella/[folderId],
+// .../modello/*) non deve MAI importare useClientStore ne' leggere un
+// parametro clientId dalla route. Per assegnare una scheda a un cliente si
+// passa SEMPRE dal dettaglio del modello ("Assegna a cliente"), mai da qui.
 export function TemplateLibraryScreen({ folderId }: { folderId: string | null }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -138,6 +141,8 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
   // server. Un conteggio superficiale mostrerebbe al coach un "1 sottocartella"
   // anche quando quella sottocartella contiene decine di modelli tre livelli
   // sotto: la scelta "sposta/elimina" deve riflettere l'intero impatto reale.
+  // Riguarda SEMPRE e SOLO modelli personali: i modelli di sistema non vivono
+  // in alcuna cartella, quindi non compaiono mai in questo conteggio.
   function countFolderSubtree(rootId: string): { subfolderCount: number; templateCount: number } {
     const descendantFolderIds: string[] = [];
     function collect(parentId: string) {
@@ -149,7 +154,8 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
       }
     }
     collect(rootId);
-    const templateCount = templates.filter((t) => t.folderId === rootId || (t.folderId && descendantFolderIds.includes(t.folderId))).length;
+    const personalTemplates = templates.filter((t) => !t.isSystem);
+    const templateCount = personalTemplates.filter((t) => t.folderId === rootId || (t.folderId && descendantFolderIds.includes(t.folderId))).length;
     return { subfolderCount: descendantFolderIds.length, templateCount };
   }
 
@@ -221,13 +227,28 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
     );
   }
 
+  const isRoot = folderId === null;
+  const systemTemplates = isRoot ? templates.filter((t) => t.isSystem).sort((a, b) => a.name.localeCompare(b.name)) : [];
   const subfolders = folders.filter((f) => f.parentFolderId === folderId).sort((a, b) => a.name.localeCompare(b.name));
-  const items = templates.filter((t) => t.folderId === folderId).sort((a, b) => a.name.localeCompare(b.name));
+  const personalItems = templates
+    .filter((t) => !t.isSystem && t.folderId === folderId)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  type Row = { key: string; kind: 'folder'; folder: TemplateFolder } | { key: string; kind: 'template'; template: WorkoutTemplateSummary };
+  type Row =
+    | { key: string; kind: 'section'; title: string; subtitle?: string }
+    | { key: string; kind: 'folder'; folder: TemplateFolder }
+    | { key: string; kind: 'template'; template: WorkoutTemplateSummary };
+
   const rows: Row[] = [
+    ...(isRoot && systemTemplates.length > 0
+      ? [
+          { key: 'section-pro', kind: 'section' as const, title: 'Professionali', subtitle: 'Modelli completi pronti da assegnare, non modificabili' },
+          ...systemTemplates.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
+        ]
+      : []),
+    ...(isRoot ? [{ key: 'section-mine', kind: 'section' as const, title: 'La mia libreria', subtitle: 'I tuoi modelli personali, organizzati in cartelle' }] : []),
     ...subfolders.map((folder) => ({ key: `folder-${folder.id}`, kind: 'folder' as const, folder })),
-    ...items.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
+    ...personalItems.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
   ];
 
   return (
@@ -249,7 +270,7 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
             ) : (
               <View style={styles.titleBlock}>
                 <Text style={[AppTextStyle.title, { color: colors.ink }]}>Modelli allenamento</Text>
-                <Text style={[styles.subtitle, { color: colors.inkSoft }]}>La tua libreria personale, organizzata in cartelle</Text>
+                <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Modelli professionali e la tua libreria personale</Text>
               </View>
             )}
             <View style={styles.actionsRow}>
@@ -272,21 +293,30 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
             Nessuna cartella o scheda modello qui. Crea una cartella o una nuova scheda modello per iniziare.
           </Text>
         }
-        renderItem={({ item }) =>
-          item.kind === 'folder' ? (
-            <FolderRow
-              folder={item.folder}
-              onPress={() => router.push(`/schede/cartella/${item.folder.id}`)}
-              onRename={() => {
-                setFolderModalError(null);
-                setRenamingFolder(item.folder);
-              }}
-              onDelete={() => openDeleteFolder(item.folder)}
-            />
-          ) : (
-            <TemplateRow template={item.template} onPress={() => router.push(`/schede/modello/${item.template.id}`)} />
-          )
-        }
+        renderItem={({ item }) => {
+          if (item.kind === 'section') {
+            return (
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.ink }]}>{item.title}</Text>
+                {item.subtitle ? <Text style={[styles.sectionSubtitle, { color: colors.inkSoft }]}>{item.subtitle}</Text> : null}
+              </View>
+            );
+          }
+          if (item.kind === 'folder') {
+            return (
+              <FolderRow
+                folder={item.folder}
+                onPress={() => router.push(`/schede/cartella/${item.folder.id}`)}
+                onRename={() => {
+                  setFolderModalError(null);
+                  setRenamingFolder(item.folder);
+                }}
+                onDelete={() => openDeleteFolder(item.folder)}
+              />
+            );
+          }
+          return <TemplateRow template={item.template} onPress={() => router.push(`/schede/modello/${item.template.id}`)} />;
+        }}
       />
 
       <TemplateFolderNameModal
@@ -369,10 +399,16 @@ function FolderRow({
 
 function TemplateRow({ template, onPress }: { template: WorkoutTemplateSummary; onPress: () => void }) {
   const { colors } = useAppTheme();
+  const metaParts: string[] = [];
+  if (template.durationWeeks) metaParts.push(`${template.durationWeeks} sett.`);
+  if (template.sessionsPerWeek) metaParts.push(`${template.sessionsPerWeek}x/sett.`);
+  metaParts.push(`${template.dayCount} ${template.dayCount === 1 ? 'giorno' : 'giorni'}`);
+  metaParts.push(`${template.exerciseCount} esercizi`);
+
   return (
     <AppPressableCard onPress={onPress} accessibilityLabel={`Apri scheda modello ${template.name}`} style={styles.templateRow}>
-      <View style={[styles.templateIcon, { backgroundColor: colors.coralSoft }]}>
-        <Dumbbell size={24} color={colors.coral} />
+      <View style={[styles.templateIcon, { backgroundColor: template.isSystem ? colors.mossSoft : colors.coralSoft }]}>
+        <Dumbbell size={24} color={template.isSystem ? colors.moss : colors.coral} />
       </View>
       <View style={styles.templateCopy}>
         <Text style={[styles.templateName, { color: colors.ink }]} numberOfLines={2}>
@@ -381,8 +417,10 @@ function TemplateRow({ template, onPress }: { template: WorkoutTemplateSummary; 
         <View style={styles.templateBadges}>
           {template.goal ? <AppBadge label={template.goal} tone="moss" /> : null}
           {template.level ? <AppBadge label={template.level} /> : null}
-          <Text style={[styles.templateMeta, { color: colors.inkSoft }]}>{template.exerciseCount} esercizi</Text>
         </View>
+        <Text style={[styles.templateMeta, { color: colors.inkSoft }]} numberOfLines={1}>
+          {metaParts.join(' · ')}
+        </Text>
       </View>
       <ChevronRight size={20} color={colors.inkFaint} />
     </AppPressableCard>
@@ -398,6 +436,9 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: AppSpacing[2] },
   actionButtonWrap: { flexBasis: 140, flexGrow: 1, minWidth: 0 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  sectionHeader: { gap: 2, marginTop: AppSpacing[2], marginBottom: AppSpacing[1] },
+  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  sectionSubtitle: { fontSize: AppFontSize.sm, fontWeight: '500' },
   folderRow: { flexDirection: 'row', alignItems: 'center', gap: AppSpacing[2], padding: AppSpacing[3] },
   folderRowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: AppSpacing[3], minWidth: 0 },
   folderIcon: { width: 44, height: 44, borderRadius: AppRadius.lg, alignItems: 'center', justifyContent: 'center' },
