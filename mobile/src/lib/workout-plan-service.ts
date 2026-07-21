@@ -65,6 +65,8 @@ type WorkoutPlanRow = {
   id: string;
   coach_id: string;
   client_id: string;
+  template_id: string | null;
+  sequence_order: number | null;
   name: string;
   start_date: string;
   expiry_date: string;
@@ -80,9 +82,16 @@ type WorkoutPlanRow = {
 };
 
 // day_order/workout_day_exercises: il "giorno" e' un dettaglio implementativo
-// (vedi commento in cima al file) — non esposto nel tipo WorkoutPlan.
+// (vedi commento in cima al file) — non esposto nel tipo WorkoutPlan, TRANNE
+// il suo id (workout_days.id), esposto come workoutDayId: serve
+// all'agenda per collegare un appuntamento al giorno esatto (vedi
+// types/training.ts). template_id/sequence_order servono a raggruppare i
+// giorni di uno stesso programma e a proporre il prossimo pending
+// (lib/workout-sequence.ts) — mai scritti da questo file (solo letti: il
+// salvataggio resta esclusivamente via save_workout_template/
+// assign_workout_template_to_client, non toccati).
 const SELECT_WORKOUT_PLAN =
-  'id,coach_id,client_id,name,start_date,expiry_date,scheduled_time,session_status,started_at,completed_at,duration_seconds,day_label,week_label,subscription_id,' +
+  'id,coach_id,client_id,template_id,sequence_order,name,start_date,expiry_date,scheduled_time,session_status,started_at,completed_at,duration_seconds,day_label,week_label,subscription_id,' +
   'workout_days(id,day_order,workout_day_exercises(id,exercise_id,exercise_order,sets,reps,reps_min,reps_max,target_weight,rest_seconds,notes,technique_type,superset_group_id,completed))';
 
 function mapRowToPlan(row: WorkoutPlanRow): WorkoutPlan {
@@ -111,6 +120,9 @@ function mapRowToPlan(row: WorkoutPlanRow): WorkoutPlan {
     name: row.name,
     clientId: row.client_id,
     coachId: row.coach_id,
+    templateId: row.template_id,
+    sequenceOrder: row.sequence_order,
+    workoutDayId: day?.id,
     startDate: row.start_date,
     expiryDate: row.expiry_date,
     scheduledTime: row.scheduled_time ?? undefined,

@@ -13,7 +13,13 @@ export type Appointment = {
   id: string;
   clientId: string;
   coachId: string;
+  // In realta' un workout_plan_id (nome storico invariato per non rompere
+  // appointment-service.ts/RLS gia' applicata): il piano reale collegato.
   workoutSessionId?: string;
+  // Il giorno esatto (workout_days.id) dentro workoutSessionId — oggi ogni
+  // piano ha sempre un solo giorno, ma il collegamento resta esplicito e
+  // verificato via RLS, mai assunto implicitamente.
+  workoutDayId?: string;
   title: string;
   date: string; // AAAA-MM-GG
   startTime: string; // HH:mm

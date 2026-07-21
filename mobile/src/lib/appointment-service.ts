@@ -62,6 +62,7 @@ type AppointmentRow = {
   status: string;
   type: string | null;
   workout_session_id: string | null;
+  workout_day_id: string | null;
   created_at: string;
 };
 
@@ -73,6 +74,7 @@ function mapRowToAppointment(row: AppointmentRow): Appointment {
     clientId: row.client_id,
     coachId: row.coach_id,
     workoutSessionId: row.workout_session_id ?? undefined,
+    workoutDayId: row.workout_day_id ?? undefined,
     title: row.title,
     date: start.date,
     startTime: start.time,
@@ -84,7 +86,7 @@ function mapRowToAppointment(row: AppointmentRow): Appointment {
   };
 }
 
-const ROW_COLUMNS = 'id,coach_id,client_id,title,description,start_at,end_at,status,type,workout_session_id,created_at';
+const ROW_COLUMNS = 'id,coach_id,client_id,title,description,start_at,end_at,status,type,workout_session_id,workout_day_id,created_at';
 
 // Lettura RLS-scoped: il coach vede solo i propri appuntamenti, il cliente
 // solo quelli in cui e' client_id — nessun filtro applicativo necessario
@@ -131,6 +133,7 @@ export async function createAppointment(
         status: appointment.status,
         type: appointment.type,
         workout_session_id: appointment.workoutSessionId ?? null,
+        workout_day_id: appointment.workoutDayId ?? null,
       })
       .select(ROW_COLUMNS)
       .single();
@@ -204,6 +207,32 @@ async function validateAppointmentScope(
     return {
       ok: false,
       result: { ok: false, code: 'workout_plan_client_mismatch', message: 'La scheda selezionata non appartiene al cliente scelto.' },
+    };
+  }
+
+  if (!appointment.workoutDayId) return { ok: true };
+  if (!isValidUuid(appointment.workoutDayId)) {
+    return {
+      ok: false,
+      result: { ok: false, code: 'workout_day_not_synced', message: 'Il workout selezionato non e ancora sincronizzato con Supabase.' },
+    };
+  }
+
+  const { data: day, error: dayError } = await supabase
+    .from('workout_days')
+    .select('id')
+    .eq('id', appointment.workoutDayId)
+    .eq('workout_plan_id', appointment.workoutSessionId)
+    .maybeSingle();
+
+  if (dayError) {
+    logSupabaseError('APPOINTMENT_DAY_SCOPE_CHECK_ERROR', dayError);
+    return { ok: false, result: mapCreateAppointmentError(dayError) };
+  }
+  if (!day) {
+    return {
+      ok: false,
+      result: { ok: false, code: 'workout_day_plan_mismatch', message: 'Il workout selezionato non appartiene alla scheda scelta.' },
     };
   }
 
@@ -291,6 +320,7 @@ export async function updateAppointment(appointment: Appointment): Promise<Appoi
       status: appointment.status,
       type: appointment.type,
       workout_session_id: appointment.workoutSessionId ?? null,
+      workout_day_id: appointment.workoutDayId ?? null,
     })
     .eq('id', appointment.id)
     .select(ROW_COLUMNS)

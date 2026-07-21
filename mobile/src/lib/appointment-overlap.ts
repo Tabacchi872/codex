@@ -26,3 +26,19 @@ export function isValidTimeRange(startTime: string, endTime: string): boolean {
   const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
   return timePattern.test(startTime) && timePattern.test(endTime) && startTime < endTime;
 }
+
+// Nessuna regola esistente impedisce di collegare lo stesso workout a due
+// appuntamenti diversi (nessun vincolo unique in tabella): questo e' un
+// AVVISO non bloccante, non una validazione — il coach puo' comunque
+// salvare (es. un recupero volutamente programmato due volte). Gli
+// appuntamenti annullati non contano come doppia prenotazione, stesso
+// criterio gia' usato da findOverlappingAppointment.
+export function findAppointmentAlreadyLinkedToWorkout(
+  existing: Appointment[],
+  workoutPlanId: string,
+  excludeAppointmentId?: string,
+): Appointment | null {
+  return (
+    existing.find((a) => a.id !== excludeAppointmentId && a.status !== 'cancelled' && a.workoutSessionId === workoutPlanId) ?? null
+  );
+}

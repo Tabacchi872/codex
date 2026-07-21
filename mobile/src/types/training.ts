@@ -185,6 +185,22 @@ export type WorkoutPlan = {
   // lib/workout-progress.ts) — nessuna rottura per le schede esistenti.
   dayLabel?: string;
   weekLabel?: string;
+  // Id del workout_days reale (sempre esattamente una riga per scheda oggi,
+  // day_order=1) — usato dall'agenda per collegare un appuntamento al
+  // giorno esatto, non solo al piano che lo contiene (appointment-service.ts).
+  workoutDayId?: string;
+  // Modello di libreria da cui questa scheda e' stata copiata
+  // (assign_workout_template_to_client) — null/assente per le schede create
+  // dall'editor manuale. Tutte le schede copiate nella STESSA assegnazione
+  // condividono lo stesso templateId: e' la chiave usata per raggruppare i
+  // giorni (Workout A/B/C) di uno stesso programma nell'agenda
+  // (lib/workout-sequence.ts).
+  templateId?: string | null;
+  // Ordine stabile del giorno all'interno del programma (dal sort_order del
+  // workout_template_days originario, mai da data/weekday/indice locale).
+  // Assente per le schede senza templateId, che non fanno parte di alcuna
+  // sequenza multi-giorno.
+  sequenceOrder?: number | null;
 };
 
 // Storico: il valore reale per l'istruttore è vedere la progressione nel tempo,

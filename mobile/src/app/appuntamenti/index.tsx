@@ -114,7 +114,7 @@ export default function AppuntamentiScreen() {
             <AppointmentRow
               appointment={item}
               clientName={client ? clientFullName(client) : 'Cliente'}
-              onPress={() => (client ? router.push(`/clienti/${client.id}`) : undefined)}
+              onPress={() => router.push({ pathname: '/appuntamenti/[id]', params: { id: item.id } })}
               onComplete={() => handleStatusChange(item, 'completed')}
               onCancel={() => handleStatusChange(item, 'cancelled')}
             />
@@ -142,7 +142,7 @@ function AppointmentRow({
   const isCompleted = appointment.status === 'completed';
   return (
     <AppCard style={styles.row}>
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Apri cliente ${clientName}`} hitSlop={4} style={styles.rowMain}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Apri appuntamento con ${clientName}`} hitSlop={4} style={styles.rowMain}>
         <Text style={[styles.name, { color: colors.ink }]}>{clientName}</Text>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>
           {formatDayMonth(appointment.date)} · {appointment.startTime}–{appointment.endTime} — {APPOINTMENT_TYPE_LABEL[appointment.type]}
