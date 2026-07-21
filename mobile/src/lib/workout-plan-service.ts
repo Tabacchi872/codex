@@ -172,6 +172,9 @@ function buildSavePayload(plan: WorkoutPlan) {
 // sempre "CODICE: messaggio", stesso pattern gia' usato da
 // register_client_with_code in auth-service.ts.
 function describeSaveError(message: string): { code: string; friendly: string } {
+  if (message.includes('WORKOUT_LOCKED')) {
+    return { code: 'workout_locked', friendly: 'Questo workout è già completato e non può essere modificato.' };
+  }
   if (message.includes('NOT_YOUR_CLIENT')) {
     return { code: 'not_your_client', friendly: 'Questo cliente non risulta collegato al tuo account coach.' };
   }
