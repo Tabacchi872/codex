@@ -467,3 +467,13 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   9. Verificare e rimuovere le dipendenze npm inutilizzate in `mobile/package.json` (mai fatto un audit dedicato in questa sessione).
   10. Test di un APK preview reale su device/emulatore Android (build EAS `preview`, mai eseguito in questo ambiente).
   11. Build AAB di produzione (EAS `production`), mai eseguita.
+
+- [x] **Feat: storico carichi completo per singolo esercizio (2026-07-21, continuazione 9):** la card "Storico pesi" nella schermata esercizio mostrava l'intera lista di serie inline con un toggle. Riscritta come card compatta interamente cliccabile (Ultimo carico/Miglior carico/data ultima registrazione/stato vuoto "Nessun carico registrato" — verificato nel codice, nessun refuso "Nessun carico repleto" presente), il tap apre lo storico completo su `/storico-carichi` (route esistente riusata, non duplicata) filtrato per clientId+exerciseId (mai workoutPlanId). Vedi `docs/WORKLOG.md` (voce 2026-07-21 "Feat: storico carichi completo per singolo esercizio"). Commit `0acbeb4`.
+- [ ] **Verifica reale storico carichi per singolo esercizio (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser disponibile in questo ambiente, 7 scenari richiesti esplicitamente):**
+  1. Esercizio senza alcun carico registrato → la card mostra lo stato vuoto compatto "Nessun carico registrato", nessuna lista/tabella.
+  2. Registrare 3 serie su un esercizio → la card deve mostrare Ultimo carico e Miglior carico corretti (Miglior carico = massimo storico, non solo dell'ultima sessione).
+  3. Lo stesso esercizio presente in piu' schede (passate/attuali/future) → aprendo lo storico completo, tutte le sessioni compaiono, raggruppate per data/scheda, mai un'unica lista disordinata per singola serie.
+  4. Isolamento tra clienti: aprire lo storico di un cliente non deve mai mostrare dati di un altro cliente, ne' un cliente deve poter cambiare `clientId` da parametro URL.
+  5. Navigazione indietro dallo storico completo → deve tornare esattamente alla stessa schermata/sessione esercizio da cui si e' partiti (stesso `planId`), non a una route generica.
+  6. Coach e cliente: entrambi devono vedere lo stesso storico autorizzato per lo stesso esercizio/cliente (coach solo se il cliente e' realmente suo).
+  7. Sessioni completate: lo storico deve restare in sola lettura (nessun bottone Elimina attivo su una serie di una sessione completata), sia per il coach sia per il cliente.
