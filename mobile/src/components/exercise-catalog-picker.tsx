@@ -551,7 +551,7 @@ function MenuOption({ label, meta, active, onPress }: { label: string; meta?: st
       onPress={onPress}
       style={[
         styles.menuOption,
-        { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? '#173B16' : '#05090C' },
+        { borderColor: active ? theme.primary : theme.border, backgroundColor: active ? theme.backgroundSelected : theme.background },
       ]}>
       <View style={styles.menuOptionText}>
         <ThemedText type="smallBold" style={{ color: active ? theme.primary : theme.text }} numberOfLines={2}>
@@ -568,10 +568,20 @@ function MenuOption({ label, meta, active, onPress }: { label: string; meta?: st
   );
 }
 
+// Bug reale corretto (2026-07-21): questo pannello (e le sue MenuOption)
+// usava sfondi con hex hardcoded ('#05090C'/'#173B16', valori quasi identici
+// alla palette dark — vedi constants/theme.ts Colors.dark.background/
+// backgroundSelected), indipendenti da `theme`: il menu appariva sempre
+// scuro anche con l'app in tema chiaro, mentre bottone/bordo/testo (gia'
+// letti da `theme`) restavano chiari — da qui il contrasto illeggibile
+// segnalato. Ora usa `theme.background`, stesso token gia' usato da
+// SelectorButton subito sopra/sotto: bottone chiuso e pannello aperto
+// restano la stessa superficie, come nell'originale (che condivideva un
+// unico hex hardcoded tra pannello e righe inattive).
 function DropdownList({ children }: { children: ReactNode }) {
   const theme = useTheme();
   return (
-    <View style={[styles.dropdownList, { borderColor: theme.border, backgroundColor: '#05090C' }]}>
+    <View style={[styles.dropdownList, { borderColor: theme.border, backgroundColor: theme.background }]}>
       {children}
     </View>
   );
