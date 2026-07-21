@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { BackHeader } from '@/components/ui';
@@ -11,6 +12,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { getCurrentSession } from '@/lib/auth-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { createWorkoutPlan } from '@/lib/workout-plan-service';
+import { useAuthStore } from '@/store/auth-store';
 import { useTrainingStore } from '@/store/training-store';
 import type { WorkoutPlan } from '@/types/training';
 
@@ -18,9 +20,14 @@ export default function NuovaSchedaScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { clientId } = useLocalSearchParams<{ clientId?: string }>();
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const addWorkoutPlan = useTrainingStore((s) => s.addWorkoutPlan);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  if (!isCoach) {
+    return <CoachOnlyNotice />;
+  }
 
   // Se Supabase e' configurato, la scheda va creata li' (fonte di verita'):
   // il coach_id inviato DEVE essere l'id reale della sessione Supabase (mai

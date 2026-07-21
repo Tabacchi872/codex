@@ -57,7 +57,15 @@ const CLIENT_ONLY_ROUTES = [
 ];
 
 const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto', '/abbonamento-coach'];
-const COACH_ONLY_PREFIXES = ['/clienti/', '/appuntamenti/', '/schede/new', '/schede/modelli'];
+const COACH_ONLY_PREFIXES = [
+  '/clienti/',
+  '/appuntamenti/',
+  '/schede/new',
+  '/schede/modelli',
+  '/schede/modello',
+  '/schede/professionali',
+  '/schede/cartella',
+];
 const SUPERADMIN_ONLY_PREFIXES = ['/superadmin'];
 
 // Unico punto che decide cosa mostrare in base allo stato di autenticazione

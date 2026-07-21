@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { BackHeader } from '@/components/ui';
@@ -10,6 +11,7 @@ import { WorkoutTemplateForm } from '@/components/workout-template-form';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { listTemplateFolders, saveWorkoutTemplate, type WorkoutTemplateSaveInput } from '@/lib/workout-plan-service';
 import { supabaseConfig } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth-store';
 import type { TemplateFolder } from '@/types/template-library';
 
 // Nuova scheda modello nella libreria globale del coach. folderId (se
@@ -19,6 +21,7 @@ export default function NuovoModelloScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { folderId } = useLocalSearchParams<{ folderId?: string }>();
+  const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,6 +41,10 @@ export default function NuovoModelloScreen() {
       };
     }, []),
   );
+
+  if (!isCoach) {
+    return <CoachOnlyNotice />;
+  }
 
   async function handleSave(input: Omit<WorkoutTemplateSaveInput, 'id'>) {
     if (!supabaseConfig.isConfigured) {
