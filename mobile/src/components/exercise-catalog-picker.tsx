@@ -36,6 +36,16 @@ type ExerciseCatalogPickerProps = {
 const DIFFICULTIES: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
 const EXERCISE_TYPES: ExerciseType[] = ['forza', 'cardio', 'mobilita', 'stretching'];
 
+// Sentinel "nessun gruppo scelto", stesso pattern gia' usato da
+// equipmentFilter/difficultyFilter (entrambi 'all' di default). Prima del
+// fix, selectedGroup era SEMPRE un ExerciseMuscleGroupId reale (mai "nessun
+// filtro"): partiva da firstGroup, che essendo 'petto' il primo elemento di
+// EXERCISE_GROUP_ORDER con almeno un esercizio, risultava quasi sempre
+// 'petto' — mostrando solo gli esercizi del petto ad ogni apertura, con la
+// pill "Petto x" sempre visibile come se fosse una scelta esplicita
+// dell'utente.
+type GroupFilterValue = ExerciseMuscleGroupId | 'all';
+
 type CustomExerciseDraft = {
   name: string;
   group: ExerciseMuscleGroupId;
@@ -71,7 +81,7 @@ export function ExerciseCatalogPicker({
   );
   const firstGroup = EXERCISE_GROUP_ORDER.find((group) => groupCounts[group] > 0) ?? 'petto';
 
-  const [selectedGroup, setSelectedGroup] = useState<ExerciseMuscleGroupId>(firstGroup);
+  const [selectedGroup, setSelectedGroup] = useState<GroupFilterValue>('all');
   const [selectedExerciseId, setSelectedExerciseId] = useState('');
   const [query, setQuery] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('all');
@@ -91,9 +101,12 @@ export function ExerciseCatalogPicker({
   const [customError, setCustomError] = useState<string | null>(null);
   const [customDraft, setCustomDraft] = useState<CustomExerciseDraft>({
     name: '',
-    group: selectedGroup,
+    // Un esercizio personalizzato ha sempre un gruppo muscolare reale (mai
+    // "tutti i gruppi"): usa firstGroup, non selectedGroup, che ora puo'
+    // valere 'all' come stato iniziale del filtro.
+    group: firstGroup,
     secondary: [] as ExerciseMuscleGroupId[],
-    primaryMuscles: defaultPrimaryMusclesForGroup(selectedGroup),
+    primaryMuscles: defaultPrimaryMusclesForGroup(firstGroup),
     secondaryMuscles: [],
     equipment: '',
     difficulty: 'beginner' as Difficulty,
@@ -103,7 +116,10 @@ export function ExerciseCatalogPicker({
   });
 
   const groupExercises = useMemo(
-    () => exercises.filter((exercise) => exerciseMatchesGroup(exercise, selectedGroup)).sort((a, b) => a.name.localeCompare(b.name, 'it')),
+    () =>
+      (selectedGroup === 'all' ? exercises : exercises.filter((exercise) => exerciseMatchesGroup(exercise, selectedGroup))).sort((a, b) =>
+        a.name.localeCompare(b.name, 'it'),
+      ),
     [exercises, selectedGroup],
   );
   const equipmentOptions = useMemo(() => equipmentOptionsFor(groupExercises), [groupExercises]);
@@ -122,7 +138,7 @@ export function ExerciseCatalogPicker({
     [groupCounts],
   );
 
-  function selectGroup(group: ExerciseMuscleGroupId) {
+  function selectGroup(group: GroupFilterValue) {
     if (group === selectedGroup) return;
     setSelectedGroup(group);
     setSelectedExerciseId('');
@@ -132,11 +148,16 @@ export function ExerciseCatalogPicker({
     setOpenMenu(null);
     setDuration('');
     setNotes('');
-    setCustomDraft((current) => ({
-      ...current,
-      group,
-      primaryMuscles: current.primaryMuscles.length > 0 ? current.primaryMuscles : defaultPrimaryMusclesForGroup(group),
-    }));
+    // 'all' ("Tutti i gruppi", o la rimozione della pill) non e' un gruppo
+    // muscolare reale: il draft dell'esercizio personalizzato resta sul
+    // proprio gruppo corrente, mai svuotato.
+    if (group !== 'all') {
+      setCustomDraft((current) => ({
+        ...current,
+        group,
+        primaryMuscles: current.primaryMuscles.length > 0 ? current.primaryMuscles : defaultPrimaryMusclesForGroup(group),
+      }));
+    }
   }
 
   function resetParameters() {
@@ -288,7 +309,9 @@ export function ExerciseCatalogPicker({
             <Pressable onPress={() => setFiltersOpen((current) => !current)} style={styles.filtersHeader}>
               <ThemedText type="smallBold">Filtri</ThemedText>
               <View style={styles.activeFilterWrap}>
-                <ActiveFilterPill label={EXERCISE_GROUP_LABEL[selectedGroup]} onClear={() => setOpenMenu('group')} />
+                {selectedGroup !== 'all' ? (
+                  <ActiveFilterPill label={EXERCISE_GROUP_LABEL[selectedGroup]} onClear={() => selectGroup('all')} />
+                ) : null}
               </View>
               <ChevronDown size={17} color={theme.textSecondary} style={{ transform: [{ rotate: filtersOpen ? '180deg' : '0deg' }] }} />
             </Pressable>
@@ -297,9 +320,14 @@ export function ExerciseCatalogPicker({
               <View style={styles.filtersBody}>
                 <View style={styles.selectorBlock}>
                   <ThemedText type="small" themeColor="textSecondary">Gruppo muscolare</ThemedText>
-                  <SelectorButton label={EXERCISE_GROUP_LABEL[selectedGroup]} open={openMenu === 'group'} onPress={() => setOpenMenu(openMenu === 'group' ? null : 'group')} />
+                  <SelectorButton
+                    label={selectedGroup === 'all' ? 'Tutti i gruppi' : EXERCISE_GROUP_LABEL[selectedGroup]}
+                    open={openMenu === 'group'}
+                    onPress={() => setOpenMenu(openMenu === 'group' ? null : 'group')}
+                  />
                   {openMenu === 'group' ? (
                     <DropdownList>
+                      <MenuOption label="Tutti i gruppi" active={selectedGroup === 'all'} onPress={() => { selectGroup('all'); setOpenMenu(null); }} />
                       {selectableGroups.map((group) => (
                         <MenuOption
                           key={group}
