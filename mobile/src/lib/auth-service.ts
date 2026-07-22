@@ -570,7 +570,7 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('full_name,email,avatar_url,created_at')
+    .select('full_name,email,avatar_url,avatar_preset,created_at')
     .eq('id', userId)
     .maybeSingle();
   if (profileError) {
@@ -624,6 +624,7 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
     connectionStatus: coachClient?.status === 'suspended' ? 'suspended' : coachClient?.status === 'active' ? 'active' : undefined,
     avatarStoragePath: profile?.avatar_url ?? null,
     avatarUrl: signedAvatarUrl ?? profile?.avatar_url ?? null,
+    avatarPreset: profile?.avatar_preset ?? 'neutral',
   };
 
   return { ok: true, data: { client, coachBusinessName: coachProfile?.business_name ?? null } };
