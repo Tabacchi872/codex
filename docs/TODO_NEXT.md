@@ -474,18 +474,26 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   5. Verificare che non ci sia alcun flash del form/contenuto reale prima del redirect, su connessione lenta/CPU throttling.
   6. Da una route negata, verificare che back/navigazione riporti a una route consentita (tab bar cliente), non a una schermata vuota o a un loop.
 
-- [ ] **Elenco aperto dall'audit di stabilizzazione (2026-07-21), priorita' da definire, non ancora affrontato in questa sessione:**
+- [ ] **Elenco aperto dall'audit di stabilizzazione (2026-07-21), aggiornato 2026-07-22 (continuazione 5 — pulizia finale del progetto):**
   1. Test runtime reali (REST/RPC dirette, non solo traccia di codice) delle migration `20260727090000`/`20260728090000` — vedi checklist dedicata sopra.
-  2. Commit separato per le modifiche RevenueCat gia' presenti (non committate) nel working tree (`mobile/src/app/abbonamento-coach.tsx`, `mobile/src/lib/revenuecat-service.ts`, `mobile/src/lib/package-checkout-service.ts`, `supabase/functions/revenuecat-webhook/index.ts`, ecc.) — mai isolate in un commit dedicato in questa sessione.
-  3. Verifica e commit del parser BIA InBody120 (`supabase/functions/parse-bia-report/inbody120-parser.ts` + `inbody120-parser.test.ts`, entrambi non tracciati/non committati) e delle modifiche non committate a `supabase/functions/parse-bia-report/index.ts`.
+  2. ~~Commit separato per le modifiche RevenueCat~~ — **risolto**: `b8a8b72 feat: aggiunge la gestione abbonamento RevenueCat`, poi `4f366e9 fix: aggiorna il pacchetto dopo un cambio prodotto RevenueCat`.
+  3. ~~Verifica e commit del parser BIA InBody120~~ — **il flusso BIA e il parser InBody120 sono stati rimossi interamente dal repository** (mai committati prima, `45dbc5e refactor: rimuove il flusso BIA dall'app`, 2026-07-22 continuazione 5) invece di essere completati/committati, su richiesta esplicita dell'utente. Vedi checklist dedicata "Test runtime dopo la rimozione del flusso BIA" sotto.
   4. ~~Ritorno non corretto dopo l'eliminazione di una scheda cliente~~ — **risolto 2026-07-22, vedi BUG-047 sopra** (`schede/[id].tsx` torna ora al dettaglio del cliente proprietario, tab Schede, mai alla libreria modelli).
-  5. Nascondere la tab/voce Chat ai clienti autonomi (self-guided): oggi resta raggiungibile anche per un cliente senza coach assegnato, dove non ha significato.
-  6. Eseguire la migration del bucket Storage `exercise-videos` (schema/RLS documentati in `docs/SUPABASE_STORAGE_VIDEO.md`, mai eseguiti su un progetto reale — vedi anche checklist dedicata sopra).
-  7. Ricreare `mobile/.env.example` (menzionato come creato in una sessione precedente ma non presente nel repository attuale) — nessun template locale per le variabili `EXPO_PUBLIC_*` richieste.
-  8. Eliminare le cartelle di backup residue `mobile_backup_20260715/` e `mobile_git_backup/` dal repository, se confermato che non servono piu'.
-  9. Verificare e rimuovere le dipendenze npm inutilizzate in `mobile/package.json` (mai fatto un audit dedicato in questa sessione).
+  5. ~~Nascondere la tab/voce Chat ai clienti autonomi~~ — **risolto**: `924489f fix: nasconde la chat ai clienti autonomi` (tab bar) e `48a0dd1 fix: nasconde le azioni coach ai clienti autonomi` (Home cliente: Check-in/Prenotazioni/Bacheca/Chat con il coach). Test runtime ancora aperti, vedi checklist dedicata piu' sotto.
+  6. Eseguire la migration del bucket Storage `exercise-videos` (versionata in `20260729090000_version_exercise_videos_storage_bucket.sql`, mai eseguita su un progetto reale — vedi anche checklist dedicata sopra).
+  7. **Ricreare `mobile/.env.example` — ancora BLOCCATO**: le impostazioni di permesso dell'ambiente usato in questa sessione impediscono qualunque scrittura sotto `mobile/.env*` (incluso un file placeholder senza valori reali). Da creare manualmente con questo contenuto esatto (solo placeholder, nessun valore reale — le uniche 5 variabili `EXPO_PUBLIC_*` effettivamente lette in `mobile/src`, verificato con grep):
+     ```
+     EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+     EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-public-key
+     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=your-revenuecat-android-public-sdk-key
+     EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=your-revenuecat-ios-public-sdk-key
+     EXPO_PUBLIC_ENABLE_DEMO_DATA=false
+     ```
+  8. ~~Eliminare le cartelle di backup residue~~ — **risolto 2026-07-22 (continuazione 5)**: `mobile_backup_20260715/` (52M) e `mobile_git_backup/` (1.5M) rimosse, commit `3860ba9 chore: rimuove backup e file obsoleti`.
+  9. ~~Verificare e rimuovere le dipendenze npm inutilizzate~~ — **verificato 2026-07-22 (continuazione 5), nessuna rimossa**: `expo-glass-effect`/`expo-symbols` non sono importate da `mobile/src` ma sono dependencies dirette (non peer/dev/optional) di `expo-router` stesso — rimuoverle dal `package.json` di primo livello non le eliminerebbe realmente (npm le installerebbe comunque come transitive di `expo-router`) e rischierebbe di disallineare la versione pinnata dal resto dell'SDK Expo 57. `@expo/ngrok` confermato intenzionalmente presente (tool CLI di sviluppo, non un import applicativo).
   10. Test di un APK preview reale su device/emulatore Android (build EAS `preview`, mai eseguito in questo ambiente).
   11. Build AAB di produzione (EAS `production`), mai eseguita.
+  12. **(nuovo 2026-07-22 continuazione 5)** `npx.cmd expo-doctor` segnala 8 pacchetti Expo con la patch version leggermente indietro rispetto a quella attesa dall'SDK 57 (`@expo/ui`, `expo`, `expo-asset`, `expo-constants`, `expo-dev-client`, `expo-image-picker`, `expo-notifications`, `expo-router`) — preesistente, non toccato in questa sessione (nessuna richiesta esplicita di aggiornare versioni). Valutare `npx expo install --check` in una sessione dedicata.
 
 - [x] **Feat: storico carichi completo per singolo esercizio (2026-07-21, continuazione 9):** la card "Storico pesi" nella schermata esercizio mostrava l'intera lista di serie inline con un toggle. Riscritta come card compatta interamente cliccabile (Ultimo carico/Miglior carico/data ultima registrazione/stato vuoto "Nessun carico registrato" — verificato nel codice, nessun refuso "Nessun carico repleto" presente), il tap apre lo storico completo su `/storico-carichi` (route esistente riusata, non duplicata) filtrato per clientId+exerciseId (mai workoutPlanId). Vedi `docs/WORKLOG.md` (voce 2026-07-21 "Feat: storico carichi completo per singolo esercizio"). Commit `0acbeb4`.
 - [ ] **Verifica reale storico carichi per singolo esercizio (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser disponibile in questo ambiente, 7 scenari richiesti esplicitamente):**
@@ -562,3 +570,30 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   - [ ] Verifica completa su Expo Web.
   - [ ] Verifica completa su Android dev build/APK.
   - [ ] Controllo layout su schermo stretto.
+
+- [x] **Pulizia finale del progetto: rimozione flusso BIA, backup, script obsoleti — completato lato codice, verifica statica effettuata (2026-07-22, continuazione 5):** flusso BIA (upload/parsing/revisione PDF) rimosso interamente, incluso il parser InBody120 mai committato; metriche manuali/storico pesi/workout/RevenueCat verificati invariati; auto-inserimento cliente delle misure manuali (`resolveMetricsActor`/`allowClientActions`) e card "Profilo di allenamento" preservati come modifiche valide residue; backup obsoleti (`mobile_backup_20260715/`, `mobile_git_backup/`), script superato (`fix-workout-uuid.sql`), componente orfano (`status-dot.tsx`) rimossi. Verifica statica: `tsc --noEmit` pulito, `expo-doctor` 19/20 (1 issue preesistente non collegata), `npm ls --depth=0` pulito, `git diff --check` pulito, grep esaustivo zero riferimenti BIA residui. **Nessun clic reale eseguito** — vedi checklist dedicata sotto. Commit: `8746335`, `45dbc5e`, `736b88b`, `3860ba9`.
+- [ ] **Test runtime dopo la rimozione del flusso BIA (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser/Android disponibile in questo ambiente, completato solo lato codice/verifica statica, commit di riferimento sopra):**
+
+  METRICHE MANUALI (invariate, da riconfermare dopo la rimozione BIA)
+  - [ ] Coach: "Aggiungi misurazione" su un cliente salva correttamente peso/altezza/BMI/composizione/circonferenze.
+  - [ ] Modifica ed eliminazione di una misurazione esistente funzionano ancora (icone matita/cestino, solo lato coach).
+  - [ ] Grafici temporali (peso/massa grassa/girovita) e confronti ("Ultimo controllo"/"Dall'inizio") si popolano correttamente con almeno 2 rilevazioni.
+  - [ ] Una riga storica con `source='bia_pdf'` (dati da una vecchia sessione, se presente sul progetto reale) resta visibile nello storico/grafici senza errori.
+  - [ ] Nessun bottone o testo "BIA"/"PDF" visibile in nessuna schermata metriche (coach o cliente).
+
+  AUTO-INSERIMENTO CLIENTE (funzionalita' preservata, mai testata dal vivo)
+  - [ ] Cliente collegato a un coach attivo, su `/metriche`: vede il bottone "Aggiungi misurazione" e riesce a salvare una propria rilevazione.
+  - [ ] La riga creata dal cliente ha `coach_id` corretto (il coach realmente collegato) e `created_by` uguale al cliente.
+  - [ ] Cliente su `/metriche` NON vede le icone di modifica/eliminazione sulle rilevazioni esistenti (restano riservate al coach).
+  - [ ] Cliente senza coach collegato (o senza `coach_clients` attivo): il salvataggio viene rifiutato con un messaggio chiaro, nessun errore silenzioso.
+  - [ ] Verificare se la migration `20260717100000_client_metrics_client_entry.sql` (segnala "Not applied automatically by Codex") e' davvero applicata sul progetto reale — se non lo e', l'auto-inserimento cliente fallira' con un errore RLS.
+
+  PROFILO DI ALLENAMENTO CLIENTE (`cliente-profilo.tsx`, funzionalita' preservata)
+  - [ ] Cliente con onboarding completato: la card "Il mio profilo di allenamento" mostra obiettivi/peso/altezza/BMI/giorni/esperienza/aree di interesse corretti.
+  - [ ] Cliente senza onboarding completato: messaggio "Profilo di allenamento non ancora compilato" (o "Percorso gestito dal tuo coach" per coach_guided), nessun errore.
+  - [ ] Messaggio di conferma avatar ("Avatar aggiornato") scompare da solo dopo circa 2-3 secondi.
+
+  REGRESSIONE GENERALE
+  - [ ] Nessun import rotto/schermata bianca su nessuna route toccata (`metriche.tsx`, `cliente-profilo.tsx`, dettaglio cliente coach tab Metriche).
+  - [ ] RevenueCat (acquisto/gestione/webhook), workout, storico carichi, avatar upload restano invariati — nessuna regressione.
+  - [ ] Web e Android coerenti.
