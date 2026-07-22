@@ -425,7 +425,7 @@ export function AuthGate() {
     if (pathname === CLIENT_ONBOARDING || pathname === CLIENT_CONNECT_COACH || pathname === CLIENT_SELF_GUIDED_PLANS) {
       return <Slot />;
     }
-    return <ClientTabs />;
+    return <ClientTabs mode={clientOnboarding.mode} />;
   }
 
   if (currentRole === 'superadmin') {
