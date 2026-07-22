@@ -531,3 +531,34 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   6. Dopo il redirect, il tasto indietro non riapre la scheda eliminata (non deve tornare a `/schede/[id]` della scheda cancellata).
   7. Stesso comportamento su Web e su Android.
   8. La libreria globale dei modelli (`/schede`) resta invariata: aprirla direttamente dal tab bar coach continua a mostrare cartelle/modelli come prima, nessuna regressione.
+
+- [x] **Nasconde chat e azioni coach-only ai clienti self_guided — completato lato codice, verifica statica effettuata (2026-07-22):** tab Chat rimossa dalla bottom bar (`client-tabs.tsx`/`client-tabs.web.tsx` via `visibleClientTabs()`, mode letto da `AuthGate`/`clientOnboarding.mode`, commit `924489f4`); tile Check-in/Prenotazioni/Bacheca e bottone "Chat con il coach" rimossi dalla Home cliente (`cliente-home.tsx`, flag `isCoachGuided` da `myCoach.clientMode`, commit `48a0dd15`). Verifica statica: `tsc --noEmit` pulito, `git diff --check` pulito, audit grep delle rotte coach-only, tracciamento manuale dei render-gate di `AuthGate` per escludere flash. **Nessun clic reale eseguito** — vedi checklist runtime dedicata sotto.
+- [ ] **Test runtime navigazione cliente self-guided / coach-guided (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser/Android disponibile in questo ambiente, completato solo lato codice/verifica statica, commit di riferimento `924489f4` e `48a0dd15`):**
+
+  CLIENTE SELF_GUIDED
+  - [ ] La tab Chat non compare nella bottom bar.
+  - [ ] Nella Home non compare il tile Check-in.
+  - [ ] Nella Home non compare il tile Prenotazioni.
+  - [ ] Nella Home non compare il tile Bacheca.
+  - [ ] Nella Home non compare il pulsante "Chat con il coach".
+  - [ ] Il tile Nutrizione resta visibile e funzionante.
+  - [ ] La griglia Home resta ordinata senza spazi vuoti.
+  - [ ] Un deep link diretto a /chat viene bloccato da AuthGate.
+  - [ ] I deep link a /questionario, /prenotazioni e /bacheca vengono bloccati.
+  - [ ] Refresh della pagina senza comparsa temporanea delle azioni coach-only.
+
+  CLIENTE COACH_GUIDED
+  - [ ] La tab Chat resta visibile.
+  - [ ] Check-in, Prenotazioni, Bacheca e Chat con il coach restano visibili.
+  - [ ] Tutte le relative route continuano ad aprirsi.
+  - [ ] Nessuna regressione dopo refresh.
+
+  CAMBIO ACCOUNT
+  - [ ] Logout self_guided → login coach_guided aggiorna correttamente tab e Home.
+  - [ ] Logout coach_guided → login self_guided nasconde immediatamente le azioni.
+  - [ ] Nessun flash della configurazione dell'account precedente.
+
+  PIATTAFORME
+  - [ ] Verifica completa su Expo Web.
+  - [ ] Verifica completa su Android dev build/APK.
+  - [ ] Controllo layout su schermo stretto.
