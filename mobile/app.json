@@ -8,7 +8,12 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.fitcoachapp.mobile",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,7 +50,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "L'app usa le foto per allegarle al check-in settimanale che invii al tuo coach."
+          "photosPermission": "L'app usa le foto per allegarle al check-in settimanale che invii al tuo coach.",
+          "cameraPermission": false
         }
       ],
       [
