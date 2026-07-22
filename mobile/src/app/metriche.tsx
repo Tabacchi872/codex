@@ -29,10 +29,10 @@ export default function MetricheClienteScreen() {
           <View>
             <Text style={[styles.title, { color: colors.ink }]}>I tuoi progressi</Text>
             <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-              Rilevazioni confermate dal coach e commenti condivisi.
+              Le tue misurazioni, i commenti del coach e i progressi nel tempo.
             </Text>
           </View>
-          <ClientMetricsPanel clientId={currentClientId} clientName={client ? `${client.firstName} ${client.lastName}`.trim() : 'Cliente'} readOnly />
+          <ClientMetricsPanel clientId={currentClientId} clientName={client ? `${client.firstName} ${client.lastName}`.trim() : 'Cliente'} readOnly allowClientActions />
         </>
       )}
     </AppScreen>

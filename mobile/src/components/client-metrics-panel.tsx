@@ -1,6 +1,6 @@
-import { FileText, Pencil, Trash2 } from 'lucide-react-native';
+import { Pencil, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { AppButton, AppCard, AppTextField } from '@/components/ui';
@@ -11,27 +11,25 @@ import {
   devicesDiffer,
   formatMetricValue,
   getLatestMeasurements,
-  METRIC_DEFINITIONS,
   readMetric,
   sortMeasurements,
 } from '@/lib/client-metrics-comparison';
-import {
-  createBiaReportSignedUrl,
-  createClientMeasurement,
-  deleteBiaReport,
-  deleteClientMeasurement,
-  pickBiaPdf,
-  updateClientMeasurement,
-  uploadBiaReport,
-} from '@/lib/client-metrics-service';
+import { createClientMeasurement, deleteClientMeasurement, updateClientMeasurement } from '@/lib/client-metrics-service';
 import { formatDayMonth } from '@/lib/format-date';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import type { BiaReport, ClientMeasurement, MeasurementDraft, MetricValueKey } from '@/types/client-metrics';
+import type { ClientMeasurement, MeasurementDraft, MetricValueKey } from '@/types/client-metrics';
 
 type ClientMetricsPanelProps = {
   clientId: string;
   clientName: string;
   readOnly?: boolean;
+  // Un cliente self_guided o coach_guided puo' registrare le proprie misure
+  // manuali (peso, circonferenze, ecc.) anche se readOnly resta true per la
+  // gestione avanzata (modifica/eliminazione di rilevazioni esistenti, riservata
+  // al coach): vedi resolveMetricsActor in client-metrics-service.ts, che
+  // riconosce quando chi scrive e' il cliente stesso e verifica comunque il
+  // collegamento a un coach attivo prima di salvare.
+  allowClientActions?: boolean;
 };
 
 type FieldConfig = { key: MetricValueKey; label: string; unit: string };
@@ -87,50 +85,20 @@ const EMPTY_FORM = {
   clientVisibleComment: '',
 };
 
-export function ClientMetricsPanel({ clientId, clientName, readOnly = false }: ClientMetricsPanelProps) {
+export function ClientMetricsPanel({ clientId, clientName, readOnly = false, allowClientActions = false }: ClientMetricsPanelProps) {
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const compact = width < 360;
-  const { measurements, reports, loading, error, reload } = useClientMetrics(clientId, !readOnly);
+  const canCreate = !readOnly || allowClientActions;
+  const canManage = !readOnly;
+  const { measurements, loading, error, reload } = useClientMetrics(clientId);
   const ordered = useMemo(() => sortMeasurements(measurements), [measurements]);
   const { first, previous, latest } = useMemo(() => getLatestMeasurements(measurements), [measurements]);
   const fromStart = useMemo(() => compareMeasurements(first, latest), [first, latest]);
   const fromPrevious = useMemo(() => compareMeasurements(previous, latest), [previous, latest]);
-  const [formMode, setFormMode] = useState<'closed' | 'manual' | 'review'>('closed');
+  const [formMode, setFormMode] = useState<'closed' | 'manual'>('closed');
   const [editingMeasurement, setEditingMeasurement] = useState<ClientMeasurement | null>(null);
-  const [reviewReport, setReviewReport] = useState<BiaReport | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-
-  async function handleUploadPdf() {
-    if (uploading) return;
-    setActionMessage(null);
-    const picked = await pickBiaPdf();
-    if (picked.canceled || !picked.assets[0]) return;
-    const asset = picked.assets[0];
-    const confirmed = await confirmAction(`Caricare "${asset.name}" per ${clientName}?`);
-    if (!confirmed) return;
-    setUploading(true);
-    const result = await uploadBiaReport(clientId, asset);
-    setUploading(false);
-    if (!result.ok) {
-      setActionMessage(result.message);
-      return;
-    }
-    setReviewReport(result.data);
-    setEditingMeasurement(null);
-    setFormMode('review');
-    await reload();
-  }
-
-  async function handleOpenPdf(report: BiaReport) {
-    const result = await createBiaReportSignedUrl(report.storagePath);
-    if (!result.ok) {
-      setActionMessage(result.message);
-      return;
-    }
-    await Linking.openURL(result.data);
-  }
 
   async function handleDeleteMeasurement(measurement: ClientMeasurement) {
     const confirmed = await confirmAction('Eliminare questa rilevazione dallo storico?');
@@ -140,30 +108,18 @@ export function ClientMetricsPanel({ clientId, clientName, readOnly = false }: C
     if (result.ok) await reload();
   }
 
-  async function handleDeleteReport(report: BiaReport) {
-    const confirmed = await confirmAction('Eliminare soltanto il PDF BIA collegato?');
-    if (!confirmed) return;
-    const result = await deleteBiaReport(report);
-    setActionMessage(result.ok ? 'PDF BIA eliminato.' : result.message);
-    if (result.ok) await reload();
-  }
-
   if (formMode !== 'closed') {
     return (
-      <MeasurementReviewForm
+      <MeasurementForm
         clientId={clientId}
-        clientName={clientName}
-        report={reviewReport}
         measurement={editingMeasurement}
         onCancel={() => {
           setFormMode('closed');
           setEditingMeasurement(null);
-          setReviewReport(null);
         }}
         onSaved={async () => {
           setFormMode('closed');
           setEditingMeasurement(null);
-          setReviewReport(null);
           await reload();
         }}
       />
@@ -176,10 +132,9 @@ export function ClientMetricsPanel({ clientId, clientName, readOnly = false }: C
       {error ? <Text style={[styles.smallText, { color: colors.rust }]}>{error}</Text> : null}
       {actionMessage ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>{actionMessage}</Text> : null}
 
-      {!readOnly ? (
+      {canCreate ? (
         <View style={[styles.actionsRow, compact && styles.actionsColumn]}>
           <AppButton label="Aggiungi misurazione" onPress={() => setFormMode('manual')} fullWidth={compact} />
-          <AppButton label={uploading ? 'Caricamento...' : 'Carica PDF BIA'} onPress={handleUploadPdf} loading={uploading} disabled={uploading} variant="outline" fullWidth={compact} />
         </View>
       ) : null}
 
@@ -232,7 +187,7 @@ export function ClientMetricsPanel({ clientId, clientName, readOnly = false }: C
                   <Text style={[styles.smallText, { color: colors.inkSoft }]}>{`${measurement.deviceBrand ?? ''} ${measurement.deviceModel ?? ''}`.trim()}</Text>
                 ) : null}
               </View>
-              {!readOnly ? (
+              {canManage ? (
                 <View style={styles.iconActions}>
                   <Pressable onPress={() => { setEditingMeasurement(measurement); setFormMode('manual'); }} hitSlop={8}>
                     <Pencil size={18} color={colors.moss} />
@@ -246,41 +201,17 @@ export function ClientMetricsPanel({ clientId, clientName, readOnly = false }: C
           ))
         )}
       </AppCard>
-
-      {!readOnly ? (
-        <AppCard style={styles.cardGap}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>PDF BIA</Text>
-          {reports.length === 0 ? <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun PDF caricato.</Text> : null}
-          {reports.map((report) => (
-            <View key={report.id} style={[styles.reportRow, { borderColor: colors.border }]}>
-              <FileText size={18} color={colors.moss} />
-              <View style={styles.historyText}>
-                <Text style={[styles.historyTitle, { color: colors.ink }]} numberOfLines={1}>{report.originalFilename ?? 'BIA.pdf'}</Text>
-                <Text style={[styles.smallText, { color: colors.inkSoft }]}>Stato: {report.status}</Text>
-              </View>
-              <AppButton label="Apri" size="sm" variant="ghost" onPress={() => handleOpenPdf(report)} />
-              <Pressable onPress={() => handleDeleteReport(report)} hitSlop={8}>
-                <Trash2 size={18} color={colors.rust} />
-              </Pressable>
-            </View>
-          ))}
-        </AppCard>
-      ) : null}
     </View>
   );
 }
 
-function MeasurementReviewForm({
+function MeasurementForm({
   clientId,
-  clientName,
-  report,
   measurement,
   onCancel,
   onSaved,
 }: {
   clientId: string;
-  clientName: string;
-  report: BiaReport | null;
   measurement: ClientMeasurement | null;
   onCancel: () => void;
   onSaved: () => Promise<void>;
@@ -288,7 +219,7 @@ function MeasurementReviewForm({
   const { colors } = useAppTheme();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [form, setForm] = useState<Record<string, string>>(() => buildInitialForm(report, measurement));
+  const [form, setForm] = useState<Record<string, string>>(() => buildInitialForm(measurement));
 
   useEffect(() => {
     const weight = parseNumber(form.weightKg);
@@ -302,7 +233,7 @@ function MeasurementReviewForm({
     if (saving) return;
     setSaving(true);
     setMessage(null);
-    const draft = buildDraft(form, report);
+    const draft = buildDraft(form);
     const result = measurement
       ? await updateClientMeasurement({ ...measurement, ...draft, updatedAt: measurement.updatedAt })
       : await createClientMeasurement(clientId, draft);
@@ -316,19 +247,6 @@ function MeasurementReviewForm({
 
   return (
     <View style={styles.panel}>
-      <AppCard style={styles.cardGap}>
-        <Text style={[styles.cardTitle, { color: colors.ink }]}>Controlla dati BIA</Text>
-        <Text style={[styles.smallText, { color: colors.inkSoft }]}>{clientName}</Text>
-        {report ? (
-          <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-            File: {report.originalFilename ?? 'PDF BIA'} · Stato {report.status}
-          </Text>
-        ) : (
-          <Text style={[styles.smallText, { color: colors.inkSoft }]}>Inserimento manuale</Text>
-        )}
-        {report?.errorMessage ? <Text style={[styles.smallText, { color: colors.rust }]}>{report.errorMessage}</Text> : null}
-      </AppCard>
-
       <AppTextField label="Data e ora rilevazione" value={form.measuredAt} onChangeText={(value) => patchForm(setForm, 'measuredAt', value)} placeholder="2026-07-16T10:30" />
 
       {FIELD_GROUPS.map((group) => (
@@ -343,7 +261,6 @@ function MeasurementReviewForm({
                   onChangeText={(value) => patchForm(setForm, field.key, value)}
                   keyboardType="decimal-pad"
                 />
-                <MetricReviewState report={report} fieldKey={field.key} value={form[field.key]} />
               </View>
             ))}
           </View>
@@ -439,42 +356,30 @@ function MetricTile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetricReviewState({ report, fieldKey, value }: { report: BiaReport | null; fieldKey: MetricValueKey; value: string | undefined }) {
-  const { colors } = useAppTheme();
-  if (!report) return null;
-  const confidence = report.extractionConfidence?.[fieldKey];
-  const label = value?.trim() ? confidence !== undefined && confidence < 0.7 ? 'Da controllare' : 'Riconosciuto' : 'Non trovato';
-  const color = label === 'Riconosciuto' ? colors.moss : label === 'Da controllare' ? colors.coral : colors.inkSoft;
-  return <Text style={[styles.reviewState, { color }]}>{label}{confidence !== undefined ? ` · ${Math.round(confidence * 100)}%` : ''}</Text>;
-}
-
-function buildInitialForm(report: BiaReport | null, measurement: ClientMeasurement | null) {
-  const data = report?.extractedData ?? {};
-  const source = measurement ?? data;
+function buildInitialForm(measurement: ClientMeasurement | null) {
   const result: Record<string, string> = {
     ...EMPTY_FORM,
-    measuredAt: toLocalInput(String((source as Record<string, unknown>).measuredAt ?? measurement?.measuredAt ?? new Date().toISOString())),
-    deviceBrand: String((source as Record<string, unknown>).deviceBrand ?? measurement?.deviceBrand ?? ''),
-    deviceModel: String((source as Record<string, unknown>).deviceModel ?? measurement?.deviceModel ?? ''),
+    measuredAt: toLocalInput(measurement?.measuredAt ?? new Date().toISOString()),
+    deviceBrand: measurement?.deviceBrand ?? '',
+    deviceModel: measurement?.deviceModel ?? '',
     measurementLocation: measurement?.measurementLocation ?? '',
     coachComment: measurement?.coachComment ?? '',
     clientVisibleComment: measurement?.clientVisibleComment ?? '',
   };
   for (const group of FIELD_GROUPS) {
     for (const field of group.fields) {
-      const value = (source as Record<string, unknown>)[field.key] ?? measurement?.[field.key];
+      const value = measurement?.[field.key];
       result[field.key] = typeof value === 'number' ? String(value).replace('.', ',') : '';
     }
   }
   return result;
 }
 
-function buildDraft(form: Record<string, string>, report: BiaReport | null): MeasurementDraft {
+function buildDraft(form: Record<string, string>): MeasurementDraft {
   const weight = parseNumber(form.weightKg);
   const height = parseNumber(form.heightCm);
   const draft: MeasurementDraft = {
-    source: report ? 'bia_pdf' : 'manual',
-    biaReportId: report?.id ?? null,
+    source: 'manual',
     measuredAt: parseMeasuredAt(form.measuredAt),
     weightKg: weight,
     heightCm: height,
@@ -605,13 +510,6 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
     paddingVertical: AppSpacing[2],
   },
-  reportRow: {
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-    paddingVertical: AppSpacing[2],
-  },
   historyText: {
     flex: 1,
     minWidth: 0,
@@ -630,9 +528,5 @@ const styles = StyleSheet.create({
   },
   formField: {
     gap: 3,
-  },
-  reviewState: {
-    fontSize: 11,
-    fontWeight: '700',
   },
 });

@@ -1,4 +1,6 @@
-export type BiaReportStatus = 'uploaded' | 'processing' | 'extracted' | 'needs_review' | 'confirmed' | 'failed';
+// 'bia_pdf' resta un valore valido SOLO per leggere correttamente le righe
+// storiche create quando il flusso BIA esisteva ancora (mai piu' scritto
+// dall'app dopo la rimozione del flusso BIA): vedi client-metrics-service.ts.
 export type ClientMeasurementSource = 'manual' | 'bia_pdf' | 'imported';
 
 export type MetricQuality = 'recognized' | 'review' | 'missing';
@@ -28,30 +30,6 @@ export type MetricValueKey =
   | 'rightThighCm'
   | 'leftCalfCm'
   | 'rightCalfCm';
-
-export type BiaReport = {
-  id: string;
-  coachId: string;
-  clientId: string;
-  storagePath: string;
-  originalFilename: string | null;
-  mimeType: string | null;
-  fileSize: number | null;
-  fileHash: string | null;
-  status: BiaReportStatus;
-  extractedText?: string | null;
-  extractedData?: Partial<Record<MetricValueKey | 'measuredAt' | 'deviceBrand' | 'deviceModel', unknown>> | null;
-  extractionConfidence?: Partial<Record<MetricValueKey, number>> | null;
-  extractionProvider?: string | null;
-  errorCode?: string | null;
-  errorMessage?: string | null;
-  uploadedAt: string;
-  processedAt?: string | null;
-  confirmedAt?: string | null;
-  confirmedBy?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
 
 export type ClientMeasurement = {
   id: string;

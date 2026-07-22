@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { listClientBiaReports, listClientMeasurements } from '@/lib/client-metrics-service';
-import type { BiaReport, ClientMeasurement } from '@/types/client-metrics';
+import { listClientMeasurements } from '@/lib/client-metrics-service';
+import type { ClientMeasurement } from '@/types/client-metrics';
 
 type UseClientMetricsResult = {
   measurements: ClientMeasurement[];
-  reports: BiaReport[];
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
 };
 
-export function useClientMetrics(clientId: string | null | undefined, includeReports = true): UseClientMetricsResult {
+// Le misurazioni si caricano sempre quando c'e' un clientId, indipendentemente
+// da readOnly/allowClientActions del pannello che le mostra (invariato dal
+// comportamento gia' esistente prima della rimozione del flusso BIA: solo il
+// caricamento dei PDF BIA era condizionato da un secondo parametro, ora
+// scomparso insieme al flusso).
+export function useClientMetrics(clientId: string | null | undefined): UseClientMetricsResult {
   const [measurements, setMeasurements] = useState<ClientMeasurement[]>([]);
-  const [reports, setReports] = useState<BiaReport[]>([]);
   const [loading, setLoading] = useState(Boolean(clientId));
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
@@ -22,7 +25,6 @@ export function useClientMetrics(clientId: string | null | undefined, includeRep
   const reload = useCallback(async () => {
     if (!clientId) {
       setMeasurements([]);
-      setReports([]);
       setLoading(false);
       return;
     }
@@ -30,21 +32,15 @@ export function useClientMetrics(clientId: string | null | undefined, includeRep
     requestIdRef.current = requestId;
     setLoading(true);
     setError(null);
-    const [measurementsResult, reportsResult] = await Promise.all([
-      listClientMeasurements(clientId),
-      includeReports ? listClientBiaReports(clientId) : Promise.resolve({ ok: true as const, data: [] }),
-    ]);
+    const result = await listClientMeasurements(clientId);
     if (requestIdRef.current !== requestId) return;
-    if (!measurementsResult.ok) {
-      setError(measurementsResult.message);
+    if (!result.ok) {
+      setError(result.message);
     } else {
-      setMeasurements(measurementsResult.data);
-    }
-    if (reportsResult.ok) {
-      setReports(reportsResult.data);
+      setMeasurements(result.data);
     }
     setLoading(false);
-  }, [clientId, includeReports]);
+  }, [clientId]);
 
   useEffect(() => {
     reload();
@@ -57,5 +53,5 @@ export function useClientMetrics(clientId: string | null | undefined, includeRep
     return () => subscription.remove();
   }, [reload]);
 
-  return { measurements, reports, loading, error, reload };
+  return { measurements, loading, error, reload };
 }
