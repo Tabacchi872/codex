@@ -459,7 +459,7 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   1. Test runtime reali (REST/RPC dirette, non solo traccia di codice) delle migration `20260727090000`/`20260728090000` — vedi checklist dedicata sopra.
   2. Commit separato per le modifiche RevenueCat gia' presenti (non committate) nel working tree (`mobile/src/app/abbonamento-coach.tsx`, `mobile/src/lib/revenuecat-service.ts`, `mobile/src/lib/package-checkout-service.ts`, `supabase/functions/revenuecat-webhook/index.ts`, ecc.) — mai isolate in un commit dedicato in questa sessione.
   3. Verifica e commit del parser BIA InBody120 (`supabase/functions/parse-bia-report/inbody120-parser.ts` + `inbody120-parser.test.ts`, entrambi non tracciati/non committati) e delle modifiche non committate a `supabase/functions/parse-bia-report/index.ts`.
-  4. Ritorno non corretto dopo l'eliminazione di una scheda cliente: `schede/[id].tsx` fa ancora `router.replace('/schede')` dopo `handleDelete`, che ora atterra sulla libreria modelli del coach invece che su un elenco di sessioni cross-cliente (effetto collaterale noto dal 2026-07-20, mai corretto, nessun crash/perdita dati).
+  4. ~~Ritorno non corretto dopo l'eliminazione di una scheda cliente~~ — **risolto 2026-07-22, vedi BUG-047 sopra** (`schede/[id].tsx` torna ora al dettaglio del cliente proprietario, tab Schede, mai alla libreria modelli).
   5. Nascondere la tab/voce Chat ai clienti autonomi (self-guided): oggi resta raggiungibile anche per un cliente senza coach assegnato, dove non ha significato.
   6. Eseguire la migration del bucket Storage `exercise-videos` (schema/RLS documentati in `docs/SUPABASE_STORAGE_VIDEO.md`, mai eseguiti su un progetto reale — vedi anche checklist dedicata sopra).
   7. Ricreare `mobile/.env.example` (menzionato come creato in una sessione precedente ma non presente nel repository attuale) — nessun template locale per le variabili `EXPO_PUBLIC_*` richieste.
@@ -501,3 +501,14 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   8. Verificare il caso di un piano `completed` presente SOLO in locale (mai sincronizzato, id non-UUID, es. da prima del collegamento Supabase): deve essere inserito correttamente come riga nuova, senza errori.
   9. Nessuna schermata rossa (Web/Android) durante l'intero ciclo di avvio/refresh.
   10. Migrazione idempotente dopo logout/login (nessun ciclo, nessun errore ripetuto).
+
+- [x] **Fix BUG-047: torna alle schede del cliente dopo l'eliminazione (2026-07-22, continuazione):** eliminare una scheda reale dal percorso Clienti → cliente → Schede → dettaglio reindirizzava a `/schede` (libreria globale modelli), perdendo il contesto cliente. Fix: `schede/[id].tsx`, `goToClientSchede(clientId)` → `router.replace({ pathname: '/clienti/[id]', params: { id: clientId, tab: 'schede' } })`, clientId sempre da `plan!.clientId`. Vedi `docs/BUGS.md` (BUG-047), `docs/WORKLOG.md` (voce 2026-07-22 continuazione). Commit `10f0383`.
+- [ ] **Verifica reale navigazione dopo eliminazione scheda cliente / BUG-047 (priorita' alta, mai fatta con clic reali — nessun tool di automazione browser/app disponibile in questo ambiente, 8 scenari richiesti esplicitamente dall'utente):**
+  1. Elimino una scheda `todo` di un cliente (es. Rita) dal suo dettaglio → torno al dettaglio di Rita, tab Schede (non alla libreria modelli).
+  2. La scheda eliminata non compare piu' nella lista schede di Rita.
+  3. Elimino una scheda di un altro cliente (es. Luigi) → NON atterro sul dettaglio di Rita (o di un cliente sbagliato) — atterro sempre sul cliente proprietario della scheda eliminata.
+  4. Cancellazione fallita (es. rete assente) → resto nel dettaglio scheda, nessuna navigazione, errore reale visibile.
+  5. Tentativo di eliminare una scheda `completed` → bloccato (sia lato client con messaggio immediato, sia server-side se dovesse arrivare una richiesta diretta).
+  6. Dopo il redirect, il tasto indietro non riapre la scheda eliminata (non deve tornare a `/schede/[id]` della scheda cancellata).
+  7. Stesso comportamento su Web e su Android.
+  8. La libreria globale dei modelli (`/schede`) resta invariata: aprirla direttamente dal tab bar coach continua a mostrare cartelle/modelli come prima, nessuna regressione.
