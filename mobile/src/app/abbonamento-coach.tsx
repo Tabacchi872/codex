@@ -6,7 +6,7 @@ import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, AppScreen, 
 import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
 import { useMySubscription } from '@/hooks/use-my-subscription';
 import { useSubscriptionPackages } from '@/hooks/use-subscription-packages';
-import { loadStoreProductsForPackages, restorePackagePurchases, startPackageCheckout } from '@/lib/package-checkout-service';
+import { loadStoreProductsForPackages, openPackageSubscriptionManagement, restorePackagePurchases, startPackageCheckout } from '@/lib/package-checkout-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { RevenueCatProductState } from '@/lib/revenuecat-service';
@@ -26,6 +26,8 @@ export default function AbbonamentoCoachScreen() {
   const [storeError, setStoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
   const [restoring, setRestoring] = useState(false);
+  const [managementMessage, setManagementMessage] = useState('');
+  const [managingSubscription, setManagingSubscription] = useState(false);
 
   const reloadAll = useCallback(() => {
     reloadSubscription();
@@ -69,10 +71,19 @@ export default function AbbonamentoCoachScreen() {
     if (result.ok) reloadAll();
   }
 
+  async function handleManageSubscription() {
+    setManagingSubscription(true);
+    setManagementMessage('');
+    const result = await openPackageSubscriptionManagement();
+    setManagingSubscription(false);
+    setManagementMessage(result.message);
+    if (result.ok) reloadAll();
+  }
+
   if (!supabaseConfig.isConfigured) {
     return (
       <AppScreen>
-        <BackHeader title="Abbonamento" fallbackHref="/impostazioni" />
+        <BackHeader title="Pacchetto e fatturazione" fallbackHref="/impostazioni" />
         <AppCard>
           <AppEmptyState
             title="Supabase non configurato"
@@ -85,10 +96,10 @@ export default function AbbonamentoCoachScreen() {
 
   return (
     <AppScreen>
-      <BackHeader title="Abbonamento" fallbackHref="/impostazioni" />
+      <BackHeader title="Pacchetto e fatturazione" fallbackHref="/impostazioni" />
 
       <AppCard style={styles.card}>
-        <Text style={[styles.sectionTitle, { color: colors.ink }]}>Il tuo abbonamento</Text>
+        <Text style={[styles.sectionTitle, { color: colors.ink }]}>Il tuo pacchetto</Text>
         {loadingSubscription ? (
           <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento...</Text>
         ) : subscriptionError ? (
@@ -106,6 +117,19 @@ export default function AbbonamentoCoachScreen() {
         )}
         {loadingCapacity ? <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento utilizzo clienti...</Text> : null}
         {capacityError ? <AppErrorState message={capacityError} onRetry={reloadCapacity} /> : null}
+        {current?.paymentProvider === 'revenuecat' ? (
+          <>
+            <AppButton
+              label="Gestisci abbonamento"
+              onPress={handleManageSubscription}
+              variant="outline"
+              size="sm"
+              loading={managingSubscription}
+              fullWidth
+            />
+            {managementMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{managementMessage}</Text> : null}
+          </>
+        ) : null}
       </AppCard>
 
       <View style={styles.sectionHeader}>
@@ -256,10 +280,10 @@ function PackageOfferCard({
       {checkoutMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{checkoutMessage}</Text> : null}
 
       <AppButton
-        label={isCurrent ? 'Rinnova pacchetto' : 'Acquista o cambia pacchetto'}
+        label={isCurrent ? 'Pacchetto attuale' : 'Acquista in app'}
         onPress={handlePurchase}
         loading={starting}
-        disabled={!canPurchase}
+        disabled={isCurrent || !canPurchase}
         fullWidth
       />
     </AppCard>
@@ -285,7 +309,7 @@ function formatDate(value: string) {
 
 function getStatusLabel(status: UserSubscriptionStatus) {
   const labels: Record<UserSubscriptionStatus, string> = {
-    pending: 'In attesa',
+    pending: 'Pagamento in attesa',
     active: 'Attivo',
     expired: 'Scaduto',
     canceled: 'Annullato',

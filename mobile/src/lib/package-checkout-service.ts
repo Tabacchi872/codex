@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { getCurrentSession } from './auth-service';
 import {
   loadRevenueCatProductStates,
+  openRevenueCatSubscriptionManagement,
   purchaseRevenueCatPackage,
   restoreRevenueCatPurchases,
   type RevenueCatProductState,
@@ -30,6 +31,10 @@ export type CheckoutResult =
 export type RestorePurchasesResult =
   | { ok: true; code: 'synced' | 'sync_timeout'; provider: CheckoutProvider; message: string }
   | { ok: false; code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'restore_error' | 'sync_error'; provider: CheckoutProvider; message: string };
+
+export type ManageSubscriptionResult =
+  | { ok: true; provider: CheckoutProvider; message: string }
+  | { ok: false; code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'no_management_url' | 'open_error'; provider: CheckoutProvider; message: string };
 
 export function resolveCheckoutProvider(): CheckoutProvider {
   if (Platform.OS === 'ios') return 'apple';
@@ -124,6 +129,20 @@ export async function restorePackagePurchases(): Promise<RestorePurchasesResult>
     };
   }
   return { ok: true, code: 'synced', provider, message: 'Acquisti ripristinati e abbonamento aggiornato.' };
+}
+
+export async function openPackageSubscriptionManagement(): Promise<ManageSubscriptionResult> {
+  const provider = resolveCheckoutProvider();
+  const session = await getCurrentSession();
+  const userId = session.ok ? session.data?.user.id : null;
+  if (!userId) {
+    return { ok: false, code: 'not_authenticated', provider, message: 'Accedi con un account Supabase reale per gestire l\'abbonamento.' };
+  }
+
+  const result = await openRevenueCatSubscriptionManagement(userId);
+  return result.ok
+    ? { ok: true, provider, message: result.message }
+    : { ok: false, code: result.code, provider, message: result.message };
 }
 
 function mapPurchaseErrorCode(code: 'unsupported' | 'not_configured' | 'missing_product' | 'cancelled' | 'purchase_error') {

@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import Purchases, {
   type CustomerInfo,
   type CustomerInfoUpdateListener,
@@ -51,6 +51,10 @@ export type RevenueCatPurchaseResult =
 export type RevenueCatRestoreResult =
   | { ok: true; customerInfo: CustomerInfo; message: string }
   | { ok: false; code: 'unsupported' | 'not_configured' | 'restore_error'; message: string };
+
+export type RevenueCatManageSubscriptionResult =
+  | { ok: true; message: string }
+  | { ok: false; code: 'unsupported' | 'not_configured' | 'no_management_url' | 'open_error'; message: string };
 
 const EXPO_GO_MESSAGE = 'RevenueCat richiede una development build o una build EAS: Expo Go non supporta il modulo nativo.';
 const WEB_MESSAGE = 'Acquisti in-app disponibili solo su Android e iOS. Sul web serve un checkout separato.';
@@ -242,6 +246,34 @@ export async function restoreRevenueCatPurchases(userId: string): Promise<Revenu
     return { ok: true, customerInfo, message: 'Ripristino ricevuto, sincronizzazione in corso.' };
   } catch (err) {
     return { ok: false, code: 'restore_error', message: `Ripristino non riuscito: ${safeErrorMessage(err)}` };
+  }
+}
+
+export async function openRevenueCatSubscriptionManagement(userId: string): Promise<RevenueCatManageSubscriptionResult> {
+  const identifyResult = await identifyRevenueCatUser(userId);
+  if (!identifyResult.ok) return { ok: false, code: identifyResult.code, message: identifyResult.message };
+
+  let customerInfo: CustomerInfo;
+  try {
+    customerInfo = await Purchases.getCustomerInfo();
+  } catch (err) {
+    return { ok: false, code: 'open_error', message: `Impossibile recuperare la gestione abbonamento: ${safeErrorMessage(err)}` };
+  }
+
+  const managementURL = (customerInfo as { managementURL?: string | null }).managementURL;
+  if (!managementURL) {
+    return {
+      ok: false,
+      code: 'no_management_url',
+      message: 'Gestione abbonamento non disponibile per questo account store.',
+    };
+  }
+
+  try {
+    await Linking.openURL(managementURL);
+    return { ok: true, message: 'Gestione abbonamento aperta nello store.' };
+  } catch (err) {
+    return { ok: false, code: 'open_error', message: `Impossibile aprire la gestione abbonamento: ${safeErrorMessage(err)}` };
   }
 }
 

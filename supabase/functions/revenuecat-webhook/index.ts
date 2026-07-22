@@ -238,11 +238,6 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, data: { processed: true, eventId, recordOnly: true, type, ...transfer } }, 200);
     }
 
-    if (type === 'PRODUCT_CHANGE') {
-      await markEvent(true, null);
-      return json({ ok: true, data: { processed: true, eventId, recordOnly: true, type, reason: 'deferred_product_change' } }, 200);
-    }
-
     const identity = await resolveSupabaseUserId(supabaseAdmin, event);
     if (!identity.ok) {
       await markEvent(false, identity.message);

@@ -36,12 +36,12 @@ export default function ImpostazioniScreen() {
             description="Condividi questo codice con i clienti che vuoi collegare al tuo profilo."
           />
 
-          <AppSectionTitle>ABBONAMENTO</AppSectionTitle>
+          <AppSectionTitle>PACCHETTO</AppSectionTitle>
           <AppCard style={styles.subscriptionCard}>
             <AppListRow
               icon={<Ticket size={19} color={colors.coral} />}
               iconBackground={colors.coralSoft}
-              title="Gestisci abbonamento"
+              title="Pacchetto e fatturazione"
               subtitle="Pacchetto coach, stato e scadenza"
               onPress={() => router.push('/abbonamento-coach')}
             />
