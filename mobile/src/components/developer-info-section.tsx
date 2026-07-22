@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react-native';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppCard } from './ui';
 
@@ -13,6 +13,37 @@ import {
   TERMS_OF_SERVICE_URL,
 } from '@/constants/app-info';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
+
+function notify(title: string, message: string) {
+  if (Platform.OS === 'web') {
+    globalThis.alert(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
+}
+
+// Apre un link legale (Privacy/Termini) senza mai lasciare una promise
+// rejection non gestita: nessun URL vuoto/malformato, nessun handler di
+// deep link disponibile (canOpenURL) e nessun errore di rete durante
+// l'apertura devono produrre un tap silenzioso o una schermata rossa —
+// l'utente vede sempre un messaggio chiaro. Stesso comportamento su Web
+// (globalThis.alert, Linking.openURL apre una nuova scheda), Android e iOS.
+async function openLegalLink(url: string) {
+  if (!url || !url.trim()) {
+    notify('Link non disponibile', 'Questo link non è ancora stato configurato.');
+    return;
+  }
+  try {
+    const supported = await Linking.canOpenURL(url);
+    if (!supported) {
+      notify('Impossibile aprire il link', 'Nessuna app in grado di aprire questo indirizzo su questo dispositivo.');
+      return;
+    }
+    await Linking.openURL(url);
+  } catch {
+    notify('Impossibile aprire il link', 'Controlla la connessione e riprova.');
+  }
+}
 
 // Sezione "Sviluppatore": visibile sia lato coach sia lato cliente (vedi
 // impostazioni.tsx e cliente-profilo.tsx), stesso componente per non
@@ -35,10 +66,10 @@ export function DeveloperInfoSection() {
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       <View style={styles.legalLinks}>
-        <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={8}>
+        <Pressable onPress={() => void openLegalLink(PRIVACY_POLICY_URL)} hitSlop={8}>
           <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Privacy policy</Text>
         </Pressable>
-        <Pressable onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)} hitSlop={8}>
+        <Pressable onPress={() => void openLegalLink(TERMS_OF_SERVICE_URL)} hitSlop={8}>
           <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Termini di servizio</Text>
         </Pressable>
       </View>
