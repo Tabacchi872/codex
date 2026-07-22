@@ -50,6 +50,15 @@ export default function ClienteHomeScreen() {
   const boardPosts = useBoardStore((s) => s.posts);
   const { resolve: resolveExercise } = useExerciseResolver();
   const myCoach = useMyCoach();
+  // Fail-closed (=== 'coach_guided', non !== 'self_guided'): myCoach.clientMode
+  // parte da null finche' useMyCoach() non risolve la fetch (ogni mount a
+  // freddo e ogni logout/login su un nuovo account). Con "!== 'self_guided'"
+  // (la stessa condizione gia' usata sotto per ClientAssignedCoachCard, li'
+  // accettabile perche' quella card gestisce un proprio stato di loading) le 4
+  // azioni coach-only mostrate qui sotto lampeggerebbero visibili per un
+  // cliente self_guided finche' il mode non si risolve. Qui serve invece la
+  // garanzia opposta: mai mostrate finche' non e' confermato coach_guided.
+  const isCoachGuided = myCoach.clientMode === 'coach_guided';
 
   const client = getClientById(clients, currentClientId);
 
@@ -90,6 +99,47 @@ export default function ClienteHomeScreen() {
         nextExercise?.difficulty ? { kind: 'difficulty', label: DIFFICULTY_LABEL[nextExercise.difficulty as Difficulty] ?? nextExercise.difficulty } : null,
       ].filter((item): item is { kind: 'exercises' | 'duration' | 'difficulty'; label: string } => Boolean(item))
     : [];
+
+  // Nutrizione resta sempre disponibile (funzione autonoma). Le altre tre
+  // richiedono un coach assegnato (le loro rotte sono in
+  // SELF_GUIDED_COACH_ONLY_ROUTES, auth-gate.tsx): un cliente self_guided che
+  // le premesse veniva sempre rimbalzato in Home da AuthGate. Un unico flag
+  // (isCoachGuided) invece di quattro condizioni separate, cosi' la griglia
+  // si ricompone da sola senza spazi vuoti quando le tre voci mancano.
+  const quickTiles: { key: string; title: string; subtitle: string; icon: ReactNode; onPress: () => void }[] = [
+    {
+      key: 'nutrizione',
+      title: 'Nutrizione',
+      subtitle: nutritionPlan ? nutritionPlan.title : 'Piani e ricette',
+      icon: <Apple size={compact ? 22 : 24} color={colors.moss} />,
+      onPress: () => navigate('cliente-home-nutrizione', '/nutrizione'),
+    },
+  ];
+  if (isCoachGuided) {
+    quickTiles.push(
+      {
+        key: 'checkin',
+        title: 'Check-in',
+        subtitle: lastCheckin ? `Ultimo ${formatDayMonth(lastCheckin.date)}` : 'Tieni il ritmo',
+        icon: <ClipboardList size={compact ? 22 : 24} color={colors.moss} />,
+        onPress: () => navigate('cliente-home-checkin', '/questionario'),
+      },
+      {
+        key: 'prenotazioni',
+        title: 'Prenotazioni',
+        subtitle: nextBooking ? `${formatDayMonth(nextBooking.date)} ${nextBooking.time}` : 'I tuoi appuntamenti',
+        icon: <Calendar size={compact ? 22 : 24} color={colors.moss} />,
+        onPress: () => navigate('cliente-home-prenota', '/prenotazioni'),
+      },
+      {
+        key: 'bacheca',
+        title: 'Bacheca',
+        subtitle: relevantPosts.length ? `${relevantPosts.length} aggiornamenti` : 'News e aggiornamenti',
+        icon: <Megaphone size={compact ? 22 : 24} color={colors.moss} />,
+        onPress: () => navigate('cliente-home-bacheca', '/bacheca'),
+      },
+    );
+  }
 
   return (
     <AppScreen contentStyle={styles.screenContent}>
@@ -203,30 +253,9 @@ export default function ClienteHomeScreen() {
           </AppCard>
 
           <View style={styles.quickGrid}>
-            <QuickTile
-              title="Nutrizione"
-              subtitle={nutritionPlan ? nutritionPlan.title : 'Piani e ricette'}
-              icon={<Apple size={compact ? 22 : 24} color={colors.moss} />}
-              onPress={() => navigate('cliente-home-nutrizione', '/nutrizione')}
-            />
-            <QuickTile
-              title="Check-in"
-              subtitle={lastCheckin ? `Ultimo ${formatDayMonth(lastCheckin.date)}` : 'Tieni il ritmo'}
-              icon={<ClipboardList size={compact ? 22 : 24} color={colors.moss} />}
-              onPress={() => navigate('cliente-home-checkin', '/questionario')}
-            />
-            <QuickTile
-              title="Prenotazioni"
-              subtitle={nextBooking ? `${formatDayMonth(nextBooking.date)} ${nextBooking.time}` : 'I tuoi appuntamenti'}
-              icon={<Calendar size={compact ? 22 : 24} color={colors.moss} />}
-              onPress={() => navigate('cliente-home-prenota', '/prenotazioni')}
-            />
-            <QuickTile
-              title="Bacheca"
-              subtitle={relevantPosts.length ? `${relevantPosts.length} aggiornamenti` : 'News e aggiornamenti'}
-              icon={<Megaphone size={compact ? 22 : 24} color={colors.moss} />}
-              onPress={() => navigate('cliente-home-bacheca', '/bacheca')}
-            />
+            {quickTiles.map((tile) => (
+              <QuickTile key={tile.key} title={tile.title} subtitle={tile.subtitle} icon={tile.icon} onPress={tile.onPress} />
+            ))}
           </View>
 
           <AppCard style={styles.summaryCard}>
@@ -242,13 +271,15 @@ export default function ClienteHomeScreen() {
             <AppButton label="I tuoi pesi" variant="outline" onPress={() => navigate('cliente-home-storico-carichi', '/storico-carichi')} fullWidth />
           </AppCard>
 
-          <AppButton
-            label="Chat con il coach"
-            variant="outline"
-            icon={<MessageCircle size={16} color={colors.moss} />}
-            onPress={() => navigate('cliente-home-coach', '/chat')}
-            fullWidth
-          />
+          {isCoachGuided ? (
+            <AppButton
+              label="Chat con il coach"
+              variant="outline"
+              icon={<MessageCircle size={16} color={colors.moss} />}
+              onPress={() => navigate('cliente-home-coach', '/chat')}
+              fullWidth
+            />
+          ) : null}
         </>
       )}
     </AppScreen>
