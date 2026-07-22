@@ -20,3 +20,12 @@ export const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 // scheda/sessione, appuntamento) per non dover fare una migrazione dati se in
 // futuro si aggiungessero più coach; per ora vale sempre questa costante.
 export const DEFAULT_COACH_ID = 'coach-1';
+
+// PLACEHOLDER: nessun documento privacy/termini reale esiste ancora per
+// questo progetto. Richiesti da App Store Connect (App Privacy) e dalla
+// schermata Impostazioni (vedi DeveloperInfoSection). Luigi deve sostituire
+// questi due URL con le pagine reali (privacy policy e termini di servizio,
+// pubblicate su un dominio che controlla) prima della submission — vedi
+// IOS_SETUP.md, sezione "Dati ancora mancanti".
+export const PRIVACY_POLICY_URL = 'https://example.com/fitcoach/privacy-policy';
+export const TERMS_OF_SERVICE_URL = 'https://example.com/fitcoach/termini-di-servizio';

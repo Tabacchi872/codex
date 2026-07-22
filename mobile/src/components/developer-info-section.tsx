@@ -1,9 +1,17 @@
 import { Info } from 'lucide-react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppCard } from './ui';
 
-import { APP_COPYRIGHT, APP_NAME, APP_OWNER, APP_VERSION, APP_YEAR } from '@/constants/app-info';
+import {
+  APP_COPYRIGHT,
+  APP_NAME,
+  APP_OWNER,
+  APP_VERSION,
+  APP_YEAR,
+  PRIVACY_POLICY_URL,
+  TERMS_OF_SERVICE_URL,
+} from '@/constants/app-info';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
 // Sezione "Sviluppatore": visibile sia lato coach sia lato cliente (vedi
@@ -25,6 +33,15 @@ export function DeveloperInfoSection() {
       <InfoRow label="Anno" value={String(APP_YEAR)} />
 
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+      <View style={styles.legalLinks}>
+        <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={8}>
+          <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Privacy policy</Text>
+        </Pressable>
+        <Pressable onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)} hitSlop={8}>
+          <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Termini di servizio</Text>
+        </Pressable>
+      </View>
 
       <Text style={[styles.smallText, { color: colors.inkSoft }]}>
         Grazie a tutti i coach e clienti che contribuiranno al miglioramento dell&apos;app.
@@ -74,5 +91,13 @@ const styles = StyleSheet.create({
   },
   copyright: {
     marginTop: AppSpacing[1],
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    gap: AppSpacing[3],
+  },
+  link: {
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });
