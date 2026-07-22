@@ -488,3 +488,16 @@ Poi, checklist ereditata dalla sessione precedente (2026-07-05), ancora da verif
   6. "Indietro" dalla schermata esercizio deve tornare alla scheda/sessione corretta da cui si e' partiti.
   7. Lo storico carichi (`/storico-carichi`, feature precedente) deve continuare a funzionare per clientId+exerciseId, non deve essere stato toccato da questo fix.
   8. Verificare che non ci sia alcun fallback silenzioso: un parametro incoerente deve sempre mostrare l'errore di blocco, mai la prima assegnazione trovata a caso.
+
+- [x] **Fix BUG-046: evita di rimigrare i workout completati (2026-07-22):** `runMigration` (`workout-plan-migration.ts`) ritentava piani gia' remoti/completed (ricomparsi nello store locale dopo un `setWorkoutPlans`), venendo bloccato da `WORKOUT_LOCKED` ad ogni refresh. Fix: `candidates` esclude ora ogni piano con `isValidUuid(plan.id)` — un id placeholder locale non e' mai un UUID, quindi un id UUID prova che la riga esiste gia' su Supabase. Vedi `docs/BUGS.md` (BUG-046), `docs/WORKLOG.md` (voce 2026-07-22). Commit `3c5fe60`.
+- [ ] **Verifica reale migrazione locale workout / BUG-046 (priorita' alta, mai fatta con avvio app reale — nessun tool di automazione disponibile in questo ambiente, 10 scenari richiesti esplicitamente dall'utente):**
+  1. Avvio app con un coach che ha almeno un workout remoto `completed`: nessun errore in console, nessun tentativo di scrittura (`WORKOUT_REMOTE_SAVE_ERROR` non deve comparire).
+  2. Secondo avvio/refresh (stessa sessione o dopo restart): lo stesso workout non viene ritentato, nessun log ripetuto.
+  3. Workout remoto `todo`: la sincronizzazione/lettura normale continua a funzionare, nessuna regressione.
+  4. Workout remoto `in_progress`: idem.
+  5. Tentativo manuale di modifica reale di una scheda `completed` (non via migrazione, ma da UI: `schede/[id].tsx`): `WORKOUT_LOCKED` deve restare un errore reale e visibile.
+  6. Nessuna duplicazione di piani/giorni/esercizi dopo piu' refresh consecutivi.
+  7. Nessuna perdita dello storico carichi/progressi sui piani coinvolti.
+  8. Verificare il caso di un piano `completed` presente SOLO in locale (mai sincronizzato, id non-UUID, es. da prima del collegamento Supabase): deve essere inserito correttamente come riga nuova, senza errori.
+  9. Nessuna schermata rossa (Web/Android) durante l'intero ciclo di avvio/refresh.
+  10. Migrazione idempotente dopo logout/login (nessun ciclo, nessun errore ripetuto).
