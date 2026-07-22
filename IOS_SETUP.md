@@ -61,6 +61,7 @@ Gia' implementato correttamente, verificato in questo task (nessuna modifica nec
 
 ## 6. Eliminazione account (nuovo, obbligatorio per App Store 5.1.1(v))
 
+- **Deployata e attiva** sul progetto reale (`rkcecnzvzoigipjliwdk`, 2026-07-22: `npx supabase@latest functions deploy delete-account`, confermata `ACTIVE`/`verify_jwt:true` via `functions list`). Non ancora verificata con una chiamata reale end-to-end da un account di test.
 - `supabase/functions/delete-account/index.ts`: elimina **davvero** l'account (`auth.admin.deleteUser`), non lo disattiva ne' fa solo logout. Il target e' sempre e solo il chiamante autenticato (nessun `userId` accettato dal client).
 - Cascata dati: `public.profiles.id references auth.users(id) on delete cascade` (vedi `docs/SUPABASE_SCHEMA.sql`) e la quasi totalita' delle tabelle collegate a `profiles` sono `on delete cascade` — l'eliminazione dell'utente auth elimina a cascata profilo, dati coach/cliente, schede, appuntamenti, metriche, ecc. Le uniche due tabelle con `created_by ... on delete restrict` (`client_notes`, `exercise_progress_history`) vengono ripulite esplicitamente dalla Edge Function prima della `deleteUser`, per non dipendere dall'ordine di esecuzione dei trigger FK di Postgres.
 - **Limite noto**: non vengono eliminati i file nello Storage (avatar, video esercizi) collegati all'utente — resta un limite da risolvere in un task dedicato (pulizia storage per user id).
