@@ -1,7 +1,11 @@
 ﻿node_modules/
 .expo/
 dist/
+web-build/
 build/
+*.apk
+*.aab
+*.log
 .env
 .env.*
 !.env.example
@@ -13,3 +17,6 @@ build/
 .mcp.json
 
 supabase/.temp/
+
+local-test-files/
+design-references/
