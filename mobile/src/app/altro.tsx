@@ -3,6 +3,7 @@ import { Calendar, ChartColumn, Megaphone, Package, Settings, Ticket, TrendingUp
 import { StyleSheet, View } from 'react-native';
 
 import { AppCard, AppHeader, AppListRow, AppScreen } from '@/components/ui';
+import { useMyCoach } from '@/hooks/use-my-coach';
 import { logClientNavPress } from '@/lib/client-navigation';
 import { useAppTheme } from '@/theme';
 
@@ -11,6 +12,11 @@ type MenuItem = {
   icon: typeof User;
   title: string;
   href: '/cliente-profilo' | '/progressi' | '/metriche' | '/storico-carichi' | '/bacheca' | '/prenotazioni' | '/pacchetti-cliente';
+  // Route riservate a un cliente con coach assegnato (vedi
+  // SELF_GUIDED_COACH_ONLY_ROUTES in auth-gate.tsx): un cliente self_guided
+  // che le apre viene comunque rimbalzato in Home da AuthGate, ma mostrarle
+  // qui sarebbe comunque una voce di menu morta — nascoste sotto.
+  hiddenForSelfGuided?: boolean;
 };
 
 // Menu "Altro": raccoglie le schermate cliente che non hanno una tab dedicata.
@@ -28,13 +34,21 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'progressi', icon: Trophy, title: 'Progressi', href: '/progressi' },
   { key: 'abbonamento', icon: Ticket, title: 'Abbonamento', href: '/cliente-profilo' },
   { key: 'pacchetti', icon: Package, title: 'Pacchetti', href: '/pacchetti-cliente' },
-  { key: 'bacheca', icon: Megaphone, title: 'Bacheca', href: '/bacheca' },
-  { key: 'prenotazioni', icon: Calendar, title: 'Prenotazioni', href: '/prenotazioni' },
+  { key: 'bacheca', icon: Megaphone, title: 'Bacheca', href: '/bacheca', hiddenForSelfGuided: true },
+  { key: 'prenotazioni', icon: Calendar, title: 'Prenotazioni', href: '/prenotazioni', hiddenForSelfGuided: true },
 ];
 
 export default function AltroScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const myCoach = useMyCoach();
+  // Fail-closed, stesso pattern di cliente-home.tsx (isCoachGuided): il
+  // clientMode reale (mai un coachId dedotto) parte da null finche'
+  // useMyCoach() non risolve — le voci coach-only restano nascoste finche'
+  // 'coach_guided' non e' confermato, mai mostrate durante il caricamento
+  // ne' per un cliente self_guided gia' risolto.
+  const isCoachGuided = myCoach.clientMode === 'coach_guided';
+  const menuItems = MENU_ITEMS.filter((item) => !item.hiddenForSelfGuided || isCoachGuided);
 
   function navigate(source: string, target: MenuItem['href']) {
     logClientNavPress(source, target);
@@ -45,7 +59,7 @@ export default function AltroScreen() {
     <AppScreen>
       <AppHeader title="Altro" />
       <AppCard style={styles.listCard}>
-        {MENU_ITEMS.map((item, index) => {
+        {menuItems.map((item, index) => {
           const Icon = item.icon;
           return (
             <View key={item.key}>
