@@ -116,7 +116,45 @@ function isFutureOrOpenEnded(expiresAt: string | null) {
   return !expiresAt || new Date(expiresAt).getTime() > Date.now();
 }
 
-function statusForEvent(type: string, event: RevenueCatEvent, expiresAt: string | null) {
+// Solo i tipi di evento per cui purchased_at_ms rappresenta in modo
+// affidabile "quando e' avvenuta QUESTA transazione" (quindi puo' solo
+// avanzare nel tempo, mai tornare indietro tra un evento e il successivo).
+// CANCELLATION/EXPIRATION/BILLING_ISSUE/REFUND_REVERSED sono deliberatamente
+// esclusi: per questi tipi non c'e' certezza che purchased_at_ms rifletta la
+// data dell'evento stesso invece della data d'acquisto originale — se cosi'
+// fosse, una CANCELLATION reale su un abbonamento gia' rinnovato piu' volte
+// verrebbe scartata come "obsoleta" solo perche' il suo purchased_at_ms
+// (il vecchio acquisto originale) precede lo starts_at gia' avanzato dai
+// rinnovi, lasciando l'utente con un accesso che ha davvero disdetto. Stessa
+// suddivisione gia' usata dal primo case di statusForEvent qui sotto.
+const STALE_CHECK_EVENT_TYPES = new Set([
+  'INITIAL_PURCHASE',
+  'RENEWAL',
+  'PRODUCT_CHANGE',
+  'UNCANCELLATION',
+  'NON_RENEWING_PURCHASE',
+  'SUBSCRIPTION_EXTENDED',
+]);
+
+// Best-effort, non un ordinamento generale garantito: RevenueCat non espone
+// oggi (in questo codice) alcun campo di sequenza/ordinamento affidabile per
+// OGNI tipo di evento — vedi STALE_CHECK_EVENT_TYPES sopra per il perche' la
+// protezione e' applicata solo dove purchased_at_ms e' un segnale sicuro.
+// Due eventi con lo stesso purchased_at_ms restano indistinguibili.
+export function isStaleEventApplicable(type: string): boolean {
+  return STALE_CHECK_EVENT_TYPES.has(type);
+}
+
+// Vedi il commento al punto di chiamata (Deno.serve) per il ragionamento
+// completo: confronta solo contro starts_at gia' salvato, mai contro l'ora
+// corrente, e non fa nulla se manca uno dei due timestamp (nessun falso
+// positivo su un evento senza purchased_at_ms o su una riga mai aggiornata).
+export function isStaleEvent(incomingStartsAt: string, existing: { starts_at: string | null } | null): boolean {
+  if (!existing?.starts_at) return false;
+  return new Date(incomingStartsAt).getTime() < new Date(existing.starts_at).getTime();
+}
+
+export function statusForEvent(type: string, event: RevenueCatEvent, expiresAt: string | null) {
   const validNow = isFutureOrOpenEnded(expiresAt);
   switch (type) {
     case 'INITIAL_PURCHASE':
@@ -254,11 +292,11 @@ Deno.serve(async (req: Request) => {
     }
     const status = statusForEvent(type, event, expiresAt);
 
-    let existingSubscription: { id: string; package_id: string } | null = null;
+    let existingSubscription: { id: string; package_id: string; starts_at: string | null } | null = null;
     if (externalSubscriptionId) {
       const { data, error } = await supabaseAdmin
         .from('user_subscriptions')
-        .select('id,package_id')
+        .select('id,package_id,starts_at')
         .eq('payment_provider', 'revenuecat')
         .eq('external_subscription_id', externalSubscriptionId)
         .maybeSingle();
@@ -266,15 +304,71 @@ Deno.serve(async (req: Request) => {
         await markEvent(false, error.message);
         return json({ ok: false, code: 'subscription_lookup_failed', message: 'Lookup abbonamento non riuscito.' }, 500);
       }
-      existingSubscription = (data as { id: string; package_id: string } | null) ?? null;
+      existingSubscription = (data as { id: string; package_id: string; starts_at: string | null } | null) ?? null;
     }
 
-    let packageId = existingSubscription?.package_id ?? null;
-    if (!packageId) {
-      const packageLookup = await resolvePackageId(supabaseAdmin, productId, entitlementId);
+    // Protezione contro eventi fuori ordine: RevenueCat non garantisce
+    // l'ordine di consegna dei webhook. Applicata SOLO ai tipi elencati in
+    // STALE_CHECK_EVENT_TYPES (vedi commento li' sopra per il perche' gli
+    // altri tipi sono esclusi). Se esiste gia' una riga per questo
+    // external_subscription_id e il nuovo evento riporta un purchased_at_ms
+    // precedente allo starts_at gia' salvato, e' la consegna tardiva di un
+    // evento piu' vecchio (es. una RENEWAL rimasta in coda arrivata dopo un
+    // PRODUCT_CHANGE piu' recente gia' applicato): non deve mai poter
+    // riportare indietro package_id/stato/date. purchased_at_ms e' l'unico
+    // timestamp gia' presente nel payload di questo progetto (nessuna nuova
+    // colonna; nessun event_timestamp_ms mai stato analizzato/gestito qui:
+    // se RevenueCat lo invia non e' oggi tra i campi letti da extractEvent/
+    // RevenueCatEvent, quindi non e' "gia' presente" secondo questo codice).
+    // Resta un segnale best-effort, non un ordinamento generale garantito:
+    // due eventi con lo stesso purchased_at_ms restano indistinguibili.
+    if (isStaleEventApplicable(type) && isStaleEvent(startsAt, existingSubscription)) {
+      await markEvent(true, null);
+      return json({ ok: true, data: { processed: true, eventId, recordOnly: true, type, reason: 'stale_event_ignored' } }, 200);
+    }
+
+    const decision = decidePackageResolution({
+      productId,
+      entitlementId,
+      existingPackageId: existingSubscription?.package_id ?? null,
+    });
+
+    let packageId: string;
+    if (decision.kind === 'error') {
+      // Nessun prodotto nell'evento E nessuna riga preesistente da cui
+      // ereditare package_id: non c'e' alcun modo sicuro di sapere quale
+      // pacchetto associare. Stesso modello di errore/retryable usato sotto,
+      // mai un falso successo.
+      const diagnosticMessage = `Nessun product_id/entitlement_id nell'evento e nessuna sottoscrizione preesistente da cui ereditare il pacchetto (eventId=${eventId}, eventType=${type}).`;
+      await markEvent(false, diagnosticMessage);
+      return json({ ok: true, data: { processed: false, reason: decision.code, eventId, type } }, 200);
+    } else if (decision.kind === 'keep_existing') {
+      // Nessun product_id/entitlement_id in questo evento (es. alcuni
+      // CANCELLATION/EXPIRATION che non lo comunicano): conserva il pacchetto
+      // gia' collegato a questa sottoscrizione, mai null, mai una nuova
+      // associazione inventata.
+      packageId = decision.packageId;
+    } else {
+      // Un product_id/entitlement_id presente nell'evento e' sempre la fonte
+      // autorevole per package_id, anche quando esiste gia' una riga: e'
+      // esattamente questo il caso di PRODUCT_CHANGE (Base -> Pro o
+      // viceversa), dove external_subscription_id/original_transaction_id
+      // restano invariati ma il prodotto acquistato cambia. Non riusare mai
+      // silenziosamente existingSubscription.package_id quando l'evento
+      // comunica un prodotto: se il pacchetto risolto e' diverso da quello
+      // gia' salvato, subscriptionPayload sotto lo aggiorna nella stessa UPDATE.
+      const packageLookup = await resolvePackageId(supabaseAdmin, decision.productId, decision.entitlementId);
       if (!packageLookup.ok) {
-        await markEvent(false, packageLookup.message);
-        return json({ ok: true, data: { processed: false, reason: packageLookup.code } }, 200);
+        // Prodotto/entitlement presenti ma non mappati su alcun
+        // subscription_packages: mai un falso successo ne' un fallback
+        // silenzioso al vecchio package_id (lascerebbe il DB a indicare un
+        // pacchetto che l'utente non ha piu'). Nessun dato sensibile nel
+        // messaggio diagnostico: solo eventId/eventType/productId, mai il
+        // payload completo (che puo' contenere identificativi di
+        // transazione/store) ne' i secret dell'ambiente.
+        const diagnosticMessage = `${packageLookup.message} (eventId=${eventId}, eventType=${type}, productId=${productId ?? 'null'})`;
+        await markEvent(false, diagnosticMessage);
+        return json({ ok: true, data: { processed: false, reason: packageLookup.code, eventId, type } }, 200);
       }
       packageId = packageLookup.packageId;
     }
@@ -316,7 +410,33 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function resolvePackageId(
+export type PackageResolutionDecision =
+  | { kind: 'resolve'; productId: string | null; entitlementId: string | null }
+  | { kind: 'keep_existing'; packageId: string }
+  | { kind: 'error'; code: 'package_not_resolvable' };
+
+// Decisione pura (nessuna chiamata DB): dato cosa comunica l'evento e cosa
+// esiste gia' per questo external_subscription_id, stabilisce SE risolvere
+// un package_id fresco dal prodotto corrente (mai piu' un riuso silenzioso
+// del vecchio quando l'evento comunica un prodotto — questo e' il bug
+// PRODUCT_CHANGE corretto qui), conservare quello esistente (nessun
+// prodotto nell'evento ma una riga gia' collegata), o segnalare che non
+// c'e' alcun modo sicuro di risolvere un pacchetto.
+export function decidePackageResolution(input: {
+  productId: string | null;
+  entitlementId: string | null;
+  existingPackageId: string | null;
+}): PackageResolutionDecision {
+  if (input.productId || input.entitlementId) {
+    return { kind: 'resolve', productId: input.productId, entitlementId: input.entitlementId };
+  }
+  if (input.existingPackageId) {
+    return { kind: 'keep_existing', packageId: input.existingPackageId };
+  }
+  return { kind: 'error', code: 'package_not_resolvable' };
+}
+
+export async function resolvePackageId(
   supabaseAdmin: ReturnType<typeof createClient>,
   productId: string | null,
   entitlementId: string | null,
