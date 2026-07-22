@@ -2,7 +2,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { useAppointmentStore } from './appointment-store';
+import { useAttachmentStore } from './attachment-store';
+import { useBoardStore } from './board-store';
+import { useBookingStore } from './booking-store';
+import { useChatStore } from './chat-store';
+import { useCheckinStore } from './checkin-store';
+import { useClientStore } from './client-store';
+import { useSuperadminStore } from './superadmin-store';
+import { useTrainingStore } from './training-store';
+import { useYmoveAutoLinkStore } from './ymove-autolink-store';
+
 import type { UserRole } from '@/types/auth';
+
+// Store con dati account-specifici da azzerare ad ogni logout (vedi logout()
+// sotto). Import diretto (non un hook React: siamo dentro un'azione Zustand,
+// fuori dal render) — nessun rischio di dipendenza circolare, verificato:
+// nessuno di questi store importa auth-store.ts. theme-store.ts e
+// training-store.soundSettings restano fuori di proposito: sono preferenze
+// del dispositivo, non dati dell'account (vedi commenti nei rispettivi file).
+function resetUserScopedStores() {
+  useClientStore.getState().reset();
+  useTrainingStore.getState().reset();
+  useSuperadminStore.getState().reset();
+  useChatStore.getState().reset();
+  useAppointmentStore.getState().reset();
+  useBoardStore.getState().reset();
+  useBookingStore.getState().reset();
+  useCheckinStore.getState().reset();
+  useAttachmentStore.getState().reset();
+  useYmoveAutoLinkStore.getState().reset();
+}
 
 export type DemoUser = {
   email: string;
@@ -97,7 +127,23 @@ export const useAuthStore = create<AuthState>()(
           mustChangePasswordSupabase: false,
         }),
       setMustChangePasswordSupabase: (value) => set({ mustChangePasswordSupabase: value }),
-      logout: () =>
+      // Ordine: gli store account-specifici vengono azzerati PRIMA di
+      // spegnere isAuthenticated/currentRole, ma nella stessa chiamata
+      // sincrona — React 19 batcha tutti i set() consecutivi in un solo
+      // re-render, quindi non esiste un frame intermedio in cui AuthGate
+      // renderizza ancora la UI del ruolo precedente con gli store gia'
+      // vuoti (o viceversa). Le sottoscrizioni Realtime (use-appointments-
+      // realtime.ts, use-messages-realtime.ts, use-workout-plans-sync.ts)
+      // NON vanno disiscritte esplicitamente qui: i loro useEffect dipendono
+      // gia' da currentRole (auth-gate.tsx le monta senza condizioni, ma il
+      // loro effect interno e' no-op/si disiscrive quando currentRole non e'
+      // piu' 'coach'/'cliente') — impostare currentRole:null qui sotto e'
+      // cio' che le disiscrive, reattivamente, subito dopo questo set(). Non
+      // serve un passo manuale separato "prima" di questo, ed e' l'ordine
+      // piu' sicuro per questa architettura (nessuna disiscrizione manuale
+      // duplicata che potrebbe disallinearsi dagli hook).
+      logout: () => {
+        resetUserScopedStores();
         set({
           isAuthenticated: false,
           currentRole: null,
@@ -105,7 +151,8 @@ export const useAuthStore = create<AuthState>()(
           currentClientId: null,
           currentCoachId: null,
           mustChangePasswordSupabase: false,
-        }),
+        });
+      },
     }),
     {
       name: 'coachdesk-auth-store',

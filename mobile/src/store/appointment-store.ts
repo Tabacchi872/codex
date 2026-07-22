@@ -21,6 +21,8 @@ type AppointmentState = {
   // fonte principale): usata SOLO da use-appointments-realtime.ts dopo una
   // lettura riuscita — lo store diventa mirror/cache, mai piu' la fonte.
   setAppointments: (appointments: Appointment[]) => void;
+  // Azzera gli appuntamenti dell'account precedente al logout. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useAppointmentStore = create<AppointmentState>()(
@@ -43,6 +45,8 @@ export const useAppointmentStore = create<AppointmentState>()(
         })),
 
       setAppointments: (appointments) => set({ appointments }),
+
+      reset: () => set({ appointments: [] }),
     }),
     {
       name: 'fitcoach-appointment-store',

@@ -11,6 +11,8 @@ type CheckinState = {
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   addCheckin: (checkin: WeeklyCheckin) => void;
+  // Azzera i check-in dell'account precedente al logout. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useCheckinStore = create<CheckinState>()(
@@ -20,6 +22,7 @@ export const useCheckinStore = create<CheckinState>()(
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
       addCheckin: (checkin) => set((s) => ({ checkins: [...s.checkins, checkin] })),
+      reset: () => set({ checkins: [] }),
     }),
     {
       name: 'fitcoach-checkin-store',

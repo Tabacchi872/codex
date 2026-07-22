@@ -280,6 +280,11 @@ type SuperadminState = {
   sendSupportMessageAsSuperadmin: (coachId: string, text: string) => void;
   markCoachSupportReadByCoach: (coachId: string) => void;
   markCoachSupportReadBySuperadmin: (coachId: string) => void;
+  // Azzera la cache locale del superadmin al logout (dati interamente demo/
+  // locali, mai sincronizzati con un backend reale — vedi commenti sopra):
+  // torna allo stesso stato iniziale demoCoaches/demoPlans/ecc. di una
+  // installazione pulita. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 function normalizeCoach(coach: DemoCoachAccount): DemoCoachAccount {
@@ -599,6 +604,15 @@ export const useSuperadminStore = create<SuperadminState>()(
           : notification,
       );
       return changed ? { coachSupportMessages, notifications } : { notifications };
+    }),
+  reset: () =>
+    set({
+      coaches: demoCoaches,
+      plans: demoPlans,
+      coachClients: demoCoachClients,
+      paymentEvents: demoPaymentEvents,
+      coachSupportMessages: demoCoachSupportMessages,
+      notifications: [],
     }),
     }),
     {

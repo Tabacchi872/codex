@@ -44,6 +44,11 @@ type TrainingState = {
   replaceWorkoutPlan: (oldId: string, newPlan: WorkoutPlan) => void;
   addProgressEntry: (entry: ExerciseProgressHistory) => void;
   updateSoundSettings: (patch: Partial<SoundSettings>) => void;
+  // Azzera schede/storico dell'account precedente al logout. soundSettings
+  // NON viene toccato: e' una preferenza del dispositivo (volume/vibrazione
+  // del timer), non un dato dell'account — resta invariata tra un login e
+  // l'altro, come il tema. Vedi auth-store.ts, logout().
+  reset: () => void;
 };
 
 const DEFAULT_SOUND_SETTINGS: SoundSettings = {
@@ -87,6 +92,12 @@ export const useTrainingStore = create<TrainingState>()(
       addProgressEntry: (entry) => set((s) => ({ progressHistory: [...s.progressHistory, entry] })),
 
       updateSoundSettings: (patch) => set((s) => ({ soundSettings: { ...s.soundSettings, ...patch } })),
+
+      reset: () =>
+        set({
+          workoutPlans: DEMO_DATA_ENABLED ? SEED_WORKOUT_PLANS : [],
+          progressHistory: DEMO_DATA_ENABLED ? SEED_PROGRESS_HISTORY : [],
+        }),
     }),
     {
       name: 'coachdesk-training-store',

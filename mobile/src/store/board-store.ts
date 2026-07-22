@@ -13,6 +13,8 @@ type BoardState = {
   posts: BoardPost[];
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
+  // Azzera la bacheca dell'account precedente al logout. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useBoardStore = create<BoardState>()(
@@ -22,6 +24,7 @@ export const useBoardStore = create<BoardState>()(
       posts: DEMO_DATA_ENABLED ? SEED_BOARD_POSTS : [],
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
+      reset: () => set({ posts: DEMO_DATA_ENABLED ? SEED_BOARD_POSTS : [] }),
     }),
     {
       name: 'fitcoach-board-store',

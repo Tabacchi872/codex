@@ -19,6 +19,10 @@ type YmoveAutoLinkStore = {
   setRunning: (processed: number, total: number) => void;
   setDone: (summary: AutoLinkSummary) => void;
   dismiss: () => void;
+  // Azzera il banner (puo' contenere il riepilogo del coach precedente) al
+  // logout. Store non persistito: comunque vivo in memoria tra un login e
+  // l'altro nella stessa sessione app. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useYmoveAutoLinkStore = create<YmoveAutoLinkStore>((set) => ({
@@ -26,4 +30,5 @@ export const useYmoveAutoLinkStore = create<YmoveAutoLinkStore>((set) => ({
   setRunning: (processed, total) => set({ state: { status: 'running', processed, total } }),
   setDone: (summary) => set({ state: { status: 'done', summary } }),
   dismiss: () => set({ state: { status: 'idle' } }),
+  reset: () => set({ state: { status: 'idle' } }),
 }));

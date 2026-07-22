@@ -20,6 +20,10 @@ type ClientState = {
   updateClient: (client: Client) => void;
   addAccount: (account: ClientAccount) => void;
   updateAccount: (account: ClientAccount) => void;
+  // Azzera clienti/account al logout (mai hasHydrated: resta true, non e'
+  // stato dell'account ma dello store gia' idratato da AsyncStorage). Vedi
+  // auth-store.ts, logout(), unico punto che la chiama.
+  reset: () => void;
 };
 
 export const useClientStore = create<ClientState>()(
@@ -48,6 +52,8 @@ export const useClientStore = create<ClientState>()(
 
       updateAccount: (account) =>
         set((s) => ({ accounts: s.accounts.map((a) => (a.id === account.id ? account : a)) })),
+
+      reset: () => set({ clients: DEMO_DATA_ENABLED ? SEED_CLIENTS : [], accounts: DEMO_DATA_ENABLED ? SEED_CLIENT_ACCOUNTS : [] }),
     }),
     {
       name: 'coachdesk-client-store',

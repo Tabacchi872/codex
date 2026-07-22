@@ -16,6 +16,8 @@ type BookingState = {
   setHasHydrated: (value: boolean) => void;
   addBooking: (booking: Booking) => void;
   cancelBooking: (id: string) => void;
+  // Azzera le prenotazioni dell'account precedente al logout. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useBookingStore = create<BookingState>()(
@@ -29,6 +31,7 @@ export const useBookingStore = create<BookingState>()(
         set((s) => ({
           bookings: s.bookings.map((b) => (b.id === id ? { ...b, status: 'annullata' } : b)),
         })),
+      reset: () => set({ bookings: [] }),
     }),
     {
       name: 'fitcoach-booking-store',

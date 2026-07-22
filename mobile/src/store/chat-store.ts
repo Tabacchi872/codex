@@ -23,6 +23,8 @@ type ChatState = {
   // Sostituisce il messaggio ottimistico con la riga reale restituita dal DB.
   replaceMessage: (tempId: string, message: ChatMessage) => void;
   removeMessage: (id: string) => void;
+  // Azzera i messaggi dell'account precedente al logout. Vedi auth-store.ts.
+  reset: () => void;
 };
 
 export const useChatStore = create<ChatState>()(
@@ -71,6 +73,8 @@ export const useChatStore = create<ChatState>()(
             messages,
           };
         }),
+
+      reset: () => set({ messages: DEMO_DATA_ENABLED ? SEED_CHAT_MESSAGES : [] }),
     }),
     {
       name: 'fitcoach-chat-store',
