@@ -923,6 +923,43 @@ export async function getCoachActiveRegistrationCode(
   return { ok: true, data: { code: preferred.code, active: preferred.status === 'active' } };
 }
 
+// Elimina definitivamente l'account Supabase dell'utente attualmente loggato
+// (coach o cliente), chiamando la Edge Function delete-account (supabase/
+// functions/delete-account). Nessun userId passato: il target e' sempre e
+// solo l'utente della sessione corrente, mai scelto dal client. Dopo un esito
+// ok, il chiamante (impostazioni.tsx/cliente-profilo.tsx) deve eseguire
+// signOut() e riportare l'utente al login: la sessione locale resta valida
+// finche' non viene chiusa esplicitamente, ma l'account su Supabase non
+// esiste piu'.
+export async function deleteOwnAccount(): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { data, error } = await supabase.functions.invoke<{ ok: boolean }>('delete-account', {
+    body: {},
+  });
+
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = (await error.context.json()) as { code?: string; message?: string };
+        return {
+          ok: false,
+          code: 'db_error',
+          message: body.message ?? 'Eliminazione account non riuscita.',
+        };
+      } catch {
+        return { ok: false, code: 'db_error', message: 'Eliminazione account non riuscita: risposta del server non leggibile.' };
+      }
+    }
+    return { ok: false, code: 'db_error', message: `Eliminazione account non riuscita: ${error.message}` };
+  }
+  if (!data?.ok) {
+    return { ok: false, code: 'db_error', message: 'Eliminazione account non riuscita.' };
+  }
+
+  return { ok: true, data: null };
+}
+
 function isMissingMustChangePasswordColumn(message: string): boolean {
   const normalized = message.toLowerCase();
   return normalized.includes('must_change_password') && normalized.includes('does not exist');

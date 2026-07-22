@@ -1,13 +1,13 @@
-import { LogOut } from 'lucide-react-native';
+import { LogOut, Trash2 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
 import { AppCard, AppScreen, AppSectionTitle, BackHeader, UserAvatar } from '@/components/ui';
 import { DeveloperInfoSection } from '@/components/developer-info-section';
 import { ThemeSettings } from '@/components/theme-settings';
 import { useMyCoach } from '@/hooks/use-my-coach';
-import { signOut } from '@/lib/auth-service';
+import { deleteOwnAccount, signOut } from '@/lib/auth-service';
 import { pickClientAvatarImage, saveClientAvatarPresetRemote, uploadClientAvatar } from '@/lib/client-avatar-service';
 import { getCompletedClientOnboardingProfile } from '@/lib/client-onboarding-service';
 import { getClientById } from '@/lib/client-helpers';
@@ -26,6 +26,24 @@ const AVATAR_OPTIONS: { value: ClientAvatarPreset; label: string }[] = [
   { value: 'male', label: 'Uomo' },
 ];
 
+async function confirmAction(message: string) {
+  if (Platform.OS === 'web') return globalThis.confirm(message);
+  return new Promise<boolean>((resolve) => {
+    Alert.alert('Conferma', message, [
+      { text: 'Annulla', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Conferma', style: 'destructive', onPress: () => resolve(true) },
+    ]);
+  });
+}
+
+function notify(title: string, message: string) {
+  if (Platform.OS === 'web') {
+    globalThis.alert(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
+}
+
 export default function ClienteProfiloScreen() {
   const { colors } = useAppTheme();
   const currentClientId = useAuthStore((s) => s.currentClientId);
@@ -36,6 +54,7 @@ export default function ClienteProfiloScreen() {
   const [trainingProfileError, setTrainingProfileError] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const avatarMessageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const myCoach = useMyCoach();
 
@@ -79,6 +98,30 @@ export default function ClienteProfiloScreen() {
   }
 
   async function handleLogout() {
+    await signOut();
+    logout();
+  }
+
+  async function handleDeleteAccount() {
+    if (deletingAccount) return;
+    const firstConfirm = await confirmAction(
+      'Eliminare definitivamente il tuo account? Verranno cancellati tutti i tuoi dati (profilo, schede, storico allenamenti) in modo permanente.',
+    );
+    if (!firstConfirm) return;
+    const secondConfirm = await confirmAction(
+      'Questa azione non puo\' essere annullata. Confermi di voler eliminare il tuo account?',
+    );
+    if (!secondConfirm) return;
+
+    setDeletingAccount(true);
+    const result = await deleteOwnAccount();
+    setDeletingAccount(false);
+
+    if (!result.ok) {
+      notify('Eliminazione non riuscita', result.message);
+      return;
+    }
+
     await signOut();
     logout();
   }
@@ -213,6 +256,19 @@ export default function ClienteProfiloScreen() {
       <Pressable onPress={handleLogout} style={styles.logout} hitSlop={6}>
         <LogOut size={15} color={colors.rust} />
         <Text style={[styles.logoutText, { color: colors.rust }]}>Esci</Text>
+      </Pressable>
+
+      <AppSectionTitle>ZONA PERICOLOSA</AppSectionTitle>
+      <Pressable
+        onPress={handleDeleteAccount}
+        disabled={deletingAccount}
+        style={[styles.logout, deletingAccount && styles.deleteButtonDisabled]}
+        hitSlop={6}
+      >
+        <Trash2 size={15} color={colors.rust} />
+        <Text style={[styles.logoutText, { color: colors.rust }]}>
+          {deletingAccount ? 'Eliminazione in corso...' : 'Elimina account'}
+        </Text>
       </Pressable>
     </AppScreen>
   );
@@ -379,6 +435,9 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: AppFontSize.sm,
     fontWeight: '700',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
   },
   loading: {
     flex: 1,
