@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
@@ -9,13 +9,16 @@ import { ThemeSettings } from '@/components/theme-settings';
 import { useMyCoach } from '@/hooks/use-my-coach';
 import { signOut } from '@/lib/auth-service';
 import { pickClientAvatarImage, saveClientAvatarPresetRemote, uploadClientAvatar } from '@/lib/client-avatar-service';
+import { getCompletedClientOnboardingProfile } from '@/lib/client-onboarding-service';
 import { getClientById } from '@/lib/client-helpers';
 import { getNextWorkoutPlan, getWorkoutCounter } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
+import { useClientOnboardingStore } from '@/store/client-onboarding-store';
 import { useClientStore } from '@/store/client-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import { CLIENT_STATUS_LABEL, type ClientAvatarPreset } from '@/types/client';
+import type { CompletedClientOnboardingProfile } from '@/types/client-onboarding';
 
 const AVATAR_OPTIONS: { value: ClientAvatarPreset; label: string }[] = [
   { value: 'neutral', label: 'Neutro' },
@@ -27,9 +30,53 @@ export default function ClienteProfiloScreen() {
   const { colors } = useAppTheme();
   const currentClientId = useAuthStore((s) => s.currentClientId);
   const logout = useAuthStore((s) => s.logout);
+  const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
+  const [trainingProfile, setTrainingProfile] = useState<CompletedClientOnboardingProfile | null>(null);
+  const [trainingProfileLoading, setTrainingProfileLoading] = useState(false);
+  const [trainingProfileError, setTrainingProfileError] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarMessageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const myCoach = useMyCoach();
+
+  useEffect(() => {
+    return () => {
+      if (avatarMessageTimer.current) clearTimeout(avatarMessageTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    loadTrainingProfile();
+  }, [currentClientId, onboardingStatusRevision]);
+
+  async function loadTrainingProfile() {
+    if (!currentClientId) {
+      setTrainingProfile(null);
+      setTrainingProfileError(false);
+      setTrainingProfileLoading(false);
+      return;
+    }
+    setTrainingProfileLoading(true);
+    setTrainingProfileError(false);
+    const result = await getCompletedClientOnboardingProfile();
+    setTrainingProfileLoading(false);
+    if (!result.ok) {
+      if (__DEV__) console.warn('CLIENT_PROFILE_ONBOARDING_READ_ERROR', result.message);
+      setTrainingProfile(null);
+      setTrainingProfileError(true);
+      return;
+    }
+    setTrainingProfile(result.data);
+  }
+
+  function showAvatarMessage(message: string) {
+    if (avatarMessageTimer.current) clearTimeout(avatarMessageTimer.current);
+    setAvatarMessage(message);
+    avatarMessageTimer.current = setTimeout(() => {
+      setAvatarMessage(null);
+      avatarMessageTimer.current = null;
+    }, 2600);
+  }
 
   async function handleLogout() {
     await signOut();
@@ -69,18 +116,22 @@ export default function ClienteProfiloScreen() {
 
     if (uploaded.ok) {
       updateClient({ ...client, avatarUrl: uploaded.signedUrl ?? client.avatarUrl ?? null, avatarStoragePath: uploaded.path });
-      setAvatarMessage('Foto profilo aggiornata.');
+      showAvatarMessage('Avatar aggiornato');
       return;
     }
 
-    setAvatarMessage(uploaded.message);
+    showAvatarMessage(uploaded.message);
   }
 
   async function handlePresetChange(preset: ClientAvatarPreset) {
     if (!currentClientId || !client) return;
     updateClient({ ...client, avatarPreset: preset });
     const result = await saveClientAvatarPresetRemote(currentClientId, preset);
-    setAvatarMessage(result.ok ? null : result.message);
+    if (result.ok) {
+      showAvatarMessage('Avatar aggiornato');
+      return;
+    }
+    showAvatarMessage(result.message);
   }
 
   return (
@@ -126,6 +177,14 @@ export default function ClienteProfiloScreen() {
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>Stato: {CLIENT_STATUS_LABEL[client.status]}</Text>
       </AppCard>
 
+      <AppSectionTitle>IL MIO PROFILO DI ALLENAMENTO</AppSectionTitle>
+      <TrainingProfileCard
+        profile={trainingProfile}
+        loading={trainingProfileLoading}
+        error={trainingProfileError}
+        onRetry={loadTrainingProfile}
+      />
+
       {myCoach.clientMode !== 'self_guided' ? (
         <>
           <AppSectionTitle>IL TUO COACH</AppSectionTitle>
@@ -159,9 +218,124 @@ export default function ClienteProfiloScreen() {
   );
 }
 
+function TrainingProfileCard({
+  profile,
+  loading,
+  error,
+  onRetry,
+}: {
+  profile: CompletedClientOnboardingProfile | null;
+  loading: boolean;
+  error: boolean;
+  onRetry: () => void;
+}) {
+  const { colors } = useAppTheme();
+
+  if (loading) {
+    return (
+      <AppCard style={styles.trainingCard}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Caricamento profilo di allenamento...</Text>
+      </AppCard>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppCard style={styles.trainingCard}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Non è stato possibile caricare il profilo di allenamento.</Text>
+        <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Riprova" hitSlop={6} style={styles.retryButton}>
+          <Text style={[styles.retryText, { color: colors.moss }]}>Riprova</Text>
+        </Pressable>
+      </AppCard>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <AppCard style={styles.trainingCard}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Profilo di allenamento non ancora disponibile.</Text>
+      </AppCard>
+    );
+  }
+
+  const rows: { label: string; value: string }[] = [];
+  if (profile.goals.length > 0) rows.push({ label: 'Obiettivi', value: profile.goals.join(', ') });
+  if (profile.weightKg != null) rows.push({ label: 'Peso', value: `${formatNumber(profile.weightKg, 1)} kg` });
+  if (profile.heightCm != null) rows.push({ label: 'Altezza', value: `${Math.round(profile.heightCm)} cm` });
+  if (profile.bmi != null) rows.push({ label: 'BMI', value: `${formatNumber(profile.bmi, 1)}${profile.bmiCategory ? ` · ${displayBmiCategory(profile.bmiCategory)}` : ''}` });
+  if (profile.trainingDaysPerWeek != null) rows.push({ label: 'Giorni settimanali', value: `${profile.trainingDaysPerWeek}` });
+  if (profile.experienceLevel) rows.push({ label: 'Esperienza', value: displayExperience(profile.experienceLevel) });
+  if (profile.focusAreas.length > 0) rows.push({ label: 'Aree di interesse', value: profile.focusAreas.join(', ') });
+
+  if (rows.length === 0) {
+    return (
+      <AppCard style={styles.trainingCard}>
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>
+          {profile.clientMode === 'coach_guided' ? 'Percorso gestito dal tuo coach.' : 'Profilo di allenamento non ancora compilato.'}
+        </Text>
+      </AppCard>
+    );
+  }
+
+  return (
+    <AppCard style={styles.trainingCard}>
+      {rows.map((row) => (
+        <View key={row.label} style={styles.trainingRow}>
+          <Text style={[styles.trainingLabel, { color: colors.inkSoft }]}>{row.label}</Text>
+          <Text style={[styles.trainingValue, { color: colors.ink }]}>{row.value}</Text>
+        </View>
+      ))}
+    </AppCard>
+  );
+}
+
+function formatNumber(value: number, digits: number) {
+  return value.toLocaleString('it-IT', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function displayBmiCategory(value: string) {
+  return value === 'Obesita' ? 'Obesità' : value;
+}
+
+function displayExperience(value: string) {
+  const labels: Record<string, string> = {
+    beginner: 'Nuovo all’allenamento di forza',
+    novice: 'Qualche mese',
+    intermediate: 'Circa un anno',
+    advanced: 'Diversi anni',
+    competitive: 'Competizioni',
+  };
+  return labels[value] ?? value;
+}
+
 const styles = StyleSheet.create({
   section: {
     gap: 4,
+  },
+  trainingCard: {
+    gap: AppSpacing[2],
+  },
+  trainingRow: {
+    gap: 3,
+  },
+  trainingLabel: {
+    fontSize: AppFontSize.xs,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  trainingValue: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+    lineHeight: 19,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    minHeight: 34,
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '800',
   },
   profileHeader: {
     alignItems: 'center',
