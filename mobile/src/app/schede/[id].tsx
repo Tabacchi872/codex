@@ -184,14 +184,38 @@ export default function SchedaDettaglioScreen() {
     }
   }
 
+  // Dopo l'eliminazione di una scheda REALE del cliente, il coach deve
+  // tornare al cliente da cui era partito (Clienti → cliente → tab Schede),
+  // mai alla libreria globale dei modelli (`/schede`, un contesto
+  // completamente diverso — bug reale corretto qui: prima il redirect era lo
+  // stesso indiscriminatamente). Il clientId usato e' SEMPRE plan!.clientId
+  // (il piano gia' caricato con RLS scoped al coach), mai un parametro URL —
+  // questa schermata legge oggi solo `id` da useLocalSearchParams, quindi non
+  // esisterebbe comunque un clientId da URL di cui fidarsi o non fidarsi.
+  // Stesso pattern di navigazione tipizzata gia' usato da "Vai al cliente"
+  // in schede/modello/[templateId].tsx dopo un'assegnazione riuscita.
+  function goToClientSchede(clientId: string) {
+    router.replace({ pathname: '/clienti/[id]', params: { id: clientId, tab: 'schede' } });
+  }
+
   async function handleDelete() {
     if (isSessionLocked) {
       setSaveError('Questa sessione è completata e non può essere eliminata.');
       return;
     }
+    // plan!.clientId e' tipizzato come string non opzionale (types/training.ts)
+    // e proviene da una riga gia' caricata: in pratica sempre presente. Se mai
+    // fosse vuoto, il fallback resta comunque nell'area coach del cliente
+    // (`/clienti`, l'elenco) — mai un salto silenzioso alla libreria modelli,
+    // che non ha alcuna relazione con "elimina la scheda di un cliente".
+    const clientId = plan!.clientId;
     if (!supabaseConfig.isConfigured) {
       deleteWorkoutPlanLocal(plan!.id);
-      router.replace('/schede');
+      if (clientId) {
+        goToClientSchede(clientId);
+      } else {
+        router.replace('/clienti');
+      }
       return;
     }
     setSaveError('');
@@ -199,11 +223,20 @@ export default function SchedaDettaglioScreen() {
     const result = await deleteWorkoutPlanRemote(plan!.id);
     setSaving(false);
     if (!result.ok) {
+      // Errore reale mostrato, incluso WORKOUT_LOCKED (una scheda completed
+      // e' bloccata anche server-side dai trigger di immutabilita', gia'
+      // applicati — vedi describeSaveError/deleteWorkoutPlan in
+      // workout-plan-service.ts): nessuna navigazione in caso di fallimento,
+      // resto nel dettaglio con l'errore visibile.
       setSaveError(result.message);
       return;
     }
     deleteWorkoutPlanLocal(plan!.id);
-    router.replace('/schede');
+    if (clientId) {
+      goToClientSchede(clientId);
+    } else {
+      router.replace('/clienti');
+    }
   }
 
   // Aggiornamenti di sessione (stato/timer/completamento): ottimistici — la
