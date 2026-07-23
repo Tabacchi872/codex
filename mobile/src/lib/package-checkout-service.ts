@@ -23,7 +23,7 @@ export type CheckoutResult =
     }
   | {
       ok: false;
-      code: 'not_implemented' | 'not_authenticated' | 'not_configured' | 'unsupported' | 'missing_product' | 'cancelled' | 'purchase_error' | 'sync_error';
+      code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'missing_product' | 'cancelled' | 'purchase_error' | 'sync_error';
       provider: CheckoutProvider;
       message: string;
     };
@@ -64,14 +64,6 @@ export async function loadStoreProductsForPackages(
 
 export async function startPackageCheckout(pkg: SubscriptionPackage): Promise<CheckoutResult> {
   const provider = resolveCheckoutProvider();
-  if (pkg.targetRole !== 'coach') {
-    return {
-      ok: false,
-      code: 'not_implemented',
-      provider,
-      message: 'Il pagamento reale dei pacchetti cliente non e ancora collegato. Nessun abbonamento viene attivato localmente.',
-    };
-  }
 
   const session = await getCurrentSession();
   const userId = session.ok ? session.data?.user.id : null;

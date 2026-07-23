@@ -2,7 +2,7 @@ import { getCurrentSession } from './auth-service';
 import { supabaseConfig } from './supabase';
 import { listUserSubscriptions, pickCurrentSubscriptionForRole } from './user-subscriptions-service';
 
-import type { UserSubscription } from '@/types/subscription-packages';
+import type { SubscriptionPackage, UserSubscription } from '@/types/subscription-packages';
 
 export const CLIENT_REVENUECAT_ENTITLEMENT = 'client_pro';
 export const CLIENT_REVENUECAT_OFFERING = 'client_plans';
@@ -53,4 +53,18 @@ export function pickCurrentSelfGuidedSubscription(subscriptions: UserSubscriptio
     ),
     'client',
   );
+}
+
+// Ordina sempre MONTHLY -> THREE_MONTH -> ANNUAL usando la durata reale del
+// pacchetto (Supabase), mai l'ordine restituito da un'Offering RevenueCat o
+// da sort_order del pannello superadmin: entrambi possono cambiare senza che
+// il significato "mensile/trimestrale/annuale" cambi. Durata equivalente in
+// mesi (durationUnit 'days' e' un'approssimazione a scopo di solo
+// ordinamento, mai mostrata all'utente).
+function durationInMonths(pkg: SubscriptionPackage): number {
+  return pkg.durationUnit === 'months' ? pkg.durationValue : pkg.durationValue / 30;
+}
+
+export function sortClientPackagesByDuration<T extends SubscriptionPackage>(packages: T[]): T[] {
+  return [...packages].sort((a, b) => durationInMonths(a) - durationInMonths(b));
 }

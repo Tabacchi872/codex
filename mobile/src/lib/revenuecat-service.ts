@@ -20,6 +20,13 @@ export type RevenueCatProductInfo = {
   revenueCatPackageIdentifier: string;
   offeringIdentifier: string;
   priceString: string;
+  // Prezzo numerico e prezzo-equivalente-mensile (rcPackage.product.price /
+  // .pricePerMonth, gia' normalizzato dall'SDK RevenueCat stesso — nessun
+  // calcolo manuale sul periodo ISO8601 in questo modulo). Usati SOLO per
+  // calcolare in sicurezza il risparmio in UI quando la valuta coincide;
+  // priceString resta sempre il testo autorevole mostrato come prezzo.
+  price: number | null;
+  pricePerMonth: number | null;
   currencyCode: string | null;
   subscriptionPeriod: string | null;
   periodLabel: string | null;
@@ -317,6 +324,8 @@ function resolveRevenueCatPackage(pkg: SubscriptionPackage, offerings: Purchases
           revenueCatPackageIdentifier: rcPackage.identifier,
           offeringIdentifier: offering.identifier,
           priceString: rcPackage.product.priceString,
+          price: typeof rcPackage.product.price === 'number' ? rcPackage.product.price : null,
+          pricePerMonth: rcPackage.product.pricePerMonth ?? null,
           currencyCode: rcPackage.product.currencyCode ?? null,
           subscriptionPeriod: period,
           periodLabel: period ? formatIsoPeriod(period) : null,
