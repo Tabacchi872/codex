@@ -17,6 +17,12 @@ type MenuItem = {
   // che le apre viene comunque rimbalzato in Home da AuthGate, ma mostrarle
   // qui sarebbe comunque una voce di menu morta — nascoste sotto.
   hiddenForSelfGuided?: boolean;
+  // Simmetrico: "Pacchetti" (Client Pro) non serve a un cliente coach_guided,
+  // che ha gia' accesso completo tramite il proprio coach. La route resta
+  // raggiungibile via URL diretto (invariato, non e' un problema di
+  // sicurezza): qui si nasconde solo la voce di menu, per non proporre un
+  // acquisto irrilevante.
+  hiddenForCoachGuided?: boolean;
 };
 
 // Menu "Altro": raccoglie le schermate cliente che non hanno una tab dedicata.
@@ -33,7 +39,7 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'metriche', icon: ChartColumn, title: 'Metriche', href: '/metriche' },
   { key: 'progressi', icon: Trophy, title: 'Progressi', href: '/progressi' },
   { key: 'abbonamento', icon: Ticket, title: 'Abbonamento', href: '/cliente-profilo' },
-  { key: 'pacchetti', icon: Package, title: 'Pacchetti', href: '/pacchetti-cliente' },
+  { key: 'pacchetti', icon: Package, title: 'Pacchetti', href: '/pacchetti-cliente', hiddenForCoachGuided: true },
   { key: 'bacheca', icon: Megaphone, title: 'Bacheca', href: '/bacheca', hiddenForSelfGuided: true },
   { key: 'prenotazioni', icon: Calendar, title: 'Prenotazioni', href: '/prenotazioni', hiddenForSelfGuided: true },
 ];
@@ -48,7 +54,10 @@ export default function AltroScreen() {
   // 'coach_guided' non e' confermato, mai mostrate durante il caricamento
   // ne' per un cliente self_guided gia' risolto.
   const isCoachGuided = myCoach.clientMode === 'coach_guided';
-  const menuItems = MENU_ITEMS.filter((item) => !item.hiddenForSelfGuided || isCoachGuided);
+  const isSelfGuided = myCoach.clientMode === 'self_guided';
+  const menuItems = MENU_ITEMS.filter(
+    (item) => (!item.hiddenForSelfGuided || isCoachGuided) && (!item.hiddenForCoachGuided || isSelfGuided),
+  );
 
   function navigate(source: string, target: MenuItem['href']) {
     logClientNavPress(source, target);

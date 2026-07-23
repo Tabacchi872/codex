@@ -1,11 +1,18 @@
 import { CheckCircle2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, AppScreen, BackHeader } from '@/components/ui';
 import { useMySubscription } from '@/hooks/use-my-subscription';
 import { useSubscriptionPackages } from '@/hooks/use-subscription-packages';
-import { startPackageCheckout } from '@/lib/package-checkout-service';
+import { sortClientPackagesByDuration } from '@/lib/client-plan-access-service';
+import {
+  loadStoreProductsForPackages,
+  openPackageSubscriptionManagement,
+  restorePackagePurchases,
+  startPackageCheckout,
+} from '@/lib/package-checkout-service';
+import type { RevenueCatProductState } from '@/lib/revenuecat-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { SubscriptionPackage, UserSubscriptionStatus } from '@/types/subscription-packages';
@@ -14,12 +21,77 @@ import type { SubscriptionPackage, UserSubscriptionStatus } from '@/types/subscr
 // superadmin (letti sempre da Supabase), distinti dagli abbonamenti sessioni
 // che il proprio coach puo' assegnare (subscriptions, gestita in
 // clienti/[id].tsx lato coach) — qui il cliente acquista direttamente un
-// pacchetto del superadmin, uguale per tutti i coach. Nessun pagamento reale
-// collegato in questa fase (vedi lib/package-checkout-service.ts).
+// pacchetto del superadmin, uguale per tutti i coach. Prezzo/periodo sempre
+// dallo store tramite RevenueCat (mai da subscription_packages.price/currency,
+// che restano valori amministrativi non autorevoli per la UI). Questa e' la
+// schermata raggiungibile da un self_guided GIA' abbonato (AuthGate rediretta
+// altrove chi non ha un piano attivo verso /abbonamento-cliente), quindi qui
+// vive anche "Gestisci abbonamento".
 export default function PacchettiClienteScreen() {
   const { colors } = useAppTheme();
   const { packages, loading: loadingPackages, error: packagesError, reload: reloadPackages } = useSubscriptionPackages('client');
   const { current, history, loading: loadingSubscription, error: subscriptionError, reload: reloadSubscription } = useMySubscription();
+  const sortedPackages = sortClientPackagesByDuration(packages);
+  const [storeProducts, setStoreProducts] = useState<Record<string, RevenueCatProductState>>({});
+  const [storeLoading, setStoreLoading] = useState(false);
+  const [storeError, setStoreError] = useState('');
+  const [restoreMessage, setRestoreMessage] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  const [managementMessage, setManagementMessage] = useState('');
+  const [managingSubscription, setManagingSubscription] = useState(false);
+
+  const reloadAll = useCallback(() => {
+    reloadSubscription();
+    reloadPackages();
+  }, [reloadPackages, reloadSubscription]);
+
+  useEffect(() => {
+    if (!supabaseConfig.isConfigured || sortedPackages.length === 0) {
+      setStoreProducts({});
+      setStoreLoading(false);
+      setStoreError('');
+      return;
+    }
+    let active = true;
+    setStoreLoading(true);
+    setStoreError('');
+    (async () => {
+      try {
+        const result = await loadStoreProductsForPackages(sortedPackages);
+        if (!active) return;
+        setStoreProducts(result);
+      } catch (err) {
+        if (!active) return;
+        setStoreError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (active) setStoreLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // sortedPackages e' una nuova referenza ad ogni render: dipendiamo dal
+    // suo contenuto tramite packages (gia' incluso qui indirettamente).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packages]);
+
+  async function handleRestorePurchases() {
+    setRestoring(true);
+    setRestoreMessage('');
+    const result = await restorePackagePurchases();
+    setRestoring(false);
+    setRestoreMessage(result.message);
+    if (result.ok) reloadAll();
+  }
+
+  async function handleManageSubscription() {
+    setManagingSubscription(true);
+    setManagementMessage('');
+    const result = await openPackageSubscriptionManagement();
+    setManagingSubscription(false);
+    setManagementMessage(result.message);
+    if (result.ok) reloadAll();
+  }
 
   if (!supabaseConfig.isConfigured) {
     return (
@@ -55,9 +127,27 @@ export default function PacchettiClienteScreen() {
         ) : (
           <AppEmptyState title="Nessun pacchetto attivo" subtitle="Scegli un pacchetto qui sotto per abbonarti." />
         )}
+        {current?.paymentProvider === 'revenuecat' ? (
+          <>
+            <AppButton
+              label="Gestisci abbonamento"
+              onPress={handleManageSubscription}
+              variant="outline"
+              size="sm"
+              loading={managingSubscription}
+              fullWidth
+            />
+            {managementMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{managementMessage}</Text> : null}
+          </>
+        ) : null}
       </AppCard>
 
-      <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>PACCHETTI DISPONIBILI</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionLabel, { color: colors.inkFaint }]}>PACCHETTI DISPONIBILI</Text>
+        <AppButton label="Ripristina acquisti" onPress={handleRestorePurchases} variant="outline" size="sm" loading={restoring} />
+      </View>
+      {restoreMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{restoreMessage}</Text> : null}
+      {storeError ? <Text style={[styles.checkoutMessage, { color: colors.rust }]}>{storeError}</Text> : null}
 
       {loadingPackages ? (
         <AppCard>
@@ -67,13 +157,22 @@ export default function PacchettiClienteScreen() {
         <AppCard>
           <AppErrorState message={packagesError} onRetry={reloadPackages} />
         </AppCard>
-      ) : packages.length === 0 ? (
+      ) : sortedPackages.length === 0 ? (
         <AppCard>
           <AppEmptyState title="Nessun pacchetto disponibile" subtitle="Il tuo coach o l'assistenza ti aggiorneranno appena disponibili." />
         </AppCard>
       ) : (
-        packages.map((item) => (
-          <PackageOfferCard key={item.id} item={item} isCurrent={current?.package?.id === item.id && current.status === 'active'} />
+        sortedPackages.map((item, index) => (
+          <PackageOfferCard
+            key={item.id}
+            item={item}
+            isCurrent={current?.package?.id === item.id && current.status === 'active'}
+            isMostConvenient={sortedPackages.length > 1 && index === sortedPackages.length - 1}
+            storeProduct={storeProducts[item.id]}
+            storeLoading={storeLoading}
+            disabled={restoring}
+            onSynced={reloadAll}
+          />
         ))
       )}
 
@@ -120,23 +219,48 @@ function CurrentSubscriptionSummary({
         <AppBadge label={getStatusLabel(status)} tone={getStatusTone(status)} />
       </View>
       <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
-        {expiresAt ? `Scadenza: ${formatDate(expiresAt)}` : 'Nessuna scadenza registrata'}
+        {status === 'active'
+          ? expiresAt
+            ? `Attivo fino al: ${formatDate(expiresAt)}`
+            : 'Nessuna scadenza registrata'
+          : expiresAt
+            ? `Scadenza: ${formatDate(expiresAt)}`
+            : 'Nessuna scadenza registrata'}
       </Text>
     </View>
   );
 }
 
-function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCurrent: boolean }) {
+function PackageOfferCard({
+  item,
+  isCurrent,
+  isMostConvenient,
+  storeProduct,
+  storeLoading,
+  disabled,
+  onSynced,
+}: {
+  item: SubscriptionPackage;
+  isCurrent: boolean;
+  isMostConvenient: boolean;
+  storeProduct?: RevenueCatProductState;
+  storeLoading: boolean;
+  disabled: boolean;
+  onSynced: () => void;
+}) {
   const { colors } = useAppTheme();
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [starting, setStarting] = useState(false);
+  const canPurchase = !disabled && !storeLoading && storeProduct?.status === 'available';
 
   async function handleSubscribe() {
+    if (!canPurchase || isCurrent) return;
     setStarting(true);
     setCheckoutMessage('');
     const result = await startPackageCheckout(item);
     setStarting(false);
     setCheckoutMessage(result.message);
+    if (result.ok) onSynced();
   }
 
   return (
@@ -144,8 +268,8 @@ function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCu
       <View style={styles.header}>
         <View style={styles.nameBlock}>
           <Text style={[styles.name, { color: colors.ink }]}>{item.name}</Text>
-          <Text style={[styles.price, { color: colors.inkSoft }]}>
-            {formatPrice(item.price, item.currency)} / {formatDuration(item.durationValue, item.durationUnit)}
+          <Text style={[styles.price, { color: storeProduct?.status === 'available' || storeLoading ? colors.inkSoft : colors.rust }]}>
+            {formatStorePrice(storeProduct, storeLoading)}
           </Text>
         </View>
         {isCurrent ? (
@@ -153,6 +277,8 @@ function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCu
             <CheckCircle2 size={14} color={colors.moss} strokeWidth={2.5} />
             <Text style={[styles.currentPillLabel, { color: colors.moss }]}>Attuale</Text>
           </View>
+        ) : isMostConvenient ? (
+          <AppBadge label="Piu conveniente" tone="coral" />
         ) : null}
       </View>
 
@@ -168,18 +294,24 @@ function PackageOfferCard({ item, isCurrent }: { item: SubscriptionPackage; isCu
 
       {checkoutMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{checkoutMessage}</Text> : null}
 
-      <AppButton label={isCurrent ? 'Rinnova' : 'Abbonati'} onPress={handleSubscribe} loading={starting} fullWidth />
+      <AppButton
+        label={isCurrent ? 'Pacchetto attuale' : 'Abbonati'}
+        onPress={handleSubscribe}
+        loading={starting}
+        disabled={isCurrent || !canPurchase}
+        fullWidth
+      />
     </AppCard>
   );
 }
 
-function formatPrice(price: number, currency: string) {
-  return `${currency === 'EUR' ? '€' : currency + ' '}${price.toFixed(2)}`;
-}
-
-function formatDuration(value: number, unit: 'days' | 'months') {
-  const label = unit === 'days' ? (value === 1 ? 'giorno' : 'giorni') : value === 1 ? 'mese' : 'mesi';
-  return `${value} ${label}`;
+function formatStorePrice(storeProduct: RevenueCatProductState | undefined, loading: boolean) {
+  if (loading) return 'Prezzo store in caricamento...';
+  if (!storeProduct) return 'Prodotto non configurato nello store';
+  if (storeProduct.status === 'available') {
+    return storeProduct.periodLabel ? `${storeProduct.priceString} / ${storeProduct.periodLabel}` : storeProduct.priceString;
+  }
+  return storeProduct.message;
 }
 
 function formatDate(value: string) {
@@ -219,6 +351,14 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.xs,
     fontWeight: '700',
     letterSpacing: 0.4,
+    marginTop: AppSpacing[1],
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
+    justifyContent: 'space-between',
     marginTop: AppSpacing[1],
   },
   currentBlock: {

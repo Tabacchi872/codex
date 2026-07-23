@@ -28,7 +28,7 @@ function notify(title: string, message: string) {
 // l'apertura devono produrre un tap silenzioso o una schermata rossa —
 // l'utente vede sempre un messaggio chiaro. Stesso comportamento su Web
 // (globalThis.alert, Linking.openURL apre una nuova scheda), Android e iOS.
-async function openLegalLink(url: string) {
+export async function openLegalLink(url: string) {
   if (!url || !url.trim()) {
     notify('Link non disponibile', 'Questo link non è ancora stato configurato.');
     return;
