@@ -469,7 +469,15 @@ function getClientRedirectTarget({
 
   if (onboarding.mode === 'self_guided') {
     if (planAccess.loading || !planAccess.checked || planAccess.error) return null;
-    if (!planAccess.active) return pathname === CLIENT_SELF_GUIDED_PLANS ? null : CLIENT_SELF_GUIDED_PLANS;
+    if (!planAccess.active) {
+      // Nessun piano Client Pro attivo: bloccato su /abbonamento-cliente,
+      // MA la gestione account (impostazioni, tema, logout, eliminazione
+      // account) resta sempre raggiungibile — non e' una funzione premium.
+      // Raggiunta da un link diretto sulla paywall (il tab "Altro" resta
+      // bloccato: espone anche voci premium come Metriche/Progressi/Pacchetti).
+      const allowedWithoutPlan = pathname === CLIENT_SELF_GUIDED_PLANS || pathname === '/cliente-profilo';
+      return allowedWithoutPlan ? null : CLIENT_SELF_GUIDED_PLANS;
+    }
     return pathname === CLIENT_SELF_GUIDED_PLANS ||
       pathname === CLIENT_CONNECT_COACH ||
       pathname === CLIENT_ONBOARDING ||
