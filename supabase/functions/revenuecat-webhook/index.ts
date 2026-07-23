@@ -441,11 +441,16 @@ export async function resolvePackageId(
   productId: string | null,
   entitlementId: string | null,
 ): Promise<{ ok: true; packageId: string } | { ok: false; code: string; message: string }> {
+  // Nessun filtro su target_role qui: android_product_id/ios_product_id sono
+  // vincolati da unique index parziali GLOBALI (non scoped per ruolo, vedi
+  // docs/SUPABASE_SCHEMA.sql), quindi un product id risolve sempre al piu' un
+  // pacchetto, coach o client indifferentemente. Restringere a un solo ruolo
+  // impedirebbe di risolvere gli eventi RevenueCat dei pacchetti cliente
+  // (Client Pro, target_role='client').
   if (productId) {
     const { data, error } = await supabaseAdmin
       .from('subscription_packages')
       .select('id')
-      .eq('target_role', 'coach')
       .or(`android_product_id.eq.${productId},ios_product_id.eq.${productId}`);
     if (error) return { ok: false, code: 'package_lookup_failed', message: error.message };
     if ((data ?? []).length === 1) return { ok: true, packageId: (data as Array<{ id: string }>)[0].id };
@@ -458,16 +463,19 @@ export async function resolvePackageId(
     const { data, error } = await supabaseAdmin
       .from('subscription_packages')
       .select('id')
-      .eq('target_role', 'coach')
       .eq('revenuecat_entitlement_id', entitlementId);
     if (error) return { ok: false, code: 'package_lookup_failed', message: error.message };
     if ((data ?? []).length === 1) return { ok: true, packageId: (data as Array<{ id: string }>)[0].id };
     if ((data ?? []).length > 1) {
+      // Un entitlement condiviso da piu' pacchetti (es. le 3 durate Client
+      // Pro condividono client_pro) e' ambiguo SOLO come fallback: il
+      // percorso primario e' sempre productId (una durata = un product id
+      // univoco). Nessun pacchetto scelto a caso.
       return { ok: false, code: 'ambiguous_entitlement_id', message: `Entitlement id non univoco: ${entitlementId}` };
     }
   }
 
-  return { ok: false, code: 'package_not_found', message: 'Nessun pacchetto coach collegato al product id RevenueCat.' };
+  return { ok: false, code: 'package_not_found', message: 'Nessun pacchetto collegato al product id/entitlement RevenueCat.' };
 }
 
 async function resolveSupabaseUserId(
