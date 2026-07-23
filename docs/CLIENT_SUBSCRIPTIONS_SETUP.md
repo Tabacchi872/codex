@@ -9,6 +9,27 @@ pannello superadmin dell'app.
 
 Nessun segreto/chiave reale e' scritto in questo file.
 
+## ATTENZIONE — azione richiesta anche lato pacchetti coach (non solo Client Pro)
+
+`mobile/src/lib/revenuecat-service.ts` risolve ora l'Offering di un pacchetto
+in modo **esplicito e case-sensitive**, leggendo SEMPRE e SOLO
+`subscription_packages.revenuecat_offering_id` del pacchetto (`offerings.all[revenuecat_offering_id]`)
+— mai `offerings.current` (la Default Offering RevenueCat, che resta
+`Fitcoach` e non va toccata in dashboard), mai un'altra Offering come
+fallback. Se l'Offering configurata non esiste, l'app mostra un errore di
+configurazione chiaro invece di usare quella dell'altro ruolo.
+
+**Prima di questo cambiamento il flusso coach poteva funzionare anche con
+`revenuecat_offering_id` vuoto**, appoggiandosi implicitamente alla Default
+Offering (`offerings.current`) di RevenueCat. Con la rimozione di quel
+fallback, **verifica che ogni pacchetto coach attivo nel pannello superadmin
+(`/superadmin/pacchetti`, tab "Pacchetti coach") abbia il campo "Offering"
+impostato esattamente a `Fitcoach`** (maiuscola iniziale, case-sensitive) —
+altrimenti la paywall coach mostrera' "Offering RevenueCat non trovata"
+anche se l'acquisto funzionava prima di questa modifica. Stesso controllo
+per i pacchetti client: campo "Offering" impostato esattamente a
+`client_plans`.
+
 ## Contratto (identico a quanto richiesto, nessun identificativo inventato senza necessita')
 
 - Entitlement RevenueCat: `client_pro`

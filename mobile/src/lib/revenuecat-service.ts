@@ -4,7 +4,6 @@ import Purchases, {
   type CustomerInfo,
   type CustomerInfoUpdateListener,
   type PurchasesError,
-  type PurchasesOffering,
   type PurchasesOfferings,
   type PurchasesPackage,
 } from 'react-native-purchases';
@@ -310,28 +309,61 @@ function resolveRevenueCatPackage(pkg: SubscriptionPackage, offerings: Purchases
     };
   }
 
-  const candidateOfferings = getCandidateOfferings(pkg, offerings);
-  for (const offering of candidateOfferings) {
-    const rcPackage = offering.availablePackages.find((candidate) => packageMatchesProduct(candidate, expectedProductId));
-    if (rcPackage) {
-      const period = getProductPeriod(rcPackage);
-      return {
-        rcPackage,
-        state: {
-          status: 'available',
-          packageId: pkg.id,
-          productIdentifier: rcPackage.product.identifier,
-          revenueCatPackageIdentifier: rcPackage.identifier,
-          offeringIdentifier: offering.identifier,
-          priceString: rcPackage.product.priceString,
-          price: typeof rcPackage.product.price === 'number' ? rcPackage.product.price : null,
-          pricePerMonth: rcPackage.product.pricePerMonth ?? null,
-          currencyCode: rcPackage.product.currencyCode ?? null,
-          subscriptionPeriod: period,
-          periodLabel: period ? formatIsoPeriod(period) : null,
-        },
-      };
-    }
+  // Lookup esplicito e case-sensitive sull'Offering configurata per QUESTO
+  // pacchetto (subscription_packages.revenuecat_offering_id, es. 'client_plans'
+  // per i clienti self_guided, 'Fitcoach' per i coach) — MAI offerings.current,
+  // MAI un'altra Offering come fallback. offerings.current e' condivisa tra
+  // ruoli (la Default Offering di RevenueCat, che resta 'Fitcoach' e non va
+  // toccata): usarla come fonte comune mostrerebbe/venderebbe il prodotto
+  // sbagliato al ruolo sbagliato se un giorno la Default Offering cambiasse o
+  // se un pacchetto non fosse ancora configurato correttamente. Un pacchetto
+  // client non deve MAI poter risolvere silenziosamente un package
+  // dell'Offering coach, e viceversa.
+  const offeringId = pkg.revenuecatOfferingId?.trim();
+  if (!offeringId) {
+    return {
+      rcPackage: null,
+      state: {
+        status: 'not_configured',
+        packageId: pkg.id,
+        expectedProductId,
+        message: 'Nessuna Offering RevenueCat configurata per questo pacchetto (revenuecat_offering_id mancante).',
+      },
+    };
+  }
+
+  const offering = offerings.all[offeringId];
+  if (!offering) {
+    return {
+      rcPackage: null,
+      state: {
+        status: 'not_configured',
+        packageId: pkg.id,
+        expectedProductId,
+        message: `Offering RevenueCat "${offeringId}" non trovata. Verifica la configurazione in RevenueCat Dashboard (identificatori case-sensitive).`,
+      },
+    };
+  }
+
+  const rcPackage = offering.availablePackages.find((candidate) => packageMatchesProduct(candidate, expectedProductId));
+  if (rcPackage) {
+    const period = getProductPeriod(rcPackage);
+    return {
+      rcPackage,
+      state: {
+        status: 'available',
+        packageId: pkg.id,
+        productIdentifier: rcPackage.product.identifier,
+        revenueCatPackageIdentifier: rcPackage.identifier,
+        offeringIdentifier: offering.identifier,
+        priceString: rcPackage.product.priceString,
+        price: typeof rcPackage.product.price === 'number' ? rcPackage.product.price : null,
+        pricePerMonth: rcPackage.product.pricePerMonth ?? null,
+        currencyCode: rcPackage.product.currencyCode ?? null,
+        subscriptionPeriod: period,
+        periodLabel: period ? formatIsoPeriod(period) : null,
+      },
+    };
   }
 
   return {
@@ -340,22 +372,9 @@ function resolveRevenueCatPackage(pkg: SubscriptionPackage, offerings: Purchases
       status: 'missing',
       packageId: pkg.id,
       expectedProductId,
-      message: `Prodotto ${expectedProductId} non trovato negli offering RevenueCat disponibili.`,
+      message: `Prodotto ${expectedProductId} non trovato nell'Offering "${offeringId}".`,
     },
   };
-}
-
-function getCandidateOfferings(pkg: SubscriptionPackage, offerings: PurchasesOfferings) {
-  const candidates: PurchasesOffering[] = [];
-  const configuredOfferingId = pkg.revenuecatOfferingId?.trim();
-  if (configuredOfferingId && offerings.all[configuredOfferingId]) candidates.push(offerings.all[configuredOfferingId]);
-  if (offerings.current && !candidates.some((item) => item.identifier === offerings.current?.identifier)) {
-    candidates.push(offerings.current);
-  }
-  Object.values(offerings.all).forEach((offering) => {
-    if (!candidates.some((item) => item.identifier === offering.identifier)) candidates.push(offering);
-  });
-  return candidates;
 }
 
 function packageMatchesProduct(candidate: PurchasesPackage, expectedProductId: string) {
