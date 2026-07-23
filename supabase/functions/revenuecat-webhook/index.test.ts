@@ -78,6 +78,11 @@ Deno.test({
 });
 
 // --- resolvePackageId: mappatura product/entitlement -> package_id ---------
+//
+// Nessun .eq('target_role', ...) nella query reale (rimosso: android_product_id/
+// ios_product_id/revenuecat_entitlement_id non sono scoped per ruolo, vedi
+// index.ts) — il fake sotto rispecchia esattamente questa forma: select()
+// espone direttamente or()/eq() senza un eq('target_role', ...) intermedio.
 
 function fakeSupabaseForPackageLookup(opts: {
   byProductId?: Record<string, Array<{ id: string }>>;
@@ -89,19 +94,14 @@ function fakeSupabaseForPackageLookup(opts: {
       return {
         select(_columns: string) {
           return {
-            eq(column: string, _value: string) {
-              if (column !== 'target_role') throw new Error(`eq inatteso nel test: ${column}`);
-              return {
-                or(orExpression: string) {
-                  const match = /\.eq\.([^,]+)/.exec(orExpression);
-                  const productId = match ? match[1] : '';
-                  return Promise.resolve({ data: opts.byProductId?.[productId] ?? [], error: null });
-                },
-                eq(entitlementColumn: string, entitlementValue: string) {
-                  if (entitlementColumn !== 'revenuecat_entitlement_id') throw new Error(`eq inatteso nel test: ${entitlementColumn}`);
-                  return Promise.resolve({ data: opts.byEntitlementId?.[entitlementValue] ?? [], error: null });
-                },
-              };
+            or(orExpression: string) {
+              const match = /\.eq\.([^,]+)/.exec(orExpression);
+              const productId = match ? match[1] : '';
+              return Promise.resolve({ data: opts.byProductId?.[productId] ?? [], error: null });
+            },
+            eq(entitlementColumn: string, entitlementValue: string) {
+              if (entitlementColumn !== 'revenuecat_entitlement_id') throw new Error(`eq inatteso nel test: ${entitlementColumn}`);
+              return Promise.resolve({ data: opts.byEntitlementId?.[entitlementValue] ?? [], error: null });
             },
           };
         },
@@ -150,6 +150,60 @@ Deno.test({
     const client = fakeSupabaseForPackageLookup({ byEntitlementId: { pro_entitlement: [{ id: 'pkg-pro' }] } });
     const result = await resolvePackageId(client, null, 'pro_entitlement');
     assertEquals(result, { ok: true, packageId: 'pkg-pro' });
+  },
+});
+
+// --- Client Pro (target_role='client'): stesso resolver, nessun filtro di
+// ruolo. Le 3 durate (monthly/quarterly/annual) hanno product id distinti ma
+// condividono lo stesso revenuecat_entitlement_id ('client_pro') -----------
+
+Deno.test({
+  name: 'resolvePackageId: prodotto client (monthly/quarterly/annual) risolve come un prodotto coach, nessun filtro target_role',
+  ...TEST_OPTS,
+  fn: async () => {
+    const client = fakeSupabaseForPackageLookup({
+      byProductId: {
+        'client_pro:monthly': [{ id: 'pkg-client-monthly' }],
+        'client_pro:quarterly': [{ id: 'pkg-client-quarterly' }],
+        'com.fitcoachapp.mobile.client.annual': [{ id: 'pkg-client-annual' }],
+      },
+    });
+    assertEquals(await resolvePackageId(client, 'client_pro:monthly', null), { ok: true, packageId: 'pkg-client-monthly' });
+    assertEquals(await resolvePackageId(client, 'client_pro:quarterly', null), { ok: true, packageId: 'pkg-client-quarterly' });
+    assertEquals(await resolvePackageId(client, 'com.fitcoachapp.mobile.client.annual', null), {
+      ok: true,
+      packageId: 'pkg-client-annual',
+    });
+  },
+});
+
+Deno.test({
+  name: 'resolvePackageId: un product id coach e uno client non si confondono mai (namespace distinti nel fake, come nel DB reale)',
+  ...TEST_OPTS,
+  fn: async () => {
+    const client = fakeSupabaseForPackageLookup({
+      byProductId: {
+        pro_monthly: [{ id: 'pkg-coach' }],
+        'client_pro:monthly': [{ id: 'pkg-client' }],
+      },
+    });
+    assertEquals(await resolvePackageId(client, 'pro_monthly', null), { ok: true, packageId: 'pkg-coach' });
+    assertEquals(await resolvePackageId(client, 'client_pro:monthly', null), { ok: true, packageId: 'pkg-client' });
+  },
+});
+
+Deno.test({
+  name: 'resolvePackageId: entitlement client_pro condiviso da 3 pacchetti (le 3 durate) -> ambiguous_entitlement_id come fallback, mai una scelta a caso',
+  ...TEST_OPTS,
+  fn: async () => {
+    const client = fakeSupabaseForPackageLookup({
+      byEntitlementId: {
+        client_pro: [{ id: 'pkg-client-monthly' }, { id: 'pkg-client-quarterly' }, { id: 'pkg-client-annual' }],
+      },
+    });
+    const result = await resolvePackageId(client, null, 'client_pro');
+    assertEquals(result.ok, false);
+    if (!result.ok) assertEquals(result.code, 'ambiguous_entitlement_id');
   },
 });
 
