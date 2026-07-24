@@ -58,7 +58,19 @@ const CLIENT_ONLY_ROUTES = [
   CLIENT_ONBOARDING,
 ];
 
-const COACH_ONLY_EXACT_ROUTES = ['/', '/clienti', '/appuntamenti', '/impostazioni', '/schede', '/esercizi', '/supporto', '/abbonamento-coach'];
+const COACH_ONLY_EXACT_ROUTES = [
+  '/',
+  '/clienti',
+  '/appuntamenti',
+  '/impostazioni',
+  '/schede',
+  '/esercizi',
+  '/supporto',
+  '/abbonamento-coach',
+  '/area-coach',
+  '/account-coach',
+  '/assistenza',
+];
 const COACH_ONLY_PREFIXES = [
   '/clienti/',
   '/appuntamenti/',
