@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, AppCard } from '@/components/ui';
 import { useCoachInviteCode } from '@/hooks/use-coach-invite-code';
@@ -10,9 +10,10 @@ type CoachInviteCodeCardProps = {
   title: string;
   description?: string;
   copyLabel?: string;
+  showShare?: boolean;
 };
 
-export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia codice' }: CoachInviteCodeCardProps) {
+export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia codice', showShare = false }: CoachInviteCodeCardProps) {
   const { colors } = useAppTheme();
   const { code, active, loading, error, reload } = useCoachInviteCode();
   const [copyFeedback, setCopyFeedback] = useState('');
@@ -27,6 +28,23 @@ export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia cod
     if (!code) return;
     await Clipboard.setStringAsync(code);
     setCopyFeedback('Codice copiato');
+  }
+
+  async function shareCoachCode() {
+    if (!code) return;
+    const message = `Usa il codice ${code} per collegarti al mio profilo su FitCoach.`;
+    if (Platform.OS === 'web') {
+      // Share.share di React Native non e' affidabile su web: copiamo direttamente.
+      await Clipboard.setStringAsync(message);
+      setCopyFeedback('Condivisione non disponibile su web: testo copiato negli appunti.');
+      return;
+    }
+    try {
+      await Share.share({ message });
+    } catch {
+      await Clipboard.setStringAsync(message);
+      setCopyFeedback('Condivisione non riuscita: testo copiato negli appunti.');
+    }
   }
 
   return (
@@ -56,14 +74,26 @@ export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia cod
                 {active ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
               </Text>
             </View>
-            <AppButton
-              label={copyLabel}
-              onPress={copyCoachCode}
-              variant="outline"
-              size="lg"
-              disabled={!code}
-              accessibilityLabel="Copia codice coach"
-            />
+            <View style={styles.actions}>
+              <AppButton
+                label={copyLabel}
+                onPress={copyCoachCode}
+                variant="outline"
+                size="lg"
+                disabled={!code}
+                accessibilityLabel="Copia codice coach"
+              />
+              {showShare ? (
+                <AppButton
+                  label="Condividi"
+                  onPress={shareCoachCode}
+                  variant="outline"
+                  size="lg"
+                  disabled={!code}
+                  accessibilityLabel="Condividi codice coach"
+                />
+              ) : null}
+            </View>
           </View>
           {copyFeedback ? <Text style={[styles.feedback, { color: colors.moss }]}>{copyFeedback}</Text> : null}
         </>
@@ -108,6 +138,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: AppSpacing[2],
     justifyContent: 'space-between',
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
   },
   codeValue: {
     fontSize: AppFontSize.lg,

@@ -59,7 +59,7 @@ export default function CoachSupportScreen() {
             { paddingTop: Platform.OS === 'web' ? AppSpacing[5] : insets.top + AppSpacing[3], paddingBottom: AppSpacing[3] },
           ]}>
           <View style={styles.header}>
-            <BackHeader title="Supporto" fallbackHref="/impostazioni" />
+            <BackHeader title="Supporto" fallbackHref="/assistenza" />
             <Text style={[styles.subtitle, { color: colors.inkSoft }]}>
               Chat interna con il superadmin per assistenza e comunicazioni amministrative.
             </Text>

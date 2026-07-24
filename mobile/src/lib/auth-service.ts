@@ -630,7 +630,7 @@ export async function loadClientProfile(userId: string, fallbackEmail: string): 
   return { ok: true, data: { client, coachBusinessName: coachProfile?.business_name ?? null } };
 }
 
-function splitFullName(value: string) {
+export function splitFullName(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return { firstName: '', lastName: '' };
   if (parts.length === 1) return { firstName: parts[0], lastName: '' };
@@ -811,12 +811,96 @@ export async function requestPasswordReset(email: string, redirectTo?: string): 
 // Richiede una sessione di recovery gia' attiva (stabilita da Supabase quando
 // l'utente apre il link ricevuto via resetPasswordForEmail, vedi
 // reset-password-screen.tsx + supabase.ts detectSessionInUrl).
+export type OwnProfileData = {
+  fullName: string;
+  email: string;
+  phone: string;
+  avatarUrl: string | null;
+  avatarStoragePath: string | null;
+  avatarPreset: ClientAvatarPreset;
+};
+
+// Dati del PROPRIO profilo (Account coach): stessa fonte (public.profiles)
+// di loadClientProfile, ma senza i join specifici del cliente
+// (client_profiles/coach_clients) che un coach non ha.
+export async function loadOwnProfile(): Promise<AuthServiceResult<OwnProfileData>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const sessionResult = await getCurrentSession();
+  const userId = sessionResult.ok ? sessionResult.data?.user.id : undefined;
+  const fallbackEmail = sessionResult.ok ? sessionResult.data?.user.email ?? '' : '';
+  if (!userId) {
+    return { ok: false, code: 'auth_error', message: 'Sessione non valida. Accedi di nuovo.' };
+  }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('full_name,email,phone,avatar_url,avatar_preset')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore caricamento profilo: ${error.message}` };
+  }
+
+  const signedAvatarUrl = await createClientAvatarSignedUrl(profile?.avatar_url);
+  return {
+    ok: true,
+    data: {
+      fullName: profile?.full_name ?? '',
+      email: profile?.email ?? fallbackEmail,
+      phone: profile?.phone ?? '',
+      avatarUrl: signedAvatarUrl ?? profile?.avatar_url ?? null,
+      avatarStoragePath: profile?.avatar_url ?? null,
+      avatarPreset: (profile?.avatar_preset as ClientAvatarPreset | null) ?? 'neutral',
+    },
+  };
+}
+
 export async function updatePassword(newPassword: string): Promise<AuthServiceResult<null>> {
   if (!isReady() || !supabase) return notConfigured();
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) {
     return { ok: false, code: 'auth_error', message: error.message };
+  }
+  return { ok: true, data: null };
+}
+
+// Cambio indirizzo email da account gia' loggato (Account coach). Supabase
+// gestisce da solo il flusso di conferma sicura (email al vecchio e/o nuovo
+// indirizzo secondo la configurazione Auth del progetto): non tocchiamo qui
+// alcun link di conferma, ne' scriviamo direttamente su profiles.email (lo
+// aggiorna il trigger lato Supabase dopo la conferma).
+export async function updateEmail(newEmail: string): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const { error } = await supabase.auth.updateUser({ email: newEmail.trim().toLowerCase() });
+  if (error) {
+    return { ok: false, code: 'auth_error', message: error.message };
+  }
+  return { ok: true, data: null };
+}
+
+// Aggiorna nome/cognome/telefono del PROPRIO profilo (self-service): l'id
+// viene sempre letto dalla sessione corrente, mai passato dal chiamante,
+// cosi' un utente non puo' aggiornare il profilo di un altro. Coperta dalla
+// RLS profiles_self_update (id = auth.uid()) gia' esistente, nessuna nuova
+// policy necessaria.
+export async function updateOwnProfile(input: { fullName: string; phone: string }): Promise<AuthServiceResult<null>> {
+  if (!isReady() || !supabase) return notConfigured();
+
+  const sessionResult = await getCurrentSession();
+  const userId = sessionResult.ok ? sessionResult.data?.user.id : undefined;
+  if (!userId) {
+    return { ok: false, code: 'auth_error', message: 'Sessione non valida. Accedi di nuovo.' };
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ full_name: input.fullName.trim() || null, phone: input.phone.trim() || null })
+    .eq('id', userId);
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore aggiornamento profilo: ${error.message}` };
   }
   return { ok: true, data: null };
 }
