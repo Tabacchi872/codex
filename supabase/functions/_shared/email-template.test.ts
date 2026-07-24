@@ -173,10 +173,33 @@ Deno.test({
       title: 'Titolo',
       paragraphs: ['Riga 1', 'Riga 2'],
     });
+    assertStringIncludes(email.html, 'Riga 1');
+    assertStringIncludes(email.html, 'Riga 2');
+    assertStringIncludes(email.text, 'Riga 1');
+    assertStringIncludes(email.text, 'Riga 2');
     assertEquals(email.html.includes('undefined'), false);
     assertEquals(email.html.includes('null'), false);
     assertEquals(email.text.includes('undefined'), false);
     assertEquals(email.text.includes('null'), false);
+  },
+});
+
+Deno.test({
+  name: 'buildEmail: nessuna riga del box informativo viene persa nell\'output',
+  ...TEST_OPTS,
+  fn: () => {
+    const email = buildEmail({
+      subject: 'Oggetto',
+      title: 'Titolo',
+      paragraphs: ['Corpo.'],
+      infoBox: [
+        { label: 'Email', value: 'cliente@example.com' },
+        { label: 'Ruolo', value: 'Cliente' },
+      ],
+    });
+    assertStringIncludes(email.html, 'cliente@example.com');
+    assertStringIncludes(email.html, 'Ruolo');
+    assertStringIncludes(email.html, 'Cliente');
   },
 });
 
