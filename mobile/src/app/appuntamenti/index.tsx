@@ -1,14 +1,14 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppBadge, AppButton, AppCard } from '@/components/ui';
+import { AppBadge, AppButton, AppCard, AppTextField } from '@/components/ui';
 import { CoachOnlyNotice } from '@/components/coach-only-notice';
 import { BottomTabInset } from '@/constants/theme';
 import { setAppointmentStatus } from '@/lib/appointment-service';
 import { clientFullName, getClientById } from '@/lib/client-helpers';
-import { formatDayMonth } from '@/lib/format-date';
+import { formatDateForDisplay, formatDayMonth, parseDateFromDisplay } from '@/lib/format-date';
 import { notifyAppointmentPush } from '@/lib/push-notification-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
@@ -16,7 +16,20 @@ import { useAppointmentStore } from '@/store/appointment-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientStore } from '@/store/client-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
-import { APPOINTMENT_STATUS_LABEL, APPOINTMENT_TYPE_LABEL, type Appointment, type AppointmentStatus } from '@/types/appointment';
+import {
+  APPOINTMENT_STATUS_LABEL,
+  APPOINTMENT_TYPE_LABEL,
+  type Appointment,
+  type AppointmentStatus,
+  type AppointmentType,
+} from '@/types/appointment';
+
+type ViewMode = 'upcoming' | 'past';
+const APPOINTMENT_TYPES: AppointmentType[] = ['workout', 'extra_session', 'consultation', 'checkin'];
+
+function appointmentDateTimeMs(appointment: Appointment): number {
+  return new Date(`${appointment.date}T${appointment.startTime}:00`).getTime();
+}
 
 // Agenda coach: da questa fase (5) la fonte principale e' Supabase
 // (public.appointments) quando configurato — useAppointmentStore resta il
@@ -33,6 +46,10 @@ export default function AppuntamentiScreen() {
   const clients = useClientStore((s) => s.clients);
   const { loading, error, refresh } = useAppointmentsRealtime();
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('upcoming');
+  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<AppointmentType | 'all'>('all');
+  const [dateFilterDisplay, setDateFilterDisplay] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -40,13 +57,23 @@ export default function AppuntamentiScreen() {
     }, [refresh]),
   );
 
-  const upcoming = useMemo(
-    () =>
-      appointments
-        .filter((a) => a.status !== 'cancelled')
-        .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`)),
-    [appointments]
-  );
+  const dateFilterIso = parseDateFromDisplay(dateFilterDisplay);
+  const nowMs = Date.now();
+
+  const filtered = useMemo(() => {
+    const base = appointments.filter((a) => a.status !== 'cancelled');
+    const byView = base.filter((a) =>
+      viewMode === 'upcoming' ? appointmentDateTimeMs(a) >= nowMs : appointmentDateTimeMs(a) < nowMs,
+    );
+    const byClient = clientFilter === 'all' ? byView : byView.filter((a) => a.clientId === clientFilter);
+    const byType = typeFilter === 'all' ? byClient : byClient.filter((a) => a.type === typeFilter);
+    const byDate = dateFilterIso ? byType.filter((a) => a.date === dateFilterIso) : byType;
+    return byDate.sort((a, b) =>
+      viewMode === 'upcoming'
+        ? `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`)
+        : `${b.date}${b.startTime}`.localeCompare(`${a.date}${a.startTime}`),
+    );
+  }, [appointments, viewMode, clientFilter, typeFilter, dateFilterIso, nowMs]);
 
   async function handleStatusChange(appointment: Appointment, status: AppointmentStatus) {
     setStatusError(null);
@@ -72,7 +99,7 @@ export default function AppuntamentiScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
-        data={upcoming}
+        data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.content,
@@ -88,7 +115,48 @@ export default function AppuntamentiScreen() {
               <Text style={[styles.subtitle, { color: colors.inkSoft }]}>Prossimi appuntamenti con i tuoi clienti</Text>
             </View>
             <AppButton label="+ Nuovo appuntamento" onPress={() => router.push('/appuntamenti/new')} size="lg" />
-            {loading && upcoming.length === 0 ? (
+
+            <View style={styles.filterRow}>
+              <FilterChip label="Prossimi" active={viewMode === 'upcoming'} onPress={() => setViewMode('upcoming')} />
+              <FilterChip label="Passati" active={viewMode === 'past'} onPress={() => setViewMode('past')} />
+            </View>
+
+            <View style={styles.filterRow}>
+              <FilterChip label="Tutti i tipi" active={typeFilter === 'all'} onPress={() => setTypeFilter('all')} />
+              {APPOINTMENT_TYPES.map((type) => (
+                <FilterChip key={type} label={APPOINTMENT_TYPE_LABEL[type]} active={typeFilter === type} onPress={() => setTypeFilter(type)} />
+              ))}
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.clientFilterRow}>
+              <FilterChip label="Tutti i clienti" active={clientFilter === 'all'} onPress={() => setClientFilter('all')} />
+              {clients.map((client) => (
+                <FilterChip
+                  key={client.id}
+                  label={clientFullName(client)}
+                  active={clientFilter === client.id}
+                  onPress={() => setClientFilter(client.id)}
+                />
+              ))}
+            </ScrollView>
+
+            <View style={styles.dateFilterRow}>
+              <View style={styles.dateFilterInput}>
+                <AppTextField
+                  placeholder="Filtra per data (GG/MM/AAAA)"
+                  value={dateFilterDisplay}
+                  onChangeText={setDateFilterDisplay}
+                  keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'}
+                />
+              </View>
+              {dateFilterDisplay ? (
+                <Pressable onPress={() => setDateFilterDisplay('')} hitSlop={8}>
+                  <Text style={[styles.dateFilterClear, { color: colors.moss }]}>Cancella</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {loading && filtered.length === 0 ? (
               <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Caricamento appuntamenti...</Text>
             ) : null}
             {error ? (
@@ -105,7 +173,9 @@ export default function AppuntamentiScreen() {
         ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
         ListEmptyComponent={
           loading || error ? null : (
-            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Nessun appuntamento in programma.</Text>
+            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+              {viewMode === 'upcoming' ? 'Nessun appuntamento in programma.' : 'Nessun appuntamento passato trovato.'}
+            </Text>
           )
         }
         renderItem={({ item }) => {
@@ -173,6 +243,24 @@ function RowAction({ label, color, onPress }: { label: string; color: string; on
   );
 }
 
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Filtro ${label}`}
+      style={[
+        styles.filterChip,
+        { backgroundColor: active ? colors.moss : colors.surface, borderColor: active ? colors.moss : colors.border },
+      ]}>
+      <Text style={[styles.filterChipLabel, { color: active ? colors.onMoss : colors.inkSoft }]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -190,6 +278,39 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: AppFontSize.sm,
     fontWeight: '600',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
+  },
+  clientFilterRow: {
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+  },
+  filterChip: {
+    alignItems: 'center',
+    borderRadius: AppRadius.pill,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: AppSpacing[3],
+  },
+  filterChipLabel: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '800',
+  },
+  dateFilterRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+  },
+  dateFilterInput: {
+    flex: 1,
+  },
+  dateFilterClear: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
   },
   errorCard: {
     gap: AppSpacing[2],
