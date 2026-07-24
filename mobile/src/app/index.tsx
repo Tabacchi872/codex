@@ -59,7 +59,8 @@ export default function DashboardScreen() {
     .filter((a) => a.status === 'scheduled' && a.date === nowKey)
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
     .slice(0, 3);
-  const recentClients = [...clients]
+  const recentClients = clients
+    .filter((client) => client.connectionStatus !== 'removed')
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
   const activeWorkoutPlans = workoutPlans.filter((plan) => plan.sessionStatus !== 'completed' && plan.sessionStatus !== 'skipped').length;
@@ -133,7 +134,7 @@ export default function DashboardScreen() {
           recentClients.map((client, index) => {
             const counter = getWorkoutCounter([], workoutPlans, client, client.id);
             const progress = counter.total > 0 ? Math.min(counter.completed / counter.total, 1) : 0;
-            const status = getDashboardClientStatus(client);
+            const status = client.connectionStatus === 'suspended' ? 'suspended' : 'active';
             return (
               <ClientRow
                 key={client.id}
@@ -195,7 +196,7 @@ export default function DashboardScreen() {
         <QuickActionCard icon={CalendarDays} title="Nuovo appuntamento" onPress={() => navigate('dashboard-nuovo-appuntamento', '/appuntamenti/new')} />
         <QuickActionCard icon={ClipboardList} title="Assegna scheda" onPress={() => navigate('dashboard-assegna-scheda', '/schede/new')} />
         <QuickActionCard icon={Headphones} title="Supporto" onPress={() => navigate('dashboard-supporto', '/supporto')} />
-        <QuickActionCard icon={Settings} title="Impostazioni" onPress={() => navigate('dashboard-impostazioni', '/impostazioni')} />
+        <QuickActionCard icon={Settings} title="Area coach" onPress={() => navigate('dashboard-area-coach', '/area-coach')} />
       </View>
     </AppScreen>
   );
@@ -395,8 +396,8 @@ function EmptyState({ text, icon: Icon = CalendarDays }: { text: string; icon?: 
   );
 }
 
-function getDashboardClientStatus(client: Client): Exclude<CoachClientConnectionStatus, 'removed'> {
-  return client.connectionStatus === 'suspended' ? 'suspended' : 'active';
+function getDashboardClientStatus(client: Client): CoachClientConnectionStatus {
+  return client.connectionStatus === 'suspended' ? 'suspended' : client.connectionStatus === 'removed' ? 'removed' : 'active';
 }
 
 const styles = StyleSheet.create({

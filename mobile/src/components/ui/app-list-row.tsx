@@ -43,7 +43,12 @@ export function AppListRow({ icon, iconBackground, title, subtitle, trailing, on
   if (!onPress) return row;
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} hitSlop={2}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      hitSlop={2}
+      style={({ pressed }) => (pressed ? styles.pressed : undefined)}>
       {row}
     </Pressable>
   );
@@ -76,5 +81,8 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: AppFontSize.sm,
     marginTop: 1,
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });
