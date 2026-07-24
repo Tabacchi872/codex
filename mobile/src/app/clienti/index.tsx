@@ -1,6 +1,7 @@
 import { router, useRouter, type Href } from 'expo-router';
+import { Search } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBadge, AppButton, AppCard, AppErrorState, AppPressableCard, FitCoachLogo, UserAvatar } from '@/components/ui';
@@ -18,11 +19,12 @@ import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import { COACH_CLIENT_CONNECTION_STATUS_LABEL, type CoachClientConnectionStatus } from '@/types/client';
 
-type ClientStatusFilter = 'all' | 'active' | 'suspended';
+type ClientStatusFilter = 'all' | 'active' | 'suspended' | 'removed';
 const FILTERS: { value: ClientStatusFilter; label: string }[] = [
   { value: 'all', label: 'Tutti' },
   { value: 'active', label: 'Attivi' },
   { value: 'suspended', label: 'Sospesi' },
+  { value: 'removed', label: 'Rimossi' },
 ];
 
 export default function ClientiListScreen() {
@@ -33,23 +35,28 @@ export default function ClientiListScreen() {
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const [statusFilter, setStatusFilter] = useState<ClientStatusFilter>('all');
+  const [searchText, setSearchText] = useState('');
 
+  const searchQuery = searchText.trim().toLowerCase();
   const visibleClients = clients.filter((client) => {
-    if (client.connectionStatus === 'removed') return false;
     const status = getConnectionStatus(client.connectionStatus);
-    return statusFilter === 'all' || status === statusFilter;
+    if (statusFilter !== 'all' && status !== statusFilter) return false;
+    if (!searchQuery) return true;
+    return clientFullName(client).toLowerCase().includes(searchQuery) || client.email.toLowerCase().includes(searchQuery);
   });
 
   useEffect(() => {
     if (!__DEV__) return;
     console.log('CLIENTI_LIST_FILTER', {
       tab: statusFilter,
+      search: searchQuery.length > 0,
       totalClients: clients.length,
-      activeCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'active' && c.connectionStatus !== 'removed').length,
+      activeCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'active').length,
       suspendedCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'suspended').length,
+      removedCount: clients.filter((c) => getConnectionStatus(c.connectionStatus) === 'removed').length,
       visibleCount: visibleClients.length,
     });
-  }, [statusFilter, clients, visibleClients]);
+  }, [statusFilter, searchQuery, clients, visibleClients]);
 
   if (!isCoach) {
     return <CoachOnlyNotice />;
@@ -94,6 +101,17 @@ export default function ClientiListScreen() {
                 <Text style={[styles.subtitle, { color: colors.inkSoft }]}>{clients.length} clienti in gestione</Text>
               </View>
               <AppButton label="Nuovo cliente" onPress={() => navigate('clienti-new', '/clienti/new')} size="lg" />
+            </View>
+            <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Search size={16} color={colors.inkFaint} />
+              <TextInput
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder="Cerca per nome o email"
+                placeholderTextColor={colors.inkFaint}
+                style={[styles.searchInput, { color: colors.ink }]}
+                accessibilityLabel="Cerca cliente per nome o email"
+              />
             </View>
             <View style={styles.filterRow}>
               {FILTERS.map((filter) => {
@@ -159,7 +177,10 @@ export default function ClientiListScreen() {
                   </View>
                 </View>
                 <View style={styles.badgeStack}>
-                  <AppBadge label={statusLabel} tone={connectionStatus === 'suspended' ? 'amber' : 'moss'} />
+                  <AppBadge
+                    label={statusLabel}
+                    tone={connectionStatus === 'suspended' ? 'amber' : connectionStatus === 'removed' ? 'neutral' : 'moss'}
+                  />
                   {isSeedClientId(item.id) ? <AppBadge label="Demo" tone="neutral" /> : null}
                 </View>
               </View>
@@ -171,13 +192,14 @@ export default function ClientiListScreen() {
   );
 }
 
-function getConnectionStatus(status: CoachClientConnectionStatus | undefined): 'active' | 'suspended' {
-  return status === 'suspended' ? 'suspended' : 'active';
+function getConnectionStatus(status: CoachClientConnectionStatus | undefined): CoachClientConnectionStatus {
+  return status === 'suspended' ? 'suspended' : status === 'removed' ? 'removed' : 'active';
 }
 
-function getConnectionStatusCardLabel(status: 'active' | 'suspended', reason?: string | null) {
-  if (status === 'active') return COACH_CLIENT_CONNECTION_STATUS_LABEL.active;
-  return 'Sospeso';
+function getConnectionStatusCardLabel(status: CoachClientConnectionStatus, reason?: string | null) {
+  if (status === 'removed') return COACH_CLIENT_CONNECTION_STATUS_LABEL.removed;
+  if (status === 'suspended') return 'Sospeso';
+  return COACH_CLIENT_CONNECTION_STATUS_LABEL.active;
 }
 
 // Contatore "Clienti utilizzati: X su Y" / "Posti disponibili: Z", letto
@@ -289,6 +311,20 @@ const styles = StyleSheet.create({
   },
   capacityCard: {
     gap: AppSpacing[1],
+  },
+  searchRow: {
+    alignItems: 'center',
+    borderRadius: AppRadius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: AppSpacing[2],
+    minHeight: 44,
+    paddingHorizontal: AppSpacing[4],
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: AppFontSize.base,
+    paddingVertical: 0,
   },
   filterRow: {
     flexDirection: 'row',

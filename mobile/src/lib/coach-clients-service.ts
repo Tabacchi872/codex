@@ -52,7 +52,7 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
     .from('coach_clients')
     .select('client_id,created_at,status,linked_by_code,suspended_at,suspension_reason,removed_at,reactivated_at')
     .eq('coach_id', coachId)
-    .in('status', ['active', 'suspended']);
+    .in('status', ['active', 'suspended', 'removed']);
 
   if (linksError) {
     if (__DEV__) console.error('COACH_CLIENTS_LINKS_ERROR', linksError.message);
@@ -110,8 +110,9 @@ export async function listCoachClientsForCurrentUser(): Promise<CoachClientsResu
   if (__DEV__) {
     console.log('COACH_CLIENTS_MAPPED', {
       total: clients.length,
-      activeCount: clients.filter((c) => c.connectionStatus !== 'suspended').length,
+      activeCount: clients.filter((c) => c.connectionStatus === 'active').length,
       suspendedCount: clients.filter((c) => c.connectionStatus === 'suspended').length,
+      removedCount: clients.filter((c) => c.connectionStatus === 'removed').length,
     });
   }
 
@@ -166,11 +167,11 @@ function mapCoachClient(
     phone: profile.phone ?? undefined,
     goal: clientProfile?.goal ?? '',
     notes: clientProfile?.notes ?? '',
-    status: link.status === 'suspended' ? 'in_pausa' : 'attivo',
+    status: link.status === 'suspended' ? 'in_pausa' : link.status === 'removed' ? 'scaduto' : 'attivo',
     createdAt: link.created_at || clientProfile?.created_at || profile.created_at,
     coachId,
     linkedByCode: link.linked_by_code,
-    connectionStatus: link.status === 'suspended' ? 'suspended' : 'active',
+    connectionStatus: link.status === 'suspended' ? 'suspended' : link.status === 'removed' ? 'removed' : 'active',
     suspendedAt: link.suspended_at,
     suspensionReason: link.suspension_reason,
     removedAt: link.removed_at,
