@@ -1,40 +1,76 @@
-# Credenziali provvisorie via email — Edge Function `send-temporary-credentials`
+# Accesso cliente via link monouso — Edge Function `send-temporary-credentials`
 
-Feature: il coach preme "Invia via email" sulla scheda di un cliente (`mobile/src/app/clienti/[id].tsx`) per fargli avere una nuova password provvisoria via email, senza che il coach la veda mai e senza che venga mai generata o gestita dal client mobile.
+**Aggiornamento 2026-07-24**: questa feature non genera più una password
+provvisoria in chiaro. Il coach preme "Invia via email" sulla scheda di un
+cliente (`mobile/src/app/clienti/[id].tsx`) per fargli avere un **link
+monouso reale** via email: il cliente imposta da sé la propria password
+aprendo il link, con lo stesso meccanismo già usato da "Password
+dimenticata" (`forgot-password-screen.tsx` + `reset-password-screen.tsx`).
+Nessuna password transita mai per questa funzione né viene generata sul
+client mobile. Il nome della Edge Function (`send-temporary-credentials`,
+sia la cartella sia la stringa invocata da `supabase.functions.invoke`) resta
+invariato per non dover ricollegare/ridocumentare ogni riferimento esistente:
+è cambiato solo il comportamento interno.
 
 ## Architettura
 
 ```
 mobile (coach loggato)
-  -> supabase.functions.invoke('send-temporary-credentials', { body: { userId, email, role } })
-     (Authorization: Bearer <JWT del coach>, allegato automaticamente da supabase-js)
+  -> supabase.functions.invoke('send-temporary-credentials', {
+       body: { userId, email, role, redirectTo }
+     })
+     (Authorization: Bearer <JWT del coach>, allegato automaticamente da supabase-js;
+      redirectTo = getWebRedirectUrl('/reimposta-password'), dinamico per porta/ambiente su web)
   -> Edge Function (Deno, service_role key SOLO qui, mai nel bundle mobile)
      1. verifica il JWT del chiamante (supabaseAdmin.auth.getUser)
      2. verifica che il chiamante sia il coach proprietario del cliente
         (coach_clients) oppure un superadmin
      3. rilegge email/ruolo del TARGET da public.profiles (mai dal body)
-     4. genera una password random (crypto.getRandomValues, mai nel client)
-     5. supabaseAdmin.auth.admin.updateUserById(target, { password })
-     6. profiles.must_change_password = true per il target
-     7. invia l'email con Brevo (https://api.brevo.com/v3/smtp/email)
-  -> risponde solo { ok: true } o { ok: false, code, message } — MAI la password
+     4. supabaseAdmin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo } })
+        — nessuna password generata/impostata, il target resta l'utente GIA' esistente
+     5. invia l'email (design system FitCoach, supabase/functions/_shared/email-template.ts)
+        con Brevo (https://api.brevo.com/v3/smtp/email), bottone "Imposta la tua password"
+        verso l'action_link generato al punto 4
+  -> risponde solo { ok: true } o { ok: false, code, message }
 ```
 
-Al primo login successivo, `signInWithEmail` (`mobile/src/lib/auth-service.ts`) rilegge `must_change_password` da `profiles` e lo salva in `useAuthStore.mustChangePasswordSupabase`; `auth-gate.tsx` blocca l'accesso normale e mostra `SupabaseChangePasswordScreen` finche' l'utente non imposta una password propria (`completePasswordChange`, che chiama `updatePassword` reale + azzera il flag).
+Il cliente clicca il link, arriva su `/reimposta-password` (schermata già
+esistente, gestisce sia il formato `#access_token=...&type=recovery` sia
+`?token_hash=...&type=recovery`, invariata da questo lavoro), imposta la sua
+password reale. Da quel momento in poi il login è normale: **non viene
+impostato `profiles.must_change_password`** per questo flusso (non esiste
+più una password insicura da forzare a cambiare — il cliente ha scelto la
+propria password direttamente).
 
-Questo flag e' distinto dal `ClientAccount.mustChangePassword` locale (demo, AsyncStorage, usato da `ChangePasswordScreen`/"Genera credenziali di accesso"): quel meccanismo resta invariato e continua a funzionare solo per clienti aggiunti manualmente senza un vero account Supabase.
+> Questo flag resta comunque letto/rispettato per account che avessero
+> ricevuto in passato l'email col vecchio comportamento (password in
+> chiaro): `auth-gate.tsx` continua a bloccare l'accesso con
+> `SupabaseChangePasswordScreen` se `must_change_password=true` è già
+> presente su un profilo, indipendentemente da questa modifica.
 
-## SQL da eseguire
+Questo flusso è distinto dal `ClientAccount.temporaryPassword` locale (demo,
+AsyncStorage, mostrato nella stessa schermata sotto "Copia
+credenziali"/"Condividi credenziali"): quel meccanismo resta invariato,
+continua a mostrare una password locale per clienti aggiunti manualmente
+senza un vero account Supabase, **non è collegato in alcun modo** a questa
+Edge Function.
 
-Gia' incluso in `docs/SUPABASE_SCHEMA.sql` (sezione "Credenziali provvisorie via email", vicino alla fine del file): aggiunge la colonna `must_change_password` a `public.profiles` in modo idempotente (`alter table ... add column if not exists`) e forza il reload dello schema PostgREST. Nessuna nuova policy: `profiles_self_update` (gia' esistente) copre gia' la scrittura di questo campo da parte dell'utente stesso a fine cambio password.
+## Nessun SQL nuovo da eseguire
 
-Esegui (o ri-esegui) l'intero `docs/SUPABASE_SCHEMA.sql` nel SQL editor del progetto Supabase, oppure isola ed esegui solo il blocco descritto sopra se il resto e' gia' aggiornato.
+A differenza della versione precedente di questa feature, non serve alcuna
+colonna aggiuntiva: `profiles.must_change_password` (già esistente) non
+viene più scritta da questa funzione. Nessuna migration nuova, nessuna
+modifica allo schema.
 
 ## Deploy della Edge Function
 
-Codice: `supabase/functions/send-temporary-credentials/index.ts`.
+Codice: `supabase/functions/send-temporary-credentials/index.ts` (importa
+`supabase/functions/_shared/email-template.ts`, deployare entrambi i file —
+`supabase functions deploy` include automaticamente `_shared/` se referenziato
+con un import relativo, comportamento standard Supabase).
 
-Richiede il [Supabase CLI](https://supabase.com/docs/guides/cli) installato localmente (non presente in questo ambiente di sviluppo):
+Richiede il [Supabase CLI](https://supabase.com/docs/guides/cli) installato
+localmente (non presente in questo ambiente di sviluppo):
 
 ```bash
 supabase login
@@ -55,30 +91,39 @@ supabase secrets set BREVO_SENDER_EMAIL=credenziali@tuodominio.it
 supabase secrets set BREVO_SENDER_NAME="FitCoach"
 ```
 
+### Importante — Redirect URLs
+
+`generateLink` con `redirectTo` funziona solo se l'origin/porta usata rientra
+tra le **Redirect URLs** configurate su Supabase (Authentication → URL
+Configuration) — esattamente lo stesso requisito già documentato per
+"Password dimenticata" in `docs/EMAIL_SETUP.md`. Se l'origin non è in lista,
+Supabase ignora silenziosamente `redirectTo` e il link userà la Site URL di
+default.
+
 ## Come testare con un cliente reale
 
-1. Esegui `docs/SUPABASE_SCHEMA.sql` (o solo la sezione nuova) sul progetto Supabase reale.
-2. Deploya la Edge Function e imposta `BREVO_API_KEY`/`BREVO_SENDER_EMAIL` (vedi sopra) — il mittente deve essere verificato sull'account Brevo, altrimenti l'invio fallisce con `email_failed`.
-3. Nell'app, come coach, apri un cliente che si e' **registrato davvero su Supabase** (via `/registrazione-cliente` con un codice coach — un cliente aggiunto solo localmente con "Nuovo cliente" non ha un account Supabase e la function rispondera' con un errore chiaro, non con un falso successo).
-4. Genera le credenziali locali se non esistono ancora ("Genera credenziali di accesso"), poi premi "Invia via email".
-5. Verifica: stato "Invio..." sul bottone, poi messaggio di successo o errore leggibile sotto il bottone.
-6. Controlla che l'email sia arrivata all'indirizzo reale del cliente (oggetto "Le tue credenziali FitCoach"), con la password provvisoria in chiaro solo li'.
-7. Fai logout, prova ad accedere con quel cliente usando la password provvisoria ricevuta via email: deve apparire subito la schermata "Cambia password" (`SupabaseChangePasswordScreen`), che blocca l'accesso alle tab.
-8. Imposta una nuova password: l'accesso normale deve sbloccarsi.
-9. Fai logout e login di nuovo con la nuova password: la schermata di cambio password non deve piu' ricomparire.
-10. Verifica in `public.profiles` che `must_change_password` sia tornato `false` per quell'utente.
+1. Deploya la Edge Function (con `_shared/email-template.ts`) e imposta `BREVO_API_KEY`/`BREVO_SENDER_EMAIL` (vedi sopra) — il mittente deve essere verificato sull'account Brevo, altrimenti l'invio fallisce con `email_failed`.
+2. Nell'app, come coach, apri un cliente che si è **registrato davvero su Supabase** (via `/registrazione-cliente` con un codice coach — un cliente aggiunto solo localmente con "Nuovo cliente" non ha un account Supabase e la function risponderà con un errore chiaro, non con un falso successo).
+3. Premi "Invia via email".
+4. Verifica: stato "Invio..." sul bottone, poi messaggio "Email inviata: il cliente potrà impostare la password dal link ricevuto..." o errore leggibile.
+5. Controlla che l'email sia arrivata all'indirizzo reale del cliente (oggetto "Il tuo account FitCoach è pronto", layout FitCoach) — **nessuna password visibile nell'email**.
+6. Clicca il bottone "Imposta la tua password": deve arrivare su `/reimposta-password` con il form attivo (comportamento identico a "Password dimenticata").
+7. Imposta una nuova password, verifica il messaggio di conferma, poi fai login con quella password: deve funzionare normalmente, **senza** passare dalla schermata "Cambia password" obbligata (comportamento nuovo, corretto: non esiste più una password insicura da forzare a cambiare).
+8. Ripeti il test su web con una porta diversa da quella di default, per confermare che il redirect dinamico funzioni su qualunque porta locale in "Redirect URLs".
 
 > Se l'app mostra `email_failed`: lo status HTTP e il corpo della risposta di Brevo vengono loggati (`console.error('BREVO_SEND_FAILED', status, body)`) — visibili in Dashboard Supabase → Edge Functions → `send-temporary-credentials` → Logs. Cause tipiche: mittente non verificato su Brevo, `BREVO_API_KEY` errata/scaduta, piano gratuito Brevo con limite giornaliero esaurito.
+> Se l'app mostra `generate_link_failed`: verifica che l'email del cliente corrisponda esattamente a un utente Supabase Auth esistente (rilettura sempre da `public.profiles`, mai dal body).
 
-## Sicurezza — cosa e' garantito
+## Sicurezza — cosa è garantito
 
-- La `service_role` key non e' mai nel codice mobile: vive solo nell'ambiente della Edge Function.
-- La password provvisoria e' generata solo lato server (Deno `crypto.getRandomValues`), mai nel client, mai loggata, mai restituita nella risposta HTTP (successo o errore).
-- L'indirizzo email di destinazione e il ruolo del target vengono sempre riletti da `public.profiles` lato server: il body della richiesta (`email`/`role`) e' solo informativo, non e' la fonte di verita', per evitare che un chiamante autorizzato dirotti la password di un altro account verso un indirizzo a piacere.
-- Solo il coach proprietario del cliente (verificato via `coach_clients`) o un superadmin possono richiedere il reset.
+- La `service_role` key non è mai nel codice mobile: vive solo nell'ambiente della Edge Function.
+- **Nessuna password è mai generata, impostata o vista da questa funzione** — sostituisce la password provvisoria in chiaro con un link monouso reale di Supabase.
+- L'indirizzo email di destinazione e il ruolo del target vengono sempre riletti da `public.profiles` lato server: il body della richiesta (`email`/`role`) è solo informativo, non è la fonte di verità, per evitare che un chiamante autorizzato dirotti il link di accesso di un altro account verso un indirizzo a piacere.
+- Solo il coach proprietario del cliente (verificato via `coach_clients`) o un superadmin possono richiedere l'invio.
+- Tutti i valori dinamici nell'email (nome cliente/coach) passano da `escapeHtml` (`supabase/functions/_shared/email-template.ts`), l'URL del bottone passa da `safeUrl` (solo `https://`).
 
-## Limiti noti / cosa NON e' stato fatto
+## Limiti noti / cosa NON è stato fatto
 
-- Nessuna UI per generare/inviare credenziali a un coach (solo il flusso lato cliente, l'unico bottone "Invia via email" esistente nel codice). La Edge Function accetta gia' `role: 'coach'` per un riuso futuro senza modifiche.
-- Se l'invio email fallisce dopo che la password e' gia' stata cambiata sul server, non esiste un modo per recuperare quella specifica password (mai restituita al client per scelta di sicurezza): l'unica via e' premere di nuovo "Invia via email" per generarne e inviarne una nuova.
+- Nessuna UI per generare/inviare il link a un coach (solo il flusso lato cliente, l'unico bottone "Invia via email" esistente nel codice). La Edge Function accetta già `role: 'coach'` per un riuso futuro senza modifiche.
 - Nessun rate limiting applicato lato Edge Function oltre ai controlli di autorizzazione: da valutare se il pulsante viene usato molto frequentemente.
+- **Non verificato con un invio email reale in questo ambiente** (nessun tool di invio/browser disponibile) — vedi checklist di test in `docs/TODO_NEXT.md`.

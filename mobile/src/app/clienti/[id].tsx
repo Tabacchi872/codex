@@ -482,12 +482,13 @@ function CredentialsSection({
     }
   }
 
-  // Invia via email: usa un vero account Supabase (auth.admin.updateUserById
-  // dentro la Edge Function send-temporary-credentials), non l'account demo
-  // locale sopra — un cliente aggiunto manualmente dal coach senza mai
-  // essersi registrato su Supabase non ha una riga auth.users, quindi la
-  // function risponde con un errore chiaro ("Nessun account Supabase reale
-  // trovato...") invece di far finta di aver inviato qualcosa.
+  // Invia via email: usa un vero account Supabase (auth.admin.generateLink
+  // dentro la Edge Function send-temporary-credentials — link monouso, non
+  // piu' una password generata qui), non l'account demo locale sopra — un
+  // cliente aggiunto manualmente dal coach senza mai essersi registrato su
+  // Supabase non ha una riga auth.users, quindi la function risponde con un
+  // errore chiaro ("Nessun account Supabase reale trovato...") invece di far
+  // finta di aver inviato qualcosa.
   async function handleSendEmail() {
     setEmailStatus(null);
     setSendingEmail(true);
@@ -497,7 +498,10 @@ function CredentialsSection({
       setEmailStatus({ type: 'error', message: result.message });
       return;
     }
-    setEmailStatus({ type: 'success', message: 'Credenziali inviate via email.' });
+    setEmailStatus({
+      type: 'success',
+      message: 'Email inviata: il cliente potrà impostare la password dal link ricevuto (non la password mostrata sopra).',
+    });
   }
 
   return (

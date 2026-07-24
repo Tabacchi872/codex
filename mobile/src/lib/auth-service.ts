@@ -821,12 +821,16 @@ export async function updatePassword(newPassword: string): Promise<AuthServiceRe
   return { ok: true, data: null };
 }
 
-// Genera e invia credenziali provvisorie (password random + email) per un
-// utente Supabase gia' esistente, chiamando la Edge Function
-// send-temporary-credentials (supabase/functions/send-temporary-credentials).
-// La password NON viene mai generata qui ne' restituita da questa funzione:
-// il client mobile non la vede mai, coerente con la regola di sicurezza della
-// feature (vedi docs/SUPABASE_TEMP_CREDENTIALS.md). supabase.functions.invoke
+// Invia un'email con un link Supabase monouso ("Password dimenticata")
+// per un utente gia' esistente, chiamando la Edge Function
+// send-temporary-credentials (supabase/functions/send-temporary-credentials
+// — nome storico, dal 2026-07-24 non genera piu' una password: il
+// destinatario imposta la propria password aprendo il link). Nessuna
+// password viene mai generata/vista qui, coerente con la regola di
+// sicurezza della feature (vedi docs/SUPABASE_TEMP_CREDENTIALS.md).
+// redirectTo e' calcolato qui (dinamico per porta/ambiente su web, assente
+// su nativo) e passato alla Edge Function: e' lei a chiamare
+// auth.admin.generateLink, non questo client. supabase.functions.invoke
 // allega automaticamente l'Authorization: Bearer della sessione corrente
 // (fetchWithAuth in @supabase/supabase-js), quindi la Edge Function sa sempre
 // chi sta chiamando senza bisogno di passare token espliciti qui.
@@ -838,7 +842,7 @@ export async function sendTemporaryCredentials(
   if (!isReady() || !supabase) return notConfigured();
 
   const { data, error } = await supabase.functions.invoke<{ ok: boolean }>('send-temporary-credentials', {
-    body: { userId, email, role },
+    body: { userId, email, role, redirectTo: getWebRedirectUrl('/reimposta-password') },
   });
 
   if (error) {

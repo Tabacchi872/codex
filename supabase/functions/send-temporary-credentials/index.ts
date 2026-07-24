@@ -1,19 +1,29 @@
 // Edge Function: send-temporary-credentials
 //
-// Genera una password provvisoria per un utente Supabase gia' esistente
-// (coach o cliente) e la invia via email, senza MAI farla transitare o essere
-// generata sul client mobile. Chiamata da mobile/src/lib/auth-service.ts
-// (sendTemporaryCredentials) tramite supabase.functions.invoke, che allega
-// automaticamente l'Authorization: Bearer <access_token> dell'utente loggato
-// (vedi @supabase/supabase-js fetchWithAuth) — verify_jwt resta true (default
-// del progetto), quindi solo richieste di un utente autenticato arrivano qui.
+// NOME STORICO, COMPORTAMENTO AGGIORNATO (2026-07-24): non genera piu' una
+// password in chiaro. Genera un link Supabase monouso (auth.admin.generateLink,
+// type 'recovery') per un utente gia' esistente (coach o cliente) e lo invia
+// via email: il destinatario imposta da se' la propria password aprendo il
+// link, con lo stesso meccanismo gia' usato da "Password dimenticata"
+// (mobile/src/components/forgot-password-screen.tsx +
+// reset-password-screen.tsx). Nessuna password transita mai per questa
+// funzione, ne' viene generata sul client mobile. Il nome della funzione e
+// la stringa invocata da supabase.functions.invoke('send-temporary-credentials')
+// restano invariati per non dover ricollegare/ridocumentare ogni riferimento:
+// solo il comportamento interno e' cambiato (vedi docs/SUPABASE_TEMP_CREDENTIALS.md).
+//
+// Chiamata da mobile/src/lib/auth-service.ts (sendTemporaryCredentials)
+// tramite supabase.functions.invoke, che allega automaticamente
+// l'Authorization: Bearer <access_token> dell'utente loggato (vedi
+// @supabase/supabase-js fetchWithAuth) — verify_jwt resta true (default del
+// progetto), quindi solo richieste di un utente autenticato arrivano qui.
 //
 // Autorizzazione: solo il coach proprietario del cliente target (via
-// coach_clients) o un superadmin possono richiedere il reset. L'email di
+// coach_clients) o un superadmin possono richiedere l'invio. L'email di
 // destinazione e il ruolo del target vengono SEMPRE riletti da public.profiles
 // lato server, mai presi per buoni dal body della richiesta: altrimenti un
-// chiamante malevolo potrebbe far arrivare la password provvisoria di un
-// account altrui al proprio indirizzo email.
+// chiamante malevolo potrebbe far arrivare il link di accesso di un account
+// altrui al proprio indirizzo email.
 //
 // Variabili d'ambiente richieste (supabase secrets set ...):
 // - BREVO_API_KEY: chiave API Brevo (https://app.brevo.com/settings/keys/api) per l'invio email.
@@ -27,6 +37,8 @@
 // Vedi docs/SUPABASE_TEMP_CREDENTIALS.md per deploy, secrets e test end-to-end.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+import { buildEmail } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,39 +57,11 @@ function json(body: ResultBody, status: number): Response {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Set di caratteri senza ambigui (0/O, 1/l/I) per una password leggibile se
-// mai dovesse essere trascritta a mano, comunque inviata solo via email.
-const PASSWORD_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
-
-function generateTemporaryPassword(length = 16): string {
-  const bytes = new Uint32Array(length);
-  crypto.getRandomValues(bytes);
-  let password = '';
-  for (let i = 0; i < length; i += 1) {
-    // Rejection implicita non necessaria: PASSWORD_CHARSET.length (61) e
-    // 2^32 non sono in rapporto esatto, ma il bias residuo su un charset di
-    // questa dimensione e' trascurabile per una password provvisoria (non e'
-    // materiale crittografico a lungo termine, viene sostituita al primo
-    // accesso obbligato).
-    password += PASSWORD_CHARSET[bytes[i] % PASSWORD_CHARSET.length];
-  }
-  return password;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-async function sendCredentialsEmail(params: {
+async function sendAccessLinkEmail(params: {
   toEmail: string;
   fullName: string | null;
   role: 'coach' | 'cliente';
-  temporaryPassword: string;
+  actionLink: string;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
   const brevoApiKey = Deno.env.get('BREVO_API_KEY');
   if (!brevoApiKey) {
@@ -90,13 +74,20 @@ async function sendCredentialsEmail(params: {
   const senderName = Deno.env.get('BREVO_SENDER_NAME') || 'FitCoach';
   const greetingName = params.fullName?.trim() || (params.role === 'coach' ? 'Coach' : 'Cliente');
 
-  const htmlContent =
-    `<p>Ciao ${escapeHtml(greetingName)},</p>` +
-    `<p>Ti sono state assegnate delle nuove credenziali di accesso a FitCoach.</p>` +
-    `<p>Email: ${escapeHtml(params.toEmail)}<br/>` +
-    `Password provvisoria: <strong>${escapeHtml(params.temporaryPassword)}</strong></p>` +
-    `<p>Per motivi di sicurezza dovrai impostare una nuova password al primo accesso.</p>` +
-    `<p>Se non hai richiesto questo invio, contatta il tuo coach o l'assistenza.</p>`;
+  const email = buildEmail({
+    subject: 'Il tuo account FitCoach è pronto',
+    title: 'Il tuo account FitCoach è pronto',
+    preheader: 'Imposta la tua password personale per accedere a FitCoach.',
+    greetingName,
+    paragraphs: [
+      'È stato preparato per te un accesso personale a FitCoach.',
+      'Da oggi potrai consultare schede di allenamento, video e dettagli degli esercizi, storico dei carichi, metriche e progressi, appuntamenti e comunicazioni con il coach.',
+      'Per attivare il tuo accesso imposta la tua password personale dal pulsante qui sotto.',
+    ],
+    button: { label: 'Imposta la tua password', url: params.actionLink },
+    securityNote:
+      "Il link è monouso e personale: se non hai richiesto questo invio, non aprirlo e contatta il tuo coach o l'assistenza.",
+  });
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -108,8 +99,9 @@ async function sendCredentialsEmail(params: {
     body: JSON.stringify({
       sender: { name: senderName, email: senderEmail },
       to: [{ email: params.toEmail }],
-      subject: 'Le tue credenziali FitCoach',
-      htmlContent,
+      subject: email.subject,
+      htmlContent: email.html,
+      textContent: email.text,
     }),
   });
 
@@ -148,13 +140,21 @@ Deno.serve(async (req: Request) => {
   }
   const callerId = callerData.user.id;
 
-  let body: { userId?: unknown };
+  let body: { userId?: unknown; redirectTo?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ ok: false, code: 'invalid_body', message: 'Corpo della richiesta non valido.' }, 400);
   }
   const targetUserId = typeof body.userId === 'string' ? body.userId : '';
+  // redirectTo: calcolato lato mobile (getWebRedirectUrl('/reimposta-password'),
+  // stesso pattern di forgot-password-screen.tsx) — dinamico per porta/ambiente
+  // su web, assente su nativo (fallback alla Site URL configurata su Supabase,
+  // stesso limite noto del flusso "Password dimenticata"). Solo Supabase
+  // valida che l'URL rientri tra le Redirect URLs configurate sul progetto:
+  // stessa fiducia gia' accordata a emailRedirectTo altrove in questo codice,
+  // nessuna validazione aggiuntiva qui.
+  const redirectTo = typeof body.redirectTo === 'string' && body.redirectTo.trim() ? body.redirectTo.trim() : undefined;
   // email/role nel body (documentati nella spec della feature) sono solo
   // informativi lato chiamante: qui sotto vengono sempre riletti da
   // public.profiles, mai usati come destinazione o fonte di verita'.
@@ -206,48 +206,39 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, code: 'forbidden', message: 'Non autorizzato a generare credenziali per questo utente.' }, 403);
   }
 
-  const temporaryPassword = generateTemporaryPassword();
-
-  const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
-    password: temporaryPassword,
+  // Nessuna password generata/impostata qui: generateLink('recovery') crea
+  // un link Supabase monouso per l'utente GIA' esistente, che il
+  // destinatario usa per impostare da se' la propria password (stesso
+  // meccanismo di "Password dimenticata"). Non invia alcuna email da solo:
+  // l'action_link va spedito da questa funzione via Brevo, coerente con lo
+  // stile grafico FitCoach.
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'recovery',
+    email: targetProfile.email,
+    options: redirectTo ? { redirectTo } : undefined,
   });
-  if (updateUserError) {
+  if (linkError || !linkData?.properties?.action_link) {
     return json(
-      { ok: false, code: 'update_password_failed', message: `Impossibile impostare la password: ${updateUserError.message}` },
+      {
+        ok: false,
+        code: 'generate_link_failed',
+        message: `Impossibile generare il link di accesso: ${linkError?.message ?? 'risposta inattesa da Supabase.'}`,
+      },
       500,
     );
   }
 
-  const { error: flagError } = await supabaseAdmin
-    .from('profiles')
-    .update({ must_change_password: true })
-    .eq('id', targetUserId);
-  if (flagError) {
-    // La password sul server e' gia' cambiata: non possiamo piu' inviare
-    // quella vecchia via email, quindi non ha senso "annullare" tornando
-    // indietro. Segnaliamo l'errore cosi' il chiamante puo' riprovare
-    // (rigenera una nuova password e reinvia), invece di lasciare un flag
-    // incoerente in silenzio.
-    return json(
-      { ok: false, code: 'flag_update_failed', message: `Password aggiornata ma stato account non salvato: ${flagError.message}. Riprova.` },
-      500,
-    );
-  }
-
-  const emailResult = await sendCredentialsEmail({
+  const emailResult = await sendAccessLinkEmail({
     toEmail: targetProfile.email,
     fullName: targetProfile.full_name,
     role: targetProfile.role,
-    temporaryPassword,
+    actionLink: linkData.properties.action_link,
   });
   if (!emailResult.ok) {
-    // Stessa logica: la password e' gia' stata cambiata sul server. La
-    // password provvisoria in chiaro NON viene mai restituita al chiamante
-    // (il coach non deve vederla): l'unico modo per recuperare e' rigenerare.
-    return json(
-      { ok: false, code: 'email_failed', message: `${emailResult.message} La password e' comunque stata aggiornata: riprova per generarne una nuova e reinviarla.` },
-      502,
-    );
+    // Nessuna password e' mai stata impostata: un fallimento qui non lascia
+    // alcuno stato incoerente sull'account, il chiamante puo' semplicemente
+    // riprovare (rigenera un nuovo link e reinvia).
+    return json({ ok: false, code: 'email_failed', message: emailResult.message }, 502);
   }
 
   return json({ ok: true }, 200);
