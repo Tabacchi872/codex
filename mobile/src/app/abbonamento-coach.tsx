@@ -1,6 +1,6 @@
 import { CheckCircle2 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, AppScreen, BackHeader } from '@/components/ui';
 import { useCoachClientCapacity } from '@/hooks/use-coach-client-capacity';
@@ -11,6 +11,27 @@ import { supabaseConfig } from '@/lib/supabase';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { RevenueCatProductState } from '@/lib/revenuecat-service';
 import type { SubscriptionPackage, UserSubscriptionStatus } from '@/types/subscription-packages';
+
+async function confirmSecondSubscription() {
+  const message =
+    "Hai gia' un pacchetto assegnato dall'amministratore. Acquistare un pacchetto in app avviera' un secondo abbonamento separato. Vuoi continuare?";
+  if (Platform.OS === 'web') return globalThis.confirm(message);
+  return new Promise<boolean>((resolve) => {
+    Alert.alert('Conferma acquisto', message, [
+      { text: 'Annulla', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Continua', onPress: () => resolve(true) },
+    ]);
+  });
+}
+
+// Livello di capacita' di un pacchetto: usato per calcolare gli upgrade
+// disponibili. maxClients null (illimitato) e' sempre il livello piu' alto.
+// NON si usa sort_order: e' solo l'ordine di visualizzazione scelto dal
+// superadmin, non garantisce che rifletta la gerarchia Starter<Pro<Studio.
+function isUpgradeOver(candidate: SubscriptionPackage, currentMaxClients: number | null): boolean {
+  if (currentMaxClients === null) return false; // gia' al livello massimo
+  return candidate.maxClients === null || candidate.maxClients > currentMaxClients;
+}
 
 // Sezione "Abbonamento" del coach: pacchetti coach attivi letti da Supabase,
 // prezzo finale letto dallo store tramite RevenueCat, stato corrente letto da
@@ -80,10 +101,15 @@ export default function AbbonamentoCoachScreen() {
     if (result.ok) reloadAll();
   }
 
+  const currentMaxClients = current?.package?.maxClients ?? null;
+  const upgradeCandidates =
+    current && current.package ? packages.filter((p) => p.isActive && p.id !== current.package!.id && isUpgradeOver(p, currentMaxClients)) : [];
+  const hasActiveManualSubscription = current?.paymentProvider === 'superadmin_manual';
+
   if (!supabaseConfig.isConfigured) {
     return (
       <AppScreen>
-        <BackHeader title="Pacchetto e fatturazione" fallbackHref="/impostazioni" />
+        <BackHeader title="Pacchetto e fatturazione" fallbackHref="/area-coach" />
         <AppCard>
           <AppEmptyState
             title="Supabase non configurato"
@@ -96,7 +122,7 @@ export default function AbbonamentoCoachScreen() {
 
   return (
     <AppScreen>
-      <BackHeader title="Pacchetto e fatturazione" fallbackHref="/impostazioni" />
+      <BackHeader title="Pacchetto e fatturazione" fallbackHref="/area-coach" />
 
       <AppCard style={styles.card}>
         <Text style={[styles.sectionTitle, { color: colors.ink }]}>Il tuo pacchetto</Text>
@@ -111,6 +137,7 @@ export default function AbbonamentoCoachScreen() {
             expiresAt={current.expiresAt}
             maxClients={current.package?.maxClients ?? null}
             usedClients={capacity?.usedClients ?? null}
+            paymentProvider={current.paymentProvider}
           />
         ) : (
           <AppEmptyState title="Nessun pacchetto attivo" subtitle="Scegli un pacchetto qui sotto per iniziare." />
@@ -129,6 +156,11 @@ export default function AbbonamentoCoachScreen() {
             />
             {managementMessage ? <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>{managementMessage}</Text> : null}
           </>
+        ) : null}
+        {upgradeCandidates.length > 0 ? (
+          <Text style={[styles.checkoutMessage, { color: colors.inkSoft }]}>
+            Upgrade disponibili: {upgradeCandidates.map((p) => p.name).join(', ')} (vedi sotto).
+          </Text>
         ) : null}
       </AppCard>
 
@@ -157,6 +189,8 @@ export default function AbbonamentoCoachScreen() {
             key={item.id}
             item={item}
             isCurrent={current?.package?.id === item.id && current.status === 'active'}
+            isUpgrade={upgradeCandidates.some((p) => p.id === item.id)}
+            requiresConfirmBeforePurchase={hasActiveManualSubscription}
             storeProduct={storeProducts[item.id]}
             storeLoading={storeLoading}
             disabled={restoring}
@@ -173,7 +207,13 @@ export default function AbbonamentoCoachScreen() {
               <View
                 key={item.id}
                 style={[styles.historyRow, index > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                <Text style={{ color: colors.ink, fontSize: AppFontSize.sm, fontWeight: '700' }}>{item.package?.name ?? 'Pacchetto'}</Text>
+                <View style={styles.historyRowText}>
+                  <Text style={{ color: colors.ink, fontSize: AppFontSize.sm, fontWeight: '700' }}>{item.package?.name ?? 'Pacchetto'}</Text>
+                  <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.xs }}>
+                    {item.startsAt ? formatDate(item.startsAt) : formatDate(item.createdAt)} · {getProviderLabel(item.paymentProvider)}
+                  </Text>
+                  <Text style={{ color: colors.inkFaint, fontSize: AppFontSize.xs }}>Importo gestito dallo Store</Text>
+                </View>
                 <AppBadge label={getStatusLabel(item.status)} tone={getStatusTone(item.status)} />
               </View>
             ))}
@@ -190,18 +230,22 @@ function CurrentSubscriptionSummary({
   expiresAt,
   maxClients,
   usedClients,
+  paymentProvider,
 }: {
   status: UserSubscriptionStatus;
   packageName: string;
   expiresAt: string | null;
   maxClients: number | null;
   usedClients: number | null;
+  paymentProvider: string | null;
 }) {
   const { colors } = useAppTheme();
+  const isManual = paymentProvider === 'superadmin_manual';
   return (
     <View style={styles.currentRow}>
       <View style={styles.currentText}>
         <Text style={[styles.currentPackageName, { color: colors.ink }]}>{packageName}</Text>
+        {isManual ? <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>Assegnato dall&apos;amministratore</Text> : null}
         <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
           {expiresAt ? `Scadenza: ${formatDate(expiresAt)}` : 'Nessuna scadenza registrata'}
         </Text>
@@ -218,6 +262,8 @@ function CurrentSubscriptionSummary({
 function PackageOfferCard({
   item,
   isCurrent,
+  isUpgrade,
+  requiresConfirmBeforePurchase,
   storeProduct,
   storeLoading,
   disabled,
@@ -225,6 +271,8 @@ function PackageOfferCard({
 }: {
   item: SubscriptionPackage;
   isCurrent: boolean;
+  isUpgrade: boolean;
+  requiresConfirmBeforePurchase: boolean;
   storeProduct?: RevenueCatProductState;
   storeLoading: boolean;
   disabled: boolean;
@@ -237,6 +285,10 @@ function PackageOfferCard({
 
   async function handlePurchase() {
     if (!canPurchase) return;
+    if (requiresConfirmBeforePurchase) {
+      const confirmed = await confirmSecondSubscription();
+      if (!confirmed) return;
+    }
     setStarting(true);
     setCheckoutMessage('');
     const result = await startPackageCheckout(item);
@@ -258,6 +310,10 @@ function PackageOfferCard({
           <View style={[styles.currentPill, { backgroundColor: colors.mossSoft }]}>
             <CheckCircle2 size={14} color={colors.moss} strokeWidth={2.5} />
             <Text style={[styles.currentPillLabel, { color: colors.moss }]}>Attuale</Text>
+          </View>
+        ) : isUpgrade ? (
+          <View style={[styles.currentPill, { backgroundColor: colors.coralSoft }]}>
+            <Text style={[styles.currentPillLabel, { color: colors.coral }]}>Upgrade</Text>
           </View>
         ) : null}
       </View>
@@ -315,6 +371,12 @@ function getStatusLabel(status: UserSubscriptionStatus) {
     canceled: 'Annullato',
   };
   return labels[status];
+}
+
+function getProviderLabel(provider: string | null) {
+  if (provider === 'superadmin_manual') return 'Amministratore';
+  if (provider === 'revenuecat') return 'RevenueCat';
+  return 'Provider non specificato';
 }
 
 function getStatusTone(status: UserSubscriptionStatus) {
@@ -420,6 +482,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: AppSpacing[2],
     paddingVertical: AppSpacing[2],
+  },
+  historyRowText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
 });
