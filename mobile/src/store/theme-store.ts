@@ -14,10 +14,14 @@ type ThemeState = {
   setMode: (mode: ThemeMode) => void;
 };
 
+const VALID_MODES: ThemeMode[] = ['light', 'dark', 'system'];
+
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      mode: 'dark',
+      // Default a 'light': prima installazione e nessuna preferenza salvata
+      // devono aprire l'app in tema chiaro, mai in dark o nel tema di sistema.
+      mode: 'light',
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
       setMode: (mode) => set({ mode }),
@@ -25,6 +29,15 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'coachdesk-theme-store',
       storage: createJSONStorage(() => AsyncStorage),
+      // Sanifica in un solo passaggio (nessun doppio render) preferenze
+      // vecchie/corrotte/non valide: fallback a 'light' invece di propagare
+      // un valore imprevisto a useEffectiveColorScheme.
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<ThemeState> | undefined;
+        const mode =
+          persisted?.mode && VALID_MODES.includes(persisted.mode) ? persisted.mode : 'light';
+        return { ...currentState, ...persisted, mode };
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
