@@ -1,0 +1,87 @@
+<!--
+FitCoach — Template email (notifica di sicurezza)
+========================================
+Nome: Metodo di accesso collegato (Identity linked)
+Oggetto consigliato: Modifica di sicurezza sul tuo account FitCoach
+
+⚠️ NESSUNO SLOT DASHBOARD SUPABASE PER QUESTO TEMPLATE. Supabase Auth non
+invia nativamente questa notifica. Pronto per un futuro invio CUSTOM (es.
+Database Webhook su identities + Edge Function + Brevo, stesso pattern di
+send-temporary-credentials), non collegato a nulla oggi. Nota anche: questo
+progetto non usa provider OAuth/identity linking in questo momento
+(solo email+password) — verificato, nessun codice li implementa.
+
+Placeholder: la riga "Metodo di accesso collegato" nel box informazioni
+corrisponde al {{descrizione_operazione}} generico della specifica, qui già
+risolto al caso concreto (idealmente includerebbe anche il nome del
+provider, es. "Google collegato", quando questo flusso verrà implementato).
+
+Test da eseguire (quando/se questo meccanismo verrà implementato):
+  - Verificare su Gmail, Outlook, Apple Mail.
+-->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Modifica di sicurezza sul tuo account FitCoach</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F3F6F2;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Un nuovo metodo di accesso è stato collegato al tuo account.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F6F2;">
+  <tr>
+    <td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#FFFFFF;border:1px solid #DCE5DA;border-radius:12px;">
+        <tr>
+          <td align="center" style="padding:32px 32px 16px 32px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#07110B;">FitCoach</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#536052;margin-top:4px;">Il tuo percorso, ogni giorno.</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;"><hr style="border:none;border-top:1px solid #DCE5DA;margin:8px 0 24px 0;"></td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;">
+            <h1 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:20px;color:#07110B;">Modifica di sicurezza sul tuo account</h1>
+            <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#07110B;">È stata effettuata la seguente modifica sul tuo account FitCoach:</p>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px 0;">
+              <tr>
+                <td bgcolor="#EAF1E7" style="border:1px solid #DCE5DA;border-radius:8px;padding:16px;">
+                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#07110B;font-weight:700;">Metodo di accesso collegato</div>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px 0;">
+              <tr>
+                <td bgcolor="#FCEACB" style="border-radius:4px;padding:12px 16px;">
+                  <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#2A1B02;">Se sei stato tu, non devi fare nulla. Se non riconosci questa operazione, cambia immediatamente la password e contatta l'assistenza.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 32px 32px;border-top:1px solid #DCE5DA;">
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;line-height:1.6;">
+              Hai ricevuto questa email perché è stata effettuata un'operazione sul tuo account FitCoach.<br>
+              Per assistenza utilizza i contatti presenti nell'app.
+            </p>
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;">
+              <a href="https://example.com/fitcoach/privacy-policy" style="color:#536052;">Privacy Policy</a> · <a href="https://example.com/fitcoach/termini-di-servizio" style="color:#536052;">Termini di servizio</a>
+            </p>
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;">
+              Questa è un'email automatica. Non rispondere direttamente a questo messaggio.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

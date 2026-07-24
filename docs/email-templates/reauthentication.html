@@ -1,0 +1,93 @@
+<!--
+FitCoach — Template email Supabase Auth
+========================================
+Nome: Riautenticazione (Reauthentication)
+Oggetto consigliato: Conferma operazione su FitCoach
+Pagina Dashboard: Supabase Dashboard → Authentication → Emails → Templates → Reauthentication
+Placeholder Supabase usati: {{ .Token }}
+
+Stato reale in questo progetto: NON UTILIZZATO oggi (nessun codice chiama
+reauthenticate — verificato). Preparato per completezza.
+
+Nessun pulsante in questo template: la riautenticazione richiede l'inserimento
+del codice direttamente nell'app, non un link cliccabile. Non viene
+promessa alcuna durata di validità del codice (non disponibile/configurabile
+da questo repository).
+
+Istruzioni di copia:
+  1. Supabase Dashboard → Authentication → Emails → Templates → "Reauthentication".
+  2. Imposta l'oggetto come sopra.
+  3. Sostituisci l'intero contenuto HTML con il markup da <!doctype html> in poi.
+  4. Salva. Nessuna modifica automatica finché non incollato manualmente.
+
+Test da eseguire dopo la copia (quando/se questo flusso verrà attivato):
+  - Innescare una riautenticazione con un account di TEST e verificare che
+    il codice mostrato nell'email corrisponda a quello richiesto dall'app.
+  - Verificare su Gmail, Outlook, Apple Mail.
+-->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Conferma operazione su FitCoach</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F3F6F2;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Un codice per verificare la tua identità.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F6F2;">
+  <tr>
+    <td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#FFFFFF;border:1px solid #DCE5DA;border-radius:12px;">
+        <tr>
+          <td align="center" style="padding:32px 32px 16px 32px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#07110B;">FitCoach</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#536052;margin-top:4px;">Il tuo percorso, ogni giorno.</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;"><hr style="border:none;border-top:1px solid #DCE5DA;margin:8px 0 24px 0;"></td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;">
+            <h1 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:20px;color:#07110B;">Verifica la tua identità</h1>
+            <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#07110B;">Per completare un'operazione sensibile sul tuo account, inserisci questo codice nell'app.</p>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px 0;">
+              <tr>
+                <td align="center" bgcolor="#EAF1E7" style="border:1px solid #DCE5DA;border-radius:8px;padding:20px;">
+                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;letter-spacing:6px;color:#07110B;">{{ .Token }}</div>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px 0;">
+              <tr>
+                <td bgcolor="#FCEACB" style="border-radius:4px;padding:12px 16px;">
+                  <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#2A1B02;">Il codice ha una validità limitata. Se non hai richiesto tu questa operazione, non condividerlo con nessuno.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 32px 32px;border-top:1px solid #DCE5DA;">
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;line-height:1.6;">
+              Hai ricevuto questa email perché è stata effettuata un'operazione sul tuo account FitCoach.<br>
+              Per assistenza utilizza i contatti presenti nell'app.
+            </p>
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;">
+              <a href="https://example.com/fitcoach/privacy-policy" style="color:#536052;">Privacy Policy</a> · <a href="https://example.com/fitcoach/termini-di-servizio" style="color:#536052;">Termini di servizio</a>
+            </p>
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;">
+              Questa è un'email automatica. Non rispondere direttamente a questo messaggio.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

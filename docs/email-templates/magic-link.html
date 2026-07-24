@@ -1,0 +1,104 @@
+<!--
+FitCoach — Template email Supabase Auth
+========================================
+Nome: Magic Link
+Oggetto consigliato: Il tuo codice di accesso FitCoach
+Pagina Dashboard: Supabase Dashboard → Authentication → Emails → Templates → Magic Link
+Placeholder Supabase usati: {{ .ConfirmationURL }} (variante attiva sotto),
+  {{ .Token }} (variante OTP, commentata — vedi nota sotto)
+
+Stato reale in questo progetto: NON UTILIZZATO oggi (nessun codice chiama
+signInWithOtp — verificato). Preparato per completezza.
+
+Il flusso reale dell'app NON e' ne' Magic Link ne' OTP oggi: questo file usa
+il pulsante (meccanismo standard del template Magic Link di Supabase). Se in
+futuro FitCoach implementasse un login con codice numerico (OTP) invece del
+link, SOSTITUIRE il blocco pulsante con il blocco OTP commentato più sotto
+(mai mostrare entrambi insieme nella stessa email).
+
+Istruzioni di copia:
+  1. Supabase Dashboard → Authentication → Emails → Templates → "Magic Link".
+  2. Imposta l'oggetto come sopra.
+  3. Sostituisci l'intero contenuto HTML con il markup da <!doctype html> in poi.
+  4. Salva. Nessuna modifica automatica finché non incollato manualmente.
+
+Test da eseguire dopo la copia (quando/se questo flusso verrà attivato):
+  - Richiedere un accesso via Magic Link con un account di TEST e verificare
+    il layout FitCoach.
+  - Cliccare "Accedi a FitCoach": deve completare l'accesso normalmente.
+  - Verificare su Gmail, Outlook, Apple Mail.
+-->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Il tuo codice di accesso FitCoach</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F3F6F2;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Accedi a FitCoach con un tocco.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F6F2;">
+  <tr>
+    <td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#FFFFFF;border:1px solid #DCE5DA;border-radius:12px;">
+        <tr>
+          <td align="center" style="padding:32px 32px 16px 32px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#07110B;">FitCoach</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#536052;margin-top:4px;">Il tuo percorso, ogni giorno.</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;"><hr style="border:none;border-top:1px solid #DCE5DA;margin:8px 0 24px 0;"></td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;">
+            <h1 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:20px;color:#07110B;">Accedi a FitCoach</h1>
+
+            <!-- VARIANTE ATTIVA: Magic Link (pulsante) -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+              <tr>
+                <td align="center" bgcolor="#67D42D" style="border-radius:8px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#07110B;text-decoration:none;border-radius:8px;">Accedi a FitCoach</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#536052;word-break:break-all;">
+              Se il pulsante non funziona, copia e incolla questo link nel browser:<br>
+              <a href="{{ .ConfirmationURL }}" style="color:#536052;">{{ .ConfirmationURL }}</a>
+            </p>
+            <!-- FINE VARIANTE ATTIVA -->
+
+            <!--
+            VARIANTE ALTERNATIVA (OTP numerico) — usare SOLO se il flusso reale
+            diventa un codice da digitare in app invece di un link. In quel
+            caso: eliminare il blocco "VARIANTE ATTIVA" sopra e scommentare
+            questo blocco (mai mostrare entrambi insieme).
+
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#07110B;">Codice:</p>
+            <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;letter-spacing:4px;color:#07110B;">{{ .Token }}</p>
+            <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#07110B;">Inserisci questo codice nell'app FitCoach per completare l'accesso.</p>
+            -->
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 32px 32px;border-top:1px solid #DCE5DA;">
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;line-height:1.6;">
+              Hai ricevuto questa email perché è stata effettuata un'operazione sul tuo account FitCoach.<br>
+              Per assistenza utilizza i contatti presenti nell'app.
+            </p>
+            <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;">
+              <a href="https://example.com/fitcoach/privacy-policy" style="color:#536052;">Privacy Policy</a> · <a href="https://example.com/fitcoach/termini-di-servizio" style="color:#536052;">Termini di servizio</a>
+            </p>
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#879187;">
+              Questa è un'email automatica. Non rispondere direttamente a questo messaggio.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
