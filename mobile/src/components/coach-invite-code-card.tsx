@@ -1,10 +1,12 @@
 import * as Clipboard from 'expo-clipboard';
+import { Copy, Share2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, AppCard } from '@/components/ui';
+import { Fonts } from '@/constants/theme';
 import { useCoachInviteCode } from '@/hooks/use-coach-invite-code';
-import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
+import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 
 type CoachInviteCodeCardProps = {
   title: string;
@@ -49,12 +51,8 @@ export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia cod
 
   return (
     <AppCard style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.copy}>
-          <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-          {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
-        </View>
-      </View>
+      <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+      {description ? <Text style={[styles.description, { color: colors.inkSoft }]}>{description}</Text> : null}
 
       {loading ? (
         <Text style={[styles.helper, { color: colors.inkSoft }]}>Caricamento codice...</Text>
@@ -65,36 +63,65 @@ export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia cod
         </View>
       ) : code ? (
         <>
-          <View style={styles.codeRow}>
-            <View style={styles.copy}>
-              <Text selectable style={[styles.codeValue, { color: colors.coral }]}>
-                {code}
-              </Text>
-              <Text style={[styles.status, { color: active ? colors.moss : colors.inkSoft }]}>
-                {active ? 'Attivo per nuove registrazioni clienti' : 'Disattivato'}
-              </Text>
-            </View>
-            <View style={styles.actions}>
-              <AppButton
-                label={copyLabel}
-                onPress={copyCoachCode}
-                variant="outline"
-                size="lg"
-                disabled={!code}
-                accessibilityLabel="Copia codice coach"
-              />
-              {showShare ? (
+          <View style={[styles.codeBlock, { backgroundColor: colors.surfaceSubtle, borderColor: colors.border }]}>
+            <Text
+              selectable
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              style={[styles.codeValue, { color: colors.coral }]}>
+              {code}
+            </Text>
+          </View>
+
+          <View style={[styles.statusBadge, { backgroundColor: active ? colors.mossSoft : colors.surfaceSubtle }]}>
+            {active ? <View style={[styles.statusDot, { backgroundColor: colors.moss }]} /> : null}
+            <Text
+              numberOfLines={1}
+              style={[styles.statusLabel, { color: active ? colors.moss : colors.inkSoft }]}>
+              {active ? 'Attivo per nuove registrazioni' : 'Disattivato'}
+            </Text>
+          </View>
+
+          {showShare ? (
+            <View style={styles.actionsRow}>
+              <View style={styles.actionItem}>
+                <AppButton
+                  label={copyLabel}
+                  onPress={copyCoachCode}
+                  variant="outline"
+                  size="lg"
+                  icon={<Copy size={16} color={colors.ink} />}
+                  disabled={!code}
+                  accessibilityLabel="Copia codice coach"
+                  fullWidth
+                />
+              </View>
+              <View style={styles.actionItem}>
                 <AppButton
                   label="Condividi"
                   onPress={shareCoachCode}
                   variant="outline"
                   size="lg"
+                  icon={<Share2 size={16} color={colors.ink} />}
                   disabled={!code}
                   accessibilityLabel="Condividi codice coach"
+                  fullWidth
                 />
-              ) : null}
+              </View>
             </View>
-          </View>
+          ) : (
+            <AppButton
+              label={copyLabel}
+              onPress={copyCoachCode}
+              variant="outline"
+              size="lg"
+              icon={<Copy size={16} color={colors.ink} />}
+              disabled={!code}
+              accessibilityLabel="Copia codice coach"
+            />
+          )}
+
           {copyFeedback ? <Text style={[styles.feedback, { color: colors.moss }]}>{copyFeedback}</Text> : null}
         </>
       ) : (
@@ -109,15 +136,7 @@ export function CoachInviteCodeCard({ title, description, copyLabel = 'Copia cod
 
 const styles = StyleSheet.create({
   card: {
-    gap: AppSpacing[2],
-  },
-  header: {
-    flexDirection: 'row',
-    gap: AppSpacing[2],
-  },
-  copy: {
-    flex: 1,
-    minWidth: 0,
+    gap: AppSpacing[3],
   },
   title: {
     fontSize: AppFontSize.base,
@@ -126,33 +145,49 @@ const styles = StyleSheet.create({
   description: {
     fontSize: AppFontSize.sm,
     lineHeight: AppFontSize.sm * 1.35,
-    marginTop: 3,
   },
   helper: {
     fontSize: AppFontSize.sm,
     lineHeight: AppFontSize.sm * 1.35,
   },
-  codeRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
-    justifyContent: 'space-between',
-  },
-  actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: AppSpacing[2],
+  codeBlock: {
+    borderRadius: AppRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: AppSpacing[3],
+    paddingVertical: AppSpacing[3],
   },
   codeValue: {
-    fontSize: AppFontSize.lg,
-    fontWeight: '900',
-    letterSpacing: 0.4,
+    fontFamily: Fonts.mono,
+    fontSize: AppFontSize.xl,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
-  status: {
-    fontSize: AppFontSize.sm,
-    fontWeight: '600',
-    marginTop: 2,
+  statusBadge: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: AppRadius.pill,
+    flexDirection: 'row',
+    gap: AppSpacing[1],
+    paddingHorizontal: AppSpacing[2],
+    paddingVertical: 5,
+  },
+  statusDot: {
+    borderRadius: AppRadius.pill,
+    height: 6,
+    width: 6,
+  },
+  statusLabel: {
+    fontSize: AppFontSize.sm - 1,
+    fontWeight: '700',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[2],
+  },
+  actionItem: {
+    flexBasis: 130,
+    flexGrow: 1,
   },
   feedback: {
     fontSize: AppFontSize.sm,
