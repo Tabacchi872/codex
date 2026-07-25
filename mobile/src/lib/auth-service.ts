@@ -1,4 +1,4 @@
-import { FunctionsHttpError, type Session } from '@supabase/supabase-js';
+import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError, type Session } from '@supabase/supabase-js';
 
 import { generateCoachCode, normalizeCoachCode } from './coach-code';
 import { createPendingClientOnboarding, ensureClientOnboardingDraft } from './client-onboarding-service';
@@ -1011,38 +1011,109 @@ export async function getCoachActiveRegistrationCode(
   return { ok: true, data: { code: preferred.code, active: preferred.status === 'active' } };
 }
 
+// Corpo di errore atteso da delete-account (e, in parte, dal gateway Edge
+// Functions di Supabase per 401 su JWT mancante/non valido, che risponde
+// prima ancora che la funzione venga eseguita con {code, message} — forma
+// diversa da quella della nostra funzione, {success,error,code,details}:
+// extractDeleteAccountErrorMessage gestisce entrambe le forme.
+type DeleteAccountErrorBody = { success?: boolean; error?: string; code?: string; details?: string; message?: string };
+
+const ACCOUNT_DELETE_FALLBACK_MESSAGE = 'Eliminazione non riuscita. Codice: ACCOUNT_DELETE_FAILED.';
+
+// Un messaggio "inutile" e' un valore che non porta nessuna informazione
+// leggibile per l'utente: stringa vuota, o il risultato di una
+// serializzazione fallita (JSON.stringify di un oggetto senza campi
+// riconosciuti puo' produrre esattamente "{}", il bug segnalato). Non deve
+// mai arrivare in UI: va sempre sostituito da un fallback leggibile.
+function isUselessErrorText(value: unknown): boolean {
+  if (typeof value !== 'string') return true;
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  const normalized = trimmed.toLowerCase();
+  return trimmed === '{}' || trimmed === '[object Object]' || normalized === 'undefined' || normalized === 'null';
+}
+
+// Estrae un messaggio leggibile dall'errore restituito da
+// supabase.functions.invoke(), qualunque sia la causa reale del fallimento:
+// - FunctionsFetchError: la richiesta di rete non e' nemmeno partita
+//   (offline, DNS, CORS) — error.context non e' una Response, mai chiamare
+//   .json() su di esso.
+// - FunctionsRelayError: il relay Supabase non ha raggiunto la funzione —
+//   error.context E' una Response, ma spesso senza corpo utile.
+// - FunctionsHttpError: la funzione (o il gateway, per JWT mancante/non
+//   valido) ha risposto con uno status non-2xx — error.context e' la
+//   Response reale, che puo' contenere JSON strutturato, testo semplice, o
+//   nulla di leggibile.
+// Non usa mai JSON.stringify(error) ne' interpola l'oggetto errore
+// direttamente: il fallback finale e' sempre un testo fisso, mai un dump.
+async function extractDeleteAccountErrorMessage(error: unknown): Promise<string> {
+  if (error instanceof FunctionsFetchError) {
+    return 'Servizio momentaneamente non disponibile. Controlla la connessione e riprova.';
+  }
+  if (error instanceof FunctionsRelayError) {
+    return 'Servizio momentaneamente non disponibile. Riprova tra qualche minuto.';
+  }
+  if (error instanceof FunctionsHttpError) {
+    const response = error.context as Response | undefined;
+    if (response) {
+      const rawText = await response.text().catch(() => '');
+      let body: DeleteAccountErrorBody | null = null;
+      if (rawText) {
+        try {
+          body = JSON.parse(rawText) as DeleteAccountErrorBody;
+        } catch {
+          body = null;
+        }
+      }
+      const humanMessage = body && !isUselessErrorText(body.error)
+        ? body.error
+        : body && !isUselessErrorText(body.message)
+          ? body.message
+          : null;
+      // Il messaggio scritto dal backend (o dal gateway Supabase per un JWT
+      // mancante/non valido) e' gia' completo e leggibile di per se': non gli
+      // si concatena il codice, che resta solo nei log dev (vedi sotto) —
+      // il codice compare in UI solo nel fallback finale, quando non c'e'
+      // nessun messaggio reale da mostrare.
+      if (humanMessage) {
+        return humanMessage;
+      }
+      if (response.status === 401) return 'La sessione è scaduta. Accedi nuovamente.';
+      if (response.status === 403) return 'Operazione non autorizzata.';
+      if (response.status === 409) return 'Non è stato possibile eliminare alcuni dati collegati all\'account.';
+      if (response.status >= 500) return 'Servizio momentaneamente non disponibile.';
+    }
+    return ACCOUNT_DELETE_FALLBACK_MESSAGE;
+  }
+  if (error instanceof Error && !isUselessErrorText(error.message)) {
+    return `${ACCOUNT_DELETE_FALLBACK_MESSAGE} (${error.message})`;
+  }
+  return ACCOUNT_DELETE_FALLBACK_MESSAGE;
+}
+
 // Elimina definitivamente l'account Supabase dell'utente attualmente loggato
 // (coach o cliente), chiamando la Edge Function delete-account (supabase/
 // functions/delete-account). Nessun userId passato: il target e' sempre e
 // solo l'utente della sessione corrente, mai scelto dal client. Dopo un esito
-// ok, il chiamante (impostazioni.tsx/cliente-profilo.tsx) deve eseguire
-// signOut() e riportare l'utente al login: la sessione locale resta valida
-// finche' non viene chiusa esplicitamente, ma l'account su Supabase non
-// esiste piu'.
+// ok, il chiamante (account-coach.tsx/cliente-profilo.tsx) deve eseguire
+// signOut() e riportare l'utente al login SOLO dopo questo successo
+// confermato: la sessione locale resta valida finche' non viene chiusa
+// esplicitamente, ma l'account su Supabase non esiste piu'.
 export async function deleteOwnAccount(): Promise<AuthServiceResult<null>> {
   if (!isReady() || !supabase) return notConfigured();
 
-  const { data, error } = await supabase.functions.invoke<{ ok: boolean }>('delete-account', {
+  const { data, error } = await supabase.functions.invoke<{ success: boolean }>('delete-account', {
     body: {},
   });
 
   if (error) {
-    if (error instanceof FunctionsHttpError) {
-      try {
-        const body = (await error.context.json()) as { code?: string; message?: string };
-        return {
-          ok: false,
-          code: 'db_error',
-          message: body.message ?? 'Eliminazione account non riuscita.',
-        };
-      } catch {
-        return { ok: false, code: 'db_error', message: 'Eliminazione account non riuscita: risposta del server non leggibile.' };
-      }
-    }
-    return { ok: false, code: 'db_error', message: `Eliminazione account non riuscita: ${error.message}` };
+    if (__DEV__) console.error('DELETE_ACCOUNT_ERROR', error);
+    const message = await extractDeleteAccountErrorMessage(error);
+    return { ok: false, code: 'db_error', message };
   }
-  if (!data?.ok) {
-    return { ok: false, code: 'db_error', message: 'Eliminazione account non riuscita.' };
+  if (!data?.success) {
+    if (__DEV__) console.error('DELETE_ACCOUNT_UNEXPECTED_RESPONSE', data);
+    return { ok: false, code: 'db_error', message: ACCOUNT_DELETE_FALLBACK_MESSAGE };
   }
 
   return { ok: true, data: null };
