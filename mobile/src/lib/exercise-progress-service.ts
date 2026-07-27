@@ -89,7 +89,19 @@ export async function createExerciseProgressEntries(
   }
 
   const actor = await resolveProgressActor(authUserId, first.clientId, first.workoutPlanId || null);
-  if (!actor.ok) return actor;
+  if (!actor.ok) {
+    // Ramo self-guided esplicito: un cliente senza coach non ha mai una riga
+    // coach_clients (resolveProgressActor ritorna sempre 'client_not_linked'
+    // per lui), ma resta legittimo che registri i propri progressi su una
+    // scheda automatica. Tutta l'autorizzazione reale (nessun coach, entitlement,
+    // proprietà scheda, origine, ciclo, esercizio, WORKOUT_LOCKED) è verificata
+    // server-side dalla RPC, mai qui: questo ramo si limita a instradare la
+    // stessa identica chiamata verso il percorso corretto.
+    if (actor.code === 'client_not_linked' && authUserId === first.clientId) {
+      return createSelfGuidedExerciseProgressEntries(entries, first);
+    }
+    return actor;
+  }
 
   const workoutPlan = await getWorkoutPlanById(first.workoutPlanId);
   if (!workoutPlan.ok) return { ok: false, code: workoutPlan.code, message: workoutPlan.message };
@@ -147,7 +159,12 @@ export async function deleteExerciseProgressEntry(id: string): Promise<ServiceRe
   if (!authUserId) return { ok: false, code: 'not_authenticated', message: 'Sessione non valida. Rifai il login.' };
 
   const actor = await resolveProgressActor(authUserId, String(entry.client_id), String(entry.workout_plan_id));
-  if (!actor.ok) return actor;
+  if (!actor.ok) {
+    if (actor.code === 'client_not_linked' && authUserId === String(entry.client_id)) {
+      return deleteSelfGuidedExerciseProgressEntry(id);
+    }
+    return actor;
+  }
 
   if (String(entry.created_by) !== authUserId || String(entry.created_by_role) !== actor.data.role) {
     return { ok: false, code: 'forbidden', message: 'Non sei autorizzato a eliminare questo carico.' };
@@ -206,6 +223,92 @@ async function resolveProgressActor(
 
   const row = data as WorkoutPlanOwnerRow;
   return { ok: true, data: { coachId: row.coach_id, role } };
+}
+
+// Percorso self-guided (sotto-blocco 2.0): un cliente senza coach non ha mai
+// una riga coach_clients, quindi resolveProgressActor ritorna sempre
+// 'client_not_linked' per lui. Qui NON si duplica alcuna logica di
+// autorizzazione: la RPC log_self_guided_exercise_progress (SECURITY
+// DEFINER, sempre auth.uid(), mai un client_id/coach_id/origine passati dal
+// client) verifica server-side, in ordine: ruolo cliente, assenza di coach,
+// entitlement Client Pro attivo, proprietà reale della scheda, origine
+// auto_system/superadmin_override, stato del ciclo collegato (nessun ciclo ->
+// NO_ACTIVE_PROGRAM, sospeso/in revisione -> PROGRAM_PAUSED), appartenenza
+// dell'esercizio alla scheda (INVALID_EXERCISE), e riusa
+// exercise_progress_entry_writable() — la stessa funzione già usata dalle RLS
+// del percorso coach — per WORKOUT_LOCKED.
+async function createSelfGuidedExerciseProgressEntries(
+  entries: ExerciseProgressEntryInput[],
+  first: ExerciseProgressEntryInput,
+): Promise<ServiceResult<ExerciseProgressHistory[]>> {
+  if (!supabase) return notConfigured();
+
+  const payload = entries.map((entry) => ({
+    set_number: entry.setNumber,
+    reps_completed: entry.repsCompleted,
+    weight_kg: entry.weightKg,
+    rest_seconds: entry.restSeconds ?? null,
+    notes: entry.notes?.trim() || null,
+    perceived_effort: entry.perceivedEffort ?? null,
+    performed_at: entry.performedAt ?? new Date().toISOString(),
+    session_date: entry.sessionDate ?? new Date().toISOString().slice(0, 10),
+  }));
+
+  const { data, error } = await supabase.rpc('log_self_guided_exercise_progress', {
+    p_workout_plan_id: first.workoutPlanId,
+    p_workout_exercise_id: first.workoutExerciseId,
+    p_exercise_id: first.exerciseId,
+    p_entries: payload,
+  });
+
+  if (error) return selfGuidedRpcError('progress_insert_failed', error);
+  return { ok: true, data: ((data ?? []) as unknown as ProgressRow[]).map(mapProgressRow) };
+}
+
+async function deleteSelfGuidedExerciseProgressEntry(id: string): Promise<ServiceResult<null>> {
+  if (!supabase) return notConfigured();
+
+  const { error } = await supabase.rpc('delete_self_guided_exercise_progress', { p_entry_id: id });
+  if (error) return selfGuidedRpcError('progress_delete_failed', error);
+  return { ok: true, data: null };
+}
+
+// Traduce i codici stabili sollevati dalle due RPC self-guided (RAISE
+// EXCEPTION 'CODICE: messaggio tecnico') in un messaggio leggibile in
+// italiano, mai il messaggio Postgres grezzo. Stesso principio di
+// describeAssignError (auto-program-service.ts).
+function selfGuidedRpcError(fallbackCode: string, error: unknown): ServiceResult<never> {
+  logSupabaseError(`EXERCISE_PROGRESS_${fallbackCode.toUpperCase()}`, error);
+  const info = readError(error);
+  const raw = info.message || '';
+  if (raw.includes('SUBSCRIPTION_REQUIRED')) {
+    return { ok: false, code: 'subscription_required', message: 'Serve un piano Client Pro attivo per registrare i tuoi progressi.' };
+  }
+  if (raw.includes('NO_ACTIVE_PROGRAM')) {
+    return { ok: false, code: 'no_active_program', message: 'Non risulta alcun programma automatico attivo collegato a questa scheda.' };
+  }
+  if (raw.includes('PROGRAM_PAUSED')) {
+    return { ok: false, code: 'program_paused', message: 'Il tuo programma è in attesa di revisione: riprova più tardi.' };
+  }
+  if (raw.includes('WORKOUT_LOCKED')) {
+    return { ok: false, code: 'workout_locked', message: 'Questo workout o questo esercizio è già completato e non può essere modificato.' };
+  }
+  if (raw.includes('INVALID_EXERCISE')) {
+    return { ok: false, code: 'invalid_exercise', message: 'Questo esercizio non appartiene a questa scheda.' };
+  }
+  if (raw.includes('INVALID_SESSION')) {
+    return { ok: false, code: 'invalid_session', message: 'Scheda non trovata o non accessibile.' };
+  }
+  if (raw.includes('FORBIDDEN')) {
+    return { ok: false, code: 'forbidden', message: 'Non sei autorizzato a questa operazione.' };
+  }
+  if (raw.includes('NOT_AUTHENTICATED')) {
+    return { ok: false, code: 'not_authenticated', message: 'Sessione non valida. Rifai il login.' };
+  }
+  if (raw.includes('INVALID_PAYLOAD')) {
+    return { ok: false, code: 'invalid_payload', message: 'Dati non validi: controlla peso e ripetizioni inserite.' };
+  }
+  return dbError(fallbackCode, 'Impossibile completare l\'operazione. Riprova.', error);
 }
 
 function mapProgressRow(row: ProgressRow): ExerciseProgressHistory {
