@@ -961,3 +961,14 @@ Formato per ogni voce:
 - **Riferimenti a bug/decisioni collegate:** BUG-055 resta chiuso (contenuto finale ora corretto). Nuovo BUG-056 aperto, non bloccante. Prossimo passo: fermarsi qui, come richiesto — nessun avvio automatico del sotto-blocco 2.3.
 
 ---
+
+## 2026-07-27 — BUG-056 chiuso: regola ordinale definitiva dei livelli, correzione isolata
+- **Cosa è stato fatto:** l'utente ha fornito la regola definitiva di compatibilità livello (`beginner=1/intermediate=2/advanced=3`, `exercise.min_level <= template.level`). Verificato che `gambe-bulgarian-split-squat` in "Manubri ed Elastici" (Intermedio) è realmente `advanced` (3 > 2, incompatibile). Sostituito con `gambe-affondi`, già presente nello stesso `substitution_group='lunge_bodyweight_quad'`, stesso `movement_pattern`/`primary_muscle_group`/`is_unilateral`, livello realmente `intermediate` (non abbassato artificialmente).
+- **Migration**: `supabase/migrations/20260809090000_fix_bug_056_level_hierarchy.sql`, precondizione esplicita sulla riga modificata + verifica di non-regressione su una riga adiacente non toccata. Applicata al DB reale, nessuna eccezione sollevata.
+- **Risultato**: rivalidati i 18 template col criterio operativo (nessun `advanced` in `Principiante` + location + completezza): **18/18 PASS**. Non regressione: `cycles_real=1`, `reviews_real=0`, `plans_from_manubri_elastici=0` — invariati.
+- **Scoperta collaterale, fuori scope, non corretta**: applicando la regola ordinale letteralmente a tutti i 18 template emergono **12 template aggiuntivi** con esercizi `advanced` sopra il proprio livello — mai scoperti prima perché la regola operativa usata durante 2.2/BUG-055/BUG-055b era più permissiva. Registrato come **BUG-057** in `docs/BUGS.md`, non corretto (fuori scope, decine di righe in template mai segnalati).
+- **File toccati:** nuova migration `20260809090000_fix_bug_056_level_hierarchy.sql`. `docs/BUGS.md` (BUG-056 chiuso, nuovo BUG-057), `docs/DECISIONS.md`.
+- **Test eseguiti ed esito:** `supabase db push --dry-run` pulito dopo l'apply; `npx tsc --noEmit` pulito (nessuna modifica mobile).
+- **Riferimenti a bug/decisioni collegate:** BUG-056 chiuso. Nuovo BUG-057 aperto, non bloccante. Prossimo passo: sotto-blocco 2.3 (motore di revisione), come richiesto.
+
+---
