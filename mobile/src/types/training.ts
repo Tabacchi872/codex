@@ -173,7 +173,10 @@ export type WorkoutPlan = {
   // constants/app-info.ts DEFAULT_COACH_ID) e abbonamento a cui questa sessione
   // "consuma" un allenamento se completata (types/subscription.ts). Entrambi
   // opzionali per non rompere le schede create prima di questo campo.
-  coachId?: string;
+  // null/assente = scheda automatica (origin='auto_system'/'superadmin_
+  // override', "programmi automatici" per clienti senza coach): nessun coach
+  // coinvolto, mai un valore fittizio al posto di null.
+  coachId?: string | null;
   subscriptionId?: string;
   // Ora pianificata dell'allenamento (HH:mm), distinta da `startDate` che è solo
   // la data. Opzionale: una scheda senza orario esplicito resta valida (mostra

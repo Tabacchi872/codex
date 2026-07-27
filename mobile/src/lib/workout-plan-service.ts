@@ -63,7 +63,7 @@ type WorkoutDayRow = {
 
 type WorkoutPlanRow = {
   id: string;
-  coach_id: string;
+  coach_id: string | null;
   client_id: string;
   template_id: string | null;
   sequence_order: number | null;
@@ -119,7 +119,7 @@ function mapRowToPlan(row: WorkoutPlanRow): WorkoutPlan {
     id: row.id,
     name: row.name,
     clientId: row.client_id,
-    coachId: row.coach_id,
+    coachId: row.coach_id ?? undefined,
     templateId: row.template_id,
     sequenceOrder: row.sequence_order,
     workoutDayId: day?.id,

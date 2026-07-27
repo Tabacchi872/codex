@@ -17,6 +17,7 @@ import { useAppointmentsRealtime } from '@/hooks/use-appointments-realtime';
 import { useMessagesRealtime } from '@/hooks/use-messages-realtime';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
 import { getCurrentSession, signOut } from '@/lib/auth-service';
+import { getClientFitnessProfileStatus } from '@/lib/client-fitness-profile-service';
 import { getAssignedCoachStatusLabel, getMyAssignedCoach, type AssignedCoachSummary } from '@/lib/client-coach-service';
 import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
 import { getMySelfGuidedPlanAccess } from '@/lib/client-plan-access-service';
@@ -36,6 +37,11 @@ const SUPERADMIN_HOME = '/superadmin' as Href;
 const CLIENT_ONBOARDING = '/onboarding-cliente';
 const CLIENT_CONNECT_COACH = '/collega-coach';
 const CLIENT_SELF_GUIDED_PLANS = '/abbonamento-cliente';
+// Questionario fitness obbligatorio per i clienti self_guided (senza coach),
+// prerequisito del sistema "programmi automatici": si aggancia allo stesso
+// meccanismo di redirect bloccante di CLIENT_ONBOARDING/CLIENT_SELF_GUIDED_
+// PLANS, dopo entrambi (mai per il percorso coach_guided).
+const CLIENT_FITNESS_QUESTIONNAIRE = '/questionario-fitness';
 const SELF_GUIDED_COACH_ONLY_ROUTES = ['/chat', '/bacheca', '/prenotazioni', '/questionario'];
 
 const CLIENT_ONLY_ROUTES = [
@@ -56,6 +62,7 @@ const CLIENT_ONLY_ROUTES = [
   '/questionario',
   '/pacchetti-cliente',
   CLIENT_ONBOARDING,
+  CLIENT_FITNESS_QUESTIONNAIRE,
 ];
 
 const COACH_ONLY_EXACT_ROUTES = [
@@ -129,6 +136,13 @@ export function AuthGate() {
   const [coachAccessRetryKey, setCoachAccessRetryKey] = useState(0);
   const [clientPlanAccess, setClientPlanAccess] = useState({ loading: false, checked: false, active: false, error: null as string | null });
   const [clientPlanRetryKey, setClientPlanRetryKey] = useState(0);
+  const [clientFitnessQuestionnaire, setClientFitnessQuestionnaire] = useState({
+    loading: false,
+    checked: false,
+    required: false,
+    error: null as string | null,
+  });
+  const [fitnessQuestionnaireRetryKey, setFitnessQuestionnaireRetryKey] = useState(0);
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
 
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
@@ -139,6 +153,7 @@ export function AuthGate() {
     onboarding: clientOnboarding,
     coachAccess: clientCoachAccess,
     planAccess: clientPlanAccess,
+    fitnessQuestionnaire: clientFitnessQuestionnaire,
   });
   const targetPath = clientOnboarding.error ? null : clientTargetPath ?? roleTargetPath;
 
@@ -273,6 +288,62 @@ export function AuthGate() {
     clientOnboarding.error,
     clientPlanRetryKey,
     onboardingStatusRevision,
+  ]);
+
+  // Questionario fitness obbligatorio (sistema "programmi automatici"): solo
+  // per self_guided, e solo DOPO onboarding+paywall Client Pro esistenti gia'
+  // superati (stesso ordine gia' in uso, nessuna modifica al paywall).
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      currentRole !== 'cliente' ||
+      mustChangePasswordSupabase ||
+      !supabaseConfig.isConfigured ||
+      clientOnboarding.mode !== 'self_guided'
+    ) {
+      setClientFitnessQuestionnaire({ loading: false, checked: false, required: false, error: null });
+      return;
+    }
+    if (clientOnboarding.loading || !clientOnboarding.checked || clientOnboarding.required || clientOnboarding.error) {
+      setClientFitnessQuestionnaire({ loading: false, checked: false, required: false, error: null });
+      return;
+    }
+    if (clientPlanAccess.loading || !clientPlanAccess.checked || clientPlanAccess.error || !clientPlanAccess.active) {
+      setClientFitnessQuestionnaire({ loading: false, checked: false, required: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setClientFitnessQuestionnaire((current) => ({ ...current, loading: true, checked: false, error: null }));
+    (async () => {
+      const result = await getClientFitnessProfileStatus();
+      if (!active) return;
+      if (!result.ok) {
+        if (__DEV__) console.error('CLIENT_FITNESS_QUESTIONNAIRE_GATE_ERROR', result.message);
+        setClientFitnessQuestionnaire({ loading: false, checked: true, required: false, error: 'Non e stato possibile verificare il questionario.' });
+        return;
+      }
+      setClientFitnessQuestionnaire({ loading: false, checked: true, required: !result.data.completed, error: null });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    currentRole,
+    currentClientId,
+    isAuthenticated,
+    mustChangePasswordSupabase,
+    clientOnboarding.loading,
+    clientOnboarding.checked,
+    clientOnboarding.required,
+    clientOnboarding.mode,
+    clientOnboarding.error,
+    clientPlanAccess.loading,
+    clientPlanAccess.checked,
+    clientPlanAccess.error,
+    clientPlanAccess.active,
+    fitnessQuestionnaireRetryKey,
   ]);
 
   // Prima sincronizzazione schede/allenamenti con Supabase (2026-07-14):
@@ -419,6 +490,18 @@ export function AuthGate() {
     }
     if (
       supabaseConfig.isConfigured &&
+      clientOnboarding.mode === 'self_guided' &&
+      clientPlanAccess.checked &&
+      clientPlanAccess.active &&
+      (clientFitnessQuestionnaire.loading || !clientFitnessQuestionnaire.checked)
+    ) {
+      return <LoadingGate />;
+    }
+    if (clientOnboarding.mode === 'self_guided' && clientPlanAccess.active && clientFitnessQuestionnaire.error) {
+      return <OnboardingCheckError onRetry={() => setFitnessQuestionnaireRetryKey((value) => value + 1)} />;
+    }
+    if (
+      supabaseConfig.isConfigured &&
       !clientOnboarding.required &&
       clientOnboarding.mode !== 'self_guided' &&
       (clientCoachAccess.loading || !clientCoachAccess.checked)
@@ -434,7 +517,12 @@ export function AuthGate() {
     if (targetPath) {
       return <LoadingGate />;
     }
-    if (pathname === CLIENT_ONBOARDING || pathname === CLIENT_CONNECT_COACH || pathname === CLIENT_SELF_GUIDED_PLANS) {
+    if (
+      pathname === CLIENT_ONBOARDING ||
+      pathname === CLIENT_CONNECT_COACH ||
+      pathname === CLIENT_SELF_GUIDED_PLANS ||
+      pathname === CLIENT_FITNESS_QUESTIONNAIRE
+    ) {
       return <Slot />;
     }
     return <ClientTabs mode={clientOnboarding.mode} />;
@@ -468,6 +556,7 @@ function getClientRedirectTarget({
   onboarding,
   coachAccess,
   planAccess,
+  fitnessQuestionnaire,
 }: {
   role: UserRole | null;
   pathname: string;
@@ -475,6 +564,7 @@ function getClientRedirectTarget({
   onboarding: { loading: boolean; required: boolean; checked: boolean; mode: 'coach_guided' | 'self_guided' | null; error: string | null };
   coachAccess: { loading: boolean; checked: boolean; coach: AssignedCoachSummary | null; error: string | null };
   planAccess: { loading: boolean; checked: boolean; active: boolean; error: string | null };
+  fitnessQuestionnaire: { loading: boolean; checked: boolean; required: boolean; error: string | null };
 }): Href | null {
   if (role !== 'cliente' || !supabaseConfigured || onboarding.error || onboarding.loading || !onboarding.checked) return null;
   if (onboarding.required) return pathname === CLIENT_ONBOARDING ? null : CLIENT_ONBOARDING;
@@ -490,9 +580,16 @@ function getClientRedirectTarget({
       const allowedWithoutPlan = pathname === CLIENT_SELF_GUIDED_PLANS || pathname === '/cliente-profilo';
       return allowedWithoutPlan ? null : CLIENT_SELF_GUIDED_PLANS;
     }
+    // Questionario fitness obbligatorio (sistema "programmi automatici"):
+    // verificato solo DOPO onboarding+paywall, mai per coach_guided.
+    if (fitnessQuestionnaire.loading || !fitnessQuestionnaire.checked || fitnessQuestionnaire.error) return null;
+    if (fitnessQuestionnaire.required) {
+      return pathname === CLIENT_FITNESS_QUESTIONNAIRE ? null : CLIENT_FITNESS_QUESTIONNAIRE;
+    }
     return pathname === CLIENT_SELF_GUIDED_PLANS ||
       pathname === CLIENT_CONNECT_COACH ||
       pathname === CLIENT_ONBOARDING ||
+      pathname === CLIENT_FITNESS_QUESTIONNAIRE ||
       SELF_GUIDED_COACH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
       ? CLIENT_HOME
       : null;

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { AutoProgramCard } from '@/components/auto-program-card';
 import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
 import { AppButton, AppCard, AppEmptyState, AppPressableCard, AppRingProgress, AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
@@ -189,7 +190,9 @@ export default function ClienteHomeScreen() {
 
           {myCoach.clientMode !== 'self_guided' ? (
             <ClientAssignedCoachCard coach={myCoach.coach} loading={myCoach.loading} error={myCoach.error} onRetry={myCoach.reload} />
-          ) : null}
+          ) : (
+            <AutoProgramCard />
+          )}
 
           <AppCard
             padded={false}
