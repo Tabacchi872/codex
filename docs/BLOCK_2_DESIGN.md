@@ -2,13 +2,14 @@
 
 **Stato: progettazione approvata (2026-07-27) con le decisioni della sezione 0
 qui sotto. Sotto-blocco 2.0 (logging progressi self-guided) implementato,
-testato e chiuso (migration `20260803090000`, vedi sezione 1.3). Il resto del
-Blocco 2 (schema cicli/review, motore di revisione, variazione esercizi, UI)
-resta non implementato: nessuna migrazione/RPC/schermata scritta oltre al
-sotto-blocco 2.0.** Le soglie numeriche non ancora coperte da una decisione
-esplicita restano marcate **[PROPOSTA DA APPROVARE]**; le scelte di
-modellazione non ancora confermate restano **[INTERPRETAZIONE — da
-confermare]**.
+testato e chiuso (migration `20260803090000`). Sotto-blocco 2.1 (schema
+cicli/check-in/review, tabelle di supporto) implementato, testato e chiuso
+(migration `20260804090000`, vedi sezione 23). Motore di revisione, RPC
+cliente/Superadmin, variazione automatica esercizi, UI, seed completo
+metadati esercizio (2.2) restano non implementati.** Le soglie numeriche non
+ancora coperte da una decisione esplicita restano marcate **[PROPOSTA DA
+APPROVARE]**; le scelte di modellazione non ancora confermate restano
+**[INTERPRETAZIONE — da confermare]**.
 
 ## 0. Decisioni approvate dall'utente (2026-07-27)
 
@@ -905,3 +906,41 @@ Elenco in ordine di dipendenza (nessuna di 2.1-2.7 è stata scritta o applicata)
 - **2.7 — Verifica end-to-end**: stessa metodologia RLS/REST reale già validata il 2026-07-27 (ruolo `authenticated`/`anon` esplicito, harness con account sintetici, cleanup finale), matrice di sezione 18 completa.
 
 Solo dopo 2.7 con esito PASS, procedere a un'eventuale ulteriore conferma prima del Blocco 3 (pannello Superadmin UI, centro notifiche in-app).
+
+---
+
+## 23. Sotto-blocco 2.1 — schema implementato (2026-07-27, migration `20260804090000_block2_cycle_review_schema.sql`)
+
+**Solo schema**: nessuna RPC/motore di revisione/variazione esercizi/UI/notifica visibile in questa migration, come richiesto. Verifiche read-only preliminari: 1 riga in `client_program_cycles` (cliente reale, `status='active'`), 0 in `client_cycle_reviews`/`client_monthly_checkins`/`superadmin_program_overrides`, 2 in `client_program_cycle_plans`, 16 in `client_excluded_exercises` — tutte compatibili con le modifiche additive, verificato dopo l'apply.
+
+### 23.1 Differenze rispetto alla proposta iniziale (sezioni 1-22 di questo documento)
+
+- **`auto_program_review_config` è una singola tabella versionata per riga**, non lo schema a due tabelle (`..._versions` + `...`) abbozzato in sezione 7.3: ogni riga porta già `config_version`/`is_active`/`valid_from`/`valid_until`/`changed_by`/`change_reason`, con un indice unico parziale su `(key) where is_active` a garantire una sola versione attiva. Più semplice, stesso risultato, un solo oggetto da gestire in futuro.
+- **`client_cycle_reviews_cycle_id_key` (UNIQUE su `cycle_id`, Blocco 1) è stato sostituito da un indice univoco parziale** (`client_cycle_reviews_one_definitive_per_cycle_idx`, `where decision <> 'insufficient_data'`). Scoperta emersa solo analizzando lo schema esistente contro il nuovo requisito "impedire più review **definitive**": il vincolo originale avrebbe permesso una sola riga in assoluto per ciclo, incompatibile con la possibilità esplicitamente richiesta di più tentativi `insufficient_data` (audit trail dei retry) prima di una decisione definitiva. Verificato PASS con test reale: due tentativi `insufficient_data` sullo stesso ciclo coesistono; un secondo tentativo con decisione definitiva (`progress` dopo `maintain`) viene respinto con violazione di unicità.
+- **Nessuna tabella ledger per le pause abbonamento** (sezione 22, punto 11): il documento non approva una tabella dedicata (propone la ricostruzione da `user_subscriptions` come meccanismo primario, con un contatore materializzato come alternativa futura non decisa) — creata quindi nessuna tabella, per rispettare la condizione "se il documento approva... creala ora". `client_program_cycles.effective_active_days` resta il campo pronto ad accogliere il risultato, qualunque meccanismo verrà scelto nel 2.3.
+- **`superseded_at` è stato rinominato `replaced_at`** (non solo un'aggiunta) per coerenza col nuovo stato `replaced` — 0 righe reali valorizzavano quella colonna, verificato prima del rename.
+- **`client_program_cycles_source_check` esteso con `auto_partial_change`**: non esplicitamente richiesto dal testo del compito, ma inferito per coerenza — le altre 3 decisioni che generano un nuovo ciclo (`progress`/`maintain`/`regress`) avevano già un source dedicato (`auto_progression`/`auto_maintain`/`auto_regression`); `partial_change` no.
+- **Notes su `superadmin_program_overrides` reso `NOT NULL` + non vuoto** (0 righe reali, nessun impatto) per "motivo obbligatorio".
+
+### 23.2 Mapping vecchi → nuovi stati/decisioni (applicato via UPDATE difensivi, 0 righe reali interessate)
+
+`client_program_cycles.status`: `superseded`→`replaced`, `suspended`→`paused_subscription`, `pending_review`→`pending_safety_review` (se `decision_reason` contiene un segnale esplicito di dolore/supervisione) altrimenti `pending_template`. `client_cycle_reviews.decision`: `reduce`→`regress`, `superadmin_required`→`manual_review`, `block_pain`→`blocked_safety`.
+
+### 23.3 Nuovi CHECK/indici/RLS (riepilogo — dettaglio completo nella migration)
+
+- `client_program_cycles_status_check` (11 valori), `..._source_check` (+`auto_partial_change`), 4 nuovi CHECK di coerenza date (`review_due_after_start`, `checkin_before_review`, `resumed_after_suspended`, `effective_active_days >= 0`). Indice `client_program_cycles_one_current_per_client_idx` esteso da 3 a 8 stati non terminali.
+- `client_monthly_checkins`: 9 nuovi CHECK (fatica/recupero/soddisfazione/giorni disponibili/luogo/attrezzatura/motivo skip/stato/durata), trigger di immutabilità post-lock (`prevent_client_monthly_checkin_edit_after_lock`, bypass solo Superadmin).
+- `client_cycle_reviews`: `decision` esteso a 9 valori, nuovo indice univoco parziale (23.1), 6 nuovi CHECK (eleggibilità/aderenza/percentuale esercizi/sessioni/conteggi esercizi/origine/coerenza timestamp).
+- `auto_program_review_config` (nuova): unique `(config_version, key)`, indice univoco parziale "una sola versione attiva per chiave", trigger di validazione valori (negativi ovunque, range 0-1 per le chiavi-percentuale), RLS superadmin-only, 14 righe seed (`config_version=1`, tutte `is_active=true`).
+- `exercise_movement_metadata` (nuova): CHECK su ogni enum (schema di movimento/gruppo muscolare/attrezzatura/livello/ruolo/classe movimento), CHECK array su `compatible_locations`, RLS superadmin-only, 1 riga minima (`gambe-squat`) per verifica schema — nessun seed completo (2.2).
+- `exercise_alternatives` (nuova): CHECK anti-self-reference, UNIQUE coppia sorgente/alternativa, trigger che impedisce riferimenti a esercizi non registrati in `exercise_movement_metadata`, RLS superadmin-only.
+- `client_cycle_exercise_transitions` (nuova): UNIQUE anti-duplicati, trigger anti cross-client (review/cicli precedente-successivo devono appartenere allo stesso `client_id` dichiarato), RLS superadmin-only + lettura proprietario.
+- `superadmin_program_overrides`: `action` esteso a 13 valori, 8 nuove colonne (entità/valori prima-dopo/review collegata/stato applicazione/annullamento), trigger anti cross-client (stessa logica di `client_cycle_exercise_transitions`), `notes` reso obbligatorio.
+
+### 23.4 Nota di compatibilità per il sotto-blocco 2.3 (non un bug, non risolto qui)
+
+`assign_initial_auto_program()` (Blocco 1) ha un controllo hardcoded `status in ('draft', 'active', 'pending_review')` per il proprio fast-path di idempotenza. Con l'estensione a 11 stati, questo elenco non copre più i nuovi stati non terminali (`checkin_due`/`review_pending`/`pending_subscription`/`paused_subscription`/`pending_safety_review`/`pending_template`) — se un cliente si trovasse in uno di questi stati (possibile solo dopo che il motore di revisione, 2.3, esisterà davvero) e richiamasse di nuovo questa RPC, il fast-path non riconoscerebbe il ciclo esistente e tenterebbe un secondo INSERT. **Non è un bug oggi** (nessun codice produce ancora questi stati) **e non ha richiesto una modifica in questo sotto-blocco** (è una RPC, non schema — fuori perimetro esplicito del 2.1): l'indice univoco parziale aggiornato (23.3) impedirebbe comunque un secondo ciclo reale, ma con un errore di violazione di unicità grezzo invece di un ritorno pulito del ciclo esistente. Da correggere insieme al motore di revisione nel sotto-blocco 2.3.
+
+### 23.5 Test eseguiti (tutti PASS, rollback espliciti — nessuna scrittura persistita oltre alla migration stessa)
+
+Colonne/CHECK/FK/indici/default verificati via `information_schema`/`pg_constraint`/`pg_indexes`; RLS abilitata su tutte le nuove tabelle (`pg_class.relrowsecurity`); seed config 14/14 righe, 1 sola versione attiva; riga reale (`status='active'`, `source='auto_initial'`) compatibile, tutte le nuove colonne nullable/default corrette. Comportamentali: valore soglia fuori range `[0,1]` respinto; due review "definitive" sullo stesso ciclo respinte, due tentativi `insufficient_data` sullo stesso ciclo permessi; alternativa esercizio verso se stesso respinta; riferimento a esercizio non registrato respinto; modifica di un check-in dopo il lock respinta; transizione esercizio con `client_id` di un cliente diverso da quello reale del ciclo/review respinta. Ruoli: `authenticated` generico → 0 righe su tabelle amministrative; `anon` → 0 righe ovunque; cliente proprietario reale → vede ancora il proprio ciclo (invariato); Superadmin reale → accesso completo alle nuove tabelle.
