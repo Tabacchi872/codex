@@ -65,3 +65,79 @@ Cleanup: eliminati entrambi gli account sintetici via `auth.admin.deleteUser` (s
 - `docs/DECISIONS.md`, `docs/PROJECT_STATE.md`, `docs/TODO_NEXT.md`, `docs/WORKLOG.md`
 
 Non è stato toccato alcun codice del sotto-blocco 2.3 (motore di revisione), che resta da iniziare.
+
+---
+
+## Riapertura (2026-07-27, stesso giorno): 2 sostituzioni del fix sopra erano semanticamente incompatibili
+
+Migration: `supabase/migrations/20260808090000_fix_bug_055b_template_semantic_equipment.sql`.
+
+L'utente ha richiesto una verifica semantica mirata prima di procedere col sotto-blocco 2.3, segnalando che due delle sostituzioni sopra, pur avendo prodotto un "18/18 PASS" automatico, non rispettavano la promessa reale del template.
+
+### Causa del falso PASS (spiegazione richiesta esplicitamente)
+
+Il validatore usato per il fix precedente aveva **due punti ciechi distinti**, entrambi confermati con query dirette prima di scrivere qualunque correzione:
+
+1. **Attrezzatura verificata solo con il tag grezzo a 3 livelli** (`bodyweight_only`/`home_basic`/`full_gym`) confrontato con la location del template, **mai con il testo dichiarato dell'attrezzatura dell'esercizio** in `mobile/src/data/exercise-library.ts` (campo `equipment`). Per "Corpo Libero" (equipment dichiarato: "Corpo libero, sbarra opzionale per il dorso") questo ha lasciato passare due esercizi il cui testo non offre mai un'alternativa a corpo libero:
+   - `dorso-rematore-manubrio`: testo "Manubrio, panca" — manubrio sempre necessario, nessuna alternativa a corpo libero.
+   - `glutei-squat-sumo`: testo "Bilanciere o manubrio" — nessuna opzione a corpo libero. **Introdotto dal fix precedente con lo stesso identico errore** (sostituiva `gambe-squat`, controllato solo su `equipment_tag`, mai sul testo).
+
+   Per confronto, un esercizio corretto come `gambe-affondi` ("a corpo libero o con manubri") offre esplicitamente l'opzione a corpo libero — ecco perché quello non era mai stato un problema.
+
+   **Verificato anche `tricipiti-dip-tricipiti`** con lo stesso criterio più rigoroso: il suo testo ("Parallele **o** panca") offre già un'alternativa a bassa attrezzatura (qualunque sedia/panca stabile di casa), coerente con la nota già scritta nella riga del template ("Su sedia o panca stabile"). **Non è un'incompatibilità**: non è stato toccato, per evitare di correggere qualcosa che non era rotto.
+
+2. **La sostituzione in "Tecnica dei Fondamentali" verificava solo `movement_pattern`** (hinge = hinge), **mai `substitution_group`** — il campo più preciso già presente nei dati fin dal sotto-blocco 2.2: `gambe-stacco-rumeno` appartiene a `hinge_hamstring_barbell` (vero hip-hinge: busto che si inclina, bacino che arretra, femorali che si allungano sotto carico), mentre `gambe-hip-thrust` appartiene a `hinge_glute_extension` (estensione d'anca a busto fisso — funzione biomeccanica diversa, nonostante condividano lo stesso `movement_pattern` grezzo). La distinzione era già nei dati, semplicemente mai controllata da questa sostituzione. Il giorno "Focus Stacco e Press" richiede di insegnare proprio il pattern hip-hinge: la sostituzione non lo faceva.
+
+### Nuova regola di validazione adottata
+
+Un esercizio è equipaggiamento-compatibile con un template "a corpo libero" solo se il suo testo `equipment` nel catalogo offre esplicitamente un'alternativa a corpo libero/bassa attrezzatura domestica (non basta il tag grezzo). Una sostituzione di un esercizio `role='primary'` deve preservare `substitution_group`, non solo `movement_pattern`.
+
+### 3 nuovi esercizi aggiunti al catalogo
+
+| id | Nome | Equipment tag | Substitution group | Usato per sostituire |
+|---|---|---|---|---|
+| `gambe-air-squat` | Squat a corpo libero | `bodyweight_only` | `squat_barbell_quad` (stessa famiglia di `gambe-squat`) | `glutei-squat-sumo` in Corpo Libero |
+| `dorso-rematore-corpo-libero` | Rematore a corpo libero (inverted row) | `home_basic` (sbarra bassa/tavolo/anelli) | `row_horizontal_dorsali` (stessa famiglia di `dorso-rematore-manubrio`) | `dorso-rematore-manubrio` in Corpo Libero |
+| `gambe-stacco-rumeno-manubri` | Stacco rumeno con manubri | `home_basic` | `hinge_hamstring_barbell` (stessa famiglia di `gambe-stacco-rumeno`) | `gambe-hip-thrust` in Tecnica dei Fondamentali **e** `femorali-hip-hinge` in Manubri ed Elastici |
+
+Nessun video locale registrato per questi 3 id: `videoStatus` risulterà `'missing'` (comportamento già gestito dal codice esistente, coerente con molti altri esercizi "coverage" del catalogo — dichiarato esplicitamente, non un errore).
+
+### Sostituzioni definitive (tabella prima/dopo di questa riapertura)
+
+| Riga | Template / Giorno / Pos. | Prima (dal fix precedente) | Dopo | Motivo |
+|---|---|---|---|---|
+| `1df6d2cd-...` | Corpo Libero / Workout B / 1 | `glutei-squat-sumo` | `gambe-air-squat` | nessuna alternativa a corpo libero nel testo di `glutei-squat-sumo` |
+| `44f2f186-...` | Corpo Libero / Workout B / 2 | `dorso-rematore-manubrio` | `dorso-rematore-corpo-libero` | nessuna alternativa a corpo libero nel testo di `dorso-rematore-manubrio` |
+| `11a09e8c-...` | Manubri ed Elastici / Lower A / 2 | `femorali-hip-hinge` | `gambe-stacco-rumeno-manubri` | regressione a corpo libero non ottimale per un template a manubri: ora usa un vero stacco rumeno con manubri, stesso `substitution_group` dell'esercizio originale |
+| `7433b045-...` | Tecnica dei Fondamentali / Focus Stacco e Press / 2 | `gambe-hip-thrust` | `gambe-stacco-rumeno-manubri` | `gambe-hip-thrust` non preserva il `substitution_group` (hinge_glute_extension ≠ hinge_hamstring_barbell): non insegna il pattern hip-hinge richiesto dal giorno |
+
+Nessuna variazione di serie/reps/recupero per Corpo Libero (struttura preservata, solo note aggiornate). Manubri ed Elastici: sets 4→3, reps 15→12 (range 12-18→10-12), rest 60s→75s — volume tipico di un hinge caricato invece di un drill a corpo libero ad alte ripetizioni. Tecnica dei Fondamentali: struttura invariata (3×10, rest 75s), solo note aggiornate.
+
+Aggiornati anche i `reason` di 2 righe di `exercise_alternatives` inserite dal fix precedente (`dorso-trazioni→dorso-rematore-manubrio`, `gambe-stacco-rumeno→gambe-hip-thrust`) che citavano esplicitamente la scelta di sostituzione ora superata: generalizzati, le relazioni restano valide come alternative a sé stanti.
+
+### Risultato validazione (rieseguita su tutti i 18 template, non solo sui 3 toccati)
+
+- **18/18 template PASS** sul controllo location/level/completezza (query eseguita su tutti i 18, non solo sui 3 — nessun'altra incompatibilità emersa altrove).
+- **Corpo Libero**: rivisti tutti i 12 esercizi con la nuova regola equipaggiamento-testo — zero esercizi con manubri/bilancieri/cavi/macchine richiesti senza alternativa; le uniche 2 righe `home_basic` residue (`dorso-rematore-corpo-libero`: sbarra dichiarata dal template; `tricipiti-dip-tricipiti`: panca/sedia già nel testo originale) sono entrambe motivate e riviste esplicitamente.
+- **Manubri ed Elastici**: confermato 0 esercizi `full_gym` in nessuno dei 2 template "Casa" (query dedicata).
+- **Focus Stacco e Press**: contiene 2 esercizi `hinge` (`femorali-hip-hinge` no-load + `gambe-stacco-rumeno-manubri` caricato) — progressione tecnica coerente all'interno dello stesso giorno, non un duplicato.
+- 0 duplicati dello stesso esercizio nei giorni modificati.
+- Nuove alternative verificate: `gambe-air-squat` 2, `dorso-rematore-corpo-libero` 2, `gambe-stacco-rumeno-manubri` 3.
+- Non regressione dati reali: `cycles_real=1`, `reviews_real=0`, `plans_from_these_templates=0` — invariati, nessuna scheda cliente reale ha mai usato questi 3 template.
+- Verifica esplicita di non-regressione nella migration su una riga adiacente non toccata (`gambe-squat` in "Focus Squat"): nessuna eccezione sollevata.
+
+### Test con account sintetici (ripetuto)
+
+Stessa metodologia del fix precedente (Admin API + PostgREST, trigger reale `handle_new_user()`, mai clienti reali): **3/3 template PASS** (Corpo Libero 3 piani, Manubri ed Elastici 4 piani, Tecnica dei Fondamentali 3 piani — 10 piani totali, 0 discrepanze). Cleanup verificato: 0 residuo su `profiles`/`workout_plans`.
+
+### Scoperta collaterale, esplicitamente FUORI SCOPE di questa correzione (documentata, non risolta)
+
+Durante il riesame di "Manubri ed Elastici" (Lower B) è emerso che `gambe-bulgarian-split-squat` (`min_level='advanced'`) è usato in questo template `Intermedio`. Questo NON è stato toccato: non era tra le sostituzioni segnalate dall'utente, la richiesta di riapertura non chiedeva un audit generale del livello per i template `Intermedio`/`Avanzato` (solo la regola "advanced in un template Principiante" era stata finora validata), e cambiare la regola generale di compatibilità livello richiede una decisione di prodotto autonoma, non una correzione implicita dentro BUG-055. Registrato come **BUG-056** in `docs/BUGS.md` per una decisione futura esplicita.
+
+### File toccati in questa riapertura
+
+- `supabase/migrations/20260808090000_fix_bug_055b_template_semantic_equipment.sql` (nuova, applicata al DB reale)
+- `mobile/src/data/exercise-library.ts` (3 nuovi esercizi)
+- `docs/BUG_055_TEMPLATE_FIX.md` (questa sezione)
+- `docs/BUGS.md` (nuovo BUG-056, non un fix di BUG-055 — resta un appunto separato)
+- `docs/EXERCISE_METADATA_COVERAGE.md`, `docs/BLOCK_2_DESIGN.md`, `docs/DECISIONS.md`, `docs/PROJECT_STATE.md`, `docs/TODO_NEXT.md`, `docs/WORKLOG.md`

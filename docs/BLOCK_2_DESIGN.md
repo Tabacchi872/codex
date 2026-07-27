@@ -969,3 +969,16 @@ Dettaglio completo (tabella prima/dopo, criteri di sostituzione, test): **`docs/
 - **Risultato**: 18/18 template `auto_eligible` PASS (era 15/18). 0 duplicati, 0 esercizi senza alternativa tra i nuovi inseriti. `plans_from_these_templates=0` sia prima che dopo → nessuna scheda cliente reale toccata.
 - **Test con account sintetici** (percorso server reale, `assign_workout_template_to_client`, mai clienti reali): coach e cliente sintetici creati tramite il vero trigger `handle_new_user()` (non insert manuali), 3/3 template assegnati con copie esatte (10 piani totali), cleanup via `auth.admin.deleteUser` con zero residuo verificato.
 - **BUG-055 chiuso in `docs/BUGS.md`**. Il motore di revisione (sotto-blocco 2.3, non ancora iniziato) può ora fidarsi del flag `auto_eligible` per tutti e 18 i template.
+
+---
+
+## 26. Riapertura di BUG-055: correzione semantica (2026-07-27, migration `20260808090000_fix_bug_055b_template_semantic_equipment.sql`)
+
+Dettaglio completo in **`docs/BUG_055_TEMPLATE_FIX.md`** (sezione "Riapertura"). Sintesi:
+
+- **Causa del falso PASS**: il validatore usato per la sezione 25 controllava solo il tag grezzo a 3 livelli dell'attrezzatura (mai il testo dichiarato dell'esercizio nel catalogo mobile) e solo `movement_pattern` per le sostituzioni (mai `substitution_group`, il campo più preciso già presente nei dati dal 2.2). Questo ha lasciato passare `dorso-rematore-manubrio`/`glutei-squat-sumo` in "Corpo Libero" (nessuna alternativa a corpo libero nel loro testo) e `gambe-hip-thrust` in "Tecnica dei Fondamentali" (stesso `movement_pattern` di `gambe-stacco-rumeno` ma `substitution_group` diverso: `hinge_glute_extension` non è `hinge_hamstring_barbell`, non insegna il pattern hip-hinge).
+- **3 nuovi esercizi aggiunti** al catalogo (`gambe-air-squat`, `dorso-rematore-corpo-libero`, `gambe-stacco-rumeno-manubri`), ciascuno nello stesso `substitution_group` dell'esercizio che sostituisce, per preservare la funzione tecnica oltre al solo pattern di movimento.
+- **4 righe corrette di nuovo** (2 in Corpo Libero, 1 in Manubri ed Elastici, 1 in Tecnica dei Fondamentali). Riesaminato `tricipiti-dip-tricipiti`: il suo testo ("Parallele o panca") offre già un'alternativa a bassa attrezzatura coerente con la nota del template — non toccato, non era rotto.
+- **Rivalidati tutti i 18 template** (non solo i 3 toccati) con la regola corretta: 18/18 PASS confermato, nessun'altra incompatibilità trovata altrove.
+- **Scoperta collaterale fuori scope**: `gambe-bulgarian-split-squat` (`advanced`) usato in "Manubri ed Elastici" (`Intermedio`) — registrato come **BUG-056**, non corretto (richiede prima una decisione di prodotto sulla regola di compatibilità livello per template `Intermedio`/`Avanzato`, mai definita finora).
+- **Test con account sintetici ripetuto**: 3/3 template PASS, cleanup e residuo zero verificati, stessa metodologia (trigger reale `handle_new_user()`, mai clienti reali).
