@@ -957,3 +957,15 @@ Dettaglio completo, tassonomia adottata, fonti, eccezioni, verifica dei 18 templ
 - **Scoperta rilevante, documentata in `docs/BUGS.md` (BUG-055)**: 3 dei 18 template `auto_eligible` (Blocco 1) contengono esercizi con attrezzatura o livello incoerenti col template stesso (es. uno squat con bilanciere in un template "Corpo Libero"). Non corretto qui (dati Blocco 1, fuori scope; nessuna disattivazione automatica di `auto_eligible`, come richiesto) — decisione dell'utente necessaria prima che il sotto-blocco 2.3 possa fidarsi ciecamente del flag per questi 3 template.
 - **Un solo esercizio usato dai template resta senza alcuna alternativa** per scelta esplicita (non dimenticanza): `gambe-leg-extension`, unico esercizio di isolamento in estensione del ginocchio nel catalogo, nessuna alternativa credibile senza cambiare schema di movimento.
 - Nessuna nuova policy RLS, nessun grant aggiuntivo: le tabelle restano superadmin-only (+ lettura proprietario per le transizioni esercizio, invariata dal 2.1). Verificato con test reali: `authenticated` generico non può leggere né modificare (`UPDATE` con `RETURNING` → 0 righe), `anon` → 0 accesso, Superadmin reale → accesso completo (96 metadati, 114 alternative).
+
+---
+
+## 25. BUG-055 — fix del contenuto incompatibile dei 3 template, chiuso (2026-07-27, migration `20260807090000_fix_bug_055_auto_template_content.sql`)
+
+Dettaglio completo (tabella prima/dopo, criteri di sostituzione, test): **`docs/BUG_055_TEMPLATE_FIX.md`**. Sintesi:
+
+- **Causa**: 3 dei 18 template `auto_eligible` (Blocco 1) contenevano esercizi incoerenti con attrezzatura/luogo/livello dichiarati (scoperti durante il 2.2, non corretti allora per rispettare lo scope del sotto-blocco). Verificata la regola di immutabilità prima di intervenire: nessuna FK tra `workout_template_*` e `workout_plans`/`workout_days`/`workout_day_exercises` (copia per valore in `assign_workout_template_to_client`), 0 utilizzi reali dei 3 template → sicuro correggere in-place.
+- **4 righe di `workout_template_exercises` corrette** (2 in "Corpo Libero", 1 in "Manubri ed Elastici", 1 in "Tecnica dei Fondamentali"), con verifica pre-condizione esplicita nella migration (`raise exception` se il contenuto reale non corrispondeva esattamente a quello analizzato) e verifica esplicita di non-regressione su una riga adiacente non toccata dello stesso template.
+- **Risultato**: 18/18 template `auto_eligible` PASS (era 15/18). 0 duplicati, 0 esercizi senza alternativa tra i nuovi inseriti. `plans_from_these_templates=0` sia prima che dopo → nessuna scheda cliente reale toccata.
+- **Test con account sintetici** (percorso server reale, `assign_workout_template_to_client`, mai clienti reali): coach e cliente sintetici creati tramite il vero trigger `handle_new_user()` (non insert manuali), 3/3 template assegnati con copie esatte (10 piani totali), cleanup via `auth.admin.deleteUser` con zero residuo verificato.
+- **BUG-055 chiuso in `docs/BUGS.md`**. Il motore di revisione (sotto-blocco 2.3, non ancora iniziato) può ora fidarsi del flag `auto_eligible` per tutti e 18 i template.

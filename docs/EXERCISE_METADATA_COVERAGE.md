@@ -64,7 +64,9 @@ Nessun esercizio è stato marcato `eligible_for_substitution=false` (tutti i 96 
 
 ## Verifica dei 18 template `auto_eligible`
 
-15/18 **PASS** (tutti gli esercizi esistono, hanno metadati, attrezzatura/luogo/livello coerenti col template). **3 FAIL — problemi reali nel CONTENUTO dei template (Blocco 1, non nel seed di questo sotto-blocco), trovati perché ora esiste per la prima volta un dato di attrezzatura/livello con cui confrontarli:**
+**Aggiornamento 2026-07-27 (BUG-055 chiuso):** dopo la migration `20260807090000_fix_bug_055_auto_template_content.sql`, **18/18 template PASS**. I 3 FAIL descritti sotto (storico, al momento del seed di questo sotto-blocco) sono stati corretti sostituendo gli esercizi incompatibili — dettaglio completo (tabella prima/dopo, criteri di sostituzione, test) in `docs/BUG_055_TEMPLATE_FIX.md`. Il motore di revisione (2.3) può ora fidarsi del flag `auto_eligible` per tutti e 18 i template.
+
+15/18 **PASS** (tutti gli esercizi esistono, hanno metadati, attrezzatura/luogo/livello coerenti col template). **3 FAIL (storico, corretti — vedi sopra) — problemi reali nel CONTENUTO dei template (Blocco 1, non nel seed di questo sotto-blocco), trovati perché ora esiste per la prima volta un dato di attrezzatura/livello con cui confrontarli:**
 
 | Template | Location | Level | Problema |
 |---|---|---|---|
@@ -72,7 +74,7 @@ Nessun esercizio è stato marcato `eligible_for_substitution=false` (tutti i 96 
 | **Manubri ed Elastici** | Casa | Intermedio | Include `gambe-stacco-rumeno` (stacco rumeno con **bilanciere**, `full_gym`) — un template il cui nome stesso indica "manubri ed elastici" non dovrebbe contenere un esercizio a bilanciere. |
 | **Tecnica dei Fondamentali** | Palestra | Principiante | Include `gambe-stacco-rumeno` (livello `advanced`) in un template "Principiante"/"Fondamentali". |
 
-**Nessuno di questi 3 template è stato disattivato (`auto_eligible` non toccato)**: la richiesta di questo sotto-blocco vieta esplicitamente di disattivare automaticamente senza documentare, ed è comunque una modifica ai dati del Blocco 1 (`workout_template_exercises`), fuori dallo scope di un sotto-blocco di seed metadati. **Decisione richiesta all'utente prima che il motore di revisione (2.3) possa fidarsi ciecamente del flag `auto_eligible` per questi 3 template**: correggere il contenuto del template (sostituire l'esercizio incompatibile) oppure accettare esplicitamente l'eccezione. Vedi anche `docs/BUGS.md` per la registrazione formale.
+**Nessuno di questi 3 template è stato disattivato (`auto_eligible` non toccato)**: la richiesta di questo sotto-blocco vieta esplicitamente di disattivare automaticamente senza documentare, ed è comunque una modifica ai dati del Blocco 1 (`workout_template_exercises`), fuori dallo scope di un sotto-blocco di seed metadati. Il contenuto è stato corretto in un task dedicato successivo (BUG-055, vedi `docs/BUG_055_TEMPLATE_FIX.md`). Vedi anche `docs/BUGS.md` per la registrazione formale.
 
 ## Decisioni rimandate al sotto-blocco 2.3
 
