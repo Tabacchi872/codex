@@ -11,7 +11,7 @@ export type SubscriptionPackageTargetRole = 'coach' | 'client';
 
 export type SubscriptionPackageDurationUnit = 'days' | 'months';
 
-export type UserSubscriptionStatus = 'pending' | 'active' | 'expired' | 'canceled';
+export type UserSubscriptionStatus = 'pending' | 'active' | 'expired' | 'canceled' | 'refunded' | 'revoked';
 
 export type SubscriptionPackage = {
   id: string;

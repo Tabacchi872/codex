@@ -66,11 +66,28 @@ export default function ClientSubscriptionScreen() {
       return;
     }
     setLoadingProducts(true);
-    const configuredPackages = sortedPackages.filter(
-      (item) =>
-        item.revenuecatEntitlementId === CLIENT_REVENUECAT_ENTITLEMENT && item.revenuecatOfferingId === CLIENT_REVENUECAT_OFFERING,
-    );
-    const states = await loadStoreProductsForPackages(configuredPackages);
+    if (__DEV__) {
+      const unexpectedConfig = sortedPackages.filter(
+        (item) =>
+          item.revenuecatEntitlementId !== CLIENT_REVENUECAT_ENTITLEMENT || item.revenuecatOfferingId !== CLIENT_REVENUECAT_OFFERING,
+      );
+      if (unexpectedConfig.length > 0) {
+        console.warn(
+          'CLIENT_PRO_PACKAGE_CONFIG_MISMATCH',
+          unexpectedConfig.map((item) => ({
+            id: item.id,
+            name: item.name,
+            revenuecatEntitlementId: item.revenuecatEntitlementId,
+            expectedEntitlementId: CLIENT_REVENUECAT_ENTITLEMENT,
+            revenuecatOfferingId: item.revenuecatOfferingId,
+            expectedOfferingId: CLIENT_REVENUECAT_OFFERING,
+            androidProductId: item.androidProductId,
+            iosProductId: item.iosProductId,
+          })),
+        );
+      }
+    }
+    const states = await loadStoreProductsForPackages(sortedPackages);
     setProductStates(states);
     setLoadingProducts(false);
   }, [sortedPackages]);
@@ -318,6 +335,7 @@ function ClientPlanCard({
   }
 
   const messageColor = messageTone === 'error' ? colors.rust : messageTone === 'success' ? colors.moss : colors.inkSoft;
+  const unavailableReason = getUnavailableReason(productState, loadingProduct);
 
   return (
     <AppCard style={styles.planCard}>
@@ -341,12 +359,13 @@ function ClientPlanCard({
           <Text style={[styles.featureText, { color: colors.ink }]}>{feature}</Text>
         </View>
       ))}
+      {unavailableReason ? <Text style={[styles.storeError, { color: colors.rust }]}>{unavailableReason}</Text> : null}
       {checkoutMessage ? <Text style={[styles.message, { color: messageColor }]}>{checkoutMessage}</Text> : null}
       {showRetry ? (
         <AppButton label="Riprova" onPress={handleRetrySync} loading={retrying} variant="outline" fullWidth />
       ) : (
         <AppButton
-          label={!canPurchase ? 'Non disponibile' : purchasing ? 'Acquisto in corso...' : 'Scegli questo piano'}
+          label={!canPurchase ? 'Prodotto non disponibile' : purchasing ? 'Acquisto in corso...' : 'Scegli questo piano'}
           onPress={handlePurchase}
           loading={purchasing}
           disabled={!canPurchase || purchasing}
@@ -361,6 +380,14 @@ function formatCardPrice(state: RevenueCatProductState | undefined) {
   if (!state) return 'Prezzo non disponibile';
   if (state.status === 'available') {
     return state.periodLabel ? `${state.priceString} / ${state.periodLabel}` : state.priceString;
+  }
+  return state.message;
+}
+
+function getUnavailableReason(state: RevenueCatProductState | undefined, loading: boolean) {
+  if (loading || state?.status === 'available') return null;
+  if (!state) {
+    return 'RevenueCat non ha restituito uno stato per questo pacchetto: controlla entitlement, offering e product identifier configurati.';
   }
   return state.message;
 }
@@ -446,6 +473,11 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: AppFontSize.sm,
+    lineHeight: 20,
+  },
+  storeError: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
     lineHeight: 20,
   },
   plansSection: {

@@ -122,10 +122,14 @@ export function subscribeRevenueCatCustomerInfo(listener: CustomerInfoUpdateList
 
 export async function configureRevenueCat(): Promise<{ ok: true } | { ok: false; code: 'unsupported' | 'not_configured'; message: string }> {
   const unsupportedMessage = getUnsupportedMessage();
-  if (unsupportedMessage) return { ok: false, code: 'unsupported', message: unsupportedMessage };
+  if (unsupportedMessage) {
+    logRevenueCatDiagnostic('REVENUECAT_CONFIG_UNSUPPORTED', { context: getRuntimeDiagnosticContext(), message: unsupportedMessage });
+    return { ok: false, code: 'unsupported', message: unsupportedMessage };
+  }
 
   const apiKey = getApiKey();
   if (!apiKey) {
+    logRevenueCatDiagnostic('REVENUECAT_CONFIG_MISSING_PUBLIC_KEY', { context: getRuntimeDiagnosticContext() });
     return {
       ok: false,
       code: 'not_configured',
@@ -137,6 +141,7 @@ export async function configureRevenueCat(): Promise<{ ok: true } | { ok: false;
     Purchases.configure({ apiKey });
     configured = true;
     configuredApiKey = apiKey;
+    logRevenueCatDiagnostic('REVENUECAT_CONFIGURED', { context: getRuntimeDiagnosticContext(), publicApiKeyPresent: true });
   }
   ensureCustomerInfoListener();
   return { ok: true };
@@ -177,16 +182,23 @@ export async function getRevenueCatCustomerInfo(userId: string): Promise<{ ok: t
 }
 
 export async function loadRevenueCatProductStates(userId: string, packages: SubscriptionPackage[]) {
+  logRevenueCatDiagnostic('REVENUECAT_LOAD_PRODUCTS_START', {
+    context: getRuntimeDiagnosticContext(),
+    packages: packages.map(describePackageForDiagnostics),
+  });
   const identifyResult = await identifyRevenueCatUser(userId);
   if (!identifyResult.ok) {
+    logRevenueCatDiagnostic('REVENUECAT_LOAD_PRODUCTS_IDENTIFY_FAILED', { code: identifyResult.code, message: identifyResult.message });
     return Object.fromEntries(packages.map((pkg) => [pkg.id, unsupportedState(pkg, identifyResult.message)]));
   }
 
   let offerings: PurchasesOfferings;
   try {
     offerings = await Purchases.getOfferings();
+    logRevenueCatDiagnostic('REVENUECAT_GET_OFFERINGS_RESULT', describeOfferingsForDiagnostics(offerings));
   } catch (err) {
     const message = `Impossibile caricare i prodotti store: ${safeErrorMessage(err)}`;
+    logRevenueCatDiagnostic('REVENUECAT_GET_OFFERINGS_ERROR', { message });
     return Object.fromEntries(packages.map((pkg) => [pkg.id, errorState(pkg, message)]));
   }
 
@@ -200,6 +212,10 @@ export async function purchaseRevenueCatPackage(pkg: SubscriptionPackage, userId
   let offerings: PurchasesOfferings;
   try {
     offerings = await Purchases.getOfferings();
+    logRevenueCatDiagnostic('REVENUECAT_PURCHASE_OFFERINGS_RESULT', {
+      package: describePackageForDiagnostics(pkg),
+      offerings: describeOfferingsForDiagnostics(offerings),
+    });
   } catch (err) {
     return { ok: false, code: 'purchase_error', message: `Impossibile caricare il prodotto store: ${safeErrorMessage(err)}` };
   }
@@ -422,4 +438,53 @@ function safeErrorMessage(err: unknown) {
     return maybeError.userInfo?.readableErrorCode ?? maybeError.readableErrorCode ?? maybeError.message ?? 'errore sconosciuto';
   }
   return String(err);
+}
+
+function logRevenueCatDiagnostic(event: string, payload: Record<string, unknown>) {
+  if (!__DEV__) return;
+  console.info(event, payload);
+}
+
+function getRuntimeDiagnosticContext() {
+  return {
+    platform: Platform.OS,
+    appOwnership: Constants.appOwnership ?? null,
+    executionEnvironment: Constants.executionEnvironment ?? null,
+    nativeAppVersion: Constants.nativeAppVersion ?? null,
+    nativeBuildVersion: Constants.nativeBuildVersion ?? null,
+    iosBundleIdentifier: Constants.expoConfig?.ios?.bundleIdentifier ?? null,
+    androidPackage: Constants.expoConfig?.android?.package ?? null,
+  };
+}
+
+function describePackageForDiagnostics(pkg: SubscriptionPackage) {
+  return {
+    id: pkg.id,
+    name: pkg.name,
+    targetRole: pkg.targetRole,
+    revenuecatEntitlementId: pkg.revenuecatEntitlementId,
+    revenuecatOfferingId: pkg.revenuecatOfferingId,
+    androidProductId: pkg.androidProductId,
+    iosProductId: pkg.iosProductId,
+    expectedProductId: getPlatformProductId(pkg),
+    isActive: pkg.isActive,
+    durationValue: pkg.durationValue,
+    durationUnit: pkg.durationUnit,
+  };
+}
+
+function describeOfferingsForDiagnostics(offerings: PurchasesOfferings) {
+  return {
+    currentOfferingIdentifier: offerings.current?.identifier ?? null,
+    offeringIdentifiers: Object.keys(offerings.all),
+    offerings: Object.values(offerings.all).map((offering) => ({
+      identifier: offering.identifier,
+      packageIdentifiers: offering.availablePackages.map((pkg) => pkg.identifier),
+      products: offering.availablePackages.map((pkg) => ({
+        revenueCatPackageIdentifier: pkg.identifier,
+        productIdentifier: pkg.product.identifier,
+        subscriptionPeriod: getProductPeriod(pkg),
+      })),
+    })),
+  };
 }
