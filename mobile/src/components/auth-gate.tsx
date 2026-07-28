@@ -63,6 +63,7 @@ const CLIENT_ONLY_ROUTES = [
   '/pacchetti-cliente',
   CLIENT_ONBOARDING,
   CLIENT_FITNESS_QUESTIONNAIRE,
+  '/check-in-periodico',
 ];
 
 const COACH_ONLY_EXACT_ROUTES = [

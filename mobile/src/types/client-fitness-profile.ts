@@ -43,7 +43,26 @@ export type InitialFitnessQuestionnairePayload = {
   requiresProfessionalSupervision: boolean;
 };
 
-export type ProgramCycleStatus = 'draft' | 'active' | 'completed' | 'superseded' | 'suspended' | 'pending_review';
+// Allineato al CHECK reale di client_program_cycles.status (11 stati,
+// sotto-blocco 2.1/2.3): il valore precedente ('draft'/'active'/'completed'/
+// 'superseded'/'suspended'/'pending_review') non corrisponde piu' da quando
+// quella migration e' stata applicata (2026-07-27) — bug trovato durante il
+// sotto-blocco 2.6: getMyActiveProgramCycle() interrogava ancora
+// `status in ('active','pending_review')`, un valore che il database non
+// produce piu' da allora, lasciando la card "Il tuo programma automatico"
+// vuota per qualunque cliente il cui ciclo non fosse rimasto 'active'.
+export type ProgramCycleStatus =
+  | 'draft'
+  | 'active'
+  | 'checkin_due'
+  | 'review_pending'
+  | 'pending_subscription'
+  | 'paused_subscription'
+  | 'pending_safety_review'
+  | 'pending_template'
+  | 'completed'
+  | 'replaced'
+  | 'cancelled';
 
 export type ActiveProgramCycle = {
   id: string;

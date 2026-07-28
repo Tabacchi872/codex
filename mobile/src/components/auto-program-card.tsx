@@ -1,35 +1,71 @@
+import { useRouter } from 'expo-router';
 import { Sparkles } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppBadge, AppCard } from './ui';
+import { AppBadge, AppButton, AppCard } from './ui';
 
-import { getMyActiveProgramCycle } from '@/lib/auto-program-service';
+import { getMyActiveProgramCycle, runCycleReview } from '@/lib/auto-program-service';
 import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 import type { ActiveProgramCycle } from '@/types/client-fitness-profile';
 
-// Mostrata solo per clienti self_guided con un ciclo automatico esistente
-// (attivo o in attesa di revisione Superadmin): nessuna card per chi ha un
-// coach, nessuna card per chi non ha ancora completato il questionario
-// (in quel caso auth-gate.tsx lo sta gia' reindirizzando altrove). Dati
-// minimi per il Blocco 1: nessun indicatore di andamento/prossima revisione
-// puntuale (dati non ancora raccolti in questo blocco).
+type CardState = { loading: boolean; cycle: ActiveProgramCycle | null; error: string | null };
+
+// Mostrata solo per clienti self_guided con un ciclo automatico esistente:
+// nessuna card per chi ha un coach (a quel punto il ciclo automatico e'
+// sempre 'replaced' dal trigger del sotto-blocco 2.4, quindi non e' piu'
+// tra gli stati non terminali letti da getMyActiveProgramCycle — la card
+// si nasconde da sola, coerente con "aggiornamento quando viene assegnato
+// un coach"), nessuna card per chi non ha ancora completato il
+// questionario (auth-gate.tsx lo sta gia' reindirizzando altrove).
+//
+// Il server non pone mai un ciclo in 'checkin_due' (nessuna funzione lo
+// scrive: vedi docs/DECISIONS.md, stesso gap noto di effective_active_days)
+// — il segnale reale e' 'active' con review_due_at gia' passato, stesso
+// identico controllo di STEP 7 di run_cycle_review lato server: qui e'
+// solo un derivato di sola lettura, mai una logica decisionale duplicata.
 export function AutoProgramCard() {
+  const router = useRouter();
   const { colors } = useAppTheme();
-  const [state, setState] = useState<{ loading: boolean; cycle: ActiveProgramCycle | null; error: string | null }>({
-    loading: true,
-    cycle: null,
-    error: null,
-  });
+  const [state, setState] = useState<CardState>({ loading: true, cycle: null, error: null });
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
+  async function load() {
+    const result = await getMyActiveProgramCycle();
+    if (!result.ok) {
+      setState({ loading: false, cycle: null, error: result.message });
+      return;
+    }
+    setState({ loading: false, cycle: result.data, error: null });
+  }
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const result = await getMyActiveProgramCycle();
+      let result = await getMyActiveProgramCycle();
       if (!active) return;
       if (!result.ok) {
         setState({ loading: false, cycle: null, error: result.message });
         return;
+      }
+      // Tentativo silenzioso di ripresa: se l'abbonamento e' stato rinnovato
+      // nel frattempo, run_cycle_review lo rileva e riporta il ciclo ad
+      // 'active' (result_code 'resumed'), altrimenti risponde comunque
+      // bloccato e qui non cambia nulla. Nessuna logica decisionale
+      // duplicata: solo una chiamata silenziosa alla stessa RPC autorevole
+      // gia' usata dal bottone "Aggiorna", poi si rilegge lo stato reale.
+      if (result.data?.status === 'paused_subscription') {
+        const retry = await runCycleReview(result.data.id);
+        if (!active) return;
+        if (retry.ok) {
+          result = await getMyActiveProgramCycle();
+          if (!active) return;
+          if (!result.ok) {
+            setState({ loading: false, cycle: null, error: result.message });
+            return;
+          }
+        }
       }
       setState({ loading: false, cycle: result.data, error: null });
     })();
@@ -41,38 +77,128 @@ export function AutoProgramCard() {
   if (state.loading || state.error || !state.cycle) return null;
 
   const { cycle } = state;
-  const isPendingReview = cycle.status === 'pending_review';
+  const isCheckinDue =
+    (cycle.status === 'active' || cycle.status === 'checkin_due') &&
+    !!cycle.reviewDueAt &&
+    new Date(cycle.reviewDueAt).getTime() <= Date.now();
 
+  async function retryReview() {
+    setRetrying(true);
+    setRetryError(null);
+    const result = await runCycleReview(cycle!.id);
+    setRetrying(false);
+    if (!result.ok) {
+      setRetryError(result.message);
+      return;
+    }
+    await load();
+  }
+
+  if (cycle.status === 'review_pending') {
+    return (
+      <AppCard style={styles.card}>
+        <CardHeader title="Il tuo programma automatico" badgeLabel="In elaborazione" badgeTone="amber" colors={colors} />
+        <Text style={[styles.body, { color: colors.inkSoft }]}>
+          Il tuo check-in è stato ricevuto e la revisione del programma è in corso.
+        </Text>
+        {retryError ? <Text style={[styles.body, { color: colors.rust }]}>{retryError}</Text> : null}
+        <AppButton label="Aggiorna" onPress={retryReview} loading={retrying} variant="secondary" />
+      </AppCard>
+    );
+  }
+
+  if (cycle.status === 'pending_safety_review') {
+    return (
+      <AppCard style={styles.card}>
+        <CardHeader title="Il tuo programma automatico" badgeLabel="In revisione" badgeTone="amber" colors={colors} />
+        <Text style={[styles.body, { color: colors.inkSoft }]}>
+          Il nostro team sta rivedendo il tuo profilo prima di assegnarti (o confermarti) un programma: riceverai una notifica appena sarà pronto.
+        </Text>
+      </AppCard>
+    );
+  }
+
+  if (cycle.status === 'pending_template') {
+    return (
+      <AppCard style={styles.card}>
+        <CardHeader title="Il tuo programma automatico" badgeLabel="In revisione" badgeTone="amber" colors={colors} />
+        <Text style={[styles.body, { color: colors.inkSoft }]}>
+          Non abbiamo trovato un programma compatibile con le tue ultime indicazioni: il nostro team ti contatterà a breve per assegnartene uno su misura.
+        </Text>
+      </AppCard>
+    );
+  }
+
+  if (cycle.status === 'pending_subscription' || cycle.status === 'paused_subscription') {
+    return (
+      <AppCard style={styles.card}>
+        <CardHeader title="Il tuo programma automatico" badgeLabel="In pausa" badgeTone="amber" colors={colors} />
+        <Text style={[styles.body, { color: colors.inkSoft }]}>
+          Il tuo abbonamento non risulta attivo: riattivalo per riprendere il programma e ricevere la prossima revisione.
+        </Text>
+        <AppButton label="Vai all'abbonamento" onPress={() => router.push('/abbonamento-cliente')} variant="secondary" />
+      </AppCard>
+    );
+  }
+
+  if (isCheckinDue) {
+    return (
+      <AppCard style={styles.card}>
+        <CardHeader title="Il tuo programma automatico" badgeLabel="Check-in disponibile" badgeTone="moss" colors={colors} />
+        <Text style={[styles.programName, { color: colors.ink }]} numberOfLines={2}>
+          {cycle.templateName ?? 'Programma personalizzato'}
+        </Text>
+        <Text style={[styles.body, { color: colors.inkSoft }]}>
+          È il momento di raccontarci come è andato l'ultimo ciclo: pochi minuti per ricevere un programma aggiornato.
+        </Text>
+        <AppButton label="Compila il check-in" onPress={() => router.push({ pathname: '/check-in-periodico', params: { cycleId: cycle.id } })} fullWidth />
+      </AppCard>
+    );
+  }
+
+  // Stati non terminali non ancora osservabili in produzione ('draft') o
+  // scaduti/annullati che teoricamente non dovrebbero comparire come
+  // "ciclo corrente" (getMyActiveProgramCycle li esclude gia'): fallback
+  // difensivo, mai un crash silenzioso.
   return (
     <AppCard style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Sparkles size={18} color={colors.moss} />
-          <Text style={[styles.title, { color: colors.ink }]}>Il tuo programma automatico</Text>
-        </View>
-        <AppBadge label={isPendingReview ? 'In revisione' : `Ciclo ${cycle.cycleNumber}`} tone={isPendingReview ? 'amber' : 'moss'} />
-      </View>
-
-      {isPendingReview ? (
-        <Text style={[styles.body, { color: colors.inkSoft }]}>
-          Il nostro team sta rivedendo il tuo questionario prima di assegnarti un programma: riceverai una notifica appena sarà pronto.
+      <CardHeader title="Il tuo programma automatico" badgeLabel={`Ciclo ${cycle.cycleNumber}`} badgeTone="moss" colors={colors} />
+      <Text style={[styles.programName, { color: colors.ink }]} numberOfLines={2}>
+        {cycle.templateName ?? 'Programma personalizzato'}
+      </Text>
+      {cycle.decisionReason ? (
+        <Text style={[styles.body, { color: colors.inkSoft }]} numberOfLines={3}>
+          {cycle.decisionReason}
         </Text>
-      ) : (
-        <>
-          <Text style={[styles.programName, { color: colors.ink }]} numberOfLines={2}>
-            {cycle.templateName ?? 'Programma personalizzato'}
-          </Text>
-          {cycle.decisionReason ? (
-            <Text style={[styles.body, { color: colors.inkSoft }]} numberOfLines={3}>
-              {cycle.decisionReason}
-            </Text>
-          ) : null}
-          <Text style={[styles.meta, { color: colors.inkSoft }]}>
-            Il ciclo dura 4 settimane; la prossima revisione verrà calcolata al tuo prossimo accesso.
-          </Text>
-        </>
-      )}
+      ) : null}
+      {cycle.reviewDueAt ? (
+        <Text style={[styles.meta, { color: colors.inkSoft }]}>
+          Prossima revisione prevista: {new Date(cycle.reviewDueAt).toLocaleDateString('it-IT')}.
+        </Text>
+      ) : null}
     </AppCard>
+  );
+}
+
+function CardHeader({
+  title,
+  badgeLabel,
+  badgeTone,
+  colors,
+}: {
+  title: string;
+  badgeLabel: string;
+  badgeTone: 'amber' | 'moss';
+  colors: ReturnType<typeof useAppTheme>['colors'];
+}) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.titleRow}>
+        <Sparkles size={18} color={colors.moss} />
+        <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+      </View>
+      <AppBadge label={badgeLabel} tone={badgeTone} />
+    </View>
   );
 }
 
