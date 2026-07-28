@@ -369,6 +369,8 @@ function getStatusLabel(status: UserSubscriptionStatus) {
     active: 'Attivo',
     expired: 'Scaduto',
     canceled: 'Annullato',
+    refunded: 'Rimborsato',
+    revoked: 'Revocato',
   };
   return labels[status];
 }
@@ -382,7 +384,7 @@ function getProviderLabel(provider: string | null) {
 function getStatusTone(status: UserSubscriptionStatus) {
   if (status === 'active') return 'moss' as const;
   if (status === 'pending') return 'amber' as const;
-  if (status === 'expired' || status === 'canceled') return 'rust' as const;
+  if (status === 'expired' || status === 'canceled' || status === 'refunded' || status === 'revoked') return 'rust' as const;
   return 'neutral' as const;
 }
 

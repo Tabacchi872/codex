@@ -1,78 +1,63 @@
 import { router, type Href } from 'expo-router';
 import {
-  ArrowUp,
-  Bell,
-  CalendarDays,
-  CheckCircle2,
   ChevronRight,
   CreditCard,
   Crown,
-  Euro,
   Headphones,
+  Info,
   Layers3,
-  LifeBuoy,
-  MessageSquare,
-  Package,
+  PackageCheck,
   Shield,
+  UserRound,
   Users,
-  WalletCards,
-  XCircle,
   type LucideIcon,
 } from 'lucide-react-native';
-import type React from 'react';
-import { useEffect } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { FitCoachLogo } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
-import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
-import { DEMO_DATA_ENABLED } from '@/lib/demo-data';
-import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
-import { useAppNotificationStore } from '@/store/app-notification-store';
-import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
-import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
-import type { AppBillingStatus, DemoPaymentEvent, SuperadminCoach, SuperadminNotification } from '@/types/superadmin';
+import { getSuperadminDashboard, type SuperadminDashboardData } from '@/lib/superadmin-platform-service';
+import { AppFontSize, AppSpacing, useAppTheme } from '@/theme';
 
-type Tone = 'lime' | 'orange' | 'purple' | 'green' | 'red' | 'muted';
-
-const currencyFormatter = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+type Tone = 'lime' | 'orange' | 'green' | 'muted';
 
 export default function SuperadminDashboard() {
   const { colors } = useAppTheme();
-  const { coaches, loading, error, reload } = useSuperadminCoaches();
-  const paymentEvents = useSuperadminStore((s) => s.paymentEvents);
-  const supportMessages = useSuperadminStore((s) => s.coachSupportMessages);
-  const notifications = useSuperadminStore((s) => s.notifications);
-  const localCoaches = useSuperadminStore((s) => s.coaches);
-  const supportConversations = getSuperadminSupportConversations(localCoaches, supportMessages);
-  const autoProgramUnread = useAppNotificationStore((s) => s.unreadCount);
-  const refreshAutoProgramUnread = useAppNotificationStore((s) => s.refreshUnreadCount);
+  const [data, setData] = useState<SuperadminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showRevenueDetails, setShowRevenueDetails] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const result = await getSuperadminDashboard();
+    setLoading(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setData(result.data);
+  }, []);
 
   useEffect(() => {
-    refreshAutoProgramUnread();
-  }, [refreshAutoProgramUnread]);
-
-  const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active' && !coach.blocked).length;
-  const activeSubscriptions = coaches.filter((coach) => coach.hasActivePackageSubscription).length;
-  const unresolvedSupport = supportConversations.filter((conversation) => conversation.unreadCount > 0).length;
-  const visiblePaymentEvents = DEMO_DATA_ENABLED ? paymentEvents : paymentEvents.filter((event) => event.provider !== 'demo' && event.provider !== 'demo_gateway');
-  const monthRevenue = visiblePaymentEvents
-    .filter((event) => event.status === 'succeeded' && isCurrentMonth(event.createdAt))
-    .reduce((sum, event) => sum + (event.amount ?? 0), 0);
-  const recentCoaches = [...coaches].sort(sortByRecentActivity).slice(0, 3);
-  const recentActivities = buildRecentActivities(coaches, visiblePaymentEvents, notifications, supportConversations).slice(0, 4);
+    load();
+  }, [load]);
 
   function navigate(source: string, target: Href) {
     logSuperadminNavPress(source, target.toString());
     router.push(target);
   }
 
+  const kpis = data?.kpis;
+
   return (
     <SuperadminShell
       title="Superadmin"
       hideHeader
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.moss} />}>
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.moss} />}>
       <View style={styles.header}>
         <View style={styles.headerGlow} pointerEvents="none" />
         <View style={styles.headerText}>
@@ -95,63 +80,69 @@ export default function SuperadminDashboard() {
         <View style={styles.errorBox}>
           <Text style={styles.errorTitle}>Dati non disponibili</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={reload} style={[styles.retryButton, { borderColor: colors.moss }]} accessibilityRole="button">
+          <Pressable onPress={load} style={[styles.retryButton, { borderColor: colors.moss }]} accessibilityRole="button">
             <Text style={[styles.retryLabel, { color: colors.moss }]}>Riprova</Text>
           </Pressable>
         </View>
       ) : null}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroller}>
-        {loading ? (
-          [0, 1, 2, 3].map((item) => <SkeletonCard key={item} width={72} height={116} />)
+      <View style={styles.kpiGrid}>
+        {loading || !kpis ? (
+          [0, 1, 2, 3, 4, 5, 6, 7].map((item) => <SkeletonCard key={item} />)
         ) : (
           <>
-            <KpiCard icon={Users} label="Coach attivi" value={String(activeCoaches)} tone="lime" onPress={() => navigate('superadmin-kpi-coach-attivi', '/superadmin/coaches?status=active' as Href)} />
-            <KpiCard icon={CalendarDays} label="Abbonamenti attivi" value={formatCompact(activeSubscriptions)} tone="lime" onPress={() => navigate('superadmin-kpi-abbonamenti', '/superadmin/coaches?status=all' as Href)} />
-            <KpiCard icon={Euro} label="Incassi mese" value={monthRevenue > 0 ? currencyFormatter.format(monthRevenue) : '-'} tone="green" onPress={() => navigate('superadmin-kpi-incassi', '/superadmin/payment-events' as Href)} />
-            <KpiCard icon={MessageSquare} label="Ticket aperti" value={String(unresolvedSupport)} tone="orange" onPress={() => navigate('superadmin-kpi-ticket', '/superadmin/support' as Href)} />
+            <KpiCard icon={Users} label="Coach attivi" value={String(kpis.activeCoaches)} tone="lime" onPress={() => navigate('superadmin-kpi-coach-attivi', '/superadmin/coaches?status=active' as Href)} />
+            <KpiCard icon={UserRound} label="Clienti totali" value={String(kpis.totalClients)} tone="lime" onPress={() => navigate('superadmin-kpi-clienti', '/superadmin/clients' as Href)} />
+            <KpiCard icon={UserRound} label="Clienti senza coach" value={String(kpis.clientsWithoutCoach)} tone="orange" onPress={() => navigate('superadmin-kpi-clienti-senza-coach', '/superadmin/clients' as Href)} />
+            <KpiCard icon={PackageCheck} label="Client Pro attivi" value={String(kpis.clientProActive)} tone="green" onPress={() => navigate('superadmin-kpi-client-pro-attivi', '/superadmin/client-pro' as Href)} />
+            <KpiCard icon={PackageCheck} label="Client Pro scaduti" value={String(kpis.clientProExpired)} tone="orange" onPress={() => navigate('superadmin-kpi-client-pro-scaduti', '/superadmin/client-pro' as Href)} />
+            <KpiCard icon={Layers3} label="Programmi automatici" value={String(kpis.activeAutoPrograms)} tone="lime" onPress={() => navigate('superadmin-kpi-programmi', '/superadmin/clients' as Href)} />
+            <KpiCard icon={Layers3} label="Revisioni da controllare" value={String(kpis.reviewsToCheck)} tone="orange" onPress={() => navigate('superadmin-kpi-revisioni', '/superadmin/clients' as Href)} />
+            <KpiCard icon={Headphones} label="Ticket aperti" value={String(kpis.openTickets)} tone="muted" onPress={() => navigate('superadmin-kpi-ticket', '/superadmin/support' as Href)} />
           </>
         )}
-      </ScrollView>
+      </View>
 
-      <SectionHeader title="Coach recenti" action="Vedi tutti" onPress={() => navigate('superadmin-coach-tutti', '/superadmin/coaches' as Href)} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.coachScroller}>
-        {loading ? (
-          [0, 1, 2].map((item) => <SkeletonCard key={item} width={96} height={150} />)
-        ) : recentCoaches.length === 0 ? (
-          <EmptyPanel title="Nessun coach registrato" detail="Quando Supabase restituira' coach reali, compariranno qui." />
-        ) : (
-          recentCoaches.map((coach) => (
-            <CoachCard key={coach.id} coach={coach} onPress={() => navigate('superadmin-coach-card', `/superadmin/coaches/${coach.id}` as Href)} />
-          ))
-        )}
-      </ScrollView>
+      <RecentSection
+        title="Coach recenti"
+        items={data?.recentCoaches ?? []}
+        loading={loading}
+        hrefBase="/superadmin/coaches"
+        onSeeAll={() => navigate('superadmin-coach-tutti', '/superadmin/coaches' as Href)}
+      />
+      <RecentSection
+        title="Clienti recenti"
+        items={data?.recentClients ?? []}
+        loading={loading}
+        hrefBase="/superadmin/clients"
+        onSeeAll={() => navigate('superadmin-clienti-tutti', '/superadmin/clients' as Href)}
+      />
+
+      {kpis ? (
+        <View style={[styles.revenueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.revenueIcon, { backgroundColor: colors.mossSoft }]}>
+            <Info size={17} color={colors.moss} />
+          </View>
+          <View style={styles.revenueCopy}>
+            <Text style={[styles.revenueTitle, { color: colors.ink }]}>Dati economici</Text>
+            <Text style={[styles.revenueText, { color: colors.inkSoft }]} numberOfLines={showRevenueDetails ? undefined : 2}>
+              Incassi coach mese: {formatMoney(kpis.coachMonthRevenue, null)}. Incassi Client Pro reali: {formatMoney(kpis.clientProMonthRevenue, kpis.clientProMonthRevenueCurrency)}. {data?.notes?.coachRevenue ?? ''} {data?.notes?.clientProRevenue ?? ''}
+            </Text>
+          </View>
+          <Pressable onPress={() => setShowRevenueDetails((value) => !value)} hitSlop={6} style={styles.detailButton}>
+            <Text style={[styles.detailButtonText, { color: colors.moss }]}>{showRevenueDetails ? 'Chiudi' : 'Dettagli'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <Text style={[styles.sectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
       <View style={styles.quickGrid}>
-        <QuickAction title="Piani" subtitle="Gestisci piani" icon={Layers3} onPress={() => navigate('superadmin-action-piani', '/superadmin/plans' as Href)} />
-        <QuickAction title="Pacchetti" subtitle="Gestisci pacchetti" icon={Package} onPress={() => navigate('superadmin-action-pacchetti', '/superadmin/pacchetti' as Href)} />
-        <QuickAction title="Pagamenti" subtitle="Transazioni" icon={CreditCard} onPress={() => navigate('superadmin-action-pagamenti', '/superadmin/payment-events' as Href)} />
+        <QuickAction title="Coach" subtitle="Coach registrati" icon={Users} onPress={() => navigate('superadmin-action-coach', '/superadmin/coaches' as Href)} />
+        <QuickAction title="Clienti" subtitle="Clienti registrati" icon={UserRound} onPress={() => navigate('superadmin-action-clienti', '/superadmin/clients' as Href)} />
+        <QuickAction title="Piani Coach" subtitle="Prezzi e limiti" icon={Layers3} onPress={() => navigate('superadmin-action-piani-coach', '/superadmin/plans' as Href)} />
+        <QuickAction title="Client Pro" subtitle="RevenueCat clienti" icon={PackageCheck} onPress={() => navigate('superadmin-action-client-pro', '/superadmin/client-pro' as Href)} />
+        <QuickAction title="Pagamenti" subtitle="Coach e Client Pro" icon={CreditCard} onPress={() => navigate('superadmin-action-pagamenti', '/superadmin/payment-events' as Href)} />
         <QuickAction title="Supporto" subtitle="Ticket & help" icon={Headphones} onPress={() => navigate('superadmin-action-supporto', '/superadmin/support' as Href)} />
-        <QuickAction
-          title="Programmi"
-          subtitle={autoProgramUnread > 0 ? `${autoProgramUnread} da rivedere` : 'Nessuna novità'}
-          icon={Bell}
-          onPress={() => navigate('superadmin-action-programmi', '/superadmin/notifiche-programmi' as Href)}
-        />
-      </View>
-
-      <SectionHeader title="Attivita' recenti" action="Vedi tutte" onPress={() => navigate('superadmin-attivita', '/superadmin/notifications' as Href)} />
-      <View style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        {loading ? (
-          [0, 1, 2].map((item) => <ActivitySkeleton key={item} />)
-        ) : recentActivities.length === 0 ? (
-          <Text style={[styles.emptyActivity, { color: colors.inkSoft }]}>Nessuna attivita' recente disponibile.</Text>
-        ) : (
-          recentActivities.map((activity, index) => (
-            <ActivityRow key={activity.id} item={activity} showBorder={index > 0} onPress={() => navigate(`superadmin-activity-${activity.id}`, activity.href)} />
-          ))
-        )}
       </View>
     </SuperadminShell>
   );
@@ -167,45 +158,61 @@ function KpiCard({ icon: Icon, label, value, tone, onPress }: { icon: LucideIcon
       accessibilityLabel={label}
       style={[styles.kpiCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={[styles.kpiIcon, { backgroundColor: palette.soft }]}>
-        <Icon size={19} color={palette.strong} strokeWidth={2.1} />
+        <Icon size={18} color={palette.strong} strokeWidth={2.1} />
       </View>
-      <Text style={[styles.kpiLabel, { color: colors.inkSoft }]} numberOfLines={2}>{label}</Text>
-      <Text style={[styles.kpiValue, { color: colors.ink }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-      <View style={styles.kpiDeltaRow}>
-        <ArrowUp size={11} color={palette.strong} />
-        <Text style={[styles.kpiDelta, { color: palette.strong }]}>n/d</Text>
+      <View style={styles.kpiCopy}>
+        <Text style={[styles.kpiLabel, { color: colors.inkSoft }]} numberOfLines={2}>{label}</Text>
+        <Text style={[styles.kpiValue, { color: colors.ink }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       </View>
-      <Text style={[styles.kpiVs, { color: colors.inkFaint }]}>vs mese scorso</Text>
     </Pressable>
   );
 }
 
-function CoachCard({ coach, onPress }: { coach: SuperadminCoach; onPress: () => void }) {
+function RecentSection({
+  title,
+  items,
+  loading,
+  hrefBase,
+  onSeeAll,
+}: {
+  title: string;
+  items: Array<{ id: string; name: string; email: string; createdAt: string }>;
+  loading: boolean;
+  hrefBase: '/superadmin/coaches' | '/superadmin/clients';
+  onSeeAll: () => void;
+}) {
   const { colors } = useAppTheme();
-  const status = getStatusPresentation(colors, coach.billingStatus);
-  const planName = coach.activePackageName ?? planCodeLabel(coach.planCode);
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Apri dettaglio coach ${coach.name}`}
-      style={[styles.coachCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <ChevronRight size={19} color={colors.inkFaint} style={styles.cardChevron} />
-      <View style={[styles.avatar, { backgroundColor: colors.surfaceSubtle }]}>
-        <Text style={[styles.avatarInitial, { color: colors.ink }]}>{getInitials(coach.name)}</Text>
-        <View style={[styles.avatarOnline, { backgroundColor: coach.blocked ? colors.inkFaint : colors.moss, borderColor: colors.surface }]} />
+    <>
+      <SectionHeader title={title} action="Vedi tutti" onPress={onSeeAll} />
+      <View style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {loading ? (
+          [0, 1, 2].map((item) => <ActivitySkeleton key={item} />)
+        ) : items.length === 0 ? (
+          <Text style={[styles.emptyActivity, { color: colors.inkSoft }]}>Nessun dato recente disponibile.</Text>
+        ) : (
+          items.map((item, index) => (
+            <Pressable
+              key={item.id}
+              onPress={() => router.push(`${hrefBase}/${item.id}` as Href)}
+              accessibilityRole="button"
+              style={[styles.activityRow, index > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+              <View style={[styles.avatar, { backgroundColor: colors.surfaceSubtle }]}>
+                <Text style={[styles.avatarInitial, { color: colors.ink }]}>{getInitials(item.name || item.email)}</Text>
+              </View>
+              <View style={styles.activityCopy}>
+                <Text style={[styles.activityTitle, { color: colors.ink }]} numberOfLines={1}>{item.name || 'Senza nome'}</Text>
+                <Text style={[styles.activityDetail, { color: colors.inkSoft }]} numberOfLines={1}>{item.email}</Text>
+              </View>
+              <View style={styles.activityMeta}>
+                <Text style={[styles.activityTime, { color: colors.inkFaint }]} numberOfLines={1}>{formatRelativeDate(item.createdAt)}</Text>
+              </View>
+              <ChevronRight size={20} color={colors.inkFaint} />
+            </Pressable>
+          ))
+        )}
       </View>
-      <Text style={[styles.coachName, { color: colors.ink }]} numberOfLines={1}>{coach.name}</Text>
-      <Text style={[styles.coachPlan, { color: status.color }]} numberOfLines={1}>{planName}</Text>
-      <Text style={[styles.coachMetaLabel, { color: colors.inkFaint }]}>Clienti</Text>
-      <Text style={[styles.coachUsage, { color: colors.ink }]}>{formatUsage(coach.clientsUsed, coach.activePackageMaxClients)}</Text>
-      <View style={[styles.coachDivider, { backgroundColor: colors.border }]} />
-      <Text style={[styles.coachMetaLabel, { color: colors.inkFaint }]}>Abbonamento</Text>
-      <View style={[styles.statusPill, { backgroundColor: status.soft }]}>
-        {status.icon}
-        <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
-      </View>
-    </Pressable>
+    </>
   );
 }
 
@@ -221,45 +228,8 @@ function QuickAction({ title, subtitle, icon: Icon, onPress }: { title: string; 
         <Icon size={22} color={colors.moss} />
       </View>
       <ChevronRight size={18} color={colors.inkFaint} style={styles.quickChevron} />
-      <Text style={[styles.quickTitle, { color: colors.ink }]}>{title}</Text>
-      <Text style={[styles.quickSubtitle, { color: colors.inkSoft }]}>{subtitle}</Text>
-    </Pressable>
-  );
-}
-
-type ActivityItem = {
-  id: string;
-  createdAt: string;
-  title: string;
-  detail: string;
-  value: string;
-  time: string;
-  tone: Tone;
-  icon: LucideIcon;
-  href: Href;
-};
-
-function ActivityRow({ item, showBorder, onPress }: { item: ActivityItem; showBorder: boolean; onPress: () => void }) {
-  const { colors } = useAppTheme();
-  const palette = getTonePalette(colors, item.tone);
-  const Icon = item.icon;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={[styles.activityRow, showBorder && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-      <View style={[styles.activityIcon, { backgroundColor: palette.soft }]}>
-        <Icon size={19} color={palette.strong} />
-      </View>
-      <View style={styles.activityCopy}>
-        <Text style={[styles.activityTitle, { color: colors.ink }]} numberOfLines={1}>{item.title}</Text>
-        <Text style={[styles.activityDetail, { color: colors.inkSoft }]} numberOfLines={1}>{item.detail}</Text>
-      </View>
-      <View style={styles.activityMeta}>
-        <Text style={[styles.activityValue, { color: palette.strong }]} numberOfLines={1}>{item.value}</Text>
-        <Text style={[styles.activityTime, { color: colors.inkFaint }]} numberOfLines={1}>{item.time}</Text>
-      </View>
-      <ChevronRight size={20} color={colors.inkFaint} />
+      <Text style={[styles.quickTitle, { color: colors.ink }]} numberOfLines={1}>{title}</Text>
+      <Text style={[styles.quickSubtitle, { color: colors.inkSoft }]} numberOfLines={1}>{subtitle}</Text>
     </Pressable>
   );
 }
@@ -277,8 +247,8 @@ function SectionHeader({ title, action, onPress }: { title: string; action: stri
   );
 }
 
-function SkeletonCard({ width, height }: { width: number; height: number }) {
-  return <View style={[styles.skeletonCard, { width, height }]} />;
+function SkeletonCard() {
+  return <View style={styles.skeletonCard} />;
 }
 
 function ActivitySkeleton() {
@@ -293,108 +263,19 @@ function ActivitySkeleton() {
   );
 }
 
-function EmptyPanel({ title, detail }: { title: string; detail: string }) {
-  const { colors } = useAppTheme();
-
-  return (
-    <View style={[styles.emptyPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.emptyPanelTitle, { color: colors.ink }]}>{title}</Text>
-      <Text style={[styles.emptyPanelDetail, { color: colors.inkSoft }]}>{detail}</Text>
-    </View>
-  );
-}
-
-function buildRecentActivities(
-  coaches: SuperadminCoach[],
-  paymentEvents: DemoPaymentEvent[],
-  notifications: SuperadminNotification[],
-  supportConversations: ReturnType<typeof getSuperadminSupportConversations>,
-): ActivityItem[] {
-  const paymentItems: ActivityItem[] = paymentEvents.map((event) => {
-    const coach = coaches.find((item) => item.id === event.coachId);
-    const failed = event.status === 'failed';
-    return {
-      id: `payment-${event.id}`,
-      createdAt: event.createdAt,
-      title: failed ? 'Pagamento fallito' : event.eventType === 'subscription_renewed' ? 'Pagamento ricevuto' : 'Evento pagamento',
-      detail: `${coach?.name ?? 'Coach'} · ${getPaymentEventLabel(event.eventType)}`,
-      value: event.amount === undefined ? '-' : currencyFormatter.format(event.amount),
-      time: formatRelativeDate(event.createdAt),
-      tone: failed ? 'orange' : 'green',
-      icon: failed ? WalletCards : Euro,
-      href: '/superadmin/payment-events' as Href,
-    };
-  });
-
-  const supportItems: ActivityItem[] = supportConversations.map((conversation) => ({
-    id: `support-${conversation.lastMessage.id}`,
-    createdAt: conversation.lastMessage.createdAt,
-    title: 'Nuovo ticket aperto',
-    detail: `${conversation.coach.name} · ${conversation.lastMessage.text}`,
-    value: `#${conversation.lastMessage.id.slice(-6).toUpperCase()}`,
-    time: formatRelativeDate(conversation.lastMessage.createdAt),
-    tone: 'purple',
-    icon: LifeBuoy,
-    href: `/superadmin/support/${conversation.coach.id}` as Href,
-  }));
-
-  const notificationItems: ActivityItem[] = notifications.map((notification) => ({
-    id: `notification-${notification.id}`,
-    createdAt: notification.createdAt,
-    title: notification.title,
-    detail: notification.description,
-    value: notification.read ? 'Letta' : 'Nuova',
-    time: formatRelativeDate(notification.createdAt),
-    tone: notification.type === 'payment_past_due' ? 'orange' : notification.type === 'coach_support_message' ? 'purple' : 'lime',
-    icon: notification.type === 'payment_past_due' ? CreditCard : notification.type === 'coach_support_message' ? MessageSquare : Shield,
-    href: '/superadmin/notifications' as Href,
-  }));
-
-  return [...paymentItems, ...supportItems, ...notificationItems].sort((a, b) => getActivityTime(b) - getActivityTime(a));
-}
-
-function getActivityTime(item: ActivityItem) {
-  const timestamp = new Date(item.createdAt).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function getPaymentEventLabel(eventType: string) {
-  const labels: Record<string, string> = {
-    subscription_renewed: 'Piano rinnovato',
-    trial_started: 'Prova attivata',
-    invoice_payment_failed: 'Problema di incasso',
-    access_blocked_manual: 'Account sospeso',
-  };
-  return labels[eventType] ?? 'Evento';
-}
-
-function getStatusPresentation(colors: ReturnType<typeof useAppTheme>['colors'], status: AppBillingStatus) {
-  const label = getBillingStatusLabel(status);
-  if (status === 'active') return { label: 'Attivo', color: colors.moss, soft: colors.mossSoft, icon: <CheckCircle2 size={12} color={colors.moss} /> };
-  if (status === 'trial') return { label: 'Prova gratuita', color: '#B887FF', soft: '#2B1D42', icon: <Shield size={12} color="#B887FF" /> };
-  if (status === 'past_due') return { label: 'In scadenza', color: colors.amber, soft: colors.amberSoft, icon: <CalendarDays size={12} color={colors.amber} /> };
-  if (status === 'blocked') return { label: 'Sospeso', color: colors.inkFaint, soft: colors.surfaceSubtle, icon: <XCircle size={12} color={colors.inkFaint} /> };
-  return { label, color: colors.rust, soft: colors.rustSoft, icon: <XCircle size={12} color={colors.rust} /> };
-}
-
 function getTonePalette(colors: ReturnType<typeof useAppTheme>['colors'], tone: Tone) {
   const palettes = {
     lime: { strong: colors.moss, soft: colors.mossSoft },
     green: { strong: colors.moss, soft: colors.mossSoft },
     orange: { strong: colors.amber, soft: colors.amberSoft },
-    purple: { strong: '#A55CFF', soft: '#291946' },
-    red: { strong: colors.rust, soft: colors.rustSoft },
     muted: { strong: colors.inkFaint, soft: colors.surfaceSubtle },
   } satisfies Record<Tone, { strong: string; soft: string }>;
   return palettes[tone];
 }
 
-function formatUsage(used: number, limit: number | null | undefined) {
-  return `${used} / ${limit == null ? '∞' : limit}`;
-}
-
-function formatCompact(value: number) {
-  return new Intl.NumberFormat('it-IT', { notation: value >= 1000 ? 'compact' : 'standard' }).format(value);
+function formatMoney(value: number | null, currency: string | null) {
+  if (value == null || !currency) return 'n/d';
+  return `${currency} ${Number(value).toFixed(2)}`;
 }
 
 function formatRelativeDate(value: string) {
@@ -406,27 +287,9 @@ function formatRelativeDate(value: string) {
   return sameDay ? `Oggi, ${time}` : date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
 }
 
-function isCurrentMonth(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return false;
-  const now = new Date();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-}
-
-function sortByRecentActivity(a: SuperadminCoach, b: SuperadminCoach) {
-  return new Date(b.periodStartsAt || 0).getTime() - new Date(a.periodStartsAt || 0).getTime();
-}
-
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return `${parts[0]?.[0] ?? 'C'}${parts[1]?.[0] ?? ''}`.toUpperCase();
-}
-
-function planCodeLabel(value: string) {
-  if (value === 'starter') return 'Studio';
-  if (value === 'pro') return 'Pro';
-  if (value === 'free') return 'Free';
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 const styles = StyleSheet.create({
@@ -530,22 +393,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  kpiScroller: {
-    gap: 6,
-    paddingRight: AppSpacing[2],
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 8,
+    width: '100%',
   },
   kpiCard: {
     backgroundColor: '#091018',
     borderColor: '#1B2B35',
     borderRadius: 14,
     borderWidth: 1,
-    gap: 4,
-    minHeight: 116,
-    padding: 7,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 66,
+    maxWidth: '48%',
+    paddingHorizontal: 9,
+    paddingVertical: 8,
     shadowColor: '#7BEA18',
     shadowOpacity: 0.08,
     shadowRadius: 16,
-    width: 72,
+    width: '48%',
   },
   kpiIcon: {
     alignItems: 'center',
@@ -554,32 +423,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 28,
   },
+  kpiCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
   kpiLabel: {
     color: '#AEB7BE',
     fontSize: 11,
     fontWeight: '600',
     lineHeight: 13,
-    minHeight: 24,
   },
   kpiValue: {
     color: '#F7F9FA',
     fontSize: 19,
     fontWeight: '800',
     lineHeight: 22,
+    marginTop: 2,
   },
-  kpiDeltaRow: {
-    alignItems: 'center',
+  revenueCard: {
+    alignItems: 'flex-start',
+    borderRadius: 14,
+    borderWidth: 1,
     flexDirection: 'row',
-    gap: 3,
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
-  kpiDelta: {
-    fontSize: 12,
+  revenueIcon: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  revenueCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  revenueTitle: {
+    fontSize: 13,
     fontWeight: '800',
+    lineHeight: 16,
   },
-  kpiVs: {
-    color: '#9AA4AE',
+  revenueText: {
     fontSize: 11,
     fontWeight: '600',
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  detailButton: {
+    paddingTop: 2,
+  },
+  detailButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   sectionHeader: {
     alignItems: 'center',
@@ -601,88 +498,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  coachScroller: {
-    gap: 6,
-    paddingRight: AppSpacing[2],
-  },
-  coachCard: {
-    backgroundColor: '#091018',
-    borderColor: '#1B2B35',
-    borderRadius: 14,
-    borderWidth: 1,
-    minHeight: 150,
-    padding: 9,
-    position: 'relative',
-    width: 96,
-  },
-  cardChevron: {
-    position: 'absolute',
-    right: 8,
-    top: 22,
-  },
   avatar: {
     alignItems: 'center',
     backgroundColor: '#22303A',
     borderRadius: 999,
-    height: 36,
+    height: 34,
     justifyContent: 'center',
-    marginBottom: 7,
-    width: 36,
+    width: 34,
   },
   avatarInitial: {
     color: '#EDF4F0',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  avatarOnline: {
-    borderColor: '#091018',
-    borderRadius: 999,
-    borderWidth: 2,
-    bottom: 1,
-    height: 11,
-    position: 'absolute',
-    right: -1,
-    width: 11,
-  },
-  coachName: {
-    color: '#F7F9FA',
     fontSize: 12,
-    fontWeight: '800',
-    lineHeight: 15,
-  },
-  coachPlan: {
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 14,
-  },
-  coachMetaLabel: {
-    color: '#9AA4AE',
-    fontSize: 9,
-    fontWeight: '600',
-    marginTop: 5,
-  },
-  coachUsage: {
-    color: '#F7F9FA',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  coachDivider: {
-    backgroundColor: '#1B2B35',
-    height: StyleSheet.hairlineWidth,
-    marginTop: 5,
-  },
-  statusPill: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 4,
-    minHeight: 20,
-    paddingHorizontal: 5,
-  },
-  statusPillText: {
-    fontSize: 10,
     fontWeight: '800',
   },
   quickGrid: {
@@ -697,8 +523,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexBasis: '47%',
     flexGrow: 1,
-    minHeight: 76,
-    padding: 10,
+    minHeight: 70,
+    minWidth: 150,
+    padding: 9,
     position: 'relative',
   },
   quickIcon: {
@@ -736,17 +563,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  activityBorder: {
-    borderTopColor: '#172631',
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  activityIcon: {
-    alignItems: 'center',
-    borderRadius: 999,
-    height: 30,
-    justifyContent: 'center',
-    width: 30,
-  },
   activityCopy: {
     flex: 1,
     minWidth: 0,
@@ -767,10 +583,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     maxWidth: 70,
   },
-  activityValue: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
   activityTime: {
     color: '#9AA4AE',
     fontSize: 9,
@@ -782,34 +594,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     padding: AppSpacing[3],
   },
-  emptyPanel: {
-    backgroundColor: '#091018',
-    borderColor: '#1B2B35',
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 6,
-    justifyContent: 'center',
-    minHeight: 128,
-    padding: AppSpacing[3],
-    width: 220,
-  },
-  emptyPanelTitle: {
-    color: '#F7F9FA',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  emptyPanelDetail: {
-    color: '#9AA4AE',
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
   skeletonCard: {
     backgroundColor: '#0C151C',
     borderColor: '#1B2B35',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
+    height: 66,
+    maxWidth: '48%',
     opacity: 0.78,
+    width: '48%',
   },
   skeletonIcon: {
     backgroundColor: '#16242E',
