@@ -1,10 +1,8 @@
 import { router, type Href } from 'expo-router';
 import {
-  Bell,
   ChevronRight,
   CreditCard,
   Crown,
-  Euro,
   Headphones,
   Info,
   Layers3,
@@ -17,7 +15,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { AppButton, AppCard, FitCoachLogo } from '@/components/ui';
+import { FitCoachLogo } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
 import { getSuperadminDashboard, type SuperadminDashboardData } from '@/lib/superadmin-platform-service';
@@ -105,23 +103,6 @@ export default function SuperadminDashboard() {
         )}
       </View>
 
-      {kpis ? (
-        <View style={[styles.revenueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.revenueIcon, { backgroundColor: colors.mossSoft }]}>
-            <Info size={18} color={colors.moss} />
-          </View>
-          <View style={styles.revenueCopy}>
-            <Text style={[styles.revenueTitle, { color: colors.ink }]}>Dati economici</Text>
-            <Text style={[styles.revenueText, { color: colors.inkSoft }]} numberOfLines={showRevenueDetails ? undefined : 2}>
-              Incassi coach mese: {formatMoney(kpis.coachMonthRevenue, null)}. Incassi Client Pro reali: {formatMoney(kpis.clientProMonthRevenue, kpis.clientProMonthRevenueCurrency)}. {data?.notes?.coachRevenue ?? ''} {data?.notes?.clientProRevenue ?? ''}
-            </Text>
-          </View>
-          <Pressable onPress={() => setShowRevenueDetails((value) => !value)} hitSlop={6} style={styles.detailButton}>
-            <Text style={[styles.detailButtonText, { color: colors.moss }]}>{showRevenueDetails ? 'Chiudi' : 'Dettagli'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
       <RecentSection
         title="Coach recenti"
         items={data?.recentCoaches ?? []}
@@ -136,6 +117,23 @@ export default function SuperadminDashboard() {
         hrefBase="/superadmin/clients"
         onSeeAll={() => navigate('superadmin-clienti-tutti', '/superadmin/clients' as Href)}
       />
+
+      {kpis ? (
+        <View style={[styles.revenueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.revenueIcon, { backgroundColor: colors.mossSoft }]}>
+            <Info size={17} color={colors.moss} />
+          </View>
+          <View style={styles.revenueCopy}>
+            <Text style={[styles.revenueTitle, { color: colors.ink }]}>Dati economici</Text>
+            <Text style={[styles.revenueText, { color: colors.inkSoft }]} numberOfLines={showRevenueDetails ? undefined : 2}>
+              Incassi coach mese: {formatMoney(kpis.coachMonthRevenue, null)}. Incassi Client Pro reali: {formatMoney(kpis.clientProMonthRevenue, kpis.clientProMonthRevenueCurrency)}. {data?.notes?.coachRevenue ?? ''} {data?.notes?.clientProRevenue ?? ''}
+            </Text>
+          </View>
+          <Pressable onPress={() => setShowRevenueDetails((value) => !value)} hitSlop={6} style={styles.detailButton}>
+            <Text style={[styles.detailButtonText, { color: colors.moss }]}>{showRevenueDetails ? 'Chiudi' : 'Dettagli'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <Text style={[styles.sectionTitle, { color: colors.ink }]}>Azioni rapide</Text>
       <View style={styles.quickGrid}>
@@ -398,30 +396,32 @@ const styles = StyleSheet.create({
   kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
+    rowGap: 8,
+    width: '100%',
   },
   kpiCard: {
     backgroundColor: '#091018',
     borderColor: '#1B2B35',
     borderRadius: 14,
     borderWidth: 1,
-    flexBasis: '47%',
     flexDirection: 'row',
-    flexGrow: 1,
     gap: 8,
-    minHeight: 78,
-    minWidth: 150,
-    padding: 9,
+    minHeight: 66,
+    maxWidth: '48%',
+    paddingHorizontal: 9,
+    paddingVertical: 8,
     shadowColor: '#7BEA18',
     shadowOpacity: 0.08,
     shadowRadius: 16,
+    width: '48%',
   },
   kpiIcon: {
     alignItems: 'center',
     borderRadius: 999,
-    height: 30,
+    height: 28,
     justifyContent: 'center',
-    width: 30,
+    width: 28,
   },
   kpiCopy: {
     flex: 1,
@@ -432,13 +432,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     lineHeight: 13,
-    minHeight: 26,
   },
   kpiValue: {
     color: '#F7F9FA',
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '800',
-    lineHeight: 23,
+    lineHeight: 22,
+    marginTop: 2,
   },
   revenueCard: {
     alignItems: 'flex-start',
@@ -446,14 +446,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   revenueIcon: {
     alignItems: 'center',
     borderRadius: 999,
-    height: 30,
+    height: 28,
     justifyContent: 'center',
-    width: 30,
+    width: 28,
   },
   revenueCopy: {
     flex: 1,
@@ -522,8 +523,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexBasis: '47%',
     flexGrow: 1,
-    minHeight: 76,
-    padding: 10,
+    minHeight: 70,
+    minWidth: 150,
+    padding: 9,
     position: 'relative',
   },
   quickIcon: {
@@ -597,11 +599,10 @@ const styles = StyleSheet.create({
     borderColor: '#1B2B35',
     borderRadius: 14,
     borderWidth: 1,
-    flexBasis: '47%',
-    flexGrow: 1,
-    height: 78,
-    minWidth: 150,
+    height: 66,
+    maxWidth: '48%',
     opacity: 0.78,
+    width: '48%',
   },
   skeletonIcon: {
     backgroundColor: '#16242E',
