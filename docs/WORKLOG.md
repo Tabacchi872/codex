@@ -1121,3 +1121,38 @@ Migrazioni sopra elencate; `mobile/src/data/exercise-library.ts` (2 nuovi eserci
 `docs/BUGS.md`: BUG-057 chiuso, BUG-060/061/062 nuovi (061 aperto, fuori scope). `docs/DECISIONS.md`: ledger `effective_active_days` senza backfill, separazione delle due schermate notifiche Superadmin. **Blocco 2 (inclusi i punti residui) e Blocco 3 completi.** Come richiesto esplicitamente: **non si inizia altro oltre il Blocco 3.**
 
 ---
+
+## 2026-07-28 (continuazione) — Verifica finale pre-release: BUG-061, bootstrap ledger, checklist test
+
+Esecuzione di una verifica finale pre-release richiesta esplicitamente, senza aggiungere funzionalità nuove.
+
+### 1. BUG-061 corretto
+- Verificato con la documentazione ufficiale RevenueCat (context7, `/revenuecat/docs`) che `REFUND` è un tipo di evento webhook reale e distinto (payload: `type`, `app_user_id`, `refund_time`, `transaction_id`, `product_id` — nessuna data di scadenza), diverso da `REFUND_REVERSED` (già gestito).
+- Migration `20260815090000_fix_bug_061_refund_status.sql`: estensione additiva del CHECK `user_subscriptions_status_check` con il nuovo valore `refunded` (nessuna riga reale toccata, solo allargamento).
+- `supabase/functions/revenuecat-webhook/index.ts`: `'REFUND'` aggiunta a `VALID_TYPES`; nuovo case `statusForEvent('REFUND', ...)` → sempre `'refunded'`, **indipendente da `expiresAt`** (un rimborso restituisce il denaro, non c'è un periodo "già pagato" da onorare come per `CANCELLATION`). `REFUND` **deliberatamente esclusa** da `STALE_CHECK_EVENT_TYPES` — stessa classe di rischio già documentata per `CANCELLATION`/`EXPIRATION`: includerla rischierebbe di scartare come "obsoleto" un rimborso reale arrivato dopo uno o più rinnovi (lo scenario "rimborso dopo rinnovo" richiesto esplicitamente), lasciando un cliente rimborsato con l'accesso ancora attivo.
+- 6 nuovi test Deno aggiunti a `index.test.ts` (stesso stile/pattern dei test esistenti per CANCELLATION/EXPIRATION) — **non eseguibili in questo ambiente**: nessun binario `deno` installato (confermato, `which deno` non trovato), limite pre-esistente già documentato nello stesso file da una sessione precedente ("nessuna infrastruttura Deno disponibile in questo ambiente").
+- **Test dal vivo a livello database** (client sintetico `block4-refund-*@example.invalid`, mai un abbonamento reale toccato): seed profilo + abbonamento attivo (simulando l'esito di un RENEWAL) + assegnazione iniziale automatica → poi simulata la scrittura esatta che il webhook corretto produrrebbe per un evento `REFUND` sulla stessa `external_subscription_id` (scenario "rimborso dopo rinnovo"): `status='refunded'` applicato → `_has_active_client_pro_entitlement` → `false` confermato → `log_self_guided_exercise_progress` → bloccato con `SUBSCRIPTION_REQUIRED` confermato → `client_program_cycle_active_periods` → intervallo aperto chiuso automaticamente dal trigger già esistente (integrazione con `effective_active_days` confermata, nessuna modifica necessaria a quel lavoro) → `workout_plans`/`workout_day_exercises` → 3 piani/12 esercizi rimasti intatti (nessuna cancellazione, mai toccati da questo webhook). Testato anche: nuova riga `user_subscriptions` attiva dopo il rimborso (nuovo abbonamento) → `_has_active_client_pro_entitlement` → `true` ripristinato, riga rimborsata mai toccata/reintegrata (dimostra che un rimborso su una transazione non corrompe una NUOVA sottoscrizione successiva). Idempotenza (evento duplicato) verificata a livello di vincolo strutturale: un secondo `INSERT` in `revenuecat_webhook_events` con lo stesso `event_id` rifiutato con `unique_violation` (il vincolo `UNIQUE(event_id)`, invariato, è la garanzia sottostante al controllo `processed` del codice reale).
+- **Non verificato**: chiamata HTTP reale alla Edge Function (richiede Docker per `supabase functions serve` — fallito con "Docker Desktop is a prerequisite" — o Deno per i test unitari, nessuno dei due disponibile). La funzione è stata comunque **deployata in produzione** (`supabase functions deploy revenuecat-webhook`, riuscito) dopo la verifica statica del codice e degli effetti a livello database.
+- Cleanup: account sintetico + riga di test in `revenuecat_webhook_events` rimossi, residuo zero verificato.
+
+### 2. Verifica bootstrap `client_program_cycle_active_periods`
+- Query su ogni ciclo reale (email non `@example.invalid`) attualmente in uno stato aperto: **trovato un solo ciclo reale**, con `effective_active_days=0` e nessuna riga nel ledger.
+- Indagine (sola lettura, nessuna modifica): il cliente reale in questione non ha alcuna riga `user_subscriptions` con `status='active'` — tutte le 4 righe esistenti risultano `expired`/`canceled` con `expires_at` compreso tra il 2026-07-26 e il 2026-07-27, **prima** dell'inizio di questa sessione di lavoro (2026-07-28) e prima ancora che il ledger `effective_active_days` fosse implementato. Nessun coach attivo collegato.
+- **Conclusione: non un bug.** `effective_active_days=0` è il valore corretto perché il ciclo non è mai stato "effettivamente utilizzabile" (nessun abbonamento valido) da quando il ledger esiste — non c'è nulla da correggere retroattivamente, il comportamento è esattamente quello previsto e documentato (nessun backfill, il ledger riflette solo la realtà da quando è stato creato in poi). **Nessuna migrazione di bootstrap creata** (non necessaria: il ciclo trovato non soddisfa la condizione "attualmente utilizzabile" richiesta per considerare `effective_active_days=0` un problema).
+
+### 3. Test manuali su dispositivo
+Verificato di nuovo (esplicitamente, per questa richiesta) che nessun tool di automazione browser/computer-use è disponibile in questo ambiente. Checklist aggiornata in `docs/TODO_NEXT.md` con l'elenco preciso richiesto (14 scenari, inclusi i 2 nuovi: "logout/login con store puliti" e "rimborso"). **Nessuno scenario dichiarato PASS.**
+
+### 4. Correzione riepilogo commit
+Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`041d1c0`, `2482583`, `ce3ad58`, `6cbe79f`, `3910851`). Verificato con `git log`: la sessione precedente ha effettivamente creato **5 commit**, non 6 — errore di conteggio nel report, corretto in questa sessione.
+
+### File toccati
+`supabase/migrations/20260815090000_fix_bug_061_refund_status.sql` (nuovo); `supabase/functions/revenuecat-webhook/index.ts`, `supabase/functions/revenuecat-webhook/index.test.ts`; `docs/PROJECT_STATE.md`, `docs/WORKLOG.md`, `docs/BUGS.md`, `docs/TODO_NEXT.md`.
+
+### Test eseguiti ed esito
+`supabase db push --dry-run` pulito; `npx tsc --noEmit` pulito; `supabase functions deploy revenuecat-webhook` riuscito; `git diff --check`/`git status --short` verificati; account sintetico + riga di test rimossi, residuo zero.
+
+### Riferimenti a bug/decisioni collegate
+`docs/BUGS.md` BUG-061 chiuso. Nessuna nuova funzionalità aggiunta, come richiesto esplicitamente.
+
+---
