@@ -219,8 +219,23 @@ export default function AccountCoachScreen() {
       return;
     }
 
-    await signOut();
-    logout();
+    // L'eliminazione server e' confermata (vedi deleteOwnAccount, anche
+    // idempotente): da qui in poi nessun errore di logout/pulizia locale puo'
+    // piu' trasformare questo successo in un fallimento mostrato all'utente —
+    // solo log diagnostico, mai un Alert d'errore. logout() e' cio' che
+    // riporta al login (AuthGate mostra LoginScreen appena isAuthenticated
+    // diventa false), quindi va eseguito comunque anche se signOut() fallisce.
+    try {
+      await signOut();
+    } catch (err) {
+      if (__DEV__) console.warn('DELETE_ACCOUNT_SIGNOUT_ERROR', err instanceof Error ? err.message : String(err));
+    }
+    notify('Account eliminato', 'Il tuo account è stato eliminato correttamente.');
+    try {
+      logout();
+    } catch (err) {
+      if (__DEV__) console.warn('DELETE_ACCOUNT_LOCAL_CLEANUP_ERROR', err instanceof Error ? err.message : String(err));
+    }
   }
 
   if (profileLoading) {

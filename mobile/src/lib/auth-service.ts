@@ -1091,14 +1091,66 @@ async function extractDeleteAccountErrorMessage(error: unknown): Promise<string>
   return ACCOUNT_DELETE_FALLBACK_MESSAGE;
 }
 
+// Alcuni fallimenti di supabase.functions.invoke() sono AMBIGUI, non la prova
+// che l'eliminazione non sia avvenuta: un FunctionsFetchError/
+// FunctionsRelayError (la risposta non e' arrivata al client, ma la Edge
+// Function puo' aver gia' completato ed eliminato l'utente lato server prima
+// che la connessione cadesse) o un 401 (SESSION_MISSING/SESSION_INVALID/
+// PROFILE_NOT_FOUND: la Edge Function non trova piu' un utente/profilo valido
+// per il JWT allegato — esattamente cio' che succede anche RIPROVANDO dopo
+// un'eliminazione gia' riuscita) non dimostrano un fallimento reale. Un 403/
+// 409/500 invece SI': per costruzione (vedi supabase/functions/delete-account
+// /index.ts) sono raggiunti solo quando l'eliminazione non e' avvenuta
+// (blocco superadmin, conflitto di pulizia dati, o deleteUser fallito dopo i
+// retry) — nessuna verifica necessaria, fallimento genuino.
+function isAmbiguousDeleteAccountError(error: unknown): boolean {
+  if (error instanceof FunctionsFetchError || error instanceof FunctionsRelayError) return true;
+  if (error instanceof FunctionsHttpError) {
+    const response = error.context as Response | undefined;
+    return response?.status === 401;
+  }
+  return false;
+}
+
+// Verifica, SOLO per i casi ambigui sopra, se l'account e' stato davvero gia'
+// eliminato: se la sessione corrente non risolve piu' un utente reale con lo
+// stesso identico segnale che GoTrue usa quando lo user del claim JWT non
+// esiste piu' nel DB ('user_not_found', o il messaggio equivalente "User from
+// sub claim in JWT does not exist" — stesso testo gia' noto e documentato nel
+// commento di delete-account/index.ts), e' la prova che l'eliminazione e'
+// riuscita: successo idempotente. Qualunque altro esito (utente ancora
+// presente, o un errore di rete generico che non dimostra nulla) NON basta a
+// dichiarare un successo mai provato: lascia intatto il fallimento originale.
+async function verifyAccountAlreadyDeleted(): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (__DEV__) {
+      console.log('DELETE_ACCOUNT_VERIFY', {
+        userStillResolves: Boolean(data?.user),
+        errorCode: (error as { code?: string } | null)?.code ?? null,
+      });
+    }
+    if (!error) return false;
+    const code = (error as { code?: string }).code;
+    const message = error.message?.toLowerCase() ?? '';
+    return code === 'user_not_found' || message.includes('does not exist');
+  } catch (err) {
+    if (__DEV__) console.warn('DELETE_ACCOUNT_VERIFY_THREW', err instanceof Error ? err.message : String(err));
+    return false;
+  }
+}
+
 // Elimina definitivamente l'account Supabase dell'utente attualmente loggato
 // (coach o cliente), chiamando la Edge Function delete-account (supabase/
 // functions/delete-account). Nessun userId passato: il target e' sempre e
 // solo l'utente della sessione corrente, mai scelto dal client. Dopo un esito
-// ok, il chiamante (account-coach.tsx/cliente-profilo.tsx) deve eseguire
-// signOut() e riportare l'utente al login SOLO dopo questo successo
-// confermato: la sessione locale resta valida finche' non viene chiusa
-// esplicitamente, ma l'account su Supabase non esiste piu'.
+// ok (anche idempotente, vedi sopra), il chiamante (account-coach.tsx/
+// cliente-profilo.tsx) deve considerare l'eliminazione conclusa: non deve
+// eseguire altre query protette con questa sessione, deve eseguire signOut()/
+// logout RevenueCat/pulizia store come operazioni best-effort che non possono
+// piu' trasformare questo successo in un errore, e riportare sempre l'utente
+// al login mostrando conferma di successo.
 export async function deleteOwnAccount(): Promise<AuthServiceResult<null>> {
   if (!isReady() || !supabase) return notConfigured();
 
@@ -1106,14 +1158,34 @@ export async function deleteOwnAccount(): Promise<AuthServiceResult<null>> {
     body: {},
   });
 
+  if (__DEV__) {
+    const httpStatus = error instanceof FunctionsHttpError ? (error.context as Response | undefined)?.status ?? null : null;
+    console.log('DELETE_ACCOUNT_RESPONSE', {
+      hasError: Boolean(error),
+      errorName: error instanceof Error ? error.name : null,
+      httpStatus,
+      success: data?.success ?? null,
+    });
+  }
+
   if (error) {
     if (__DEV__) console.error('DELETE_ACCOUNT_ERROR', error);
+    if (isAmbiguousDeleteAccountError(error) && (await verifyAccountAlreadyDeleted())) {
+      if (__DEV__) console.log('DELETE_ACCOUNT_CONFIRMED_IDEMPOTENT');
+      return { ok: true, data: null };
+    }
     const message = await extractDeleteAccountErrorMessage(error);
     return { ok: false, code: 'db_error', message };
   }
-  if (!data?.success) {
-    if (__DEV__) console.error('DELETE_ACCOUNT_UNEXPECTED_RESPONSE', data);
-    return { ok: false, code: 'db_error', message: ACCOUNT_DELETE_FALLBACK_MESSAGE };
+
+  // Un 2xx da questa funzione significa sempre successo per costruzione: e'
+  // l'unico ramo che risponde 2xx (ok(), supabase/functions/delete-account/
+  // index.ts), raggiunto solo DOPO che deleteAuthUserWithRetry ha davvero
+  // eliminato l'utente — non si distrugge un successo gia' confermato dal
+  // server per un corpo JSON inatteso, che con questa funzione non dovrebbe
+  // comunque mai verificarsi (solo un log diagnostico, mai un fallimento).
+  if (!data?.success && __DEV__) {
+    console.warn('DELETE_ACCOUNT_UNEXPECTED_BODY_ON_2XX', data);
   }
 
   return { ok: true, data: null };
