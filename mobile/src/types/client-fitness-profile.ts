@@ -75,3 +75,24 @@ export type ActiveProgramCycle = {
   startedAt: string;
   reviewDueAt: string | null;
 };
+
+// Occorrenza pianificata del ciclo (client_program_cycle_sessions): per un
+// ciclo a N giorni/settimana su 4 settimane sono N*4 righe, ciascuna che
+// referenzia una delle N schede A/B/C.../D/E (mai duplicate) con il proprio
+// stato indipendente — completare l'occorrenza 1 (settimana 1, scheda A) non
+// blocca l'occorrenza 4 (settimana 2, stessa scheda A).
+export type ProgramCycleSessionStatus = 'todo' | 'completed' | 'skipped' | 'cancelled';
+
+export type ProgramCycleSession = {
+  id: string;
+  cycleId: string;
+  workoutPlanId: string;
+  occurrenceNumber: number;
+  weekNumber: number;
+  dayLabel: string;
+  scheduledDate: string | null;
+  status: ProgramCycleSessionStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+  durationSeconds: number | null;
+};

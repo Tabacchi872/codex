@@ -1,6 +1,6 @@
 import { supabase, supabaseConfig } from './supabase';
 
-import type { ActiveProgramCycle, ProgramCycleStatus } from '@/types/client-fitness-profile';
+import type { ActiveProgramCycle, ProgramCycleSession, ProgramCycleStatus } from '@/types/client-fitness-profile';
 
 type ServiceResult<T> = { ok: true; data: T } | { ok: false; message: string };
 
@@ -102,6 +102,99 @@ export async function getMyActiveProgramCycle(): Promise<ServiceResult<ActivePro
       reviewDueAt: data.review_due_at,
     },
   };
+}
+
+type ProgramCycleSessionRow = {
+  id: string;
+  cycle_id: string;
+  workout_plan_id: string;
+  occurrence_number: number;
+  week_number: number;
+  day_label: string;
+  scheduled_date: string | null;
+  status: ProgramCycleSession['status'];
+  started_at: string | null;
+  completed_at: string | null;
+  duration_seconds: number | null;
+};
+
+function mapRowToSession(row: ProgramCycleSessionRow): ProgramCycleSession {
+  return {
+    id: row.id,
+    cycleId: row.cycle_id,
+    workoutPlanId: row.workout_plan_id,
+    occurrenceNumber: row.occurrence_number,
+    weekNumber: row.week_number,
+    dayLabel: row.day_label,
+    scheduledDate: row.scheduled_date,
+    status: row.status,
+    startedAt: row.started_at,
+    completedAt: row.completed_at,
+    durationSeconds: row.duration_seconds,
+  };
+}
+
+// Nessun filtro esplicito client_id: la RLS (client_program_cycle_sessions_
+// owner_read, tramite il cycle_id) decide da sola, stesso pattern gia' usato
+// da getMyActiveProgramCycle.
+export async function getMyProgramCycleSessions(cycleId: string): Promise<ServiceResult<ProgramCycleSession[]>> {
+  if (!supabaseConfig.isConfigured || !supabase) return { ok: true, data: [] };
+
+  const { data, error } = await supabase
+    .from('client_program_cycle_sessions')
+    .select('id,cycle_id,workout_plan_id,occurrence_number,week_number,day_label,scheduled_date,status,started_at,completed_at,duration_seconds')
+    .eq('cycle_id', cycleId)
+    .order('occurrence_number', { ascending: true });
+
+  if (error) {
+    if (__DEV__) console.warn('AUTO_PROGRAM_SESSIONS_READ_ERROR', error.message);
+    return { ok: false, message: GENERIC_ERROR };
+  }
+
+  return { ok: true, data: (data as ProgramCycleSessionRow[]).map(mapRowToSession) };
+}
+
+export type ProgramCycleSessionProgressUpdate = {
+  status?: ProgramCycleSession['status'];
+  startedAt?: string | null;
+  completedAt?: string;
+  durationSeconds?: number;
+  completedExerciseIds?: string[];
+};
+
+function describeSessionProgressError(message: string): string {
+  if (message.includes('WORKOUT_LOCKED')) return 'Questa sessione è già stata completata.';
+  if (message.includes('FORBIDDEN')) return 'Non sei autorizzato a modificare questa sessione.';
+  if (message.includes('NOT_FOUND')) return 'Sessione non trovata.';
+  if (message.includes('NOT_AUTHENTICATED')) return 'Sessione scaduta: effettua di nuovo il login.';
+  return GENERIC_ERROR;
+}
+
+// Avvia/completa una singola occorrenza pianificata (client_program_cycle_
+// sessions), MAI la scheda condivisa (workout_plans): completare l'occorrenza
+// 1 non blocca le occorrenze successive della stessa scheda A/B/C.
+export async function updateProgramCycleSessionProgress(
+  sessionId: string,
+  update: ProgramCycleSessionProgressUpdate,
+): Promise<ServiceResult<null>> {
+  if (!supabaseConfig.isConfigured || !supabase) return { ok: true, data: null };
+
+  const { error } = await supabase.rpc('update_program_cycle_session_progress', {
+    p_session_id: sessionId,
+    p_status: update.status ?? null,
+    p_started_at: update.startedAt === null ? null : (update.startedAt ?? null),
+    p_clear_started_at: update.startedAt === null,
+    p_completed_at: update.completedAt ?? null,
+    p_duration_seconds: update.durationSeconds ?? null,
+    p_completed_exercise_ids: update.completedExerciseIds ?? null,
+  });
+
+  if (error) {
+    if (__DEV__) console.warn('AUTO_PROGRAM_SESSION_PROGRESS_ERROR', error.message);
+    return { ok: false, message: describeSessionProgressError(error.message) };
+  }
+
+  return { ok: true, data: null };
 }
 
 function describeReviewError(message: string): string {

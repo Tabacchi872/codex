@@ -9,7 +9,12 @@ import { AppBadge, AppButton, AppCard, AppPressableCard } from '@/components/ui'
 import { BottomTabInset } from '@/constants/theme';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useWorkoutPlansSync } from '@/hooks/use-workout-plans-sync';
-import { assignInitialAutoProgram, getMyActiveProgramCycle } from '@/lib/auto-program-service';
+import {
+  assignInitialAutoProgram,
+  getMyActiveProgramCycle,
+  getMyProgramCycleSessions,
+  updateProgramCycleSessionProgress,
+} from '@/lib/auto-program-service';
 import { logClientNavPress } from '@/lib/client-navigation';
 import { getClientFitnessProfileStatus } from '@/lib/client-fitness-profile-service';
 import { getClientOnboardingStatus } from '@/lib/client-onboarding-service';
@@ -19,7 +24,7 @@ import { getClientPlans, getSessionDayLabel, getSessionWeekLabel } from '@/lib/w
 import { useAuthStore } from '@/store/auth-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
-import type { ActiveProgramCycle } from '@/types/client-fitness-profile';
+import type { ActiveProgramCycle, ProgramCycleSession } from '@/types/client-fitness-profile';
 import { SESSION_STATUS_LABEL, type WorkoutPlan } from '@/types/training';
 
 type Tab = 'todo' | 'past';
@@ -50,6 +55,14 @@ export default function WorkoutClienteScreen() {
   const { loading: remoteLoading, error: remoteError, refresh } = useWorkoutPlansSync();
   const [accessState, setAccessState] = useState<WorkoutAccessState>({ kind: 'loading' });
   const autoAssignAttemptedRef = useRef(false);
+  // Occorrenze pianificate (client_program_cycle_sessions) del ciclo attivo:
+  // popolate SOLO quando accessState e' 'active_program' con un ciclo
+  // auto_system reale. null = non ancora caricate/non applicabile (ciclo
+  // coach_guided, o ciclo creato prima di questa funzionalita' senza
+  // occorrenze) — in quel caso il rendering ricade sulle schede grezze come
+  // gia' faceva prima di questa aggiunta, nessuna regressione.
+  const [sessions, setSessions] = useState<ProgramCycleSession[] | null>(null);
+  const [completingSessionId, setCompletingSessionId] = useState<string | null>(null);
 
   function navigateToPlan(planId: string) {
     const target = `/schede/${planId}`;
@@ -74,6 +87,7 @@ export default function WorkoutClienteScreen() {
 
     setAccessState({ kind: 'loading' });
     const onboarding = await getClientOnboardingStatus(currentClientId);
+    if (__DEV__) console.log('WORKOUT_ACCESS_ONBOARDING', { ok: onboarding.ok, mode: onboarding.ok ? onboarding.data.mode : null });
     if (!onboarding.ok) {
       setAccessState({ kind: 'error', message: onboarding.message });
       return;
@@ -84,6 +98,7 @@ export default function WorkoutClienteScreen() {
     }
 
     const planAccess = await getMySelfGuidedPlanAccess();
+    if (__DEV__) console.log('WORKOUT_ACCESS_PLAN', { ok: planAccess.ok, active: planAccess.ok ? planAccess.data.active : null });
     if (!planAccess.ok) {
       setAccessState({ kind: 'error', message: planAccess.message });
       return;
@@ -94,6 +109,7 @@ export default function WorkoutClienteScreen() {
     }
 
     const fitnessProfile = await getClientFitnessProfileStatus();
+    if (__DEV__) console.log('WORKOUT_ACCESS_FITNESS_PROFILE', { ok: fitnessProfile.ok, completed: fitnessProfile.ok ? fitnessProfile.data.completed : null });
     if (!fitnessProfile.ok) {
       setAccessState({ kind: 'error', message: fitnessProfile.message });
       return;
@@ -104,6 +120,7 @@ export default function WorkoutClienteScreen() {
     }
 
     let cycleResult = await getMyActiveProgramCycle();
+    if (__DEV__) console.log('WORKOUT_ACCESS_CYCLE', { ok: cycleResult.ok, status: cycleResult.ok ? (cycleResult.data?.status ?? 'none') : null });
     if (!cycleResult.ok) {
       setAccessState({ kind: 'error', message: cycleResult.message });
       return;
@@ -113,7 +130,18 @@ export default function WorkoutClienteScreen() {
       autoAssignAttemptedRef.current = true;
       setAccessState({ kind: 'generating', message: 'Stiamo generando il tuo programma automatico.' });
       const assigned = await assignInitialAutoProgram();
+      if (__DEV__) console.log('AUTO_PROGRAM_ASSIGN_ATTEMPT', { ok: assigned.ok });
       if (!assigned.ok) {
+        // BUG corretto qui: il ref sopra impediva PER SEMPRE (per tutta la
+        // vita di questo mount, incluso ogni "Riprova" successivo) un nuovo
+        // tentativo dopo un primo fallimento — anche se la causa del
+        // fallimento (es. entitlement Client Pro non ancora sincronizzato dal
+        // webhook, arrivato con qualche secondo di ritardo) si risolveva da
+        // sola poco dopo. assign_initial_auto_program e' gia' idempotente e
+        // sicura da richiamare piu' volte (vedi commento sulla funzione):
+        // il reset qui sotto e' cio' che rende "Riprova" un vero nuovo
+        // tentativo, non un vicolo cieco.
+        autoAssignAttemptedRef.current = false;
         cycleResult = await getMyActiveProgramCycle();
         if (!cycleResult.ok) {
           setAccessState({ kind: 'error', message: assigned.message });
@@ -154,7 +182,33 @@ export default function WorkoutClienteScreen() {
       return;
     }
     setAccessState({ kind: 'active_program', cycle });
+
+    const sessionsResult = await getMyProgramCycleSessions(cycle.id);
+    if (__DEV__) console.log('WORKOUT_ACCESS_SESSIONS', { ok: sessionsResult.ok, count: sessionsResult.ok ? sessionsResult.data.length : null });
+    // null in caso di errore o lista vuota: il rendering ricade sulle schede
+    // grezze (comportamento identico a prima di questa funzionalita'), mai
+    // un blocco/errore mostrato per un problema di sola visualizzazione.
+    setSessions(sessionsResult.ok && sessionsResult.data.length > 0 ? sessionsResult.data : null);
   }, [currentClientId]);
+
+  async function reloadSessions(cycleId: string) {
+    const sessionsResult = await getMyProgramCycleSessions(cycleId);
+    setSessions(sessionsResult.ok && sessionsResult.data.length > 0 ? sessionsResult.data : null);
+  }
+
+  async function handleCompleteSession(session: ProgramCycleSession) {
+    if (completingSessionId) return;
+    setCompletingSessionId(session.id);
+    const result = await updateProgramCycleSessionProgress(session.id, {
+      status: 'completed',
+      completedAt: new Date().toISOString(),
+    });
+    setCompletingSessionId(null);
+    if (!result.ok) return;
+    if (accessState.kind === 'active_program' && accessState.cycle) {
+      await reloadSessions(accessState.cycle.id);
+    }
+  }
 
   function retryAccessState() {
     void loadWorkoutAccessState();
@@ -287,6 +341,56 @@ export default function WorkoutClienteScreen() {
     );
   }
 
+  // Ciclo automatico con occorrenze pianificate (client_program_cycle_
+  // sessions): A/B/C... ripetute per 4 settimane, mai schede duplicate. Ogni
+  // occorrenza ha il proprio stato indipendente — vedi
+  // update_program_cycle_session_progress. Se le occorrenze non sono
+  // disponibili (sessions === null: ciclo coach_guided, o ciclo creato prima
+  // di questa funzionalita'), si ricade sulla lista di schede grezze sotto,
+  // comportamento identico a prima.
+  if (accessState.kind === 'active_program' && sessions) {
+    const filteredSessions = sessions.filter((s) => (tab === 'todo' ? s.status === 'todo' : s.status !== 'todo'));
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <FlatList
+          data={filteredSessions}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: Platform.OS === 'web' ? AppSpacing[5] : insets.top + AppSpacing[3],
+              paddingBottom: insets.bottom + BottomTabInset + AppSpacing[4],
+            },
+          ]}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Text style={[AppTextStyle.title, { color: colors.ink }]}>I tuoi allenamenti</Text>
+              <View style={styles.tabRow}>
+                <TabButton label="Da fare" active={tab === 'todo'} onPress={() => setTab('todo')} />
+                <TabButton label="Passati" active={tab === 'past'} onPress={() => setTab('past')} />
+              </View>
+            </View>
+          }
+          ItemSeparatorComponent={() => <View style={{ height: AppSpacing[3] }} />}
+          ListEmptyComponent={
+            <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
+              {tab === 'todo' ? 'Nessuna sessione da fare al momento.' : 'Nessuna sessione passata ancora.'}
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <ProgramSessionRow
+              session={item}
+              plan={myPlans.find((p) => p.id === item.workoutPlanId) ?? null}
+              completing={completingSessionId === item.id}
+              onOpen={() => navigateToPlan(item.workoutPlanId)}
+              onComplete={() => handleCompleteSession(item)}
+            />
+          )}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
@@ -393,6 +497,72 @@ function WorkoutRow({ plan, myPlans, onPress }: { plan: WorkoutPlan; myPlans: Wo
               {plan.exercises.length} esercizi · Settimana {weekLabel}
             </Text>
           </View>
+        </View>
+        <ChevronRight size={20} color={colors.inkFaint} />
+      </View>
+    </AppPressableCard>
+  );
+}
+
+function ProgramSessionRow({
+  session,
+  plan,
+  completing,
+  onOpen,
+  onComplete,
+}: {
+  session: ProgramCycleSession;
+  plan: WorkoutPlan | null;
+  completing: boolean;
+  onOpen: () => void;
+  onComplete: () => void;
+}) {
+  const { colors } = useAppTheme();
+  const { resolve } = useExerciseResolver();
+  const firstExercise = plan?.exercises[0] ? resolve(plan.exercises[0].exerciseId) : null;
+  const thumbnailSize = 84;
+
+  return (
+    <AppPressableCard onPress={onOpen} accessibilityLabel={`Apri allenamento ${session.dayLabel}`} style={styles.card}>
+      <View style={styles.cardRow}>
+        {firstExercise ? (
+          <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={thumbnailSize} />
+        ) : (
+          <View style={[styles.planPlaceholder, { backgroundColor: colors.mossSoft }]}>
+            <Dumbbell size={26} color={colors.moss} />
+          </View>
+        )}
+        <View style={styles.cardCopy}>
+          <View style={styles.badgeRow}>
+            <AppBadge label={`GIORNO ${session.dayLabel.toUpperCase()}`} tone="moss" />
+            {session.status !== 'todo' ? (
+              <AppBadge
+                label={SESSION_STATUS_LABEL[session.status]}
+                tone={session.status === 'completed' ? 'moss' : session.status === 'skipped' ? 'amber' : 'rust'}
+              />
+            ) : null}
+          </View>
+          <Text style={[styles.planName, { color: colors.ink }]} numberOfLines={2} ellipsizeMode="tail">
+            {plan?.name ?? session.dayLabel}
+          </Text>
+          <View style={styles.metaRow}>
+            <Calendar size={13} color={colors.inkSoft} />
+            <Text style={[styles.metaText, { color: colors.inkSoft }]} numberOfLines={1}>
+              Settimana {session.weekNumber}
+              {session.scheduledDate ? ` · ${formatWeekday(session.scheduledDate)} ${formatDayMonth(session.scheduledDate)}` : ''}
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Dumbbell size={13} color={colors.inkSoft} />
+            <Text style={[styles.metaText, { color: colors.inkSoft }]} numberOfLines={1}>
+              {plan ? `${plan.exercises.length} esercizi` : ''} · Occorrenza {session.occurrenceNumber}
+            </Text>
+          </View>
+          {session.status === 'todo' ? (
+            <View style={{ marginTop: AppSpacing[1] }}>
+              <AppButton label="Segna completata" onPress={onComplete} loading={completing} disabled={completing} size="sm" />
+            </View>
+          ) : null}
         </View>
         <ChevronRight size={20} color={colors.inkFaint} />
       </View>
