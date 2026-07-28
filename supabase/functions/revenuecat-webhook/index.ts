@@ -21,6 +21,11 @@ type RevenueCatEvent = {
   transaction_id?: unknown;
   original_transaction_id?: unknown;
   store_transaction_id?: unknown;
+  store?: unknown;
+  environment?: unknown;
+  price?: unknown;
+  price_in_purchased_currency?: unknown;
+  currency?: unknown;
   purchased_at_ms?: unknown;
   expiration_at_ms?: unknown;
   cancel_reason?: unknown;
@@ -66,6 +71,13 @@ function pickUuid(value: unknown): string | null {
 function pickMsDate(value: unknown): string | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
   return new Date(value).toISOString();
+}
+
+function pickNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function stringArray(value: unknown): string[] {
@@ -266,6 +278,14 @@ Deno.serve(async (req: Request) => {
         app_user_id: null,
         product_id: productId,
         entitlement_id: entitlementId,
+        store: pickString(event.store),
+        environment: pickString(event.environment),
+        transaction_id: pickString(event.transaction_id) ?? pickString(event.store_transaction_id),
+        original_transaction_id: pickString(event.original_transaction_id),
+        price: pickNumber(event.price_in_purchased_currency) ?? pickNumber(event.price),
+        currency: pickString(event.currency),
+        purchased_at: pickMsDate(event.purchased_at_ms),
+        expiration_at: pickMsDate(event.expiration_at_ms),
         payload,
       });
       if (ledgerInsertError?.code === '23505') {
@@ -300,7 +320,20 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, data: { processed: false, reason: identity.code } }, 200);
     }
     const appUserId = identity.userId;
-    await supabaseAdmin.from('revenuecat_webhook_events').update({ app_user_id: appUserId }).eq('event_id', eventId);
+    await supabaseAdmin
+      .from('revenuecat_webhook_events')
+      .update({
+        app_user_id: appUserId,
+        store: pickString(event.store),
+        environment: pickString(event.environment),
+        transaction_id: pickString(event.transaction_id) ?? pickString(event.store_transaction_id),
+        original_transaction_id: pickString(event.original_transaction_id),
+        price: pickNumber(event.price_in_purchased_currency) ?? pickNumber(event.price),
+        currency: pickString(event.currency),
+        purchased_at: pickMsDate(event.purchased_at_ms),
+        expiration_at: pickMsDate(event.expiration_at_ms),
+      })
+      .eq('event_id', eventId);
 
     const startsAt = pickMsDate(event.purchased_at_ms) ?? new Date().toISOString();
     const expiresAt = pickMsDate(event.expiration_at_ms);
