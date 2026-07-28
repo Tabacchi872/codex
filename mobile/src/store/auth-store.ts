@@ -2,12 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { useAppNotificationStore } from './app-notification-store';
 import { useAppointmentStore } from './appointment-store';
 import { useAttachmentStore } from './attachment-store';
 import { useBoardStore } from './board-store';
 import { useBookingStore } from './booking-store';
 import { useChatStore } from './chat-store';
 import { useCheckinStore } from './checkin-store';
+import { useClientMonthlyCheckinStore } from './client-monthly-checkin-store';
 import { useClientStore } from './client-store';
 import { useSuperadminStore } from './superadmin-store';
 import { useTrainingStore } from './training-store';
@@ -32,6 +34,8 @@ function resetUserScopedStores() {
   useCheckinStore.getState().reset();
   useAttachmentStore.getState().reset();
   useYmoveAutoLinkStore.getState().reset();
+  useClientMonthlyCheckinStore.getState().reset();
+  useAppNotificationStore.getState().reset();
 }
 
 export type DemoUser = {

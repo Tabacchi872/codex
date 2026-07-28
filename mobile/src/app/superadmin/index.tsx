@@ -1,6 +1,7 @@
 import { router, type Href } from 'expo-router';
 import {
   ArrowUp,
+  Bell,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
@@ -19,6 +20,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import type React from 'react';
+import { useEffect } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 
 import { FitCoachLogo } from '@/components/ui';
@@ -27,6 +29,7 @@ import { useSuperadminCoaches } from '@/hooks/use-superadmin-coaches';
 import { DEMO_DATA_ENABLED } from '@/lib/demo-data';
 import { getBillingStatusLabel } from '@/lib/superadmin-billing-status';
 import { logSuperadminNavPress } from '@/lib/superadmin-navigation';
+import { useAppNotificationStore } from '@/store/app-notification-store';
 import { getSuperadminSupportConversations, useSuperadminStore } from '@/store/superadmin-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { AppBillingStatus, DemoPaymentEvent, SuperadminCoach, SuperadminNotification } from '@/types/superadmin';
@@ -43,6 +46,12 @@ export default function SuperadminDashboard() {
   const notifications = useSuperadminStore((s) => s.notifications);
   const localCoaches = useSuperadminStore((s) => s.coaches);
   const supportConversations = getSuperadminSupportConversations(localCoaches, supportMessages);
+  const autoProgramUnread = useAppNotificationStore((s) => s.unreadCount);
+  const refreshAutoProgramUnread = useAppNotificationStore((s) => s.refreshUnreadCount);
+
+  useEffect(() => {
+    refreshAutoProgramUnread();
+  }, [refreshAutoProgramUnread]);
 
   const activeCoaches = coaches.filter((coach) => coach.billingStatus === 'active' && !coach.blocked).length;
   const activeSubscriptions = coaches.filter((coach) => coach.hasActivePackageSubscription).length;
@@ -124,6 +133,12 @@ export default function SuperadminDashboard() {
         <QuickAction title="Pacchetti" subtitle="Gestisci pacchetti" icon={Package} onPress={() => navigate('superadmin-action-pacchetti', '/superadmin/pacchetti' as Href)} />
         <QuickAction title="Pagamenti" subtitle="Transazioni" icon={CreditCard} onPress={() => navigate('superadmin-action-pagamenti', '/superadmin/payment-events' as Href)} />
         <QuickAction title="Supporto" subtitle="Ticket & help" icon={Headphones} onPress={() => navigate('superadmin-action-supporto', '/superadmin/support' as Href)} />
+        <QuickAction
+          title="Programmi"
+          subtitle={autoProgramUnread > 0 ? `${autoProgramUnread} da rivedere` : 'Nessuna novità'}
+          icon={Bell}
+          onPress={() => navigate('superadmin-action-programmi', '/superadmin/notifiche-programmi' as Href)}
+        />
       </View>
 
       <SectionHeader title="Attivita' recenti" action="Vedi tutte" onPress={() => navigate('superadmin-attivita', '/superadmin/notifications' as Href)} />

@@ -1,13 +1,14 @@
 import { Image, type ImageProps } from 'expo-image';
 import { Redirect, useRouter, type Href } from 'expo-router';
-import { Apple, ArrowRight, Calendar, ClipboardList, Clock, Dumbbell, Gauge, Megaphone, MessageCircle, TrendingUp, User } from 'lucide-react-native';
+import { Apple, ArrowRight, Bell, Calendar, ClipboardList, Clock, Dumbbell, Gauge, Megaphone, MessageCircle, TrendingUp, User } from 'lucide-react-native';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { AutoProgramCard } from '@/components/auto-program-card';
 import { ClientAssignedCoachCard } from '@/components/client-assigned-coach-card';
-import { AppButton, AppCard, AppEmptyState, AppPressableCard, AppRingProgress, AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
+import { AppButton, AppCard, AppEmptyState, AppIconButton, AppPressableCard, AppRingProgress, AppScreen, FitCoachLogo, UserAvatar } from '@/components/ui';
 import { resolveExerciseCatalogThumbnail } from '@/data/exercise-image-catalog';
 import { useMyCoach } from '@/hooks/use-my-coach';
 import { logClientNavPress } from '@/lib/client-navigation';
@@ -15,6 +16,7 @@ import { getClientById } from '@/lib/client-helpers';
 import { formatDayMonth, formatFullDateEyebrow } from '@/lib/format-date';
 import { getNextWorkoutPlan, getWorkoutCounter } from '@/lib/workout-progress';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
+import { useAppNotificationStore } from '@/store/app-notification-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useBoardStore } from '@/store/board-store';
 import { useBookingStore } from '@/store/booking-store';
@@ -62,6 +64,12 @@ export default function ClienteHomeScreen() {
   const isCoachGuided = myCoach.clientMode === 'coach_guided';
 
   const client = getClientById(clients, currentClientId);
+  const unreadNotifications = useAppNotificationStore((s) => s.unreadCount);
+  const refreshUnreadNotifications = useAppNotificationStore((s) => s.refreshUnreadCount);
+
+  useEffect(() => {
+    refreshUnreadNotifications();
+  }, [refreshUnreadNotifications]);
 
   function navigate(source: string, target: string) {
     logClientNavPress(source, target);
@@ -146,13 +154,27 @@ export default function ClienteHomeScreen() {
     <AppScreen contentStyle={styles.screenContent}>
       <View style={styles.topBar}>
         <FitCoachLogo size="md" />
-        <UserAvatar
-          firstName={client?.firstName}
-          lastName={client?.lastName}
-          imageUrl={client?.avatarUrl}
-          preset={client?.avatarPreset}
-          size={compact ? 46 : 52}
-        />
+        <View style={styles.topBarActions}>
+          <View>
+            <AppIconButton
+              icon={<Bell size={20} color={colors.ink} />}
+              onPress={() => navigate('cliente-home-notifiche', '/notifiche')}
+              accessibilityLabel={unreadNotifications > 0 ? `Notifiche, ${unreadNotifications} non lette` : 'Notifiche'}
+            />
+            {unreadNotifications > 0 ? (
+              <View style={[styles.notificationBadge, { backgroundColor: colors.coral }]}>
+                <Text style={styles.notificationBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+              </View>
+            ) : null}
+          </View>
+          <UserAvatar
+            firstName={client?.firstName}
+            lastName={client?.lastName}
+            imageUrl={client?.avatarUrl}
+            preset={client?.avatarPreset}
+            size={compact ? 46 : 52}
+          />
+        </View>
       </View>
 
       <View style={styles.heroHeader}>
@@ -397,6 +419,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: AppSpacing[3],
     marginBottom: 0,
+  },
+  topBarActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: AppSpacing[3],
+  },
+  notificationBadge: {
+    alignItems: 'center',
+    borderRadius: AppRadius.pill,
+    height: 18,
+    justifyContent: 'center',
+    minWidth: 18,
+    paddingHorizontal: 4,
+    position: 'absolute',
+    right: -4,
+    top: -4,
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
   heroHeader: {
     gap: AppSpacing[1],

@@ -11,6 +11,7 @@ type ClientMonthlyCheckinState = {
   drafts: Record<string, MonthlyCheckinDraft>;
   upsertDraft: (cycleId: string, patch: Partial<Omit<MonthlyCheckinDraft, 'cycleId' | 'updatedAt'>>) => void;
   clearDraft: (cycleId: string) => void;
+  reset: () => void;
 };
 
 const emptyDraft = (cycleId: string): MonthlyCheckinDraft => ({
@@ -46,6 +47,7 @@ export const useClientMonthlyCheckinStore = create<ClientMonthlyCheckinState>()(
           delete next[cycleId];
           return { drafts: next };
         }),
+      reset: () => set({ drafts: {} }),
     }),
     {
       name: 'fitcoach-client-monthly-checkin-drafts',
