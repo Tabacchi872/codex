@@ -39,6 +39,7 @@ const VALID_TYPES = new Set([
   'BILLING_ISSUE',
   'PRODUCT_CHANGE',
   'SUBSCRIPTION_EXTENDED',
+  'REFUND',
   'REFUND_REVERSED',
   'TRANSFER',
   'TEMPORARY_ENTITLEMENT_GRANT',
@@ -127,6 +128,16 @@ function isFutureOrOpenEnded(expiresAt: string | null) {
 // (il vecchio acquisto originale) precede lo starts_at gia' avanzato dai
 // rinnovi, lasciando l'utente con un accesso che ha davvero disdetto. Stessa
 // suddivisione gia' usata dal primo case di statusForEvent qui sotto.
+//
+// FIX BUG-061: REFUND esclusa per LO STESSO identico motivo, con una posta
+// in gioco piu' seria se si sbagliasse in questa direzione — includerla nel
+// controllo di staleness rischierebbe di scartare come "obsoleto" un
+// rimborso REALE arrivato dopo uno o piu' rinnovi (esattamente lo scenario
+// "rimborso dopo rinnovo" richiesto esplicitamente), lasciando un cliente
+// rimborsato con l'accesso ancora attivo. Meglio applicare SEMPRE un
+// rimborso non appena arriva (stessa scelta gia' presa per CANCELLATION):
+// revocare un accesso gia' pagato-e-restituito e' sempre corretto,
+// indipendentemente da quando la transazione originale risale.
 const STALE_CHECK_EVENT_TYPES = new Set([
   'INITIAL_PURCHASE',
   'RENEWAL',
@@ -171,6 +182,13 @@ export function statusForEvent(type: string, event: RevenueCatEvent, expiresAt: 
       return 'expired';
     case 'BILLING_ISSUE':
       return validNow ? 'active' : 'pending';
+    // FIX BUG-061: un rimborso revoca l'accesso SUBITO, indipendentemente da
+    // expiresAt/validNow — a differenza di CANCELLATION (che rispetta
+    // l'accesso fino alla scadenza gia' pagata, perche' l'utente ha davvero
+    // pagato quel periodo), qui il denaro e' stato restituito: non c'e'
+    // alcun periodo "gia' pagato" da onorare.
+    case 'REFUND':
+      return 'refunded';
     case 'REFUND_REVERSED':
       return expiresAt && validNow ? 'active' : 'expired';
     case 'TEMPORARY_ENTITLEMENT_GRANT':

@@ -223,10 +223,10 @@ Deno.test({
 });
 
 Deno.test({
-  name: 'isStaleEventApplicable: false per CANCELLATION/EXPIRATION/BILLING_ISSUE/REFUND_REVERSED (mai scartati come obsoleti)',
+  name: 'isStaleEventApplicable: false per CANCELLATION/EXPIRATION/BILLING_ISSUE/REFUND_REVERSED/REFUND (mai scartati come obsoleti)',
   ...TEST_OPTS,
   fn: () => {
-    for (const type of ['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'REFUND_REVERSED']) {
+    for (const type of ['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'REFUND_REVERSED', 'REFUND']) {
       assertEquals(isStaleEventApplicable(type), false, `atteso false per ${type}`);
     }
   },
@@ -306,5 +306,33 @@ Deno.test({
     const past = new Date(Date.now() - 86_400_000).toISOString();
     assertEquals(statusForEvent('CANCELLATION', {}, future), 'active');
     assertEquals(statusForEvent('CANCELLATION', {}, past), 'canceled');
+  },
+});
+
+// --- statusForEvent: BUG-061, REFUND revoca sempre, subito -----------------
+
+Deno.test({
+  name: 'statusForEvent: REFUND e\' sempre refunded anche con scadenza futura (revoca immediata, mai "valido fino alla scadenza")',
+  ...TEST_OPTS,
+  fn: () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    assertEquals(statusForEvent('REFUND', {}, future), 'refunded');
+  },
+});
+
+Deno.test({
+  name: 'statusForEvent: REFUND e\' sempre refunded anche senza alcuna data di scadenza nel payload',
+  ...TEST_OPTS,
+  fn: () => {
+    assertEquals(statusForEvent('REFUND', {}, null), 'refunded');
+  },
+});
+
+Deno.test({
+  name: 'statusForEvent: REFUND e\' sempre refunded anche con scadenza gia\' passata',
+  ...TEST_OPTS,
+  fn: () => {
+    const past = new Date(Date.now() - 86_400_000).toISOString();
+    assertEquals(statusForEvent('REFUND', {}, past), 'refunded');
   },
 });
