@@ -13,11 +13,11 @@ export default function SuperadminPlans() {
   const plans = useSuperadminStore((s) => s.plans);
   const { colors } = useAppTheme();
   return (
-    <SuperadminShell title="Piani" description="Catalogo piani dell'app coach con prezzi, limiti e funzionalita'.">
+    <SuperadminShell title="Piani Coach" description="Piani commerciali interni per coach: prezzi, limiti clienti e funzionalita'.">
       <AppCard style={styles.ruleCard}>
         <Text style={[styles.ruleTitle, { color: colors.ink }]}>Regola prezzi</Text>
         <Text style={[styles.smallText, { color: colors.inkSoft }]}>
-          EUR {demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = EUR{' '}
+          Questi piani riguardano esclusivamente quanto paga un coach e quanti clienti puo' gestire. EUR {demoPlanBillingRule.monthlyPricePerClient} per cliente al mese. Extra +{demoPlanBillingRule.extraClientStep} clienti = EUR{' '}
           {demoPlanBillingRule.extraMonthlyPricePerStep}/mese.
         </Text>
       </AppCard>

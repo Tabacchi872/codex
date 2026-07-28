@@ -14,11 +14,14 @@ export default function SuperadminLayout() {
       <Stack.Screen name="coaches/index" options={{ title: 'Coach registrati' }} />
       <Stack.Screen name="coaches/new" options={{ title: 'Nuovo coach' }} />
       <Stack.Screen name="coaches/[id]" options={{ title: 'Dettaglio coach' }} />
+      <Stack.Screen name="clients/index" options={{ title: 'Clienti registrati' }} />
+      <Stack.Screen name="clients/[id]" options={{ title: 'Dettaglio cliente' }} />
       <Stack.Screen name="plans/index" options={{ title: 'Piani coach' }} />
       <Stack.Screen name="plans/[id]" options={{ title: 'Dettaglio piano' }} />
       <Stack.Screen name="pacchetti/index" options={{ title: 'Pacchetti e abbonamenti' }} />
       <Stack.Screen name="pacchetti/new" options={{ title: 'Nuovo pacchetto' }} />
       <Stack.Screen name="pacchetti/[id]" options={{ title: 'Dettaglio pacchetto' }} />
+      <Stack.Screen name="client-pro" options={{ title: 'Client Pro' }} />
       <Stack.Screen name="payment-events" options={{ title: 'Eventi pagamento' }} />
       <Stack.Screen name="support/index" options={{ title: 'Supporto coach' }} />
       <Stack.Screen name="support/[coachId]" options={{ title: 'Chat coach' }} />

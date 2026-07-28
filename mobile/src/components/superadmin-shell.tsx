@@ -1,5 +1,5 @@
 import { router, usePathname, type Href } from 'expo-router';
-import { Bell, Euro, House, LifeBuoy, Package, Users, type LucideIcon } from 'lucide-react-native';
+import { Bell, Euro, House, LifeBuoy, UserRound, Users, type LucideIcon } from 'lucide-react-native';
 import type React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type RefreshControlProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,10 +14,16 @@ import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@
 const NAV_ITEMS = [
   { href: '/superadmin' as Href, label: 'Dashboard', icon: House, activePrefix: '/superadmin' },
   { href: '/superadmin/coaches' as Href, label: 'Coach', icon: Users, activePrefix: '/superadmin/coaches' },
-  { href: '/superadmin/pacchetti' as Href, label: 'Pacchetti', icon: Package, activePrefix: '/superadmin/pacchetti' },
-  { href: '/superadmin/payment-events' as Href, label: 'Pagamenti', icon: Euro, activePrefix: '/superadmin/payment-events' },
+  { href: '/superadmin/clients' as Href, label: 'Clienti', icon: UserRound, activePrefix: '/superadmin/clients' },
+  {
+    href: '/superadmin/payment-events' as Href,
+    label: 'Pagamenti',
+    icon: Euro,
+    activePrefix: '/superadmin/payment-events',
+    activePrefixes: ['/superadmin/payment-events', '/superadmin/plans', '/superadmin/pacchetti', '/superadmin/client-pro'],
+  },
   { href: '/superadmin/support' as Href, label: 'Supporto', icon: LifeBuoy, activePrefix: '/superadmin/support' },
-] as const satisfies readonly { href: Href; label: string; icon: LucideIcon; activePrefix?: string }[];
+] as const satisfies readonly { href: Href; label: string; icon: LucideIcon; activePrefix?: string; activePrefixes?: string[] }[];
 
 // Altezza del SOLO contenuto della bottom bar (pillola 26 + gap 4 + label 13
 // + paddingTop 8 + paddingBottom base 4 ≈ 55, arrotondata con margine): l'
@@ -117,9 +123,10 @@ export function SuperadminShell({ title, description, children, contentStyle, hi
         {NAV_ITEMS.map((item) => {
           const href = item.href.toString();
           const activePrefix = 'activePrefix' in item ? item.activePrefix : href;
+          const activePrefixes = 'activePrefixes' in item ? item.activePrefixes : [activePrefix];
           const active = href === '/superadmin'
             ? pathname === '/superadmin'
-            : pathname === activePrefix || pathname.startsWith(`${activePrefix}/`);
+            : activePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
           const isSupport = href === '/superadmin/support';
           const Icon = item.icon;
           return (
