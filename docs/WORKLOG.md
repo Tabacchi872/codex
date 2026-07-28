@@ -1155,4 +1155,16 @@ Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`0
 ### Riferimenti a bug/decisioni collegate
 `docs/BUGS.md` BUG-061 chiuso. Nessuna nuova funzionalità aggiunta, come richiesto esplicitamente.
 
+## 2026-07-28 (continuazione) — Smoke test HTTP reale sul webhook RevenueCat deployato (BUG-061)
+- **Cosa è stato fatto:** colmato il limite lasciato esplicitamente aperto nella verifica precedente ("non verificato: la chiamata HTTP reale"). Eseguito uno smoke test HTTP reale contro `https://rkcecnzvzoigipjliwdk.supabase.co/functions/v1/revenuecat-webhook`, **già deployata in produzione**, usando il secret RevenueCat realmente configurato (fornito dall'utente su richiesta esplicita, usato solo runtime in memoria, mai scritto in un file del repository). Nessun account/abbonamento reale toccato: un secondo account sintetico dedicato (dominio `@example.invalid`) è stato creato, usato e rimosso interamente.
+  - Seed: profilo cliente + `user_subscriptions` `status='active'` con pacchetto Client Pro Trimestrale reale, `external_subscription_id='synt-http-refund-block5-001'`, `expires_at` futuro. Pre-condizione verificata: `_has_active_client_pro_entitlement` → `true`.
+  - Chiamata HTTP reale: `POST` con payload `{ event: { type:'REFUND', id:<event_id univoco>, app_user_id, product_id, entitlement_id, transaction_id, purchased_at_ms } }` e header `Authorization: Bearer <secret reale>` → **HTTP 200**, `{"ok":true,"data":{"processed":true,"status":"refunded"}}`.
+  - Verifiche post-refund: `user_subscriptions.status` → `'refunded'`; `_has_active_client_pro_entitlement` → `false`; `log_self_guided_exercise_progress` chiamata come utente autenticato reale (JWT via login, non service_role) → rifiutata con `SUBSCRIPTION_REQUIRED`; riga in `revenuecat_webhook_events` presente con `processed=true` (storico conservato).
+  - Idempotenza: stesso `event_id` reinviato → HTTP 200, `{"duplicate":true}`, nessuna scrittura aggiuntiva (`updated_at` invariato).
+  - Cleanup: riga `revenuecat_webhook_events`, `user_subscriptions`, `profiles` ed utente Auth sintetico eliminati via Admin API; residuo verificato zero.
+- **File/aree toccate:** nessun file di codice (nessuna modifica richiesta, il test ha solo esercitato la funzione già deployata). Solo documentazione: `docs/BUGS.md`, `docs/WORKLOG.md`.
+- **Test eseguiti ed esito:** PASS su tutti i controlli richiesti (HTTP 2xx, subscription revocata, accesso workout bloccato, storico conservato, idempotenza, cleanup completo). Nessun test UI eseguito né dichiarato PASS in questo intervento.
+- **Nota residua non bloccante:** una cartella `supabase/functions/revenuecat-webhook-test-harness/` (copia locale creata durante l'esplorazione di un approccio alternativo poi abbandonato, mai deployata, non tracciata da git) è rimasta sul filesystem — il tentativo di rimuoverla è stato bloccato due volte dal permesso Bash; innocua (non tracciata, non deployata) ma da rimuovere manualmente se l'utente lo desidera.
+- **Riferimenti a bug/decisioni collegate:** `docs/BUGS.md` BUG-061 aggiornato da "non verificato via HTTP" a **PASS via HTTP reale**. Nessuna nuova funzionalità aggiunta.
+
 ---
