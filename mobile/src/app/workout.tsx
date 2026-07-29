@@ -31,7 +31,7 @@ type Tab = 'todo' | 'past';
 type WorkoutAccessState =
   | { kind: 'loading' }
   | { kind: 'coach_guided' }
-  | { kind: 'client_pro_required' }
+  | { kind: 'client_pro_required'; reason: 'expired' | 'missing' }
   | { kind: 'questionnaire_required' }
   | { kind: 'generating'; message: string }
   | { kind: 'pending_safety_review'; cycle: ActiveProgramCycle }
@@ -104,7 +104,7 @@ export default function WorkoutClienteScreen() {
       return;
     }
     if (!planAccess.data.active) {
-      setAccessState({ kind: 'client_pro_required' });
+      setAccessState({ kind: 'client_pro_required', reason: planAccess.data.reason === 'expired' ? 'expired' : 'missing' });
       return;
     }
 
@@ -178,7 +178,7 @@ export default function WorkoutClienteScreen() {
       return;
     }
     if (cycle.status === 'pending_subscription' || cycle.status === 'paused_subscription') {
-      setAccessState({ kind: 'client_pro_required' });
+      setAccessState({ kind: 'client_pro_required', reason: 'expired' });
       return;
     }
     setAccessState({ kind: 'active_program', cycle });
@@ -233,12 +233,13 @@ export default function WorkoutClienteScreen() {
   }
 
   if (accessState.kind === 'client_pro_required') {
+    const expired = accessState.reason === 'expired';
     return (
       <StatusScreen
-        title="Client Pro richiesto"
-        message="Per usare gli allenamenti automatici senza coach serve un piano Client Pro attivo."
+        title={expired ? 'Client Pro è scaduto' : 'Client Pro richiesto'}
+        message={expired ? 'Rinnova Client Pro per continuare e ricevere il tuo programma automatico.' : 'Per usare gli allenamenti automatici senza coach serve un piano Client Pro attivo.'}
         icon={<LockKeyhole size={28} color={colors.moss} />}
-        primaryLabel="Vai ai Piani"
+        primaryLabel={expired ? 'Rinnova Client Pro' : 'Vai ai Piani'}
         onPrimary={() => router.push('/abbonamento-cliente')}
       />
     );
@@ -283,11 +284,13 @@ export default function WorkoutClienteScreen() {
   if (accessState.kind === 'pending_template') {
     return (
       <StatusScreen
-        title="Pending template"
-        message={accessState.cycle.decisionReason ?? 'Non e stato trovato un modello compatibile: serve una revisione del team.'}
+        title="Programma non ancora disponibile"
+        message="Non abbiamo ancora un programma automatico perfettamente compatibile con le risposte del questionario. Puoi riprovare la generazione oppure controllare le risposte inserite."
         icon={<FileWarning size={28} color={colors.moss} />}
-        primaryLabel="Aggiorna"
+        primaryLabel="Riprova"
         onPrimary={retryAccessState}
+        secondaryLabel="Controlla questionario"
+        onSecondary={() => router.push('/questionario-fitness')}
       />
     );
   }
@@ -430,12 +433,16 @@ function StatusScreen({
   icon,
   primaryLabel,
   onPrimary,
+  secondaryLabel,
+  onSecondary,
 }: {
   title: string;
   message: string;
   icon: ReactNode;
   primaryLabel: string;
   onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -446,6 +453,7 @@ function StatusScreen({
           <Text style={[styles.statusTitle, { color: colors.ink }]}>{title}</Text>
           <Text style={[styles.statusMessage, { color: colors.inkSoft }]}>{message}</Text>
           <AppButton label={primaryLabel} onPress={onPrimary} fullWidth />
+          {secondaryLabel && onSecondary ? <AppButton label={secondaryLabel} onPress={onSecondary} variant="outline" fullWidth /> : null}
         </AppCard>
       </View>
     </View>

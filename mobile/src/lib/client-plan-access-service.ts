@@ -11,6 +11,7 @@ export type ClientPlanAccess = {
   active: boolean;
   packageName: string | null;
   expiresAt: string | null;
+  reason: 'active' | 'expired' | 'missing';
 };
 
 type ClientPlanAccessResult =
@@ -19,7 +20,7 @@ type ClientPlanAccessResult =
 
 export async function getMySelfGuidedPlanAccess(): Promise<ClientPlanAccessResult> {
   if (!supabaseConfig.isConfigured) {
-    return { ok: true, data: { active: false, packageName: null, expiresAt: null } };
+    return { ok: true, data: { active: false, packageName: null, expiresAt: null, reason: 'missing' } };
   }
 
   const sessionResult = await getCurrentSession();
@@ -34,12 +35,20 @@ export async function getMySelfGuidedPlanAccess(): Promise<ClientPlanAccessResul
   }
 
   const subscription = pickCurrentSelfGuidedSubscription(subscriptionsResult.data);
+  const clientSubscriptions = subscriptionsResult.data.filter(
+    (item) =>
+      item.paymentProvider === 'revenuecat' &&
+      item.package?.targetRole === 'client' &&
+      item.package?.revenuecatEntitlementId === CLIENT_REVENUECAT_ENTITLEMENT,
+  );
+  const latestExpired = clientSubscriptions.find((item) => item.status === 'expired' || (item.expiresAt ? new Date(item.expiresAt).getTime() <= Date.now() : false));
   return {
     ok: true,
     data: {
       active: subscription !== null,
-      packageName: subscription?.package?.name ?? null,
-      expiresAt: subscription?.expiresAt ?? null,
+      packageName: subscription?.package?.name ?? latestExpired?.package?.name ?? null,
+      expiresAt: subscription?.expiresAt ?? latestExpired?.expiresAt ?? null,
+      reason: subscription ? 'active' : latestExpired ? 'expired' : 'missing',
     },
   };
 }
