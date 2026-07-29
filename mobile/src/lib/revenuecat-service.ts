@@ -50,17 +50,17 @@ export type RevenueCatPurchaseResult =
     }
   | {
       ok: false;
-      code: 'unsupported' | 'not_configured' | 'missing_product' | 'cancelled' | 'purchase_error';
+      code: 'unsupported' | 'not_configured' | 'identify_error' | 'missing_product' | 'cancelled' | 'purchase_error';
       message: string;
     };
 
 export type RevenueCatRestoreResult =
   | { ok: true; customerInfo: CustomerInfo; message: string }
-  | { ok: false; code: 'unsupported' | 'not_configured' | 'restore_error'; message: string };
+  | { ok: false; code: 'unsupported' | 'not_configured' | 'identify_error' | 'restore_error'; message: string };
 
 export type RevenueCatManageSubscriptionResult =
   | { ok: true; message: string }
-  | { ok: false; code: 'unsupported' | 'not_configured' | 'no_management_url' | 'open_error'; message: string };
+  | { ok: false; code: 'unsupported' | 'not_configured' | 'identify_error' | 'no_management_url' | 'open_error'; message: string };
 
 const EXPO_GO_MESSAGE = 'RevenueCat richiede una development build o una build EAS: Expo Go non supporta il modulo nativo.';
 const WEB_MESSAGE = 'Acquisti in-app disponibili solo su Android e iOS. Sul web serve un checkout separato.';
@@ -151,7 +151,11 @@ export async function identifyRevenueCatUser(userId: string) {
   const configuredResult = await configureRevenueCat();
   if (!configuredResult.ok) return configuredResult;
   if (identifiedUserId !== userId) {
-    await Purchases.logIn(userId);
+    try {
+      await Purchases.logIn(userId);
+    } catch (err) {
+      return { ok: false as const, code: 'identify_error' as const, message: safeErrorMessage(err) };
+    }
     identifiedUserId = userId;
   }
   return { ok: true as const };
@@ -264,9 +268,25 @@ export async function restoreRevenueCatPurchases(userId: string): Promise<Revenu
   const identifyResult = await identifyRevenueCatUser(userId);
   if (!identifyResult.ok) return { ok: false, code: identifyResult.code, message: identifyResult.message };
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    const appUserIdBefore = await Purchases.getAppUserID();
+    logRevenueCatDiagnostic('RESTORE_START', { supabaseUserId: userId, revenueCatAppUserIdBefore: appUserIdBefore });
+    await Purchases.restorePurchases();
+    await Purchases.invalidateCustomerInfoCache();
+    const customerInfo = await Purchases.getCustomerInfo();
+    const appUserIdAfter = await Purchases.getAppUserID();
+    logRevenueCatDiagnostic('RESTORE_SUCCESS', {
+      supabaseUserId: userId,
+      revenueCatAppUserIdBefore: appUserIdBefore,
+      revenueCatAppUserIdAfter: appUserIdAfter,
+      ...describeClientProCustomerInfo(customerInfo),
+    });
     return { ok: true, customerInfo, message: 'Ripristino ricevuto, sincronizzazione in corso.' };
   } catch (err) {
+    logRevenueCatDiagnostic('RESTORE_ERROR', {
+      supabaseUserId: userId,
+      code: safeErrorCode(err),
+      message: safeErrorMessage(err),
+    });
     return { ok: false, code: 'restore_error', message: `Ripristino non riuscito: ${safeErrorMessage(err)}` };
   }
 }
@@ -305,6 +325,10 @@ export function isPackageEntitlementActive(pkg: SubscriptionPackage, customerInf
   const platformProductId = getPlatformProductId(pkg);
   const expected = productIdentifier ?? platformProductId;
   return expected ? customerInfo.activeSubscriptions.includes(expected) : false;
+}
+
+export function isClientProCustomerInfoActive(customerInfo: CustomerInfo) {
+  return customerInfo.entitlements.active.client_pro?.isActive === true;
 }
 
 function resolveProductState(pkg: SubscriptionPackage, offerings: PurchasesOfferings): RevenueCatProductState {
@@ -440,6 +464,14 @@ function safeErrorMessage(err: unknown) {
   return String(err);
 }
 
+function safeErrorCode(err: unknown) {
+  if (err && typeof err === 'object') {
+    const maybeError = err as Partial<PurchasesError> & { code?: string };
+    return maybeError.code ?? maybeError.userInfo?.readableErrorCode ?? maybeError.readableErrorCode ?? null;
+  }
+  return null;
+}
+
 function logRevenueCatDiagnostic(event: string, payload: Record<string, unknown>) {
   if (!__DEV__) return;
   console.info(event, payload);
@@ -470,6 +502,17 @@ function describePackageForDiagnostics(pkg: SubscriptionPackage) {
     isActive: pkg.isActive,
     durationValue: pkg.durationValue,
     durationUnit: pkg.durationUnit,
+  };
+}
+
+function describeClientProCustomerInfo(customerInfo: CustomerInfo) {
+  const clientPro = customerInfo.entitlements.active.client_pro ?? null;
+  return {
+    activeSubscriptions: customerInfo.activeSubscriptions,
+    clientProActive: clientPro?.isActive === true,
+    productIdentifier: clientPro?.productIdentifier ?? null,
+    expirationDate: clientPro?.expirationDate ?? null,
+    latestPurchaseDate: clientPro?.latestPurchaseDate ?? null,
   };
 }
 

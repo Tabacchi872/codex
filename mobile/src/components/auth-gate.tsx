@@ -375,11 +375,11 @@ export function AuthGate() {
     return detach;
   }, [currentRole]);
 
-  // RevenueCat usa lo stesso UUID Supabase Auth del coach. Su logout/cambio
-  // account si chiude l'identita' RevenueCat per evitare contaminazioni tra
-  // acquisti di store diversi sullo stesso device.
+  // RevenueCat usa lo stesso UUID Supabase Auth per coach e clienti. Su
+  // logout/cambio account si chiude l'identita' RevenueCat per evitare
+  // contaminazioni tra acquisti di store diversi sullo stesso device.
   useEffect(() => {
-    if (currentRole !== 'coach' || !isAuthenticated || !supabaseConfig.isConfigured) {
+    if ((currentRole !== 'coach' && currentRole !== 'cliente') || !isAuthenticated || !supabaseConfig.isConfigured) {
       if (revenueCatUserIdRef.current) {
         revenueCatUserIdRef.current = null;
         logoutRevenueCat();
@@ -403,7 +403,10 @@ export function AuthGate() {
         await logoutRevenueCat();
       }
       revenueCatUserIdRef.current = userId;
-      await identifyRevenueCatUser(userId);
+      const identifyResult = await identifyRevenueCatUser(userId);
+      if (!identifyResult.ok && __DEV__) {
+        console.warn('REVENUECAT_IDENTIFY_ERROR', identifyResult.code, identifyResult.message);
+      }
     })();
     return () => {
       active = false;

@@ -6,6 +6,7 @@ import {
   openRevenueCatSubscriptionManagement,
   purchaseRevenueCatPackage,
   restoreRevenueCatPurchases,
+  isClientProCustomerInfoActive,
   type RevenueCatProductState,
 } from './revenuecat-service';
 import { waitForAnySubscriptionSync, waitForPackageSubscriptionSync } from './user-subscriptions-service';
@@ -23,18 +24,36 @@ export type CheckoutResult =
     }
   | {
       ok: false;
-      code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'missing_product' | 'cancelled' | 'purchase_error' | 'sync_error';
+      code:
+        | 'not_authenticated'
+        | 'not_configured'
+        | 'unsupported'
+        | 'identify_error'
+        | 'missing_product'
+        | 'cancelled'
+        | 'purchase_error'
+        | 'sync_error';
       provider: CheckoutProvider;
       message: string;
     };
 
 export type RestorePurchasesResult =
   | { ok: true; code: 'synced' | 'sync_timeout'; provider: CheckoutProvider; message: string }
-  | { ok: false; code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'restore_error' | 'sync_error'; provider: CheckoutProvider; message: string };
+  | {
+      ok: false;
+      code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'identify_error' | 'restore_error' | 'sync_error';
+      provider: CheckoutProvider;
+      message: string;
+    };
 
 export type ManageSubscriptionResult =
   | { ok: true; provider: CheckoutProvider; message: string }
-  | { ok: false; code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'no_management_url' | 'open_error'; provider: CheckoutProvider; message: string };
+  | {
+      ok: false;
+      code: 'not_authenticated' | 'not_configured' | 'unsupported' | 'identify_error' | 'no_management_url' | 'open_error';
+      provider: CheckoutProvider;
+      message: string;
+    };
 
 export function resolveCheckoutProvider(): CheckoutProvider {
   if (Platform.OS === 'ios') return 'apple';
@@ -108,16 +127,20 @@ export async function restorePackagePurchases(): Promise<RestorePurchasesResult>
     return { ok: false, code: restored.code, provider, message: restored.message };
   }
 
+  const revenueCatHasClientPro = isClientProCustomerInfoActive(restored.customerInfo);
   const synced = await waitForAnySubscriptionSync(userId);
   if (!synced.ok) {
     return { ok: false, code: 'sync_error', provider, message: synced.message };
   }
   if (!synced.data) {
+    const message = revenueCatHasClientPro
+      ? 'Acquisto riconosciuto. Sincronizzazione in corso.'
+      : 'Nessun Client Pro attivo trovato nello store per questo account. Se hai appena rinnovato, riprova tra poco.';
     return {
       ok: true,
       code: 'sync_timeout',
       provider,
-      message: 'Ripristino ricevuto. La sincronizzazione Supabase e ancora in corso: riapri la schermata tra poco.',
+      message,
     };
   }
   return { ok: true, code: 'synced', provider, message: 'Acquisti ripristinati e abbonamento aggiornato.' };
@@ -137,7 +160,9 @@ export async function openPackageSubscriptionManagement(): Promise<ManageSubscri
     : { ok: false, code: result.code, provider, message: result.message };
 }
 
-function mapPurchaseErrorCode(code: 'unsupported' | 'not_configured' | 'missing_product' | 'cancelled' | 'purchase_error') {
+function mapPurchaseErrorCode(
+  code: 'unsupported' | 'not_configured' | 'identify_error' | 'missing_product' | 'cancelled' | 'purchase_error',
+) {
   if (code === 'missing_product') return 'missing_product' as const;
   return code;
 }
