@@ -1,7 +1,8 @@
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, type Href } from 'expo-router';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppBadge, AppButton, AppCard, AppEmptyState, AppErrorState, BackHeader, type AppBadgeTone } from '@/components/ui';
 import { SuperadminShell } from '@/components/superadmin-shell';
@@ -110,7 +111,7 @@ export default function SuperadminClientDetailScreen() {
             )}
           </AppCard>
 
-          <JsonSection title="Ciclo corrente" value={detail.currentCycle} empty="Nessun ciclo corrente." />
+          <CurrentCycleCard cycle={detail.currentCycle} workoutPlans={detail.workoutPlans} />
           <Section title="Schede precedenti e correnti" items={detail.workoutPlans} empty="Nessuna scheda associata." renderItem={(item, index) => (
             <InfoCard key={stringValue(item.id) || index}>
               <Text style={[styles.itemTitle, { color: colors.ink }]}>{stringValue(item.name) || 'Scheda'}</Text>
@@ -124,10 +125,10 @@ export default function SuperadminClientDetailScreen() {
               </View>
             </InfoCard>
           )} />
-          <Section title="Check-in" items={detail.checkins} empty="Nessun check-in." renderItem={(item, index) => <JsonCard key={stringValue(item.id) || index} value={item} />} />
-          <Section title="Review" items={detail.reviews} empty="Nessuna review." renderItem={(item, index) => <JsonCard key={stringValue(item.id) || index} value={item} />} />
-          <Section title="Notifiche" items={detail.notifications} empty="Nessuna notifica." renderItem={(item, index) => <JsonCard key={stringValue(item.id) || index} value={item} />} />
-          <Section title="Override Superadmin" items={detail.overrides} empty="Nessun override Superadmin." renderItem={(item, index) => <JsonCard key={stringValue(item.id) || index} value={item} />} />
+          <Section title="Check-in" items={detail.checkins} empty="Nessun check-in." renderItem={(item, index) => <GenericRecordCard key={stringValue(item.id) || index} value={item} />} />
+          <Section title="Review" items={detail.reviews} empty="Nessuna review." renderItem={(item, index) => <GenericRecordCard key={stringValue(item.id) || index} value={item} />} />
+          <Section title="Notifiche" items={detail.notifications} empty="Nessuna notifica." renderItem={(item, index) => <NotificationCard key={stringValue(item.id) || index} value={item} />} />
+          <Section title="Override Superadmin" items={detail.overrides} empty="Nessun override Superadmin." renderItem={(item, index) => <GenericRecordCard key={stringValue(item.id) || index} value={item} />} />
         </>
       )}
     </SuperadminShell>
@@ -154,12 +155,39 @@ function Section({
   );
 }
 
-function JsonSection({ title, value, empty }: { title: string; value: Record<string, unknown> | null; empty: string }) {
+function CurrentCycleCard({ cycle, workoutPlans }: { cycle: Record<string, unknown> | null; workoutPlans: Record<string, unknown>[] }) {
   const { colors } = useAppTheme();
+  const relatedPlans = workoutPlans.filter((plan) => !cycle?.id || stringValue(plan.cycle_id) === stringValue(cycle.id));
+  const visiblePlans = relatedPlans.length > 0 ? relatedPlans : workoutPlans;
+  const completedWorkouts = visiblePlans.filter((plan) => stringValue(plan.session_status) === 'completed').length;
+  const plannedWorkouts = numberValue(cycle?.planned_sessions) ?? numberValue(cycle?.total_sessions) ?? visiblePlans.length;
+
   return (
     <AppCard style={styles.card}>
-      <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>{title}</Text>
-      {value ? <JsonCard value={value} /> : <Text style={[styles.smallText, { color: colors.inkSoft }]}>{empty}</Text>}
+      <Text style={[AppTextStyle.cardTitle, { color: colors.ink }]}>Ciclo corrente</Text>
+      {cycle ? (
+        <>
+          <View style={styles.headerRow}>
+            <AppBadge label={cycleStatusLabel(stringValue(cycle.status))} tone={cycleStatusTone(stringValue(cycle.status))} />
+            <Text style={[styles.smallText, { color: colors.inkSoft }]}>Il programma e' stato assegnato automaticamente in base al questionario.</Text>
+          </View>
+          <View style={styles.grid}>
+            <Field label="Origine" value={cycleOriginLabel(stringValue(cycle.origin) || stringValue(cycle.created_by_role))} />
+            <Field label="Nome programma" value={stringValue(cycle.program_name) || stringValue(cycle.name) || stringValue(visiblePlans[0]?.name) || 'Programma automatico'} />
+            <Field label="Ciclo numero" value={stringValue(cycle.cycle_number)} />
+            <Field label="Data inizio" value={formatDateTime(stringValue(cycle.started_at) || stringValue(cycle.created_at))} />
+            <Field label="Data revisione prevista" value={formatDateTime(stringValue(cycle.next_review_at) || stringValue(cycle.review_due_at))} />
+            <Field label="Giorni attivi" value={stringValue(cycle.effective_active_days) || stringValue(cycle.active_days)} />
+            <Field label="Schede presenti" value={String(visiblePlans.length)} />
+            <Field label="Allenamenti previsti" value={String(plannedWorkouts)} />
+            <Field label="Allenamenti completati" value={String(completedWorkouts)} />
+            <Field label="Ultimo aggiornamento" value={formatDateTime(stringValue(cycle.updated_at))} />
+          </View>
+          <TechnicalDetails value={cycle} />
+        </>
+      ) : (
+        <Text style={[styles.smallText, { color: colors.inkSoft }]}>Nessun ciclo corrente.</Text>
+      )}
     </AppCard>
   );
 }
@@ -169,11 +197,74 @@ function InfoCard({ children }: { children: React.ReactNode }) {
   return <View style={[styles.infoCard, { borderColor: colors.border }]}>{children}</View>;
 }
 
-function JsonCard({ value }: { value: Record<string, unknown> }) {
+function NotificationCard({ value }: { value: Record<string, unknown> }) {
   const { colors } = useAppTheme();
   return (
     <View style={[styles.infoCard, { borderColor: colors.border }]}>
-      <Text style={[styles.jsonText, { color: colors.inkSoft }]}>{JSON.stringify(value, null, 2)}</Text>
+      <View style={styles.headerRow}>
+        <Text style={[styles.itemTitle, { color: colors.ink }]}>{stringValue(value.title) || notificationTypeLabel(stringValue(value.type))}</Text>
+        <AppBadge label={truthy(value.read_at) || truthy(value.read) ? 'Letta' : 'Non letta'} tone={truthy(value.read_at) || truthy(value.read) ? 'neutral' : 'amber'} />
+      </View>
+      <Text style={[styles.smallText, { color: colors.inkSoft }]}>{stringValue(value.message) || 'Messaggio non disponibile.'}</Text>
+      <View style={styles.grid}>
+        <Field label="Tipo" value={notificationTypeLabel(stringValue(value.type))} />
+        <Field label="Data e ora" value={formatDateTime(stringValue(value.created_at))} />
+        <Field label="Collegamento al ciclo" value={stringValue(value.cycle_number) ? `Ciclo ${stringValue(value.cycle_number)}` : shortId(stringValue(value.cycle_id)) || '-'} />
+      </View>
+      <TechnicalDetails value={value} allowedKeys={['id', 'type', 'status', 'created_at', 'read_at', 'cycle_id']} />
+    </View>
+  );
+}
+
+function GenericRecordCard({ value }: { value: Record<string, unknown> }) {
+  const { colors } = useAppTheme();
+  const entries = Object.entries(value).filter(([key]) => !isSensitiveOrInternalKey(key)).slice(0, 8);
+  return (
+    <View style={[styles.infoCard, { borderColor: colors.border }]}>
+      <Text style={[styles.itemTitle, { color: colors.ink }]}>{stringValue(value.title) || stringValue(value.name) || genericRecordTitle(value)}</Text>
+      <View style={styles.grid}>
+        {entries.map(([key, item]) => (
+          <Field key={key} label={fieldLabel(key)} value={formatUnknownValue(item)} />
+        ))}
+      </View>
+      <TechnicalDetails value={value} />
+    </View>
+  );
+}
+
+function TechnicalDetails({ value, allowedKeys }: { value: Record<string, unknown>; allowedKeys?: string[] }) {
+  const { colors } = useAppTheme();
+  const [open, setOpen] = useState(false);
+  const entries = Object.entries(value)
+    .filter(([key]) => (allowedKeys ? allowedKeys.includes(key) : isTechnicalKey(key)))
+    .filter(([, item]) => item !== null && item !== undefined);
+  if (entries.length === 0) return null;
+
+  async function copyIds() {
+    const ids = entries
+      .filter(([key]) => key.toLowerCase().endsWith('id') || key.toLowerCase().includes('_id'))
+      .map(([key, item]) => `${key}: ${String(item)}`)
+      .join('\n');
+    if (ids) await Clipboard.setStringAsync(ids);
+  }
+
+  return (
+    <View style={[styles.techBox, { borderColor: colors.border }]}>
+      <Pressable onPress={() => setOpen((value) => !value)} hitSlop={6}>
+        <Text style={[styles.techToggle, { color: colors.moss }]}>{open ? 'Nascondi dettagli tecnici' : 'Dettagli tecnici'}</Text>
+      </Pressable>
+      {open ? (
+        <>
+          <View style={styles.grid}>
+            {entries.map(([key, item]) => (
+              <Field key={key} label={fieldLabel(key)} value={formatTechnicalValue(key, item)} />
+            ))}
+          </View>
+          <Pressable onPress={() => void copyIds()} hitSlop={6}>
+            <Text style={[styles.techToggle, { color: colors.moss }]}>Copia ID</Text>
+          </Pressable>
+        </>
+      ) : null}
     </View>
   );
 }
@@ -199,6 +290,13 @@ function formatDate(value: string) {
   return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function formatDateTime(value: string) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     active: 'Attivo',
@@ -216,6 +314,109 @@ function statusTone(status: string): AppBadgeTone {
   if (status === 'pending') return 'amber';
   if (status === 'canceled') return 'neutral';
   return 'rust';
+}
+
+function cycleStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    active: 'Attivo',
+    draft: 'In attesa',
+    pending: 'In attesa',
+    pending_template: 'Programma in preparazione',
+    pending_safety_review: 'In attesa di revisione',
+    pending_subscription: 'Client Pro richiesto',
+    completed: 'Completato',
+    suspended: 'Sospeso',
+    paused: 'Sospeso',
+  };
+  return labels[status] ?? (status ? fieldLabel(status) : 'In attesa');
+}
+
+function cycleStatusTone(status: string): AppBadgeTone {
+  if (status === 'active') return 'moss';
+  if (status === 'completed') return 'neutral';
+  if (status === 'pending_safety_review' || status === 'pending_template' || status === 'pending_subscription' || status === 'draft') return 'amber';
+  if (status === 'suspended' || status === 'paused') return 'rust';
+  return 'neutral';
+}
+
+function cycleOriginLabel(value: string) {
+  const labels: Record<string, string> = {
+    auto: 'Programma automatico',
+    automatic: 'Programma automatico',
+    auto_program: 'Programma automatico',
+    system: 'Programma automatico',
+    coach: 'Coach',
+    superadmin: 'Superadmin',
+    cliente: 'Cliente',
+  };
+  return labels[value] ?? (value ? fieldLabel(value) : 'Programma automatico');
+}
+
+function notificationTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    auto_program_assigned: 'Programma automatico assegnato',
+    active: 'Attivo',
+    pending_template: 'Programma in preparazione',
+    pending_safety_review: 'In attesa di revisione',
+    cliente: 'Cliente',
+    coach: 'Coach',
+  };
+  return labels[type] ?? (type ? fieldLabel(type) : 'Notifica');
+}
+
+function numberValue(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  return null;
+}
+
+function truthy(value: unknown) {
+  return value === true || (typeof value === 'string' && value.trim().length > 0);
+}
+
+function shortId(value: string) {
+  if (!value) return '';
+  return value.length > 12 ? `${value.slice(0, 8)}...${value.slice(-4)}` : value;
+}
+
+function isSensitiveOrInternalKey(key: string) {
+  const lowered = key.toLowerCase();
+  return lowered.includes('token') || lowered.includes('secret') || lowered === 'dedup_key' || lowered === 'recipient_id' ||
+    lowered === 'client_id' || lowered === 'created_by' || lowered === 'template_id' || lowered === 'fitness_profile_snapshot' ||
+    lowered === 'decision_reason' || lowered === 'algorithm_version';
+}
+
+function isTechnicalKey(key: string) {
+  const lowered = key.toLowerCase();
+  return lowered === 'id' || lowered.endsWith('_id') || lowered.includes('reason') || lowered.includes('algorithm') ||
+    lowered.includes('version') || lowered.includes('snapshot') || lowered.includes('created_by');
+}
+
+function formatTechnicalValue(key: string, value: unknown) {
+  if (key.toLowerCase().endsWith('id') || key.toLowerCase().includes('_id')) return shortId(stringValue(value));
+  return formatUnknownValue(value);
+}
+
+function formatUnknownValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return '-';
+  if (typeof value === 'boolean') return value ? 'Si' : 'No';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return formatDateTime(value);
+    return value;
+  }
+  if (Array.isArray(value)) return value.length === 0 ? 'Nessun elemento' : `${value.length} elementi`;
+  return 'Dato strutturato';
+}
+
+function fieldLabel(key: string) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function genericRecordTitle(value: Record<string, unknown>) {
+  if (stringValue(value.status)) return statusLabel(stringValue(value.status));
+  if (stringValue(value.type)) return notificationTypeLabel(stringValue(value.type));
+  return 'Elemento';
 }
 
 const styles = StyleSheet.create({
@@ -254,9 +455,14 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.base,
     fontWeight: '700',
   },
-  jsonText: {
-    fontFamily: 'monospace',
-    fontSize: 11,
-    lineHeight: 15,
+  techBox: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: AppSpacing[2],
+    paddingTop: AppSpacing[2],
+  },
+  techToggle: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '800',
+    textDecorationLine: 'underline',
   },
 });
