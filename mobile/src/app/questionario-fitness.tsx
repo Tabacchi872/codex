@@ -1,11 +1,14 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Check, ChevronRight } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { LegalConsentCheckbox } from '@/components/legal-consent-checkbox';
 import { AppButton, AppScreen, AppTextField } from '@/components/ui';
+import { PRIVACY_POLICY_URL } from '@/constants/app-info';
 import { assignInitialAutoProgram } from '@/lib/auto-program-service';
 import { saveInitialFitnessQuestionnaire } from '@/lib/client-fitness-profile-service';
+import { recordHealthDataConsent } from '@/lib/legal-acceptance-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientFitnessProfileStore } from '@/store/client-fitness-profile-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
@@ -62,7 +65,7 @@ const COMMON_EXERCISES: { id: string; name: string }[] = [
 
 const PAIN_AREAS = ['Spalla', 'Gomito', 'Polso', 'Schiena bassa', 'Schiena alta', 'Anca', 'Ginocchio', 'Caviglia', 'Altro'];
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 export default function QuestionarioFitnessScreen() {
   const router = useRouter();
@@ -74,6 +77,8 @@ export default function QuestionarioFitnessScreen() {
   const markCompleted = useClientFitnessProfileStore((s) => s.markCompleted);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthConsentAccepted, setHealthConsentAccepted] = useState(false);
+  const [healthConsentRecorded, setHealthConsentRecorded] = useState(false);
 
   const currentDraft = useMemo<ClientFitnessProfileDraft>(
     () =>
@@ -88,8 +93,20 @@ export default function QuestionarioFitnessScreen() {
   );
 
   const step = currentDraft.currentStep;
-  const valid = isStepValid(currentDraft, step);
+  const formValid = isStepValid(currentDraft, step, healthConsentAccepted);
+  const disabledReason = getDisabledReason(currentDraft, step, healthConsentAccepted, submitting);
   const canGoBack = step > 0;
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.info('FITNESS_QUESTIONNAIRE_STATE', {
+      healthConsentChecked: healthConsentAccepted,
+      healthConsentRecorded,
+      isSubmitting: submitting,
+      formValid,
+      disabledReason,
+    });
+  }, [disabledReason, formValid, healthConsentAccepted, healthConsentRecorded, submitting]);
 
   function patch(patchValue: Partial<Omit<ClientFitnessProfileDraft, 'clientId' | 'updatedAt'>>) {
     if (!clientId) return;
@@ -103,8 +120,17 @@ export default function QuestionarioFitnessScreen() {
   }
 
   async function continueFlow() {
-    if (!clientId || !valid || submitting) return;
+    if (!clientId || disabledReason) return;
     setError(null);
+
+    if (step === 6) {
+      setSubmitting(true);
+      const consentOk = await recordHealthConsentForFlow();
+      setSubmitting(false);
+      if (!consentOk) return;
+      patch({ currentStep: step + 1 });
+      return;
+    }
 
     if (step < TOTAL_STEPS - 1) {
       patch({ currentStep: step + 1 });
@@ -115,6 +141,12 @@ export default function QuestionarioFitnessScreen() {
     if (!payload) return;
 
     setSubmitting(true);
+    const consentOk = await recordHealthConsentForFlow();
+    if (!consentOk) {
+      setSubmitting(false);
+      return;
+    }
+
     const saveResult = await saveInitialFitnessQuestionnaire(payload);
     if (!saveResult.ok) {
       setSubmitting(false);
@@ -134,6 +166,30 @@ export default function QuestionarioFitnessScreen() {
     router.replace('/cliente-home');
   }
 
+  async function recordHealthConsentForFlow() {
+    if (healthConsentRecorded) return true;
+
+    const healthConsentResult = await recordHealthDataConsent();
+    const recorded = healthConsentResult.ok;
+    setHealthConsentRecorded(recorded);
+
+    if (__DEV__) {
+      console.info('FITNESS_HEALTH_CONSENT_RECORD_RESULT', {
+        healthConsentChecked: healthConsentAccepted,
+        healthConsentRecorded: recorded,
+        isSubmitting: true,
+        formValid,
+        disabledReason,
+      });
+    }
+
+    if (!healthConsentResult.ok) {
+      setError(healthConsentResult.message);
+      return false;
+    }
+    return true;
+  }
+
   return (
     <AppScreen
       bottomTabInset={false}
@@ -145,7 +201,7 @@ export default function QuestionarioFitnessScreen() {
           <AppButton
             label={step === TOTAL_STEPS - 1 ? 'Conferma e genera il mio programma' : 'Continua'}
             onPress={continueFlow}
-            disabled={!valid || submitting}
+            disabled={Boolean(disabledReason)}
             loading={submitting}
             fullWidth
             size="lg"
@@ -166,7 +222,13 @@ export default function QuestionarioFitnessScreen() {
         <Text style={[styles.progressText, { color: colors.inkSoft }]}>{step + 1}/{TOTAL_STEPS}</Text>
       </View>
 
-      <StepContent step={step} draft={currentDraft} onPatch={patch} />
+      <StepContent
+        step={step}
+        draft={currentDraft}
+        healthConsentAccepted={healthConsentAccepted}
+        onHealthConsentToggle={(checked) => setHealthConsentAccepted(checked)}
+        onPatch={patch}
+      />
     </AppScreen>
   );
 }
@@ -174,15 +236,19 @@ export default function QuestionarioFitnessScreen() {
 function StepContent({
   step,
   draft,
+  healthConsentAccepted,
+  onHealthConsentToggle,
   onPatch,
 }: {
   step: number;
   draft: ClientFitnessProfileDraft;
+  healthConsentAccepted: boolean;
+  onHealthConsentToggle: (checked: boolean) => void;
   onPatch: (patch: Partial<Omit<ClientFitnessProfileDraft, 'clientId' | 'updatedAt'>>) => void;
 }) {
   if (step === 0) {
     return (
-      <StepShell title="Quanti anni hai?" subtitle="Serve per proporti un programma adatto alla tua età.">
+      <StepShell title="Quanti anni hai?" subtitle="Il servizio e' destinato a utenti maggiorenni.">
         <AppTextField
           keyboardType="number-pad"
           value={draft.age ? String(draft.age) : ''}
@@ -275,6 +341,21 @@ function StepContent({
   }
   if (step === 6) {
     return (
+      <StepShell
+        title="Consenso per informazioni su salute e limitazioni"
+        subtitle="Il prossimo passaggio puo raccogliere dolori, fastidi o limitazioni fisiche utili a evitare esercizi non adatti.">
+        <LegalConsentCheckbox
+          checked={healthConsentAccepted}
+          label="Acconsento al trattamento delle informazioni relative alla mia salute e alle mie limitazioni fisiche per la creazione e gestione dei programmi di allenamento."
+          linkLabel="Apri Informativa privacy"
+          linkUrl={PRIVACY_POLICY_URL}
+          onToggle={onHealthConsentToggle}
+        />
+      </StepShell>
+    );
+  }
+  if (step === 7) {
+    return (
       <StepShell title="Hai dolori o fastidi di cui dovremmo tenere conto?">
         <ChoiceCard title="Sì" selected={draft.hasPainOrLimitation === true} onPress={() => onPatch({ hasPainOrLimitation: true })} />
         <ChoiceCard title="No" selected={draft.hasPainOrLimitation === false} onPress={() => onPatch({ hasPainOrLimitation: false, painAreas: [], painNotes: undefined })} />
@@ -300,7 +381,7 @@ function StepContent({
       </StepShell>
     );
   }
-  if (step === 7) {
+  if (step === 8) {
     return (
       <StepShell
         title="Hai un infortunio attivo o una condizione fisica che richiede il parere di un professionista prima di allenarti?"
@@ -398,10 +479,10 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function isStepValid(draft: ClientFitnessProfileDraft, step: number) {
+function isStepValid(draft: ClientFitnessProfileDraft, step: number, healthConsentAccepted: boolean) {
   switch (step) {
     case 0:
-      return !!draft.age && draft.age >= 14 && draft.age <= 100;
+      return !!draft.age && draft.age >= 18 && draft.age <= 100;
     case 1:
       return !!draft.location;
     case 2:
@@ -413,13 +494,49 @@ function isStepValid(draft: ClientFitnessProfileDraft, step: number) {
     case 5:
       return true;
     case 6:
-      return typeof draft.hasPainOrLimitation === 'boolean';
+      return healthConsentAccepted;
     case 7:
-      return typeof draft.requiresProfessionalSupervision === 'boolean';
+      return typeof draft.hasPainOrLimitation === 'boolean';
     case 8:
+      return typeof draft.requiresProfessionalSupervision === 'boolean';
+    case 9:
       return !!buildPayload(draft);
     default:
       return false;
+  }
+}
+
+function getDisabledReason(
+  draft: ClientFitnessProfileDraft,
+  step: number,
+  healthConsentAccepted: boolean,
+  submitting: boolean,
+) {
+  if (submitting) return 'submitting';
+
+  switch (step) {
+    case 0:
+      return !!draft.age && draft.age >= 18 && draft.age <= 100 ? null : 'age_invalid';
+    case 1:
+      return draft.location ? null : 'location_missing';
+    case 2:
+      return draft.equipmentLevel ? null : 'equipment_missing';
+    case 3:
+      return draft.sessionDurationMinutes ? null : 'duration_missing';
+    case 4:
+      return draft.preferredTrainingStyle ? null : 'training_style_missing';
+    case 5:
+      return null;
+    case 6:
+      return healthConsentAccepted ? null : 'health_consent_unchecked';
+    case 7:
+      return typeof draft.hasPainOrLimitation === 'boolean' ? null : 'pain_choice_missing';
+    case 8:
+      return typeof draft.requiresProfessionalSupervision === 'boolean' ? null : 'supervision_choice_missing';
+    case 9:
+      return buildPayload(draft) ? null : 'summary_payload_incomplete';
+    default:
+      return 'unknown_step';
   }
 }
 

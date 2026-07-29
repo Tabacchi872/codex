@@ -6,11 +6,12 @@ import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const canCreateSupabaseClient = Boolean(supabaseUrl && supabaseAnonKey) && (Platform.OS !== 'web' || typeof window !== 'undefined');
 
 export const supabaseConfig = {
   url: supabaseUrl,
   anonKey: supabaseAnonKey,
-  isConfigured: Boolean(supabaseUrl && supabaseAnonKey),
+  isConfigured: canCreateSupabaseClient,
 } as const;
 
 export type SupabaseClientStatus =
@@ -56,7 +57,7 @@ export function assertSupabaseConfigured() {
 // conferma/reset password arrivano come frammento #access_token=...&type=...
 // nell'URL del browser. Su nativo (Expo Go) non c'e' un URL di browser da
 // leggere, quindi resta disattivato (deep link nativo non gestito in questa fase).
-export const supabase: SupabaseClient | null = supabaseConfig.isConfigured
+export const supabase: SupabaseClient | null = canCreateSupabaseClient
   ? createClient(supabaseConfig.url as string, supabaseConfig.anonKey as string, {
       auth: {
         storage: AsyncStorage,

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CoachInviteCodeCard } from '@/components/coach-invite-code-card';
+import { DeveloperInfoSection } from '@/components/developer-info-section';
 import { AppButton, AppCard, AppErrorState, AppScreen, AppSectionTitle, AppTextField, BackHeader, UserAvatar } from '@/components/ui';
 import {
   deleteOwnAccount,
@@ -371,6 +372,9 @@ export default function AccountCoachScreen() {
         description="I clienti possono usare questo codice per collegarsi al tuo profilo."
         showShare
       />
+
+      <AppSectionTitle>SVILUPPATORE</AppSectionTitle>
+      <DeveloperInfoSection />
 
       <Pressable onPress={handleLogout} hitSlop={8} style={styles.logout}>
         <LogOut size={15} color={colors.rust} />

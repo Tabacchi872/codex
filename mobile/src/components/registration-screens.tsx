@@ -3,7 +3,10 @@ import { router, type Href } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type TextInput } from 'react-native';
 
+import { openLegalLink } from '@/components/developer-info-section';
+import { LegalConsentCheckbox } from '@/components/legal-consent-checkbox';
 import { AppButton, AppCard, AppScreen, AppTextField, UserAvatar } from '@/components/ui';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/constants/app-info';
 import { signUpClient, signUpCoach } from '@/lib/auth-service';
 import { generateCoachCode } from '@/lib/coach-code';
 import { supabaseConfig } from '@/lib/supabase';
@@ -56,6 +59,8 @@ export function CoachRegistrationScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   // Chaining tastiera "Avanti" sui campi credenziali (fix APK Android):
   // nome -> email -> password -> conferma; dalla conferma in poi ogni campo
   // ha il "Fine" di default di AppTextField, che chiude la tastiera.
@@ -71,6 +76,10 @@ export function CoachRegistrationScreen() {
     }
     if (password !== confirmPassword) {
       setError('Le password non coincidono.');
+      return;
+    }
+    if (!termsAccepted || !privacyAcknowledged) {
+      setError('Per creare l account devi accettare i Termini di servizio e dichiarare di aver letto l Informativa privacy.');
       return;
     }
     if (!legalName.trim() || !billingEmail.trim() || !country.trim()) {
@@ -136,6 +145,8 @@ export function CoachRegistrationScreen() {
           phone: phone.trim() || undefined,
           businessName: businessName.trim() || undefined,
           billingProfile,
+          termsAccepted,
+          privacyAcknowledged,
         });
       } catch (err) {
         // Difesa aggiuntiva: signUpCoach (auth-service.ts) gia' converte le
@@ -363,6 +374,22 @@ export function CoachRegistrationScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
+        <View style={styles.consentBlock}>
+          <LegalConsentCheckbox
+            checked={termsAccepted}
+            label="Accetto i Termini di servizio"
+            linkLabel="Apri Termini"
+            linkUrl={TERMS_OF_SERVICE_URL}
+            onToggle={() => setTermsAccepted((value) => !value)}
+          />
+          <LegalConsentCheckbox
+            checked={privacyAcknowledged}
+            label="Dichiaro di aver letto l Informativa privacy"
+            linkLabel="Apri Privacy"
+            linkUrl={PRIVACY_POLICY_URL}
+            onToggle={() => setPrivacyAcknowledged((value) => !value)}
+          />
+        </View>
         {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
         <AppButton
           label={submitting ? 'Creazione account...' : 'Crea account coach'}
@@ -375,6 +402,7 @@ export function CoachRegistrationScreen() {
         <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
           <Text style={[styles.link, { color: colors.moss }]}>Torna al login</Text>
         </Pressable>
+        <RegistrationLegalLinks />
       </AppCard>
     </AppScreen>
   );
@@ -395,6 +423,8 @@ export function ClientRegistrationScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   // Chaining tastiera "Avanti" (fix APK Android): nome -> email -> password
   // -> conferma; l'ultimo campo ha il "Fine" di default che chiude.
   const emailRef = useRef<TextInput>(null);
@@ -413,6 +443,10 @@ export function ClientRegistrationScreen() {
     }
     if (password.length < 6) {
       setError('La password deve avere almeno 6 caratteri.');
+      return;
+    }
+    if (!termsAccepted || !privacyAcknowledged) {
+      setError('Per creare l account devi accettare i Termini di servizio e dichiarare di aver letto l Informativa privacy.');
       return;
     }
     if (
@@ -443,6 +477,8 @@ export function ClientRegistrationScreen() {
         email: normalizedEmail,
         password,
         avatarPreset,
+        termsAccepted,
+        privacyAcknowledged,
       });
       setSubmitting(false);
       if (!result.ok) {
@@ -557,6 +593,22 @@ export function ClientRegistrationScreen() {
             <OptionGroup options={AVATAR_OPTIONS} value={avatarPreset} onChange={setAvatarPreset} />
           </View>
         </Field>
+        <View style={styles.consentBlock}>
+          <LegalConsentCheckbox
+            checked={termsAccepted}
+            label="Accetto i Termini di servizio"
+            linkLabel="Apri Termini"
+            linkUrl={TERMS_OF_SERVICE_URL}
+            onToggle={() => setTermsAccepted((value) => !value)}
+          />
+          <LegalConsentCheckbox
+            checked={privacyAcknowledged}
+            label="Dichiaro di aver letto l Informativa privacy"
+            linkLabel="Apri Privacy"
+            linkUrl={PRIVACY_POLICY_URL}
+            onToggle={() => setPrivacyAcknowledged((value) => !value)}
+          />
+        </View>
         {error ? <Text style={[styles.errorText, { color: colors.rust }]}>{error}</Text> : null}
         <AppButton
           label={submitting ? 'Creazione account...' : 'Crea account cliente'}
@@ -569,8 +621,23 @@ export function ClientRegistrationScreen() {
         <Pressable onPress={() => router.replace('/' as Href)} hitSlop={6}>
           <Text style={[styles.link, { color: colors.moss }]}>Torna al login</Text>
         </Pressable>
+        <RegistrationLegalLinks />
       </AppCard>
     </AppScreen>
+  );
+}
+
+function RegistrationLegalLinks() {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.legalLinks}>
+      <Pressable onPress={() => void openLegalLink(PRIVACY_POLICY_URL)} hitSlop={6}>
+        <Text style={[styles.legalLink, { color: colors.moss }]}>Privacy policy</Text>
+      </Pressable>
+      <Pressable onPress={() => void openLegalLink(TERMS_OF_SERVICE_URL)} hitSlop={6}>
+        <Text style={[styles.legalLink, { color: colors.moss }]}>Termini di servizio</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -698,6 +765,20 @@ const styles = StyleSheet.create({
     fontSize: AppFontSize.sm,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: AppSpacing[3],
+    justifyContent: 'center',
+  },
+  consentBlock: {
+    gap: AppSpacing[2],
+  },
+  legalLink: {
+    fontSize: AppFontSize.sm,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   feedback: {
     fontSize: AppFontSize.sm,

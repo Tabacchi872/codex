@@ -42,6 +42,7 @@ export async function getClientFitnessProfileStatus(): Promise<ServiceResult<Fit
 
 function describeSaveError(message: string): string {
   if (message.includes('INVALID_PAYLOAD')) return 'Alcune risposte non sono valide: controlla il questionario.';
+  if (message.includes('HEALTH_CONSENT_REQUIRED')) return 'Serve il consenso salute prima di salvare dolori o limitazioni fisiche.';
   if (message.includes('FORBIDDEN')) return 'Solo un account cliente può salvare questo questionario.';
   if (message.includes('NOT_AUTHENTICATED')) return 'Sessione scaduta: effettua di nuovo il login.';
   return GENERIC_SAVE_ERROR;

@@ -9,6 +9,7 @@ import {
   APP_OWNER,
   APP_VERSION,
   APP_YEAR,
+  ACCOUNT_DELETION_URL,
   PRIVACY_POLICY_URL,
   TERMS_OF_SERVICE_URL,
 } from '@/constants/app-info';
@@ -72,6 +73,9 @@ export function DeveloperInfoSection() {
         <Pressable onPress={() => void openLegalLink(TERMS_OF_SERVICE_URL)} hitSlop={8}>
           <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Termini di servizio</Text>
         </Pressable>
+        <Pressable onPress={() => void openLegalLink(ACCOUNT_DELETION_URL)} hitSlop={8}>
+          <Text style={[styles.smallText, styles.link, { color: colors.moss }]}>Richiedi eliminazione via web</Text>
+        </Pressable>
       </View>
 
       <Text style={[styles.smallText, { color: colors.inkSoft }]}>
@@ -125,6 +129,7 @@ const styles = StyleSheet.create({
   },
   legalLinks: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: AppSpacing[3],
   },
   link: {

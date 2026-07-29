@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { openLegalLink } from '@/components/developer-info-section';
 import { AppBadge, AppButton, AppCard, AppErrorState, AppScreen, FitCoachLogo } from '@/components/ui';
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/constants/app-info';
+import { ACCOUNT_DELETION_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/constants/app-info';
 import { useMySubscription } from '@/hooks/use-my-subscription';
 import { useSubscriptionPackages } from '@/hooks/use-subscription-packages';
 import { getCurrentSession, signOut } from '@/lib/auth-service';
@@ -244,6 +244,9 @@ export default function ClientSubscriptionScreen() {
         </Text>
         <Text onPress={() => void openLegalLink(TERMS_OF_SERVICE_URL)} style={[styles.legalLink, { color: colors.moss }]}>
           Termini di servizio
+        </Text>
+        <Text onPress={() => void openLegalLink(ACCOUNT_DELETION_URL)} style={[styles.legalLink, { color: colors.moss }]}>
+          Richiedi eliminazione via web
         </Text>
       </View>
     </AppScreen>
@@ -534,6 +537,7 @@ const styles = StyleSheet.create({
   },
   legalLinks: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: AppSpacing[3],
     justifyContent: 'center',
     marginTop: AppSpacing[1],
