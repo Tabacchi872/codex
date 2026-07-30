@@ -5,7 +5,6 @@ import { createPendingClientOnboarding, ensureClientOnboardingDraft } from './cl
 import { createClientAvatarSignedUrl } from './client-avatar-service';
 import { getWebRedirectUrl } from './redirect-url';
 import { getSupabaseClientStatus, supabase } from './supabase';
-import { getLegalAcceptanceMetadata } from './legal-acceptance-service';
 
 import type { Client } from '@/types/client';
 import type { ClientAvatarPreset } from '@/types/client';
@@ -43,8 +42,6 @@ export type CoachSignUpInput = {
   phone?: string;
   businessName?: string;
   billingProfile: CoachBillingProfile;
-  termsAccepted: boolean;
-  privacyAcknowledged: boolean;
 };
 
 export type CoachSignUpData = {
@@ -63,8 +60,6 @@ export type ClientSignUpInput = {
   email: string;
   password: string;
   avatarPreset?: ClientAvatarPreset;
-  termsAccepted: boolean;
-  privacyAcknowledged: boolean;
 };
 
 export type ClientSelfSignUpInput = Omit<ClientSignUpInput, 'coachCode'>;
@@ -118,9 +113,6 @@ export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceR
   // un AuthServiceResult leggibile.
   try {
     const email = input.email.trim().toLowerCase();
-    if (!input.termsAccepted || !input.privacyAcknowledged) {
-      return { ok: false, code: 'auth_error', message: 'Non e stato possibile registrare le accettazioni legali. Riprova.' };
-    }
     const businessName = input.businessName?.trim() || null;
     const billing = input.billingProfile;
     // role/full_name/phone in user_metadata: letti dal trigger public.handle_new_user
@@ -142,7 +134,6 @@ export async function signUpCoach(input: CoachSignUpInput): Promise<AuthServiceR
           phone: input.phone?.trim() || null,
           business_name: businessName,
           billing_profile: billing,
-          ...getLegalAcceptanceMetadata(),
         },
         emailRedirectTo: getWebRedirectUrl('/'),
       },
@@ -388,9 +379,6 @@ export async function signUpClientWithCoachCode(
   }
 
   const email = input.email.trim().toLowerCase();
-  if (!input.termsAccepted || !input.privacyAcknowledged) {
-    return { ok: false, code: 'auth_error', message: 'Non e stato possibile registrare le accettazioni legali. Riprova.' };
-  }
   // coach_id/coach_code in user_metadata: se "Confirm email" e' attivo, gli
   // insert sotto non possono avvenire subito (nessuna sessione => RLS blocca
   // client_profiles/coach_clients), quindi questi dati devono sopravvivere
@@ -406,7 +394,6 @@ export async function signUpClientWithCoachCode(
         coach_id: codeRow.coach_id,
         coach_code: normalizedCode,
         avatar_preset: input.avatarPreset ?? 'neutral',
-        ...getLegalAcceptanceMetadata(),
       },
     },
   });
@@ -432,9 +419,6 @@ export async function signUpClient(input: ClientSelfSignUpInput): Promise<AuthSe
   if (!isReady() || !supabase) return notConfigured();
 
   const email = input.email.trim().toLowerCase();
-  if (!input.termsAccepted || !input.privacyAcknowledged) {
-    return { ok: false, code: 'auth_error', message: 'Non e stato possibile registrare le accettazioni legali. Riprova.' };
-  }
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password: input.password,
@@ -444,7 +428,6 @@ export async function signUpClient(input: ClientSelfSignUpInput): Promise<AuthSe
         full_name: input.fullName.trim(),
         avatar_preset: input.avatarPreset ?? 'neutral',
         requires_client_onboarding: true,
-        ...getLegalAcceptanceMetadata(),
       },
       emailRedirectTo: getWebRedirectUrl('/'),
     },
@@ -1219,15 +1202,11 @@ function isBlockedBillingStatus(status: string) {
 
 function mapAuthErrorCode(message: string): AuthServiceErrorCode {
   const normalized = message.toLowerCase();
-  if (normalized.includes('legal_acceptance')) return 'auth_error';
   if (normalized.includes('already registered')) return 'email_taken';
   if (normalized.includes('email not confirmed') || normalized.includes('not confirmed')) return 'email_not_confirmed';
   return 'auth_error';
 }
 
 export function humanizeAuthErrorMessage(message: string) {
-  if (message.toLowerCase().includes('legal_acceptance')) {
-    return 'Non e stato possibile registrare le accettazioni legali. Riprova.';
-  }
   return message;
 }

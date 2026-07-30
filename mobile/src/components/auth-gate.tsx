@@ -7,7 +7,6 @@ import { ChangePasswordScreen } from './change-password-screen';
 import ClientTabs from './client-tabs';
 import { ForgotPasswordScreen } from './forgot-password-screen';
 import { LoginScreen } from './login-screen';
-import { LegalUpdateScreen } from './legal-update-screen';
 import { ClientRegistrationScreen, CoachRegistrationScreen } from './registration-screens';
 import { ResetPasswordScreen } from './reset-password-screen';
 import { SupabaseChangePasswordScreen } from './supabase-change-password-screen';
@@ -22,9 +21,8 @@ import { getClientFitnessProfileStatus } from '@/lib/client-fitness-profile-serv
 import { getAssignedCoachStatusLabel, getMyAssignedCoach, type AssignedCoachSummary } from '@/lib/client-coach-service';
 import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
 import { getMySelfGuidedPlanAccess } from '@/lib/client-plan-access-service';
-import { ensureLegalSupabaseSession, getCurrentLegalAcceptanceStatus } from '@/lib/legal-acceptance-service';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
-import { supabaseConfig } from '@/lib/supabase';
+import { supabase, supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientOnboardingStore } from '@/store/client-onboarding-store';
@@ -141,8 +139,7 @@ export function AuthGate() {
   const [coachAccessRetryKey, setCoachAccessRetryKey] = useState(0);
   const [clientPlanAccess, setClientPlanAccess] = useState({ loading: false, checked: false, active: false, error: null as string | null });
   const [clientPlanRetryKey, setClientPlanRetryKey] = useState(0);
-  const [legalAcceptance, setLegalAcceptance] = useState({ loading: false, checked: false, accepted: false, error: null as string | null });
-  const [legalAcceptanceRetryKey, setLegalAcceptanceRetryKey] = useState(0);
+  const [sessionGate, setSessionGate] = useState({ loading: false, checked: false });
   const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
   const [clientFitnessQuestionnaire, setClientFitnessQuestionnaire] = useState({
     loading: false,
@@ -152,6 +149,7 @@ export function AuthGate() {
   });
   const [fitnessQuestionnaireRetryKey, setFitnessQuestionnaireRetryKey] = useState(0);
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
+  const sessionReady = !supabaseConfig.isConfigured || mustChangePasswordSupabase || sessionGate.checked;
 
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
   const clientTargetPath = getClientRedirectTarget({
@@ -165,11 +163,6 @@ export function AuthGate() {
   });
   const targetPath = clientOnboarding.error ? null : clientTargetPath ?? roleTargetPath;
 
-  async function handleLogout() {
-    await signOut();
-    logout();
-  }
-
   async function expireLocalSession() {
     if (revenueCatUserIdRef.current) {
       revenueCatUserIdRef.current = null;
@@ -182,7 +175,7 @@ export function AuthGate() {
     }
     await signOut();
     logout();
-    setLegalAcceptance({ loading: false, checked: false, accepted: false, error: null });
+    setSessionGate({ loading: false, checked: false });
     setSessionExpiredMessage('La sessione e scaduta. Accedi nuovamente.');
     router.replace('/' as Href);
   }
@@ -190,36 +183,42 @@ export function AuthGate() {
   useEffect(() => {
     if (isPublicLegalRoute) return;
     if (!isAuthenticated || mustChangePasswordSupabase || !supabaseConfig.isConfigured) {
-      setLegalAcceptance({ loading: false, checked: false, accepted: false, error: null });
+      setSessionGate({ loading: false, checked: false });
       return;
     }
     let active = true;
-    setLegalAcceptance({ loading: true, checked: false, accepted: false, error: null });
+    setSessionGate({ loading: true, checked: false });
     (async () => {
-      const session = await ensureLegalSupabaseSession();
+      const sessionResult = await supabase?.auth.getSession();
       if (!active) return;
-      if (!session.ok) {
-        if (__DEV__) console.warn('AUTH_GATE_SESSION_RECONCILE_EXPIRED', { refreshed: session.refreshed });
-        await expireLocalSession();
+      if (sessionResult?.data.session?.user.id) {
+        setSessionGate({ loading: false, checked: true });
         return;
       }
 
-      const result = await getCurrentLegalAcceptanceStatus();
+      const refreshResult = await supabase?.auth.refreshSession();
       if (!active) return;
-      if (!result.ok) {
-        setLegalAcceptance({ loading: false, checked: true, accepted: false, error: result.message });
+      if (refreshResult?.data.session?.user.id) {
+        setSessionGate({ loading: false, checked: true });
         return;
       }
-      setLegalAcceptance({ loading: false, checked: true, accepted: result.data.accepted, error: null });
+
+      if (__DEV__) {
+        console.warn('AUTH_GATE_SESSION_RECONCILE_EXPIRED', {
+          getSessionError: sessionResult?.error?.message ?? null,
+          refreshError: refreshResult?.error?.message ?? null,
+        });
+      }
+      await expireLocalSession();
     })();
     return () => {
       active = false;
     };
-  }, [isAuthenticated, isPublicLegalRoute, legalAcceptanceRetryKey, mustChangePasswordSupabase]);
+  }, [isAuthenticated, isPublicLegalRoute, mustChangePasswordSupabase]);
 
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase || !legalAcceptance.accepted) {
+    if (!isAuthenticated || currentRole !== 'cliente' || mustChangePasswordSupabase || !sessionReady) {
       setClientOnboarding({ loading: false, required: false, checked: false, mode: null, error: null });
       return;
     }
@@ -263,7 +262,7 @@ export function AuthGate() {
     currentClientId,
     isAuthenticated,
     isPublicLegalRoute,
-    legalAcceptance.accepted,
+    sessionReady,
     mustChangePasswordSupabase,
     onboardingRetryKey,
     onboardingStatusRevision,
@@ -275,7 +274,7 @@ export function AuthGate() {
       !isAuthenticated ||
       currentRole !== 'cliente' ||
       mustChangePasswordSupabase ||
-      !legalAcceptance.accepted ||
+      !sessionReady ||
       !supabaseConfig.isConfigured ||
       clientOnboarding.mode === 'self_guided'
     ) {
@@ -308,7 +307,7 @@ export function AuthGate() {
     currentClientId,
     isAuthenticated,
     isPublicLegalRoute,
-    legalAcceptance.accepted,
+    sessionReady,
     mustChangePasswordSupabase,
     clientOnboarding.loading,
     clientOnboarding.checked,
@@ -325,7 +324,7 @@ export function AuthGate() {
       !isAuthenticated ||
       currentRole !== 'cliente' ||
       mustChangePasswordSupabase ||
-      !legalAcceptance.accepted ||
+      !sessionReady ||
       !supabaseConfig.isConfigured ||
       clientOnboarding.mode !== 'self_guided'
     ) {
@@ -357,7 +356,7 @@ export function AuthGate() {
     currentRole,
     isAuthenticated,
     isPublicLegalRoute,
-    legalAcceptance.accepted,
+    sessionReady,
     mustChangePasswordSupabase,
     clientOnboarding.loading,
     clientOnboarding.checked,
@@ -377,7 +376,7 @@ export function AuthGate() {
       !isAuthenticated ||
       currentRole !== 'cliente' ||
       mustChangePasswordSupabase ||
-      !legalAcceptance.accepted ||
+      !sessionReady ||
       !supabaseConfig.isConfigured ||
       clientOnboarding.mode !== 'self_guided'
     ) {
@@ -414,7 +413,7 @@ export function AuthGate() {
     currentClientId,
     isAuthenticated,
     isPublicLegalRoute,
-    legalAcceptance.accepted,
+    sessionReady,
     mustChangePasswordSupabase,
     clientOnboarding.loading,
     clientOnboarding.checked,
@@ -438,12 +437,12 @@ export function AuthGate() {
   // il canale Realtime — qui ci si limita ad avviare refresh().
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!legalAcceptance.accepted) return;
+    if (!sessionReady) return;
     if (currentRole !== 'coach' && currentRole !== 'cliente') return;
     refreshWorkoutPlans();
     refreshAppointments();
     refreshMessages();
-  }, [currentRole, isPublicLegalRoute, legalAcceptance.accepted, refreshWorkoutPlans, refreshAppointments, refreshMessages]);
+  }, [currentRole, isPublicLegalRoute, sessionReady, refreshWorkoutPlans, refreshAppointments, refreshMessages]);
 
   // Fase 7 — push: registra il token del device (permesso + canale Android +
   // upsert in push_tokens) e aggancia il listener del tap sulle notifiche
@@ -451,20 +450,20 @@ export function AuthGate() {
   // listener viene staccato al cleanup (logout/cambio ruolo), mai duplicato.
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!legalAcceptance.accepted) return;
+    if (!sessionReady) return;
     if (currentRole !== 'coach' && currentRole !== 'cliente') return;
     if (!supabaseConfig.isConfigured) return;
     registerPushTokenForCurrentUser();
     const detach = attachNotificationResponseListener();
     return detach;
-  }, [currentRole, isPublicLegalRoute, legalAcceptance.accepted]);
+  }, [currentRole, isPublicLegalRoute, sessionReady]);
 
   // RevenueCat usa lo stesso UUID Supabase Auth per coach e clienti. Su
   // logout/cambio account si chiude l'identita' RevenueCat per evitare
   // contaminazioni tra acquisti di store diversi sullo stesso device.
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!legalAcceptance.accepted) return;
+    if (!sessionReady) return;
     if ((currentRole !== 'coach' && currentRole !== 'cliente') || !isAuthenticated || !supabaseConfig.isConfigured) {
       if (revenueCatUserIdRef.current) {
         revenueCatUserIdRef.current = null;
@@ -500,7 +499,7 @@ export function AuthGate() {
     return () => {
       active = false;
     };
-  }, [currentRole, isAuthenticated, isPublicLegalRoute, legalAcceptance.accepted]);
+  }, [currentRole, isAuthenticated, isPublicLegalRoute, sessionReady]);
 
   // Associazione automatica video YMove (2026-07-13): avviata UNA sola volta
   // per sessione app quando il ruolo diventa 'coach' (non ad ogni render/
@@ -512,19 +511,19 @@ export function AuthGate() {
   // banner non bloccante nella dashboard coach).
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!legalAcceptance.accepted) return;
+    if (!sessionReady) return;
     if (currentRole !== 'coach' || !supabaseConfig.isConfigured) return;
     autoLinkYmoveVideosForCoach((progress) => setAutoLinkRunning(progress.processed, progress.total)).then((result) => {
       if (result.ok && result.data.total > 0) setAutoLinkDone(result.data);
     });
-  }, [currentRole, isPublicLegalRoute, legalAcceptance.accepted, setAutoLinkRunning, setAutoLinkDone]);
+  }, [currentRole, isPublicLegalRoute, sessionReady, setAutoLinkRunning, setAutoLinkDone]);
 
   useEffect(() => {
     if (isPublicLegalRoute) return;
-    if (!legalAcceptance.accepted) return;
+    if (!sessionReady) return;
     if (!authHydrated || !clientsHydrated || !isAuthenticated || !targetPath) return;
     router.replace(targetPath);
-  }, [authHydrated, clientsHydrated, isAuthenticated, isPublicLegalRoute, legalAcceptance.accepted, router, targetPath]);
+  }, [authHydrated, clientsHydrated, isAuthenticated, isPublicLegalRoute, router, sessionReady, targetPath]);
 
   if (isPublicLegalRoute) {
     return <Slot />;
@@ -559,26 +558,8 @@ export function AuthGate() {
     return <LoginScreen initialError={sessionExpiredMessage} />;
   }
 
-  if (supabaseConfig.isConfigured && !mustChangePasswordSupabase && (!legalAcceptance.checked || legalAcceptance.loading)) {
+  if (supabaseConfig.isConfigured && isAuthenticated && !mustChangePasswordSupabase && (sessionGate.loading || !sessionGate.checked)) {
     return <LoadingGate />;
-  }
-
-  if (supabaseConfig.isConfigured && !mustChangePasswordSupabase && legalAcceptance.error) {
-    return (
-      <LegalUpdateScreen
-        onAccepted={() => setLegalAcceptanceRetryKey((value) => value + 1)}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
-  if (supabaseConfig.isConfigured && !mustChangePasswordSupabase && !legalAcceptance.accepted) {
-    return (
-      <LegalUpdateScreen
-        onAccepted={() => setLegalAcceptanceRetryKey((value) => value + 1)}
-        onLogout={handleLogout}
-      />
-    );
   }
 
   if (currentRole === 'cliente') {
