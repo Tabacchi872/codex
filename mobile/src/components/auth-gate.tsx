@@ -22,7 +22,7 @@ import { getClientFitnessProfileStatus } from '@/lib/client-fitness-profile-serv
 import { getAssignedCoachStatusLabel, getMyAssignedCoach, type AssignedCoachSummary } from '@/lib/client-coach-service';
 import { ensureClientOnboardingDraft } from '@/lib/client-onboarding-service';
 import { getMySelfGuidedPlanAccess } from '@/lib/client-plan-access-service';
-import { getCurrentLegalAcceptanceStatus } from '@/lib/legal-acceptance-service';
+import { ensureLegalSupabaseSession, getCurrentLegalAcceptanceStatus } from '@/lib/legal-acceptance-service';
 import { attachNotificationResponseListener, registerPushTokenForCurrentUser } from '@/lib/push-notification-service';
 import { supabaseConfig } from '@/lib/supabase';
 import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
@@ -143,6 +143,7 @@ export function AuthGate() {
   const [clientPlanRetryKey, setClientPlanRetryKey] = useState(0);
   const [legalAcceptance, setLegalAcceptance] = useState({ loading: false, checked: false, accepted: false, error: null as string | null });
   const [legalAcceptanceRetryKey, setLegalAcceptanceRetryKey] = useState(0);
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
   const [clientFitnessQuestionnaire, setClientFitnessQuestionnaire] = useState({
     loading: false,
     checked: false,
@@ -169,6 +170,23 @@ export function AuthGate() {
     logout();
   }
 
+  async function expireLocalSession() {
+    if (revenueCatUserIdRef.current) {
+      revenueCatUserIdRef.current = null;
+    }
+    try {
+      const { logoutRevenueCat } = await import('@/lib/revenuecat-service');
+      await logoutRevenueCat();
+    } catch {
+      // Best effort: la pulizia della sessione app resta prioritaria.
+    }
+    await signOut();
+    logout();
+    setLegalAcceptance({ loading: false, checked: false, accepted: false, error: null });
+    setSessionExpiredMessage('La sessione e scaduta. Accedi nuovamente.');
+    router.replace('/' as Href);
+  }
+
   useEffect(() => {
     if (isPublicLegalRoute) return;
     if (!isAuthenticated || mustChangePasswordSupabase || !supabaseConfig.isConfigured) {
@@ -178,6 +196,14 @@ export function AuthGate() {
     let active = true;
     setLegalAcceptance({ loading: true, checked: false, accepted: false, error: null });
     (async () => {
+      const session = await ensureLegalSupabaseSession();
+      if (!active) return;
+      if (!session.ok) {
+        if (__DEV__) console.warn('AUTH_GATE_SESSION_RECONCILE_EXPIRED', { refreshed: session.refreshed });
+        await expireLocalSession();
+        return;
+      }
+
       const result = await getCurrentLegalAcceptanceStatus();
       if (!active) return;
       if (!result.ok) {
@@ -530,7 +556,7 @@ export function AuthGate() {
     if (pathname === '/password-dimenticata') {
       return <ForgotPasswordScreen />;
     }
-    return <LoginScreen />;
+    return <LoginScreen initialError={sessionExpiredMessage} />;
   }
 
   if (supabaseConfig.isConfigured && !mustChangePasswordSupabase && (!legalAcceptance.checked || legalAcceptance.loading)) {

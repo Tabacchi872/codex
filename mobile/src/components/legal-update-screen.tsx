@@ -33,6 +33,10 @@ export function LegalUpdateScreen({ onAccepted, onLogout }: LegalUpdateScreenPro
       setError(result.message);
       return;
     }
+    if (!result.data.accepted) {
+      setError('Accettazione non confermata dal server. Riprova.');
+      return;
+    }
     onAccepted();
   }
 
@@ -50,18 +54,24 @@ export function LegalUpdateScreen({ onAccepted, onLogout }: LegalUpdateScreenPro
             label="Accetto i Termini di servizio"
             linkLabel="Apri Termini"
             linkUrl={TERMS_OF_SERVICE_URL}
-            onToggle={() => setTermsAccepted((value) => !value)}
+            onToggle={setTermsAccepted}
           />
           <LegalConsentCheckbox
             checked={privacyAcknowledged}
             label="Dichiaro di aver letto l Informativa privacy"
             linkLabel="Apri Privacy"
             linkUrl={PRIVACY_POLICY_URL}
-            onToggle={() => setPrivacyAcknowledged((value) => !value)}
+            onToggle={setPrivacyAcknowledged}
           />
         </View>
         {error ? <Text style={[styles.error, { color: colors.rust }]}>{error}</Text> : null}
-        <AppButton label="Continua" onPress={submit} loading={submitting} disabled={submitting} fullWidth />
+        <AppButton
+          label="Continua"
+          onPress={submit}
+          loading={submitting}
+          disabled={submitting || !termsAccepted || !privacyAcknowledged}
+          fullWidth
+        />
         <Pressable onPress={onLogout} hitSlop={8}>
           <Text style={[styles.logout, { color: colors.inkSoft }]}>Esci</Text>
         </Pressable>

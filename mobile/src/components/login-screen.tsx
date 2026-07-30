@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -16,7 +16,7 @@ import { AppFontSize, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 // docs/DECISIONS.md per i limiti reali di questa autenticazione e il percorso
 // previsto verso un backend/auth vero. Il testo in UI resta volutamente
 // discorsivo: i dettagli tecnici restano in docs/report, non in questa schermata.
-export function LoginScreen() {
+export function LoginScreen({ initialError }: { initialError?: string | null }) {
   const router = useRouter();
   const { colors } = useAppTheme();
   const accounts = useClientStore((s) => s.accounts);
@@ -36,6 +36,10 @@ export function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
 
   async function handleLogin() {
     const normalized = identifier.trim().toLowerCase();
