@@ -37,6 +37,15 @@ function isReady() {
   return getSupabaseClientStatus().ready && supabase !== null;
 }
 
+// Rimuove il prefisso "legacy:" (usato solo lato costanti/UI superadmin) da
+// una chiave esercizio, cosi' da combaciare con la forma nuda sempre
+// memorizzata in exercise_external_links.exercise_key. Vedi
+// normalizeLegacyExerciseKey in supabase/functions/ymove-library-import/
+// index.ts (stessa normalizzazione, lato server).
+function normalizeLegacyKey(value: string): string {
+  return value.startsWith('legacy:') ? value.slice('legacy:'.length) : value;
+}
+
 function extensionOf(fileName: string | null | undefined, uri: string) {
   const source = fileName ?? uri;
   const match = source.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
@@ -202,20 +211,40 @@ export async function getExerciseVideo(exerciseId: string): Promise<VideoService
   if (error) {
     return { ok: false, code: 'db_error', message: error.message };
   }
-  if (!data) return { ok: true, data: null };
 
   // Il collegamento YMove ha sempre priorita' nel discriminare la sorgente:
   // in quel caso video_url resta sempre null nella riga, ma NON significa
   // "nessun video" — significa "il video e' su YMove, va richiesto live".
-  if (data.ymove_exercise_id) {
+  if (data?.ymove_exercise_id) {
     return { ok: true, data: { source: 'ymove', ymoveExerciseId: data.ymove_exercise_id, ymoveSlug: data.ymove_slug } };
   }
-  if (data.video_url) {
+  if (data?.video_url) {
     return { ok: true, data: { source: 'upload', videoUrl: data.video_url } };
   }
-  // Riga senza alcuna sorgente valorizzata: non dovrebbe accadere (vincolo DB
-  // exercise_videos_has_source lo impedisce), trattata onestamente come
-  // "nessun video" invece di propagare un oggetto senza source valido.
+
+  // Nessuna riga exercise_videos valorizzata (o nessuna riga affatto): prova
+  // il collegamento YMove approvato in exercise_external_links (YMove Legacy
+  // Link, Fase 1) — exercise_key li' e' sempre memorizzata SENZA prefisso
+  // "legacy:", quindi va normalizzata prima del confronto.
+  const normalizedExerciseId = normalizeLegacyKey(exerciseId);
+  const { data: externalLink, error: externalLinkError } = await supabase
+    .from('exercise_external_links')
+    .select('external_exercise_id')
+    .eq('provider', 'ymove')
+    .eq('match_status', 'manual_approved')
+    .eq('is_primary', true)
+    .or(`exercise_id.eq.${exerciseId},exercise_key.eq.${normalizedExerciseId}`)
+    .limit(1)
+    .maybeSingle();
+  if (externalLinkError) {
+    return { ok: false, code: 'db_error', message: externalLinkError.message };
+  }
+  if (externalLink?.external_exercise_id) {
+    return { ok: true, data: { source: 'ymove', ymoveExerciseId: externalLink.external_exercise_id, ymoveSlug: null } };
+  }
+
+  // Nessuna sorgente trovata in nessuna delle due tabelle: onestamente
+  // "nessun video", non un errore.
   return { ok: true, data: null };
 }
 
