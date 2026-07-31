@@ -1,0 +1,858 @@
+﻿external_exercise_id,title,primary_muscles,secondary_muscles,equipment,movement_pattern,body_position,difficulty
+005ba868-d8b1-499f-9a88-b2cf722e6bdf,Figure Four Stretch (R),full_body,,bodyweight,,,beginner
+0087bb08-f325-4401-9b37-66dd93871570,High Cable Curl,biceps,,cable,elbow_flexion,,intermediate
+00a92c05-9865-489d-8495-a8f72af802a6,Incline Machine Press,chest,,machine,,,beginner
+00c1f017-3a36-4a42-8866-fda39f906f5d,Seated Side Bends,neck,upper_traps|sternocleidomastoid,,,,beginner
+00cfe51b-59a3-4d61-b712-61ae99c1ca57,Hanging Scapular Pull,bodyweight,,bodyweight,,,
+01924d84-4c88-4476-b0dc-8fd92616b362,Dumbbell upper cuts,full_body,,dumbbell,,,intermediate
+022ea5f2-88f3-4d42-b99d-c1026d6bc343,Explosive sprinter lunge (left),quads,,bodyweight,knee_dominant,,intermediate
+028fd0e4-baf8-4633-9891-20613bdea1e8,Jump knee tucks,full_body,,bodyweight,,,intermediate
+032ca17e-2678-46e4-baac-b7ef43c283e9,Standing Dumbbell Triceps Extension,triceps,,dumbbell,elbow_extension,,intermediate
+033964cc-ed58-4fe3-8850-cf78c66a85b9,Hip hinge,hamstrings,spinal_erectors|obliques|quadriceps,bodyweight,,,beginner
+037a9f51-9b02-4404-979a-6ad18f62fc9d,Overhead Cable Curl,biceps,brachialis|brachioradialis|forearm_flexors,cable,elbow_flexion,,intermediate
+03be228e-9483-470b-ad6c-cdf3d43f7415,Double Box Single Leg Lateral Hop,quads,core|adductors|tibialis_anterior,,,,advanced
+044f938a-5772-4a0e-b39a-8a85393830e7,Tucked L-sit hold,core,,bodyweight,,,advanced
+04fccb0f-58a7-44b2-8676-573faad17634,Pike hold knee bends,full_body,,bodyweight,,,intermediate
+0501fca5-dd00-4948-8874-40cc851daaee,Explosive jump squats,quads,calves|core|hamstrings,bodyweight,knee_dominant,,intermediate
+051a5802-da89-415d-a912-93162c89a4bf,Behind the Neck Shoulder Press Machine,shoulders,,machine,,,advanced
+059690e8-f60d-4099-b3ae-93d18358a59a,Bent Over Barbell Row,back,,barbell,horizontal_pull,,intermediate
+05b2ec0e-92d4-4a93-bfed-c371747c072d,Fire Hydrant,glutes,obliques|tensor_fasciae_latae|quads,bodyweight,,,beginner
+05c60c96-4b0d-4e83-8797-9e3eb9a9cab0,Halo with dumbbell (R),shoulders,,dumbbell,,,intermediate
+061b3246-322a-41ed-a589-73fb9478651c,Side hurdel jumps to mountain climbers,core,,bodyweight,,,
+068d316f-52b0-4438-a7c9-ee21ceca2c2f,Crunches,core,,bodyweight,core,,intermediate
+069c1e6b-05f4-4390-a1c7-9b740e0bec4a,Barbell Front Raise,shoulders,,barbell,,,beginner
+0790eb48-18ee-4bae-9c32-b8049dad767f,Wall Sits,bodyweight,hamstrings|calves|core,bodyweight,,,beginner
+07cd2836-405f-4b66-9b80-2d69b1fabb6a,Reverse push ups,chest,triceps_long_head|front_deltoids|obliques,bodyweight,horizontal_push,,beginner
+0852e58d-42d4-4e7a-b612-a6d79e93e895,Half moon (right),full_body,,bodyweight,,,beginner
+094f1299-cd52-4da7-b97f-c159208ed7d1,Incline Dumbbell Rear Delt Raise,shoulders,,dumbbell,,,intermediate
+097903be-beaa-4283-9493-19eb90b59762,Dumbbell deltoid fly,chest,,dumbbell,,,intermediate
+0a095165-5eb4-4d96-a98e-d8374391f2cc,Seated EZ Bar Curl,biceps,,barbell,elbow_flexion,,beginner
+0a7821b6-c36b-4b5f-82b0-5c8ba765baae,Shot Caller Burpee,full_body,,bodyweight,,,intermediate
+0af648a1-1d2e-438b-b687-b522c9eaa8bd,Dumbbell shoulder punches,shoulders,,dumbbell,,,intermediate
+0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1,Dumbbell Overhead Tricep Extension,triceps,front_deltoids|forearm_flexors|core,dumbbell,elbow_extension,,beginner
+0b51bca9-c72f-4fc3-affd-0904de3cf8b4,Single Arm Smith Machine Row,back,,machine,horizontal_pull,,intermediate
+0b7c9826-2501-4938-a921-a6f62e66e890,Squat to toe taps,quads,,bodyweight,knee_dominant,,intermediate
+0b7f1b84-6cb0-4875-824b-e86272668a2a,Knee raises (Hanging),core,,bodyweight,,,intermediate
+0ba53212-9702-4b66-bb9d-d7b9fa12abf2,Inclined wide push up,chest,,bodyweight,horizontal_push,,intermediate
+0bc5f89b-dec0-483a-b98d-655998f8849d,Inchworm,full_body,,bodyweight,,,intermediate
+0bc74c4c-d382-46a4-95a8-d6229062aaf1,inverted row,back,biceps|rear_deltoids|forearms|core,barbell,horizontal_pull,,intermediate
+0c46de9c-4a97-405c-9fa2-aec5f5da73f0,Seated Hammer Curl,biceps,,dumbbell,elbow_flexion,,beginner
+0d0368ee-f03d-4ef9-95db-06a56434ea55,Dumbbell Scissors,full_body,,dumbbell,,,intermediate
+0d3505ae-ce8d-4ad5-b8d0-8c172dd08969,High Row Machine,back,,machine,horizontal_pull,,beginner
+0de79ddc-e829-4543-942c-e385cc76ac5e,Dumbbell Squat,quads,,dumbbell,knee_dominant,,
+0df165d9-3c63-4506-a2f1-6f64544fda5d,Forward to Reverse Bear Crawl,full_body,,bodyweight,,,intermediate
+0e19fa47-7a77-4fdf-86a0-66258725fa3d,Box Toe Tap,quads,calves|hip_flexors|tibialis_anterior,,,,beginner
+0e43c62b-bcf6-4115-8fa4-3049a4d8f24a,Criss-cross jumping jacks,full_body,,bodyweight,,,intermediate
+0e5f29cd-ff79-428a-bb1c-1753a9047f32,Barbell Full Squat,quads,calves|hip_flexors|abs,barbell,knee_dominant,,intermediate
+0ed37189-d6ea-48c0-83cb-587b44a7b546,Sumo walk,full_body,,bodyweight,,,intermediate
+0f14071c-279d-4926-b41a-cb4dc900bb1d,High plank toe touches,core,,bodyweight,core,,
+0fed480a-62f6-44d9-a457-787ebcd1395f,Single Arm Preacher Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+0ff4b70c-8c21-42a0-83c9-a0aa4fcc4b4a,Swimmers,erector_spinae,glute_max|hamstrings|rear_deltoids|lats,bodyweight,,,intermediate
+0ff5e9fe-9d15-426a-8c06-fd62a198dc47,Dumbbell shadow box,full_body,,dumbbell,,,intermediate
+10014d85-339e-4573-876d-87b003c28671,Tricep extension knee ins,triceps,,bodyweight,elbow_extension,,intermediate
+109aec41-eaeb-4963-908a-e53b560789ee,High Cable Row,lats,rear_deltoids|biceps|forearms,cable,horizontal_pull,,intermediate
+109f6115-f03d-48da-802a-2e2aa385678d,Back Extension - Hyperextension,back,glute_max|hamstrings|core,machine,elbow_extension,,beginner
+10a31695-e218-4819-b7d3-b67b1b5ac79d,Close Grip Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+10affa59-53b8-40a9-a06c-36b70d2bb005,Russian twists,core,,bodyweight,core,,intermediate
+10be21b8-de6f-4c33-9101-eadca351e663,Crab walks into squats,quads,,bodyweight,knee_dominant,,intermediate
+10d2c91e-60e8-416d-8c91-def45954009c,Close Grip Plate Press,chest,,barbell,,,intermediate
+1121f617-3012-4e15-a6d9-86ed9440acce,Step Calf Raise,calves,gastrocnemius|soleus|peroneals,,,,beginner
+1158c681-55e9-4db0-bb73-3dab32d99aa5,Barbell Curls,biceps,brachialis|brachioradialis|forearm_flexors,barbell,elbow_flexion,,beginner
+1267bc89-80f9-46ad-9f94-e7e542854042,Wide Grip Barbell Curl,biceps,,barbell,elbow_flexion,,intermediate
+1328cea8-8e8b-4a64-9f6a-10d8031b2f27,Russian Twist - no weight,core,,bodyweight,core,,intermediate
+13351b5d-ef3f-4c6b-9f47-df62202d32b2,Leg Press Close Stance - Glute Focus,glutes,,machine,,,beginner
+14044ef0-8d9d-4d65-9365-0f1bc2dd3c11,Walking knee raises,core,,bodyweight,,,intermediate
+147a7908-fdd3-4f79-94ca-f9a69989e14c,Single arm push up (R),chest,,bodyweight,horizontal_push,,advanced
+14a3a8fe-dc12-4c4b-865b-d5e0514c54d4,Dumbbell Skull Crushers,triceps,forearm_flexors|forearm_extensors|shoulders,dumbbell,,,intermediate
+1523b6fd-d8b9-4406-b188-5d1545dd0cb2,Reclined pigeon pose (left),glutes,,bodyweight,,,beginner
+1575dc75-93ab-4c7f-b924-4ed4eda2adc8,Dumbbell Russian Twist,obliques,hip_flexors|erector_spinae|shoulders,dumbbell,core,,intermediate
+15ae3c6a-9e5c-43c6-a9df-6a1cd454e1c5,Smith Machine Lunges,smith-machine,adductors|erector_spinae|abs,machine,knee_dominant,,intermediate
+16916d8d-2bce-459a-a87f-fa511936260c,Seated Neutral Grip Cable Press,chest,,cable,,,intermediate
+16a76541-f17e-49fe-832c-27776a9ec2e3,Scapula push ups,chest,,bodyweight,horizontal_push,,intermediate
+16b4d2da-13c2-419b-aa1a-14a443294762,Zercher Squats,quads,,barbell,knee_dominant,,intermediate
+185e82b2-9e20-4021-aa84-65c564aca016,Seated Cable Fly,chest,,cable,,,beginner
+18a33c56-c0b1-4f28-bb78-4b4cad53372b,Jacks with high knees,full_body,,bodyweight,,,intermediate
+18b57d25-5597-4b00-8237-cc359e4609c8,Power Snatch (ISSUE_ back on pick up a bit bend),full_body,,barbell,,,advanced
+18c65037-c4d3-4643-b099-c2f129cef229,Straddle Up,adductors,erector_spinae|semitendinosus|gastrocnemius,bodyweight,,,beginner
+18dda540-eca8-40ad-aca4-9e5f80f574d7,Forward Backward Hop over Cone,calves,tibialis_anterior|hip_flexors|soleus,,,,intermediate
+19a378bd-eec2-4950-b8f2-c4179ef28294,Hanging Leg Raise,core,hip_flexors|obliques|forearms,bodyweight,,,intermediate
+1a3c2a1d-eb55-4199-8f9c-6d332c824c5d,Kettlebell swing - American style,full_body,,,,,intermediate
+1abe4475-eab9-4532-a583-68cc06681462,Crab hold toe tap,full_body,,bodyweight,,,intermediate
+1b4146bc-1c96-4f05-88cf-72a72783122d,Dumbbell Step Ups,quads,glute_max|hamstrings|calves,dumbbell,knee_dominant,,intermediate
+1b670f12-2b3b-4046-8fb8-379450db6f52,Dumbell Bench Press,chest,front_deltoids|triceps|serratus_anterior,dumbbell|bench,,,beginner
+1b83ce89-e537-4d37-be07-af8b5c192edd,My Side Bend Stretch (L),core,,bodyweight,,,beginner
+1c13173b-006e-4bfb-8f57-6c9403915e4d,T press up,full_body,,bodyweight,,,intermediate
+1c9646ea-e5d6-4aaf-8892-12b331fcc8d2,Slingshot into T-Spine rotation,full_body,,bodyweight,,,intermediate
+1cecbe87-d29e-43af-bb44-5e1f409cd018,Push up to breakdancer,chest,,bodyweight,horizontal_push,,intermediate
+1d684533-244d-42e9-a085-843e40965805,Tree pose (right),full_body,,bodyweight,,,beginner
+1dda1f16-d715-4a4f-a12b-d75b7dca81e7,Banded Lateral Walks,glute_med,glute_max|adductors|quads,band,,,beginner
+1dfe9e16-f3bf-45c3-9536-b818c03d8bb8,Lat Pulldown with V-Grip,back,,machine,vertical_pull,,
+1e381fba-eedc-410c-ba1f-1c9c255f4d0f,Cobra pose,back,,bodyweight,,,beginner
+1e43a5c6-7d2f-4c45-a87d-28eec849221c,Warrior III (left),full_body,,bodyweight,,,beginner
+1e99855d-fbf5-433e-9273-6f4e318a6ffe,Close Grip Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+1eab35ce-2d24-4908-8d60-082cf1f7ab74,Plank pose,core,,bodyweight,core,,beginner
+1effe46b-4944-4308-b0d3-dd87a0c71bc2,Butt kickers,full_body,,bodyweight,,,intermediate
+1f636f46-0bc3-417d-a3ac-93108ecc26ec,Reclined windshield wipers,core,,bodyweight,,,beginner
+1f96bb5c-a360-4ab0-83c6-23bdb92dd10c,Seated eagle arm (right),shoulders,,bodyweight,,,beginner
+1ffaf9e8-fe94-44e8-a20b-012ea58eba46,Barbell Sumo Squat,quads,,barbell,knee_dominant,,intermediate
+204d2666-432a-400b-bf88-0b47203101ee,Inclined push up,chest,,bodyweight,horizontal_push,,beginner
+20500648-961e-4344-bb9b-c775ffc1fe71,Cable Front Kick,quads,,cable,,,beginner
+206a3084-ab16-4115-b18e-93c6c44e6cc4,Push up Circles,chest,front_deltoids|triceps|core,bodyweight,horizontal_push,,advanced
+207924a2-ae75-4371-be43-49c3cc62b4e1,Cable Tricep Pushdown,triceps,,cable,elbow_extension,,beginner
+210c81cd-983c-4267-8514-b14090b038be,Kettlebell Swing (Single Arm),ketllebell,erector_spinae|front_deltoids|obliques|forearm_flexors,,,,intermediate
+214c3916-f02f-456f-9750-70fd0679295a,Bear crawls,full_body,,bodyweight,,,intermediate
+21beb247-bf6f-41a7-b2d3-58c58d103ba0,Walking lunges - backward,quads,,bodyweight,knee_dominant,,
+21ce1e16-e426-466b-b8cf-9d4b1fce7227,Inchworms to push ups to pike push up,chest,,bodyweight,horizontal_push,,intermediate
+21dda23e-d221-4800-924e-498f4398f203,Cable Straight Leg Kickback,glutes,,cable,,,beginner
+22880d49-67f2-4f14-9510-046c32da166b,Concentration Curl,biceps,,dumbbell,elbow_flexion,,beginner
+2291338b-1445-4b35-8ebe-d92d7af522e0,Smith Machine Good Morning,hamstrings,,machine,hip_hinge,,intermediate
+22bf3fc2-d7a0-41d0-9a1a-5e0d149d2b7a,Butterfly Jumps,full_body,,bodyweight,,,intermediate
+23058ad3-cf8a-4550-a2bb-cb692999080d,Ultimate Elbow Stretch,triceps,lats|teres_major,bodyweight,,,beginner
+23781248-d4d6-418e-a5a0-932abb0ca32b,Machine Reverse Fly,shoulders,,machine,,,beginner
+23b96196-f154-4450-a2cd-fdc35af2e60c,Lying Leg Curl,hamstrings,gastrocnemius|glutes|calves,machine,hip_hinge,,beginner
+23d6cf5e-2f9a-4f78-a962-d22e6fe36aa9,Cable Woodchop (High to Low),core,rectus_abdominis|serratus_anterior|erector_spinae,cable|machine,,,intermediate
+24030adc-de07-4547-a916-24acee3d5a3e,Burpee,full_body,,bodyweight,,,intermediate
+24846377-a8c6-4955-86e6-00528b6e2b31,Rack Pulls,back,,barbell,,,intermediate
+24b76364-0eec-4035-b3e0-b7451a94db9f,Hack Squat,quads,,machine,knee_dominant,,intermediate
+24c4168e-f900-4e8b-8969-cd32dba34d6c,Overhead Squat,quads,,bodyweight,knee_dominant,,intermediate
+252e37ea-e936-42a4-ba76-d7ce35e1baa6,Smith Machine Sumo Squat,quads,,machine,knee_dominant,,intermediate
+25be107f-a9ec-4007-bb9f-c0a5088e19b5,Incline Barbell Press,chest,front_deltoids|triceps|serratus_anterior,barbell,,,intermediate
+25ec2936-1aa7-4fb9-86a3-e3b73ab94e7c,Cable Woodchop low to high,obliques,front_deltoids|glutes|quads|serratus_anterior,cable,,,intermediate
+2608b96f-dbaa-493f-9332-f1bfee45c5d4,Heel Raises toe raises,calves,tibialis_anterior|soleus|hamstrings,,,,beginner
+26098d10-600c-4876-ac19-e9fcac2ef835,Overhead Cable Rope Extension,triceps,,cable,elbow_extension,,intermediate
+2640441e-fc3e-46e7-87ee-77f25ed81d32,Plank elbow to knee,core,,bodyweight,core,,
+267b3050-21ec-4d7b-b8b1-d85b88583123,Tree pose (left),full_body,,bodyweight,,,beginner
+26f5654e-6c1f-4418-b336-0317edc13415,Medicine Ball Reverse Crunch,lower_abs,hip_flexors|obliques|transverse_abdominis,,core,,intermediate
+27114339-579a-4a81-a673-52126b81f475,Reverse Plank,glutes,rear_deltoids|lower_back|abs,bodyweight,core,,beginner
+2763cb57-a57b-4134-9ae4-979414e5d28c,V-Up,rectus_abdominis,hip_flexors|obliques|quadriceps,bodyweight,,,intermediate
+27be2ac3-3b68-4ef8-94ab-e6bfb5ba4076,Pendlay Rows,back,biceps|forearms|erector_spinae,barbell,horizontal_pull,,intermediate
+27e866fb-7cdb-4b24-824c-9ce7778c6ac7,Shoulder taps into ankle taps,full_body,,bodyweight,,,intermediate
+2811e435-2e2e-4b25-8fbb-57873e05d90d,Split squat (R),quads,,dumbbell,knee_dominant,,intermediate
+284b839e-ec4c-4551-ba9d-afbf32b60330,Push ups to toe touches,chest,,bodyweight,horizontal_push,,intermediate
+288185df-127a-4112-80df-83313767b80e,Toe touch- Posterior thigh,core,,bodyweight,,,intermediate
+292b7c17-cc1f-4753-a690-8caad6e28879,Upward facing dog pose,back,,bodyweight,,,beginner
+2930d41f-177c-4f36-bd91-4867afb85a3b,Dips,chest,,bodyweight,horizontal_push,,
+2964f7d1-8a1f-45b6-887c-a084ceb75072,Shoulder tap burpees,full_body,,bodyweight,,,intermediate
+29e0d621-73e4-44da-9db7-10302fbe9503,Seated Dumbbell Curl - One Arm - Alternating,biceps,,dumbbell,elbow_flexion,,intermediate
+2a4df469-77c8-4468-92cb-2003c90602dd,Superman extensions,back,,bodyweight,elbow_extension,,intermediate
+2b207100-576f-4029-848e-f71bb05df885,Smith Machine Bent Over Row,back,,machine,horizontal_pull,,intermediate
+2b2134be-9f7b-42d9-8739-1b24833c5e11,Seated ankle circles,tibialis_anterior,calves|peroneals|tibialis_anterior,,,,beginner
+2b536297-c5de-4994-b67d-d1adac5f29c0,Warrior II (right),glutes,,bodyweight,,,beginner
+2b82f2db-8edd-4904-af32-6fcf4c0d24d9,Lotus pose,glutes,,bodyweight,,,beginner
+2bdda28c-3fe2-4ecb-9a71-945a051d5bbd,Seated Calf Raises,calves,,barbell,,,beginner
+2c525222-75e1-4c05-b8ee-f4d2c7d1799e,Side to side push up,chest,,bodyweight,horizontal_push,,intermediate
+2c7167fd-5e7e-444f-b7a8-291e362e638c,Plank shoulder taps,core,,bodyweight,core,,
+2ca49b40-d285-4dfe-8dba-f51448b46c0a,Step-Ups (Bodyweight),bodyweight,glute_med|hamstrings|calves,bodyweight,knee_dominant,,beginner
+2cb2c89f-5ea0-49f4-8ee3-a24beb2fa192,Squat taps into jump squats,quads,,bodyweight,knee_dominant,,
+2dbfdf97-301b-423d-a27c-7485137e50f4,Machine Bicep Curl,biceps,,machine,elbow_flexion,,beginner
+2e6e0a8a-ab5d-4f00-a6b4-c1f025190b79,One-Arm Side Laterals (L),full_body,,bodyweight,,,intermediate
+2e95c001-ef00-4ecc-85a9-b97841927a29,Kettlebell Row,ketllebell,biceps|rear_deltoids|forearms|erector_spinae,,horizontal_pull,,beginner
+2ea5aa3e-034c-45a7-862a-d2f324671901,Revolved chair pose (right),core,,bodyweight,,,beginner
+2fb79823-a759-4ceb-8b16-a26ab3cfb440,Barbell Deadlift,back,,barbell,hip_hinge,,intermediate
+2fc3cb39-6cf3-4133-89fd-6b140c96110f,Spiderman push up,chest,,bodyweight,horizontal_push,,intermediate
+3175c898-09fe-4d02-82c2-de2a3834fdd4,Dumbbell waiter curls,biceps,,dumbbell,elbow_flexion,,intermediate
+31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3,Barbell Ab Rollout - On Knees,core,,barbell,,,intermediate
+31acb39d-e5bd-47f6-8895-0d4a17ff2e67,Squat Pulse on Box,quadriceps,hip_flexors|erector_spinae|abs,,knee_dominant,,beginner
+31f0a2a6-2d44-4c33-bf3a-2d0687b748a4,Bridge pose,glutes,hamstrings|erector_spinae|core,bodyweight,,,beginner
+322a5b58-ed0d-4d37-8d09-c48a606484fe,Hip stretch (right),full_body,,bodyweight,,,beginner
+32baa994-5bfa-4fb6-9ff0-07f682410778,Glute Leg Lift,glutes,hamstrings|core|lower_back,bodyweight,,,intermediate
+33869887-32ab-4c66-b033-3bef9e5de372,Bodyweight Triceps Extension (with bar),triceps,,bodyweight,elbow_extension,,intermediate
+339d8f8f-18e3-452a-ae66-f2b098382a84,Preacher Curl Dumbbell,biceps,,dumbbell,elbow_flexion,,intermediate
+339e91e9-a7a1-4ee1-a97b-6a5ec3f71684,Standing knee thrusts,full_body,,bodyweight,,,intermediate
+3433c651-a0f5-40cb-bdd8-3029f3ba15c5,Dumbbell External Rotation,full_body,,dumbbell,,,intermediate
+34d8d81b-5883-4a90-bc74-4f1ec0cbce91,Preacher Curl EZ-Bar,biceps,,barbell,elbow_flexion,,intermediate
+35b16467-8817-4c28-b84c-a1f47b1734cd,Dumbbell pistol squats,quads,,dumbbell,knee_dominant,,advanced
+36034a77-8bbc-46c9-bf91-1c310704bf3b,Knee raise marches,core,,bodyweight,,,intermediate
+3620635f-3fcb-4552-8959-dc6ec09d9ea2,A steps,hip_flexors,hamstrings|tibialis_anterior|front_deltoids,bodyweight,,,intermediate
+364dc379-ca4e-4fe2-9d95-684619a8b693,Plank in and outs,core,,bodyweight,core,,
+36aec113-771d-4ec9-854f-81f29e00cdd2,Overhead Lunge,quads,,bodyweight,knee_dominant,,intermediate
+371215cb-72ef-4039-8192-472234289504,Pec Deck Fly,chest,,machine,,,beginner
+372da9df-3ee6-450c-ae97-743968d27d71,Concentration Hammer Curl,biceps,,dumbbell,elbow_flexion,,beginner
+3730e7c4-d50d-4986-88ea-aba97ccf9b8c,Tucked L-sit hold (Hanging),core,,bodyweight,,,advanced
+3798bfae-4ad3-404c-969d-0eeb2fcbdd56,Side hurdel jumps to mountain climbers,core,,bodyweight,,,
+37b88680-2d07-424c-b1cb-8c1a3384e8dc,Squat,quads,calves|hip_flexors|abs,bodyweight,knee_dominant,,beginner
+37e6d334-06b4-4068-a9e4-5b806cbec2b6,Half moon (left),full_body,,bodyweight,,,beginner
+383d7e55-3ec7-4908-8298-96bc42aeebe9,Dumbbell Arnold Press,shoulders,triceps_long_head|upper_chest|serratus_anterior,dumbbell,,,intermediate
+38530004-f20d-4895-8deb-ab02ebac1edf,Get ups with Jump,full_body,,bodyweight,,,intermediate
+3882e700-1ad7-4b71-932a-6ee8983e50b2,Pike push ups,chest,,bodyweight,horizontal_push,,intermediate
+38c0d9e4-7f97-4e8f-8d26-650ca542e1c2,Tiger pose (left),core,,bodyweight,,,beginner
+38ef796b-7e3c-4370-9452-72b924837216,Plank Side Arm Reach Dynamic,obliques,front_deltoids|glute_med|triceps,bodyweight,core,,beginner
+3901065d-a926-4d63-9306-0f14eb731d7c,Hammer Curls,biceps,brachialis|brachioradialis|forearm_flexors,dumbbell,elbow_flexion,,intermediate
+3941270c-ad35-40bf-9906-e9c6d24ba777,Leg Extension,quads,hip_flexors|tibialis_anterior|core,machine,knee_dominant,,beginner
+396dee3e-b0b6-409b-a331-47d3bd121ac8,Pyramid pose (left),hamstrings,,bodyweight,,,beginner
+39a6eaa7-efb4-455f-942f-e53ed5a9b526,Plank jacks,core,,bodyweight,core,,
+39e71f53-4d30-4cb0-a6dc-16411d33bff0,Half frog pose (right),glutes,,bodyweight,,,beginner
+3ad63b44-3e91-44cb-a39d-45aa9d50817c,Side Plank,abs,lateral_deltoids|adductors,bodyweight,core,,intermediate
+3add251e-6e58-4f80-902c-ab32e0b61966,Dips on bench 2,chest,,bodyweight|bench,horizontal_push,,intermediate
+3adef0aa-9687-4cd0-acf6-410c9fa4ba76,Cable Crossover (Mid),chest,front_deltoids|biceps|pectoralis_minor,cable|machine,,,intermediate
+3b3e0a86-56b7-4d15-92ff-11dfaf108147,Elevated push up,chest,,bodyweight,horizontal_push,,intermediate
+3b45e42a-963f-4b79-ae1d-b1b5e8eb9add,Flat Cable Fly,chest,,cable,,,beginner
+3b69631f-65b9-4af3-9c65-5739375e3dfb,Normal grip pull ups (Full range of motion,back,,bodyweight,vertical_pull,,intermediate
+3bb357f4-d722-42e5-9c1f-166f2a2e91f2,neck stretch,neck,upper_traps|traps|sternocleidomastoid,bodyweight,,,beginner
+3bbed598-16f4-4683-a751-10cc264b4bd6,Kettlebell swing,core,,,,,
+3bf0aada-8142-418e-8f7b-f506ecc63afb,Star crunch into Half V- ups,core,,bodyweight,core,,intermediate
+3cd37329-4822-44d9-ba76-66a845736ffe,Sprinter Butt bridges,glutes,,bodyweight,,,intermediate
+3d0e9420-3d5f-4c9d-a002-7ad83f43bbde,Standing Neutral Grip Cable Press,chest,,cable,,,intermediate
+3d8fe08e-93ba-49ac-b5f9-92dbac0d39b2,Cow pose,back,,bodyweight,,,beginner
+3e668a4f-2aac-42ae-b8db-58fc179d20d2,Dumbbell Front Raise,shoulders,,dumbbell,,,beginner
+3e840d86-0fd5-4ac2-b152-2bcc8ecc67c3,Lying elbow to knee crunch,core,,bodyweight,core,,intermediate
+3e923378-4af0-4d61-9ce7-263fb0ed3b04,Smith Machine Behind the Back Shrug,back,,machine,,,intermediate
+3e96fcc6-7397-4387-ac5b-92569bd670e5,Seated Machine Chest Press,chest,front_deltoids|triceps|core,machine,,,beginner
+3ed1db96-1767-4ce2-a245-56b4a2967419,Run,core,,bodyweight,,,
+3eeee272-7aae-4e5c-8d9c-415a3bf74352,Side Bend with Dumbbells,obliques,erector_spinae|transverse_abdominis|lower_back,dumbbell,,,beginner
+3f916ec5-151e-4b3c-bdd2-011621f259fe,Half lord of the fishes pose (left),core,,bodyweight,,,beginner
+3f9f3976-7e6c-4d69-8801-1b0b5f723a68,Smith Machine Romanian Deadlift,smith-machine,glute_max|spinal_erectors|forearm_flexors,machine,hip_hinge,,intermediate
+3ffba4ed-c3ae-4727-b5dc-31823f5d3358,Machine Lateral Raise,shoulders,,machine,,,beginner
+4001ef61-57a1-4f18-8c0b-8167e15c6832,Open and close jumping jacks,full_body,,bodyweight,,,intermediate
+4061bcd4-25a4-48ce-abbe-765986eb91e5,Back Extension on Ball,erector_spinae,glute_max|hamstrings|abs,,elbow_extension,,beginner
+40811c61-7369-4803-afc0-fa7b90f90522,Low Cable Rope Curl,biceps,,cable,elbow_flexion,,beginner
+4088ec8b-252e-4444-86ef-9fa59010e9fd,Russian Twist,abs,internal_obliques|external_obliques|lower_back,bodyweight,core,,intermediate
+40e40492-ae55-417f-8391-2e6ea6c170d9,One-Arm Side Laterals (R),full_body,,dumbbell,,,intermediate
+412c612e-1822-4a22-aa3c-2461fd23a211,Low Cable Row,back,biceps|forearms|erector_spinae,cable,horizontal_pull,,intermediate
+4150a3eb-5b70-4d2e-8cab-a27e70b3ef43,Sideplank,core,,bodyweight,core,,
+426861d9-64ac-40f6-bf3e-f7ebc05ba6af,Decline Push Up,chest,triceps|front_deltoids|core,bodyweight,horizontal_push,,intermediate
+427f98b5-d33e-4447-83cd-5cef54f0eb2f,Smith Machine Squat,quads,calves|hip_flexors|abs,machine,knee_dominant,,beginner
+42a043cf-29ba-4e98-a6fe-d9cbc61f7015,Scapula hold,back,,bodyweight,,,intermediate
+42dc0603-91e8-4a1e-8bf0-ef9478718106,Seated leg raises,core,,bodyweight,,,intermediate
+42ee935a-8052-4d1b-bde6-d64bb2389e57,Bodyweight Squat,quads,hamstrings|adductors|erector_spinae|calves,bodyweight,knee_dominant,,beginner
+430ce933-5f38-44b9-8b43-810da4ec536e,Preacher Hammer Curl Dumbbells,biceps,,dumbbell,elbow_flexion,,intermediate
+43549b73-858b-4225-8fe0-e7d3d32c9535,Smith Machine Incline Press,chest,,machine,,,beginner
+435a2ddc-bd65-4ca6-a696-eb6a9e812b30,Sumo Deadlift,glutes,lats|core|forearm_flexors,barbell,hip_hinge,,intermediate
+43946d04-02aa-4dc8-9a67-3cb759440c22,Calf Raises,calves,gastrocnemius|soleus|peroneals,,,,beginner
+43c81170-5fc1-46dd-92b0-6a308c22cec1,Bent Over One-Arm Long Bar Row,back,,barbell,horizontal_pull,,intermediate
+4402c7a1-0845-4da2-882d-4e06fc275b8b,Bench Jump,full_body,,bodyweight|bench,,,intermediate
+44067253-a8d5-4b0f-9008-02c2e56624b1,Heel touches,full_body,,bodyweight,,,intermediate
+440ff6f0-b3c0-42fd-bcfd-8a85a841d410,Supported shoulder stand,core,,bodyweight,,,beginner
+4426c121-33b6-42c1-aa78-8d295d8fd687,Dumbbell Discus,full_body,,dumbbell,,,intermediate
+44a83578-5681-4a1a-99c3-f8742857bf66,Dumbbell Lateral Raise,lateral_deltoids,traps|supraspinatus|serratus_anterior,dumbbell,,,beginner
+4513eebe-8fee-42e0-9d60-3101601bdc0a,Triangle pose (left),hamstrings,,bodyweight,,,beginner
+4581a423-5d2d-4cf1-89a0-fea026ef116d,Dumbbell Fly incline,upper_chest,front_deltoids|biceps|serratus_anterior,dumbbell,,,intermediate
+45c93c0a-c64e-4f27-a694-ab9fb396cd46,DOT Drill,quads,cardiovascular_system|tibialis_anterior|abductors,bodyweight,,,intermediate
+4668a912-ef55-4b3e-8d9c-53359d6aba29,Close Grip Dumbbell Press,chest,,dumbbell,,,intermediate
+46832c7a-fd0e-49ab-9961-11726b8b9064,Kettlebell Snatch,ketllebell,front_deltoids|erector_spinae|lats|forearm_flexors,,,,advanced
+46989ad6-9ec2-40b0-929d-54893160b1af,Hack Squat Wide Stance,quads,,machine,knee_dominant,,intermediate
+46f8865d-24c2-4c81-a886-aa458c5653c5,Chair pose,quads,,bodyweight,,,beginner
+476cf5d3-e211-4650-84ec-7a3e89c08639,Half split (left),hamstrings,,bodyweight,,,beginner
+47ab9d26-7959-46bb-9744-1e48695f5e70,Bear crawl into explosive jumps,full_body,,bodyweight,,,intermediate
+48700743-f688-42d8-99ed-8c1b223d1f55,Lying Overhead Triceps Extension,triceps,,barbell,elbow_extension,,intermediate
+48b2c98e-b82f-49aa-b847-b871a69e1b95,Bench Dips,triceps,front_deltoids|pectoralis_major|core,bodyweight|bench,horizontal_push,,beginner
+49193da5-2b92-4df3-bca6-f0cd59fa9f03,Side to side plank walk into shoulder taps,core,,bodyweight,core,,
+49739b94-19b6-4ec3-aa93-53e7c4824918,Plank on elbows,core,,bodyweight,core,,
+497b7319-b2dc-4886-8ced-fdf14a08bb97,Lying Barbell Front Raise,shoulders,,barbell,,,intermediate
+49ec0843-8680-48cd-bdf2-e871d435b583,Lying knee tucks,full_body,,bodyweight,,,intermediate
+4a608293-5863-4517-b03d-a46398066e32,Incline Cable Fly,chest,,cable,,,intermediate
+4a816d4c-e7b1-4e18-823f-64d0c4eee38b,4 Square Drill,quads,calves|glutes|hip_flexors,bodyweight,,,intermediate
+4a8661d9-eef7-44c6-896b-9ea08b81ac17,Seated Leg Curl,legs,calves|gastrocnemius|glutes,machine,hip_hinge,,beginner
+4aa034b9-f826-4b1b-a259-45144fca1074,Jumping Jack,full_body,lateral_deltoids|hip_flexors|core,bodyweight,,,beginner
+4aa2b90d-e5da-47d6-abd5-4e1932324ed2,Super man crunches,core,,bodyweight,core,,intermediate
+4c22f102-513b-4fe4-a271-389c006fbb9f,Explosive knee drive,full_body,,bodyweight,,,intermediate
+4c257ac2-d310-40aa-8797-33d138519135,Run in place,full_body,,bodyweight,,,intermediate
+4c55ca15-3665-4db7-b11d-7d4273263f66,1 Leg Broad Jump,glutes,calves|core|adductors,bodyweight,,,advanced
+4c5c90fd-01a3-45f6-a952-712743be9c81,Decline Close Grip Dumbbell Press,chest,,dumbbell,,,intermediate
+4c799907-a832-42b2-b9b3-bfb75a68c840,Bow pose,back,,bodyweight,,,beginner
+4d433881-e521-45e3-a36e-8672953714c0,Cow face pose (right),shoulders,,bodyweight,,,beginner
+4d4779ae-ab3c-4f3b-8c9f-566a23c80437,Back Shuffle,cardiovascular_system,calves|quads|hip_flexors,bodyweight,,,beginner
+4d9ad82c-1799-4340-b973-c269c901d0e5,Glute Kickback,cardiovascular_system,gastrocnemius|soleus|tibialis_anterior|core,bodyweight,,,beginner
+4dd34460-26de-41b4-ba9f-66bcf4ed8e63,Mountain Climbers,bodyweight,obliques|front_deltoids|triceps|calves,bodyweight,,,beginner
+4e4377e1-ab91-4015-84ac-27b3274b549f,Barbell Shoulder Press -  Barbell Overhead Press - Barbell Military Press,shoulders,,barbell,,,
+4e5467d4-898b-4c22-98d0-5000f9b2c1ed,Wheel pose,back,,bodyweight,,,beginner
+4e6181e0-c20f-4449-91e7-48d1eef1f268,One arm Dumbbell Floor Press alternating,chest,,dumbbell,,,intermediate
+4eaaeaca-6966-4b55-94a0-4a34520bb5b9,Downward facing dog split (left),hamstrings,,bodyweight,,,beginner
+4eed07c2-fe85-409d-9f81-a4872e8ffb9e,Lunges (Left),quads,,bodyweight,knee_dominant,,intermediate
+4f5c0add-7a97-4c69-ad76-e2d87c8d1cc1,Kettlebell Press,ketllebell,triceps_long_head|serratus_anterior|upper_back,,,,intermediate
+4f5e0bcb-7424-4d6b-b837-5c3eda01c15c,Reverse Snow Angels,lower_traps,rotator_cuff|glutes|spinal_erectors,bodyweight,,,beginner
+4f756a6f-51a5-4afe-8cf8-975f3748c4f9,Elbow Plank to Side Plank,core,rectus_abdominis|erector_spinae|quads,bodyweight,core,,intermediate
+4fcd55ed-a563-4f9f-b43c-4b4ea35e5cc4,One-Arm Kettlebell Snatch from ground,full_body,,,,,
+4fe0ae5d-b04a-437b-be8a-ce6636c08348,Reverse warrior (right),quads,,bodyweight,,,beginner
+5025051b-e58e-42aa-ae78-5a9b11ef129c,Seated Cable Row Neutral Grip,back,,cable,horizontal_pull,,beginner
+5058baec-15c8-4278-afa5-9621bb4e15b5,Alternating Dumbbell Curl,biceps,,dumbbell,elbow_flexion,,beginner
+50aafd34-960f-4967-ae4b-03430a734f10,front raises,front_deltoids,lateral_deltoids|traps|serratus_anterior,dumbbell,,,beginner
+50f6c403-a7eb-4c43-9723-c9c4ee7defc7,Lateral neck stretch (left),full_body,,bodyweight,,,beginner
+513d039d-e6d0-459e-9ae7-4847a586871b,Cow face pose (left),shoulders,,bodyweight,,,beginner
+516a33ee-e1e1-459d-9417-a313b313e1a6,Side plank pulses,core,,bodyweight,core,,
+516ed8ba-873f-441b-a5a6-c52ab7fc048a,Kettlebell Lunge,kettlebell-exercises,hip_flexors|erector_spinae|forearms,,knee_dominant,,intermediate
+51f8b5e9-3c10-4727-820a-ba77857a46b2,Lunge matrix,quads,,bodyweight,knee_dominant,,intermediate
+52fb4e42-549e-4af2-a83d-f0c6c76f38ae,Armpit Opener,chest,biceps|rotator_cuff|traps,,,,beginner
+53339dca-7ed1-4edf-b88c-1f4b618b4d57,Figure 4 Squats,glutes,adductors|calves|abductors,bodyweight,knee_dominant,,intermediate
+53c6b923-dcdb-44f6-a57f-150dc1d1e547,Warrior I (right),glutes,,bodyweight,,,beginner
+53f37f4b-c486-4ebb-846b-953078455bfe,Bent leg v-sit into punches,full_body,,bodyweight,,,intermediate
+548f86e7-ee60-46ce-a482-c2b1c16e4441,Forward Lunges (Bodyweight),bodyweight,,bodyweight,knee_dominant,,
+54d04b7e-3a7d-4d04-a0b2-adaab8f8f466,Dumbbell Romanian Deadlift,hamstrings,glute_max|erector_spinae|forearm_flexors,dumbbell,hip_hinge,,intermediate
+54df7bb8-18f9-4b69-8561-f369f06632ee,Goblet Squat with Kettlebell,quads,core|adductors|erector_spinae|hamstrings,,knee_dominant,,beginner
+554adc08-afea-40c8-bf33-d4276e2d73d9,Preacher Hammer Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+55a30378-1a97-47fd-9f63-0609de03e0b9,Upper back and shoulder stretch (right),full_body,,bodyweight,,,beginner
+55bd4c71-78c6-49bd-aaaa-8c03b7528342,Chameleon push up,chest,,bodyweight,horizontal_push,,intermediate
+55ce943e-c8ad-479b-bd92-10ba1d01889e,Jumping lunges,quads,,bodyweight,knee_dominant,,intermediate
+55df26c1-83f4-439a-89be-22c156a3e118,Reverse Lunge into Knee Drive,quads,,bodyweight,knee_dominant,,intermediate
+56c25b1f-91f4-4fd1-99b9-89e4da81ecdc,Cable Upright Row,shoulders,upper_traps|biceps|forearms|rhomboids,cable|machine,horizontal_pull,,intermediate
+579695a3-b21a-4fe5-83fd-1bd47bfd2592,Low lunge (right),quads,,bodyweight,knee_dominant,,beginner
+57c55853-176e-4bad-aced-1032c63f4652,Dumbbell Lunges,quads,glute_med|hip_flexors|erector_spinae,dumbbell,knee_dominant,,intermediate
+57c79553-d2e3-41e9-97d5-3fe8c0d59fe9,Dumbbell Bicep Curl seated incline,biceps,brachialis|brachioradialis|forearm_flexors,dumbbell,elbow_flexion,,beginner
+58178205-37e9-489c-8322-f40b15d7b992,Half lord of the fishes pose (right),core,,bodyweight,,,beginner
+5894b913-11b8-47b6-8f0f-63b8ad0bd469,Leg Press Wide Stance,quads,,machine,,,beginner
+58d0fe05-1a66-4b80-a6d8-2dc2f0d73169,Bench Press,chest,,barbell|bench,,,
+592c2408-5da3-4cca-9453-9dc9cfec6d9f,Y-superman crunch,core,,bodyweight,core,,intermediate
+59887212-af71-41e1-9b3f-afe352ba1979,Bear toe taps,full_body,,bodyweight,,,intermediate
+5990deac-a91d-4531-8c2f-a708fc95fd1f,Barbell Hip Thrust,glutes,,barbell,hip_hinge,,
+5a86b7dd-04a3-47fc-b92d-910f61b184c6,EZ Bar Curl,biceps,brachialis|brachioradialis|forearm_flexors,barbell,elbow_flexion,,beginner
+5aea090d-1bca-427b-8960-c01f7a6f0211,Lunges body weight,quads,,bodyweight,knee_dominant,,intermediate
+5b61e155-eda8-4077-854b-bfe331f5fd55,Smith Machine Glute Squat,glutes,,machine,knee_dominant,,intermediate
+5ba69aaa-7f7a-4564-940e-c6fb7da55c26,Arm swings,shoulders,traps|serratus_anterior|forearms,bodyweight,,,beginner
+5bd45b94-2926-4051-b4cb-51a66f46ecf8,Standing EZ Bar Curl,biceps,,barbell,elbow_flexion,,beginner
+5cdc9847-39af-400f-8354-79e1d24828bd,Triangle pose (right),hamstrings,,bodyweight,,,beginner
+5ce18079-7df5-48e0-828e-63005b8eb3d1,Close Grip Lat Pulldown to Waist,back,,cable|machine,vertical_pull,,intermediate
+5ce9ef64-7527-4321-997b-1d1bc071f91a,Calf stretch (right),calves,,bodyweight,,,beginner
+5d55105e-04cc-4493-a7e8-302a5653e58c,High Knees v1,full_body,,bodyweight,,,intermediate
+5d6d9ca4-1ace-4dc9-b408-6ced49b753e7,Bear hold,core,front_deltoids|triceps|glutes|erector_spinae,bodyweight,,,intermediate
+5e751b08-c767-4a40-8ef7-62d271995c86,Cable Bicep Curl bar,biceps,forearm_flexors|brachialis|front_deltoids,cable,elbow_flexion,,beginner
+5e98b09d-e4aa-4ddb-aadf-02e18b6c16ac,Lying toe reaches,full_body,,bodyweight,,,intermediate
+5efb3847-ecf2-4dba-9bc0-cce91af31eac,Squats to knee(1),quads,,bodyweight,knee_dominant,,intermediate
+5f84b3d2-daff-4fc1-bb8c-c9524689af7d,Cuads Belt Squat Machine,quads,glutes|hamstrings|adductors|core,machine,knee_dominant,,intermediate
+5f8e2c01-66eb-4f23-b3ad-c87c631e257f,Extended side angle pose (right),quads,,bodyweight,,,beginner
+601cae63-a0d3-4f10-9a7f-114a5eb033e0,Over and under,full_body,,bodyweight,,,intermediate
+60ec7728-577b-4dea-a5e9-4b8ac16b6038,Dips - Triceps Version,chest,,bodyweight,horizontal_push,,intermediate
+60fa33db-7a56-4a6d-88a5-22f98a252ae1,Seated Cable Row Close Neutral Grip,back,,cable,horizontal_pull,,beginner
+610855b2-2eb1-440a-9645-9598f0a46766,Hip stretch (left),full_body,,bodyweight,,,beginner
+61410917-4fb1-41f8-86d5-16dc88fe380b,Plank,core,front_deltoids|triceps|serratus_anterior|lower_back,bodyweight,core,,beginner
+61654261-7fa6-4bd5-9cf1-04ab8c638e4f,Push Ups,chest,front_deltoids|triceps|core,bodyweight,horizontal_push,,beginner
+61ef551f-2db3-4ab9-978d-9e5712b873de,Extended side angle pose (left),quads,,bodyweight,,,beginner
+620b30ac-bc0d-4b48-bec7-b685cf57f883,Walking Lunges,quads,,bodyweight,knee_dominant,,
+623b2443-bc73-4c61-986c-412545c33aed,Fire log pose (left),glutes,,bodyweight,,,beginner
+6347356d-6248-444f-92b2-47de72d5f96e,Revolved triangle pose (right),core,,bodyweight,,,beginner
+63603235-6df6-4c55-b0fe-c417fee626b8,Bear plank side tap sidewalks,core,,bodyweight,core,,
+6362bdab-a7d7-49e8-85ab-fe1eb610cb4e,Cross body pulls to hamstring kicks,hamstrings,,bodyweight,,,intermediate
+6378a159-2d36-4fb3-b972-2862f81433e8,Hip Thrust Machine,legs,hamstrings|quads|lower_back,machine,hip_hinge,,beginner
+638616d3-100b-4b14-8516-ff9e4b3e80f2,Bear plank steps and hops,core,,bodyweight,core,,
+639e71b2-5c79-4125-ad31-1c073b8b073f,Leg Press Medium Stance,quads,,machine,,,beginner
+63ca895d-601f-4155-b654-1682690d7f1c,Single Arm T-Bar Row,back,,barbell,horizontal_pull,,intermediate
+63f5e230-17a6-40df-a2a6-f296bd816501,Side bend (right),core,,bodyweight,,,intermediate
+6413b465-6df0-4e2c-9f4b-ae36dc70ebbf,Overhead Cable Tricep Extension,triceps,core|front_deltoids|forearms,cable,elbow_extension,,intermediate
+6426c762-dd1d-4e44-b9c0-89875c81553a,Hip Abduction Machine,glutes,glute_max|glute_med|tensor_fasciae_latae,machine,,,beginner
+646f354b-3790-4796-bfd9-cd9df04bcc16,Cable Step-Ups,quads,,cable,knee_dominant,,intermediate
+649d45cb-6e06-4b5b-890a-9ea4043ed7d9,Heel to toe walk,full_body,,bodyweight,,,intermediate
+658fa4e6-8b1d-48f4-b97d-7c576783ad73,Corpse pose,full_body,,bodyweight,,,beginner
+65b90fab-d4d0-454e-8cf4-66a953ef982c,Wild thing pose (left),back,,bodyweight,,,beginner
+65e95132-e6bb-41e8-af7d-0eda931a1693,Barbell Back Squat,quads,,barbell,knee_dominant,,intermediate
+65ea17e1-f8ce-465a-ae0c-481bddb4714a,Sit ups,core,,bodyweight,,,intermediate
+6744d5a4-41a7-42b5-9383-f7f6eccf43cb,Standing One-Arm DB Triceps ExtensioN (L),triceps,,dumbbell,elbow_extension,,intermediate
+675fab33-9f21-4386-8a43-a319d0684841,Cat cow pose,back,,bodyweight,,,beginner
+67b6f81b-3bca-4b91-8cd8-4c4dd6194d6e,Explosive push ups,chest,,bodyweight,horizontal_push,,intermediate
+67f7b774-4b0f-4252-b5df-2555e9f5d0c8,Push-Up Wide,chest,front_deltoids|triceps|core,bodyweight,horizontal_push,,intermediate
+680f31da-707a-487d-9003-667fb3bbab82,Smith Machine Smith Bench Press flat,chest,front_deltoids|triceps|serratus_anterior,machine|bench,,,beginner
+6810be7c-d51f-42d4-8685-4866fc3828e1,Reclined pigeon pose (right),glutes,,bodyweight,,,beginner
+68814908-0678-4931-af0e-0fced0d2022a,Leg Press Calf Raise,legs,gastrocnemius|soleus|peroneals,machine,,,beginner
+6891aa71-6e1f-4ea4-b9ac-f38ea207216a,Dumbbell wrist curls,forearms,,dumbbell,elbow_flexion,,intermediate
+691ad2e7-b9f9-4921-8831-4da317451a2c,Smith Machine Shoulder Press,shoulders,,machine,,,beginner
+697e0018-b1bd-4035-9ced-5a446cd66caa,narrow squats chair,quads,hamstrings|core|calves,,horizontal_pull,,beginner
+697ec8a9-34fe-419e-a1b8-825456a3b335,Cable Front Raise,shoulders,,cable,,,beginner
+699bd3d1-89e8-449a-be4b-44ebee16d81f,Single-Leg Step Balance,glutes,abductors|tibialis_anterior|erector_spinae,,,,beginner
+69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1,Barbell Bench Press,chest,front_deltoids|triceps|forearms,barbell|bench,,,intermediate
+6a20f987-50aa-4023-9d0a-723759a24d55,Calf Raise Intervals,calves,soleus|tibialis_anterior|peroneals,bodyweight,,,beginner
+6a3ac67c-fa0f-4ef1-91c7-aa2503d11844,Incline Dumbbell Crossover,chest,,dumbbell,,,intermediate
+6b58c0da-6795-4103-bbed-6c3e540c1c16,Reverse Grip Skull Crusher,triceps,,barbell,,,intermediate
+6c8af30b-31f1-4c84-b394-b4293607cf4f,Mountain climbers,core,,bodyweight,,,
+6cecf804-dcf6-484b-8e1d-57e0d152bbb7,Cable Crunch kneeling,rectus_abdominis,obliques|hip_flexors|serratus_anterior,cable,core,,intermediate
+6d518c05-cac2-4215-b71d-0b564ced5900,Sage marichi I pose (right),hamstrings,,bodyweight,,,beginner
+6d78b4e0-d8b4-4cd2-8e0b-ab6d559b717d,Plie Dumbbell Squat,quads,,dumbbell,knee_dominant,,intermediate
+6d8e7e6b-aec2-49b9-8ff6-54918a1cf850,Staggered squats,quads,hip_flexors|erector_spinae|abductors,bodyweight,knee_dominant,,beginner
+6e4be416-7097-4301-bfb9-f62bc69f1fa7,Bent Over Barbell Row Overhand Grip,back,,barbell,horizontal_pull,,intermediate
+6e9512fe-74b9-4c8a-bae2-a54361937b0e,Barbell Thruster - Straight Bar Thruster,quads,,barbell,,,intermediate
+6f402009-67c2-484f-bc92-6090cc9a7ed4,Machine Shoulder Press Neutral Grip,shoulders,,machine,,,beginner
+6f53a194-8a37-42ec-87f1-2bfed82e9006,Lat Pulldown (Reverse Grip),back,biceps|rhomboids|rear_deltoids|forearms,machine,vertical_pull,,beginner
+6f54fafe-ff3f-4295-9ec6-031c1dd68e11,Seated forward bend,hamstrings,,bodyweight,,,beginner
+6f5b8c08-2853-477c-875b-b459d4f98fa9,Seated Incline Press with Machine,chest,,dumbbell|machine,,,intermediate
+700ff55b-baeb-41fe-9b1d-b2e046a45de6,T-Bar Row,back,,barbell,horizontal_pull,,intermediate
+703cabb7-a8d3-4fe8-a4e0-a5f931c7ddde,Jump get ups,full_body,,bodyweight,,,intermediate
+704e9540-7bdd-4dbd-bdd3-7341b3563693,Floor Mantis,lower_back,hamstrings|glute_max|lats,bodyweight,,,beginner
+705b3080-cf01-42f4-be0f-ea9e3f83599f,Close Grip Bench Barbell,triceps,pectoralis_major|front_deltoids|forearms,barbell|bench,,,intermediate
+706ac77a-70f7-4532-a3c5-f1ce1bd2f079,Forward lunge with lateral flexion,quads,,bodyweight,knee_dominant,,intermediate
+709f2fe5-f590-401b-aa94-d5f6dc67165b,Barbell Sit-Up,core,,barbell,,,intermediate
+70ac8f96-201b-4bd7-9ac5-f72e3aca2748,One Arm Dumbbell Bench Press - with rotation,chest,,dumbbell|bench,,,intermediate
+71213402-bffc-41ab-9425-736789fca561,Side plank pulses (Right side),core,,bodyweight,core,,
+71304f37-af11-4c9f-aa53-ef04cbc9bb29,Dumbbell Side Bend,abs,,dumbbell,,,
+714b176e-2963-43f0-ae0f-c71643cbe426,Barbell Lunge,quads,,barbell,knee_dominant,,
+716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6,Bent Over Barbell Row Underhand Grip,back,,barbell,horizontal_pull,,intermediate
+7194a0b3-ce5e-4aab-81dc-b6b2354c916b,Pull Up overhand,lats,biceps|forearms|rear_deltoids|core,bodyweight,vertical_pull,,intermediate
+71bf8e65-38ff-4145-b42c-341c8d574b59,8 Count Body Builder,full_body,cardiovascular_system|hip_flexors|calves|abs,bodyweight,,,advanced
+71cd3500-6a12-4ad9-b9c4-5b4c20f33deb,Barbell Curl 21s,biceps,,barbell,elbow_flexion,,intermediate
+71ea41d9-e931-46dc-8a6c-731a7ee3e742,Hang clean,full_body,,bodyweight,,,intermediate
+726c2b68-3da5-4dc7-a588-c8d3dd90d516,Walking lunges,quads,,bodyweight,knee_dominant,,
+72748704-e649-4df7-9e6b-747dd4d225a2,Seated shoulder push downs,full_body,,bodyweight,,,intermediate
+73097e75-dc6b-4be4-bf4a-b3f176d8ff10,Rocking horse push up into explosive jump,chest,,bodyweight,horizontal_push,,intermediate
+73368005-c7ae-4086-b7e5-31963e96af4d,Plank shoulder taps into reaches,core,,bodyweight,core,,
+7384d39b-613f-4c8e-a980-42e2d3bd8a83,Side Lateral Raise with Dumbbells,shoulders,,dumbbell,,,intermediate
+73cb1336-986a-4e65-9010-bcb205da13ce,Standing Leg Curl,hamstrings,calves|gastrocnemius|glutes,machine,hip_hinge,,beginner
+73f9f38e-cd72-4e0c-995a-e7698aab8408,Lying leg raises with crunch,core,,bodyweight,core,,intermediate
+742b9b5a-2d25-4321-9769-bdc267ac59f7,Step ups,quads,glute_med|hamstrings|calves,,knee_dominant,,beginner
+74545eb6-14ac-4017-b275-d1776516419d,Smith Machine Narrow Stance Squat,quads,,machine,horizontal_pull,,intermediate
+74658f21-21bb-40f6-bf66-54aa7b499622,Explosive push,full_body,,bodyweight,,,intermediate
+74a22260-8090-40b6-a13a-4d366c0d5fd6,Bulgarian split squat - with Barbell,quads,,barbell,knee_dominant,,intermediate
+74c36be0-d1e4-4703-8c54-612c2da1dcc1,Barbell Good Morning,hamstrings,glute_max|adductors|upper_back,barbell,hip_hinge,,intermediate
+7502b225-3aa7-44a1-901f-f02f2f14d58c,Side Bend Stretch (R),core,,bodyweight,,,beginner
+7532f005-9936-49c1-8612-132d874e1ee7,Seated Hip Abduction Machine,glutes,,machine,,,beginner
+753a6d81-dbea-453c-8daf-c8b56f366409,Leg Extension,legs,,machine,elbow_extension,,
+75593cee-6a28-4842-8222-150647b2157b,Standing Hamstring Stretch (R),hamstrings,,bodyweight,,,beginner
+75649a91-b901-4140-ab80-3052a3afed27,Russian Twist - Weighted,core,,bodyweight,core,,intermediate
+75a4cce2-a779-4b2e-b5e1-94f8587eda7b,Kettlebell Windmill,ketllebell,rotator_cuff|transverse_abdominis|hip_flexors,,,,advanced
+75ad8ef1-8f36-47b9-baef-e7efd2b88c9d,Smith Machine Squats,smith-machine,,machine,knee_dominant,,
+75f26166-ba61-48cf-ba27-0709fbdbb34b,Dumbell Straight Leg Raise,lower_abs,obliques|iliopsoas|transverse_abdominis,dumbbell,,,intermediate
+7665b7ae-4cea-4591-bafe-e73cdaa5beac,Cable Rope Face Pull,shoulders,,cable,,,beginner
+76741ca2-8960-4323-a495-c595291e3c56,Deadstop push ups,chest,,bodyweight,horizontal_push,,intermediate
+768c2a0e-5824-42f9-8175-b296f0433c02,Box jumps,quads,calves|hamstrings|erector_spinae,,,,intermediate
+774856a2-01b1-492b-a955-18d166bde3b4,hip abduction,abductors,glute_max|obliques|quads,,,,beginner
+7829eabb-e6e5-467a-807a-0c5c65ebf49e,Hollow body skullcrushers,core,,bodyweight,core,,advanced
+78c91035-616b-4b6c-a1b7-5572af8bc647,Seated High Row Machine,back,,machine,horizontal_pull,,beginner
+78f8c25f-32b2-4d60-a331-a756f793a892,Kettlebell Goblet Squat,ketllebell,,,knee_dominant,,
+79084f10-c317-4c40-ae0c-45d0b760298d,Bench Dips,bodyweight,,bodyweight|bench,horizontal_push,,
+79b0e11d-db13-4542-a7ac-7f666485f1fa,One-Arm Kettlebell Snatch - From ground,full_body,,,,,
+7a21c59b-ee5d-4f55-867f-31ca24c8003b,Mountain Climbers,core,,bodyweight,,,
+7a94a32f-40d9-42eb-b03d-afe76c71ea36,Alternating Side Reaches,obliques,front_deltoids|core,,,,beginner
+7a9bc5bf-e817-4819-a41b-44a2aee5fb67,Seated Neutral Grip Row Machine,back,,machine,horizontal_pull,,beginner
+7aaad2c1-c499-40dd-84e5-a66b910e6f8b,Bent Over Two-Dumbbell Row With Palms In,back,,dumbbell,horizontal_pull,,intermediate
+7ab0bece-90eb-45f1-9b22-3fd86c376aa1,Bent Over Dumbbell Reverse Fly,shoulders,rhomboids|middle_traps|erector_spinae,dumbbell,,,beginner
+7ade83ba-d8c1-4947-aab0-8a15506c70e5,Mountain climber cross body tuck,core,,bodyweight,,,intermediate
+7afd4594-47c0-4061-97ec-6cf5f5b9ddfe,Smith Machine Bent Over Row,smith-machine,,machine,horizontal_pull,,
+7c07c6f8-b930-436b-9639-a07a49b99b9f,Tiger pose (right),core,,bodyweight,,,beginner
+7c8e22b4-159b-4f19-8100-e05428bf1b1f,Machine Glute Kickback Single Leg,glutes,,machine,,,beginner
+7c9e7503-35f4-4dd3-a515-3b7ad96e21da,Dead Bug with Dumbbells,core,hip_flexors|front_deltoids|obliques,dumbbell,core,,intermediate
+7cbbde6d-73c7-4f94-a217-927d3bbdfd2b,Kettlebell Swing (Two Hand),ketllebell,front_deltoids|erector_spinae|adductors|forearm_flexors,,,,intermediate
+7cfe78ab-8d77-4142-8199-51d3f48b9430,Reverse Cable Preacher Curl,forearms,,cable,elbow_flexion,,intermediate
+7d31d648-432b-4edd-97bc-afc2a3e9e59a,Barbell Deadlift,full_body,core|forearms|adductors|upper_back,barbell,hip_hinge,,intermediate
+7dd83ed0-59e0-4339-a54a-d3319bdf00ab,Single Arm Seated Cable Row,back,,cable,horizontal_pull,,intermediate
+7e16e5c5-0c92-4e6e-8d3e-aaea74c66778,Wall Assisted Hamstring Walk,hamstrings,lower_back|adductors|gastrocnemius,,,,beginner
+7e217e49-9603-4d40-ab68-f83ee11b5cf3,Wild thing pose (right),back,,bodyweight,,,beginner
+7e35442f-7c48-4d32-8e18-2761542f9b17,Plank,abs,,bodyweight,core,,
+7f2664b3-8108-458d-9535-7d14af3cf955,Toe Touchers,core,,bodyweight,,,intermediate
+7f8e01f5-2b17-487f-aa3a-5614b629ade2,L dumbbell raises,full_body,,dumbbell,,,intermediate
+8085b2a3-fc64-478c-b93a-bf86dab46fc0,Mountain climbers,core,,bodyweight,,,
+808799af-013a-4f71-94e7-3fdea59b9ecf,Reverse lunge to knee drive,quads,,bodyweight,knee_dominant,,intermediate
+80b6b175-77a8-48ac-9a09-495d114d88ef,Backward lunges,quads,,bodyweight,knee_dominant,,intermediate
+812f7c37-8718-4fa6-8ad2-9c1080da9873,Incline Dumbbell Row,back,,dumbbell,horizontal_pull,,intermediate
+8180c05c-73e5-4de1-bb90-0b5e0d80c4c9,Hang Snatch,full_body,,barbell,,,advanced
+82610c61-8595-4814-a657-662932c9081d,Wide Grip Smith Machine Upright Row,shoulders,,machine,horizontal_pull,,intermediate
+82bc1bbb-e706-4fb6-a02d-6e3948dd6343,Walking Lunges - Better version,quads,,bodyweight,knee_dominant,,
+83a25d92-34c9-43cd-aeac-6af796aa9c6b,Squats to knee,quads,,bodyweight,knee_dominant,,intermediate
+83b448e2-7782-42ff-bcf6-1ce7a7e9a5a4,Hip Circle hops,glutes,,bodyweight,,,intermediate
+83df9077-41ca-4376-b5de-f4ea0393b6f8,Standing Quad Stretch (L),full_body,,bodyweight,,,beginner
+843c04e2-6344-48ad-8641-0321a60dbb63,Reclined butterfly,glutes,,bodyweight,,,beginner
+84497aca-5092-4038-bf3c-3e9beeae9f8b,Side plank pose (right),core,,bodyweight,core,,beginner
+844b8994-0c7a-477d-ab48-91b2d8ef75b0,Leg Press,legs,glute_max|hamstrings|adductors,machine,,,beginner
+8456ccc7-a3af-4d7d-8524-2ed90c57fc9e,Smith Machine Smith Calf Raise,calves,gastrocnemius|soleus|tibialis_anterior,machine,,,beginner
+8503592c-a179-456b-9417-5fb5e84fad1a,Cable Hip Abduction,glutes,,cable,,,beginner
+851015b9-546b-425d-81f3-ac6b7493a784,Seated Leg Curl,legs,,machine,hip_hinge,,
+8540be69-f287-4af1-918b-01968b7a48a8,Seated Shoulder Squeeze,full_body,,barbell|bodyweight,,,intermediate
+854b33d7-6d88-4a67-a5d5-4e7e2983b140,back stretch,lower_back,hamstrings|glutes|upper_back,,,,beginner
+8577f8c3-283b-472b-b5cf-d0eaa8e84762,Calf gas peddlers,calves,,bodyweight,,,intermediate
+857fa3a7-6b75-4329-9bb0-297db6b9f761,Side to side squat,quads,,bodyweight,knee_dominant,,intermediate
+85a71ed6-caf0-4b0c-aa70-0419d8f81157,Crab walk to squat,quads,,bodyweight,knee_dominant,,intermediate
+85d78505-04b8-4cf6-b277-c215eeb462a7,Oblique Crunches,core,,bodyweight,core,,intermediate
+865864f7-f65e-4ea1-9e43-47fc0881fc00,Warrior I (left),glutes,,bodyweight,,,beginner
+86a5f361-6b81-4ab7-a769-c32ca56d5ae4,Cable Hip Abduction,glutes,,cable,,,beginner
+86e3a801-0f1c-4424-851f-4826c75d8f48,Seated Calf Raise Machine,calves,,machine,,,beginner
+8735c2a0-5c44-4a2d-ba45-932ba4d372cd,Switching mountain climbers,core,,bodyweight,,,
+874ef2ee-909f-44db-bd03-25ffd1e24a0d,Puppy pose,back,,bodyweight,,,beginner
+87820d5e-9377-493c-a924-cc1d4750859b,First Toe Curl with Towel,forearm_flexors,tibialis_anterior|peroneals|soleus,,elbow_flexion,,beginner
+8796655f-6390-4ae1-a143-1fe6cde817cb,Decline Chest Press Machine,chest,front_deltoids|triceps|serratus_anterior,machine,,,beginner
+87a9f879-77ef-4dbe-8e8e-b15fea5052a7,Bicycle punches,core,,bodyweight,,,intermediate
+87cb06b9-6563-4676-b796-b02f68af48b5,Reverse warrior (left),quads,,bodyweight,,,beginner
+88116de4-0c5d-4985-8905-156fd03d7eb9,Good Mornings with barbell,full_body,,barbell,hip_hinge,,
+88d0a597-e95d-4c1a-a296-aa7315c3a53b,Pyramid pose (right),hamstrings,,bodyweight,,,beginner
+89b62000-867f-4f98-b24c-ad9b5708d015,Chair sit ups,core,,bodyweight,,,intermediate
+89fc3afb-7650-4bcd-9f82-726dd15e6600,Squat to alternating toe taps,quads,,bodyweight,knee_dominant,,intermediate
+89fffd4f-96b2-4833-8b3c-817a0aadb507,Good mornings,full_body,,bodyweight,hip_hinge,,
+8a0a9a9f-ff9b-449f-ba4a-d30bfbc9ca2d,Jump squats,quads,,bodyweight,knee_dominant,,
+8b749c78-6f8d-46d7-ab75-bb42ed161ae1,Standing Hamstring Stretch (L),hamstrings,,bodyweight,,,beginner
+8bbcc469-9283-4776-a12c-882060dd396c,Declined Push up - 56,chest,,bodyweight,horizontal_push,,intermediate
+8bc22d59-cc73-483b-b12c-515e974f39a6,Jumping jacks,full_body,,bodyweight,,,intermediate
+8be51cd5-3ed1-489e-9975-5d9141880055,High plank alternating single leg knee tuck,core,,bodyweight,core,,
+8cd64184-db39-4c0d-90fe-859c4661aa95,Straight arm circles,shoulders,rotator_cuff|upper_back|serratus_anterior,bodyweight,,,beginner
+8d3afa33-7191-4f69-a9f6-81b20f55dd38,Preacher Curl,biceps,,machine,elbow_flexion,,intermediate
+8d5a28d5-9aa2-4d63-bdc4-3e6e746e9d0d,Side plank up and down (left),core,,bodyweight,core,,
+8dcb1591-348a-4809-9abf-0a1679a7a52a,Dumbbell Side Bend (R),core,,dumbbell,,,
+8dcf57f2-24d8-4f4d-802c-2eacbe9d578f,Crescent lunge (left),quads,,bodyweight,knee_dominant,,beginner
+8e75c181-9db4-4e20-8fa7-be744f820f95,Cat pose,back,,bodyweight,,,beginner
+8e7c3c00-5f0b-40b1-b64d-84b78fa6ec93,Plow pose,hamstrings,,bodyweight,,,beginner
+8ef75730-0d30-4063-b6ff-242725cf8c29,Incline Dumbbell Press,chest,,dumbbell,,,beginner
+8f181782-a135-49c5-91df-de5985c69ac7,Low Cable Crossover,chest,,cable,,,intermediate
+8f2f2d63-4e39-408b-b450-f88c27d8ae1a,Deadlift with Kettlebell,full_body,adductors|traps|calves,,hip_hinge,,beginner
+8f35f8d8-b982-44af-8b71-4254b5be2532,Head Turns Neck stretches,neck,sternocleidomastoid|cervical_extensors|upper_traps,,,,beginner
+90421a51-69d9-4f27-9076-847dff2d882a,Smith Machine Lunge,quads,,machine,knee_dominant,,beginner
+90596c5a-056c-4af1-a992-a6ffaadd8999,Jump Squats - Squat Jumps,quads,,bodyweight,knee_dominant,,
+9089468c-a43c-4486-892e-557485a39245,Single Arm Cable Front Raise,shoulders,,cable,,,beginner
+90924318-0ca7-46ec-9e87-36b80e02196f,Calf stretch (left),calves,,bodyweight,,,beginner
+909e8b98-9e33-4a45-8bfa-3b0d4a9cef56,Switching lunges into Burpees (no jump),quads,,bodyweight,knee_dominant,,intermediate
+90a03a51-07e2-4acd-b893-d5c58a273587,Reverse Preacher Curl,forearms,,barbell,elbow_flexion,,intermediate
+90f429f5-8d29-4ff7-a993-a904d378803d,Half frog pose (left),glutes,,bodyweight,,,beginner
+911577a1-55e3-4bf2-b7a0-6456422c3393,Squat to Cable Row,back,,cable,horizontal_pull,,intermediate
+913dc03f-d923-43c5-9e7f-461c26770ee1,Smith Machine Lunge,quads,,machine,knee_dominant,,beginner
+920d96cd-7857-4720-9bea-21b23b124b64,Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+921feb95-16c7-4fbc-88e7-472f35ffae2e,Jump squat to backward lunge,quads,,bodyweight,knee_dominant,,
+9225c7c5-66a0-42c5-8de4-866389741736,Chest and shoulder,full_body,,bodyweight,,,intermediate
+926f4125-2676-45a8-96ee-2b6ace422494,Chest Supported Row Machine,back,rear_deltoids|biceps|forearms,machine,horizontal_pull,,beginner
+928d2978-b0a4-4619-858d-106a5c99e507,Garland pose,glutes,,bodyweight,,,beginner
+92d81e10-c495-4bf9-b205-a079f8711097,L-sit to tucked L-sit,core,,bodyweight,,,advanced
+93e53831-f499-4d0b-b266-120445c24555,Oblique Crunches,core,,bodyweight,core,,intermediate
+948e5256-8830-43b3-a28a-ddcb050373ed,Kettlebell Turkish Get-Up (Lunge style)(1),quads,,,knee_dominant,,
+94b012da-2a8d-449c-8a25-80cc1b0a1ba7,Standing Low Cable Row,back,,cable,horizontal_pull,,intermediate
+94e15f81-eee6-418c-9c25-6201b6c9f23e,Kettlebell Deadlift,ketllebell,,,hip_hinge,,
+94e2b3e2-d8e5-4f3b-8b77-5368023e25eb,Mid Row Machine,back,,machine,horizontal_pull,,beginner
+94f48c8b-042f-4df8-9805-43e4eca8573f,Seated front raises,front_deltoids,upper_chest|traps|serratus_anterior,dumbbell,,,beginner
+952c06b0-359b-4e38-adfd-c352723ab865,Leg Press Calf Raise,calves,,machine,,,beginner
+95334bcd-2aa9-4c42-a846-4944c08b9a66,High toe touches,core,,bodyweight,,,intermediate
+954de3a1-ff07-403b-9ad3-c172b2d90171,Leg Extensions,legs,hip_flexors|tensor_fasciae_latae,machine,knee_dominant,,beginner
+95640151-0b58-4872-94de-a14680227a66,Dips parallel bars,lower_chest,triceps_long_head|front_deltoids|serratus_anterior,machine,horizontal_push,,intermediate
+95a95a22-308a-4804-af36-7190b48b1ae5,Inclined diamond push up,chest,,bodyweight,horizontal_push,,intermediate
+95b3c40f-4a12-44e6-ac2e-cd7ce4a3cc3c,Smith Machine Upright Row,shoulders,,machine,horizontal_pull,,beginner
+95fb26cd-a80a-4d69-92a0-af6bf54128bc,Cable Pull-Through,legs,adductors|abs|forearms,cable|machine,,,beginner
+9632f636-81ae-4951-9830-4970bbd41e42,Seated Cable Row Underhand Grip,back,,cable,horizontal_pull,,intermediate
+9690f31a-ed99-446e-88db-2934b832f497,Dumbbell Rear Lunge,quads,,dumbbell,knee_dominant,,intermediate
+9696321a-6d49-4d1b-a42d-08fb34bb8323,Dumbbell floor chest press,chest,,dumbbell,,,intermediate
+97f48a58-e7a9-4179-88e2-f1a16feb68ca,Dumbbell fly,chest,,dumbbell,,,
+980a6af6-f72f-4e21-bfcf-4253622d507d,Plate Front Raise,shoulders,,barbell,,,beginner
+98543b7d-bf77-48b2-b0e1-f17ae61e3fc2,Kettlebell Farmer Carry,ketllebell,obliques|calves|upper_back,,,,beginner
+9898b03d-3337-4ea6-93d6-812d2004693b,Step Up No Equipment,quads,glute_max|calves|hamstrings,,knee_dominant,,beginner
+98f659d5-466b-4c23-803c-85cf32f2377c,Hollow Body Hold,bodyweight,,,core,,
+9a68f965-4e58-4b5b-87d5-c44929dd1f39,Banded squat,quads,calves|erector_spinae|hip_flexors,band,knee_dominant,,beginner
+9a8e40b3-446f-4362-9df4-461931927889,Dumbbell wrist curls,forearms,,dumbbell,elbow_flexion,,intermediate
+9acaf8fd-1e81-4106-8d86-921b013f36c0,Arch Skydiver,erector_spinae,glute_max|rhomboids|lower_traps,bodyweight,,,beginner
+9ad86735-3149-48fa-add4-705598dc149e,Farmers walk,forearms,,dumbbell,,,intermediate
+9b0e714f-6b42-40d9-941c-71bca4da5eef,Knee pseudo pushups,chest,,bodyweight,,,intermediate
+9c454a78-ff62-49a9-9879-127b48d6f2ea,Push up hold,chest,,bodyweight,horizontal_push,,intermediate
+9d46942e-53df-455c-a996-8936145ab8d2,Push-Ups - Close Triceps Position (Diamond push ups),chest,,bodyweight,horizontal_push,,intermediate
+9d525d35-2c5f-45c9-a88c-56f8526d2177,High plank to side plank,core,,bodyweight,core,,
+9d5a2722-801b-4741-8d9b-11e9a3a4ae2d,Devil press,full_body,,dumbbell,,,intermediate
+9ddd0baa-fa4b-4f5a-8dd4-3a68dc557563,Cable Fly - High to Low,chest,front_deltoids|serratus_anterior|biceps,cable|machine,,,intermediate
+9eb19f30-37d0-4aca-9e2d-c90a65f7b07b,Dumbbell Bench Press incline,upper_chest,front_deltoids|triceps|serratus_anterior,dumbbell|bench,,,intermediate
+9f3f94f9-275b-4c5c-bc97-0e5826023599,Seated Low Cable Curl,biceps,,cable,elbow_flexion,,beginner
+9fb9d7f3-6833-4f8d-97ce-f487f8fd5eca,Romanian Deadlift,hamstrings,,barbell,hip_hinge,,
+9fd5a38f-6dc0-40dd-898f-c5ec90cec9c3,Kettlebell Thruster,ketllebell,triceps|core|traps,,,,intermediate
+a0395420-b67f-4ddd-965d-30d4a489f489,Dumbbell Bench Press,chest,,dumbbell|bench,,,
+a04b709a-b24b-497b-af41-66544e152b4b,Front Raise,front_deltoids,lateral_deltoids|traps|core,dumbbell,,,beginner
+a07157e6-32c0-4380-ad71-55afc02369ec,Halo with dumbbell (L),shoulders,,dumbbell,,,intermediate
+a097abc2-16ac-413a-86e4-444a7ce1fa43,Seated Leg Curl,hamstrings,,machine,hip_hinge,,beginner
+a16a574a-28bd-4010-bcda-b9f066b381e4,Heels to Butt,full_body,,bodyweight,,,intermediate
+a1b684f7-6cf3-41a7-9c1f-2321a8e0847a,Lying Dumbbell Tricep Extension - One arm,triceps,,dumbbell,elbow_extension,,intermediate
+a299ccb1-0604-4d47-a5c1-19d5ca0e8b42,Single Arm Dumbbell Row,back,,dumbbell,horizontal_pull,,beginner
+a2ad1f3d-ac82-4d67-915c-6bd4f83e3813,Rack Pull,back,glutes|hamstrings|forearms|quads,barbell,,,intermediate
+a363775e-2aa5-49cb-ac17-7aa137d5d47b,Barbell Shrug,shoulders,rhomboids|forearms,barbell,,,beginner
+a36c63b9-c3d4-432d-a135-1ca81a162d35,Boat hold,core,,bodyweight,,,intermediate
+a46c036e-f0f6-4c03-8216-cc80da58ee3d,Dumbbell Discus (L),full_body,,dumbbell,,,intermediate
+a4715d5c-446e-4937-a25a-254652773990,Burpee (No jump) into high plank with shoulder tabs,core,,bodyweight,core,,
+a4bd22f6-d98f-47da-9523-ceb6894b9922,Half boat pose,core,,bodyweight,,,beginner
+a5d77dca-e151-4f73-aadb-890366fe8abf,Mountain climbers into shoulder taps,core,,bodyweight,,,
+a5eb6aec-09a0-428e-a5c1-13a0897416a4,Russian twists into seated knee tucks,core,,bodyweight,core,,intermediate
+a61479a9-fc68-4b4b-9e4d-2f65cd41defa,Child's pose,back,,bodyweight,,,beginner
+a62f7e6f-99b3-49cf-a02e-c5146db97da3,Glute Bridge (Bodyweight),bodyweight,,bodyweight,hip_hinge,,beginner
+a64ffb04-76a7-431a-a9a5-6addeab61813,Barbell Ab Rollout,core,,barbell,,,intermediate
+a6a9ea7b-c868-4924-842a-9c3232698c3b,Cable Lateral Raise,shoulders,,cable,,,beginner
+a921697a-e1ec-4941-bffd-f99e69b305b4,Dumbbell Concentration Curl,biceps,brachialis|brachioradialis|forearm_flexors,dumbbell,elbow_flexion,,beginner
+a95a735d-411f-4edd-abd5-5f00e79874d4,Pull Up (Neutral Grip),back,biceps|forearms|rear_deltoids|middle_traps,bodyweight,vertical_pull,,intermediate
+a97548ad-e559-4380-a6b0-50cc210031b2,Leg raises,core,,bodyweight,,,intermediate
+a97c208e-1c40-4410-b51a-a86e5cc37a04,Chameleon push up to mountain climbers,chest,,bodyweight,horizontal_push,,
+a9ab8609-e40c-44e1-9e0f-a86c3794662c,Incline Dumbbell Lateral Raise,shoulders,,dumbbell,,,intermediate
+a9db8a1f-87ac-45a6-876f-7c76bc4d5d8f,Shoulder press - Overhead press - Military press,shoulders,,machine,,,
+a9f277ce-cbc2-4223-96e5-baab4a926f92,High Knees,full_body,,bodyweight,,,intermediate
+aa3d8f09-8870-4ec1-aada-7760020dfeaa,Cable Fly Low to High,chest,front_deltoids|serratus_anterior|biceps,cable,,,intermediate
+aa60f379-a493-46d2-8e03-3ba2277f3e78,Star Jump Burpees,full_body,,bodyweight,,,intermediate
+ab008d35-2e2f-482e-810a-b2cb6ecf0bde,Trap Bar deadlift,glutes,core|forearm_flexors|calves,barbell,hip_hinge,,intermediate
+ab1681a6-93a1-4e51-ac8c-c76f02ef3737,Behind the Neck Rope Pulldown,back,,cable,,,advanced
+ab522399-6b5e-4a37-aa7a-47d2ec862631,Cable Tricep Pushdown,triceps,,cable,elbow_extension,,beginner
+ab569da1-869a-4f74-b7f8-2f0a6e90e547,Kettlebell Turkish Get-Up (Lunge style) v2,quads,,,knee_dominant,,
+ab582577-f6d5-4f62-9f5a-220995d7910f,Smith Machine Step-Ups,quads,,machine,knee_dominant,,beginner
+abd551ed-0fb5-4db7-a9d3-e9a2466da469,How to get out of bed,core,obliques|hip_flexors|erector_spinae,bodyweight,,,beginner
+abfd0396-b9b3-41b3-b8ec-88ce2faf0462,Hip flexor stretch,hip_flexors,rectus_abdominis|erector_spinae|tensor_fasciae_latae,bodyweight,,,beginner
+ac0cb7cb-0988-4591-9d99-716502691f26,Plank jack into jumping jacks,core,,bodyweight,core,,
+ac256206-2279-44dc-ab5e-94d6e7d9e8a6,Incline Barbell Front Raise,shoulders,,barbell,,,intermediate
+ac6026af-173a-4357-ac12-2c7440a71a5d,Kneeling jump squat,quads,,bodyweight,knee_dominant,,
+ac7982bb-1a81-4870-ae78-ce37bb485601,Dumbbell One-Arm Upright Row (L),back,,dumbbell,horizontal_pull,,intermediate
+acaa8104-8a71-43bb-83ca-6a5c8085a3d8,Over and under (Left),full_body,,bodyweight,,,intermediate
+accf9858-fd32-4f43-aa4d-0bd0f53d7498,Bear crawl to pike push up,chest,,bodyweight,horizontal_push,,intermediate
+ad241fc8-3d05-4ce7-a950-45380497cdc0,Dumbbell Pulse Squat,quads,hamstrings|adductors|calves|core,dumbbell,knee_dominant,,intermediate
+ad7e4bc7-a8d8-4aa7-978f-e130aeb49e8b,Gate pose (right),core,,bodyweight,,,beginner
+ad8e32a3-091a-4b10-a316-8984807ce817,Bent Over Two-Arm Long Bar Row - 105,back,,barbell,horizontal_pull,,intermediate
+ad8f28d1-cf33-4e80-9686-0742404566e3,Resistance Band Row,back,biceps|rear_deltoids|forearms,band,horizontal_pull,,beginner
+ae4a7149-9cfb-481e-bece-49ec526c8487,Machine Glute Kickback Both Legs,glutes,,machine,,,beginner
+ae8be22d-584f-4c34-add8-d25383ba90de,Barbell walking lunges,quads,,barbell,knee_dominant,,
+ae9e4d04-17ed-4235-930a-89ce847e8507,Step Squat Pulse,glutes,glute_med|hip_flexors|abductors,,knee_dominant,,intermediate
+aeea2f3a-bcd5-44a0-9ca7-57977001e382,Smith Machine Bent Over Row Overhand Grip,back,,machine,horizontal_pull,,intermediate
+aefc423a-3e4b-4ca0-89c8-62484e13f3c0,Happy baby pose,glutes,,bodyweight,,,beginner
+af0e7c20-cd4a-4c26-ac10-1ef6bdaaf35e,chair Twists,obliques,external_obliques|internal_obliques|hip_flexors,,core,,beginner
+af2d3f82-2917-4e21-8df6-7acaf5f78ad5,Laying leg raises to windshield wipers,core,,bodyweight,,,intermediate
+af494781-9fba-41df-b403-79d04db6deae,Dumbbell Side lunge,quads,,dumbbell,knee_dominant,,intermediate
+af545111-e56a-4731-ba48-2d4ce750bc8e,Dumbbell One-Arm Shoulder Press (L),shoulders,,dumbbell,,,intermediate
+af606d87-c83f-46cd-b72f-e554708eb94e,Hip Adduction Machine,quads,glute_med|hamstrings|transverse_abdominis,machine,,,beginner
+b0c07cf7-545e-4c74-8224-3355a2669fb2,Upright Barbell Row,back,,barbell,horizontal_pull,,intermediate
+b0cc57d7-7d6b-48ad-a9bc-a3dc309ea72b,Low lunge (left),quads,,bodyweight,knee_dominant,,beginner
+b126da42-0645-491c-83ae-e058822e074b,Half burpee,full_body,hamstrings|calves|triceps|abs,bodyweight,,,beginner
+b150868d-c9c5-4f0f-a407-93d7e34b6ddc,Dumbbell Shrug,back,forearm_flexors|rear_deltoids|neck,dumbbell,,,beginner
+b160ea44-725a-415f-919a-4edad64d3ce3,Burpee (No jump),full_body,,bodyweight,,,intermediate
+b1b1d4cd-c4eb-47cc-a3f8-478eb474999f,Half split (right),hamstrings,,bodyweight,,,beginner
+b1c0e80d-329c-4910-8b23-37daa8ea17da,Goblet squat,quads,,dumbbell,knee_dominant,,
+b2073383-2f4c-419e-95f3-0e1cd4f02c34,Cable Deadlift,full_body,,cable,hip_hinge,,beginner
+b219f35b-9bca-4eb5-a010-e0ded6208942,Dive bombers,full_body,,bodyweight,,,intermediate
+b21be739-d8af-416f-83e4-fc65509a9a28,Bear plank ankle taps into jumps,core,,bodyweight,core,,
+b26cc5dc-4ecf-4e02-9528-02aa561e2b0e,Smith Bench Press (Flat),chest,,machine|bench,,,
+b2a0896a-3900-4a82-bd7d-30e4b74687e9,Lying oblique crunch,core,,bodyweight,core,,intermediate
+b2ad9e74-2fdf-4cd2-b748-1449f2622216,Lateral leg swing,hip_flexors,abductors|adductors|tensor_fasciae_latae,,,,beginner
+b2eabe7f-7b04-456e-95b2-7aa3eaa88b9d,Get ups (no jump),full_body,,bodyweight,,,intermediate
+b35c3787-5974-4cca-b3d5-c28f7efa1472,Cable Rope Tricep Pushdown,triceps,,cable,elbow_extension,,beginner
+b3d09e97-408c-4eb9-8900-ddc99a9a4218,Smith Machine Shrug,back,,machine,,,beginner
+b3d44ba8-5fdd-4a7e-ace2-1b12d5901b0b,Cuban Press,shoulders,,dumbbell,,,intermediate
+b3fdc5d4-1225-4f12-8b42-86fc0617aeb6,Forward and backward lunge,quads,,bodyweight,knee_dominant,,intermediate
+b41a30a8-8a02-4101-a0a9-589efdbf786b,Push ups,chest,,bodyweight,horizontal_push,,intermediate
+b43b051d-cd66-41c7-8772-f81797ce872c,Barbell Glute Bridge,glutes,,barbell,hip_hinge,,
+b4824ea0-4d0a-418e-b22d-462b11dc9992,Cable Rope Pullover,back,,cable,,,intermediate
+b5869e95-3109-43ad-b7b5-34e6dad882f0,Dumbbell plank row,back,,dumbbell,horizontal_pull,,
+b627fc87-cf16-443b-b87d-d1ba39ed8ca9,Superman crunches,back,,bodyweight,core,,intermediate
+b66b9294-0bfe-494f-b0aa-09602a7b5e41,Smith Machine Bent Over Row Underhand Grip,back,,machine,horizontal_pull,,intermediate
+b771f714-b1dc-49f8-8df5-9f8ae35bbbae,Bird Dog,bodyweight,obliques|glute_max|rotator_cuff|transverse_abdominis,bodyweight,,,beginner
+b78e6b13-cc46-49d6-a205-f71b65e6090e,EZ Bar Reverse Curl,brachioradialis,biceps|forearm_flexors|front_deltoids,barbell,elbow_flexion,,beginner
+b7a93a70-b9fc-469f-8397-5a2e8a8877c8,Seated flutter kicks,core,,bodyweight,,,
+b7c0fca8-8f01-4c48-bea3-b691939e92bc,Lever Squat (Medium Stance),quads,,machine,knee_dominant,,beginner
+b853fd08-4739-4239-a825-8c31826d54ba,Barbell calf raises,calves,,barbell,,,beginner
+b867d101-cc16-42ff-a057-fe0de4a2d8c6,Flutter kicks,core,hip_flexors|quads|obliques,bodyweight,,,beginner
+b8fb88dc-d819-4e65-86c8-7ea13703afdb,Cross Body Hammer Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+b92cf13a-2241-45c5-b2ba-d5043c9b3ea0,Singel arm push up (L),chest,,bodyweight,horizontal_push,,intermediate
+b93996af-6946-4cf8-88e0-792b1f545750,Neutral Grip Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+b94885af-ac1a-4fd6-ac86-39da579a215d,Sage marichi I pose (left),hamstrings,,bodyweight,,,beginner
+b958f3b6-db0c-492a-8895-445af0989161,Elevated Calf Raises,bodyweight,,bodyweight,,,
+b9e7733d-fbba-413a-98d9-71803ae1edb4,Deadstop pushup to superman crunch,chest,,bodyweight,core,,intermediate
+ba260d30-e576-4f0b-8d9b-c14df6d419ee,Wall Sit,quadriceps,glute_max|hamstrings|calves|core,,,,beginner
+ba7727ee-e0bb-402c-99fb-c27eadd440f7,Jumping Ropes  skips,full_body,,bodyweight,,,intermediate
+babede27-efe6-473b-85a8-6ef01ce3fab7,Lying Barbell Skull Crusher,triceps,,barbell,,,intermediate
+bae56fcf-a610-45e8-a577-238c5ee6567b,Glute bridge,quads,,bodyweight,hip_hinge,,
+bb2079e0-031b-4b5c-873d-8c5202fc33d7,L-sit hold (dip bar or paralettes)1,chest,,bodyweight,horizontal_push,,advanced
+bb30b96e-da77-44d7-aabe-d02a7bdcaa23,Cobbler's pose,glutes,,bodyweight,,,beginner
+bba8482e-3ddd-4c44-9b2a-90af81d040e9,Standing Inner-Biceps Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+bbac448a-df15-415e-a391-8b1d400df2bf,Dumbbell deadlift,quads,,dumbbell,hip_hinge,,
+bbc9368f-e232-4081-bd5c-235c928eccb3,Leg Press Close Stance,quads,,machine,,,beginner
+bc2f34f4-07e6-4001-9dfe-8724be0d9d7e,Glute Kickback,cardiovascular_system,gastrocnemius|soleus|hip_flexors|tibialis_anterior,bodyweight,,,beginner
+bc6934d4-fe50-45ff-a40f-9d751f75c4a2,Kettlebell Halo,ketllebell,rotator_cuff|triceps|core|upper_back,,,,intermediate
+bc8a31d3-6f32-4f5d-a0c9-9935e76b2071,Horizontal Leg Press,quads,,machine,,,beginner
+bcd8c3d9-5c9b-4a97-8b30-0e85de2488ff,Leg Press,quads,,machine,,,beginner
+bcfe96da-42de-445b-85bc-44afa2789f77,Lunges,full_body,,bodyweight,knee_dominant,,
+bda13030-b09a-4fec-ada4-ec2d528db0d7,Spider Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+bda6ae04-2619-43a7-8261-490d85444eb2,Dumbbell One-Arm Upright Row (R),back,,dumbbell,horizontal_pull,,intermediate
+be5fae80-4b05-4196-8f3f-61d2c106ab32,Mountain pose,full_body,,bodyweight,,,beginner
+be7a8c2a-db1b-405f-a61f-96f26c628c6c,Barbell Romanian Deadlift,hamstrings,glute_max|spinal_erectors|forearm_flexors,barbell,hip_hinge,,intermediate
+beb4aef0-332a-4be7-9839-d51e65772e33,Toes to bar,full_body,,bodyweight,,,advanced
+beee4955-3dbc-4aa1-be35-d01666713f72,Dumbbell get ups (R),full_body,,dumbbell,,,intermediate
+bf22d9ad-1aac-47e5-8e6f-f6072b868a6d,Machine Chest Fly,chest,,machine,,,beginner
+bf3b7d97-363c-45d7-91a3-43491c5a6f2a,Pseudo push ups,chest,,bodyweight,horizontal_push,,intermediate
+bfa76dd0-298b-4c70-b1fa-e662289d2ebe,Standing Low Cable Curl,biceps,,cable,elbow_flexion,,beginner
+bfce2271-bf6b-4a45-9038-5c9fa1935990,Dumbbell Side lunge (L),quads,,dumbbell,knee_dominant,,intermediate
+c02cd05c-b615-4b43-a2f5-6c4931e0619b,Wrist rotation,forearms,biceps|front_deltoids,bodyweight,,,beginner
+c0320e6b-e7e0-4cef-ba0d-dd5e66b2ebf1,Revolved triangle pose (left),core,,bodyweight,,,beginner
+c0386f57-3cd2-42e9-9c19-d2d3dc9aa3cb,Half squat get up ),quads,,bodyweight,knee_dominant,,intermediate
+c0bd82fb-5ad6-4390-a060-dd46c1a6bea2,Barbell Overhead Press,shoulders,triceps_long_head|serratus_anterior|upper_traps,barbell,,,intermediate
+c0c8d00e-5640-462e-8cc3-422a14deb2fc,Side plank up and down (right),core,,bodyweight,core,,
+c1b55b30-7913-4590-87e1-6aac94b23df6,Sitting Pelvic tilts,lower_back,obliques|rectus_abdominis|spinal_erectors,,,,beginner
+c2266a05-5960-489a-aa74-90ac93c376b1,Toes to Sky,lower_abs,hip_flexors|obliques|quads,bodyweight,,,beginner
+c2410e7d-79c4-4593-82df-c42e8fd3450e,Push up burpees,chest,,bodyweight,horizontal_push,,intermediate
+c2595904-d93e-4807-a7fe-70019fce408f,Seated Cable Row close V bar,back,rear_deltoids|biceps|forearms|erector_spinae,cable,horizontal_pull,,beginner
+c265b4e3-ab8d-4141-9d7e-462e2c329d1b,Reverse fly plank to plank hop,shoulders,,bodyweight,core,,
+c2a135e7-1383-47c1-9757-4868ae9a8c55,Bear plank Shoulder taps,core,,bodyweight,core,,
+c2b2d15f-5841-45a2-87e4-503101f3422e,Plank to knee tap,core,,bodyweight,core,,
+c2fbe7d4-e9a5-41f8-b8eb-d903948d268b,1 Leg Left Right Hop over Cone,quads,gastrocnemius|soleus|glute_med|tibialis_anterior,,,,intermediate
+c3304243-1d9e-41b1-a01c-9ddd8f9edff8,Kettlebell Turkish Get-Up (Lunge style),quads,,,knee_dominant,,
+c38b24ea-e65d-4561-a0ca-8d578fa6bd32,Goddess pose,glutes,,bodyweight,,,beginner
+c3d00969-0a33-4a3f-b603-938c1014ca9f,Dumbbell Thruster,quads,,dumbbell,,,intermediate
+c424ec91-5260-4a23-800d-1a5e140f8320,Butt bridges,glutes,,bodyweight,,,intermediate
+c490cf34-6f30-421c-9dbb-d30b5f796efd,Sphinx pose,back,,bodyweight,,,beginner
+c4d91f02-e796-4992-a08d-531b1d4bb16b,Bear crawl shoulder tap to pike push up,chest,,bodyweight,horizontal_push,,intermediate
+c4f2aff0-d474-473a-ad7d-559033aac8b3,Bridge march,glutes,erector_spinae|quads|transverse_abdominis,bodyweight,,,intermediate
+c5a9becd-0051-47b0-9e75-ed52fedd6d44,One-Arm Dumbbell Row bench,back,,dumbbell|bench,horizontal_pull,,intermediate
+c5f49fc9-4673-4cae-8a12-6c5a4e4934a4,Push-Up (Decline),bodyweight,triceps_long_head|front_deltoids|abs,bodyweight,horizontal_push,,intermediate
+c60450d9-862c-4dd3-87b1-82f80349964d,Dumbbell fly - v2,chest,,dumbbell,,,intermediate
+c6453fa8-f869-43ed-8314-9fc093dc7351,Push-Ups (Decline),chest,,bodyweight,horizontal_push,,
+c67b0b0a-c636-4cff-9628-8ecd1e5482ca,Single leg glute bridge,glutes,erector_spinae|hip_flexors|abs,bodyweight,hip_hinge,,intermediate
+c6a81317-685a-4478-b7aa-30743ef15034,Seal jacks,cardiovascular_system,front_deltoids|pectoralis_major|glutes,bodyweight,,,beginner
+c6e3375f-ad53-425b-9313-72265c9212e2,In and out Shoulder tap push ups,chest,,bodyweight,horizontal_push,,intermediate
+c70ad438-dc0a-4933-8c68-81a09c6adaeb,Single-Arm Lat Pulldown,back,biceps|rear_deltoids|forearms,machine,vertical_pull,,intermediate
+c72f4458-a48b-4d9c-bc4f-ddc01f3a8eaf,Smith Machine Deadlift,full_body,,machine,hip_hinge,,beginner
+c794e5f9-f603-4f1a-a108-1989ff2b8215,Bear plank toe taps,core,,bodyweight,core,,
+c7c76fa8-908a-4ee0-977c-35f12057676d,Bent over Dumbbell Tricep Extension,triceps,,dumbbell,elbow_extension,,intermediate
+c7dead12-7c46-4533-a0e9-dbc882cc498b,Switching Lunges into Burpees,quads,,bodyweight,knee_dominant,,intermediate
+c809dc45-6a40-4060-a8ac-24f3c62358f7,Push up to toe touches,chest,,bodyweight,horizontal_push,,intermediate
+c811aaa0-7aa9-41c3-89f1-647feb729069,Side to side plank walk,core,,bodyweight,core,,
+c847178d-3b29-4a76-b8c6-da12de207bbf,Shoulder taps,full_body,,bodyweight,,,intermediate
+c8b7a380-562e-4ad2-8dfc-7a29b5c56418,Knee to Chest Stretch (L),full_body,,bodyweight,,,beginner
+c8f3362d-fb00-481e-b428-e0b17f4ae681,Barbell Sumo Squat,quads,,barbell,knee_dominant,,intermediate
+c90444fe-fd21-40d1-923f-5adba83e35bc,Dumbbell Pullover,lats,triceps_long_head|core|rhomboids,dumbbell,,,intermediate
+c9d2b9a8-7f3e-4b5f-9012-e8c17b80de07,Knee tucked Side plank up and downs (right,core,,bodyweight,core,,
+c9f7a5b3-9129-444d-817f-94be9a1162db,Stability Ball Plank,core,quads|glutes|erector_spinae,,core,,intermediate
+c9ff47ce-69d3-4b32-8eb4-6fdac8d8a9f2,Wide Grip Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e,Broad jumps,full_body,,bodyweight,,,intermediate
+ca7a2f9d-3af1-40cd-a33f-431f437a2902,Cable Preacher Curl,biceps,,cable,elbow_flexion,,intermediate
+cb06c2a3-ef02-4e60-b9ab-7d692fa97bc4,Camel pose,back,,bodyweight,,,beginner
+cbe360e8-fa98-4793-b327-c2769ac69943,Plyo Push-up,chest,,bodyweight,horizontal_push,,advanced
+cbedc7e1-a023-41fb-938e-f62e0ffdb7d2,Push Up Wide,chest,,bodyweight,horizontal_push,,
+cc3a2bb8-efcf-440d-9357-887ce0b04346,Quadriceps Roll,quadriceps,hip_flexors|core|shoulders,,,,beginner
+cca59a88-a42c-4630-ad1e-335e31c65717,Upper back and shoulder stretch (left),full_body,,bodyweight,,,intermediate
+cca9d3bf-daf9-421b-93ca-9e626d682807,Standing forward bend,hamstrings,,bodyweight,,,beginner
+ccd60696-7e2f-4611-b3b9-e5f11ddf4e78,Dumbbell Sumo Squat,glutes,adductors|hamstrings|core,dumbbell,knee_dominant,,beginner
+cd2bfdbe-71d7-4d3e-8b03-fc4a5ed73bf4,Cable Kickback,glutes,,cable,,,beginner
+cd6edab4-3f1e-477f-8a88-54f9c683c9de,Bulgarian split squat,quads,glute_max|hamstrings|adductors,bodyweight,knee_dominant,,intermediate
+cea24bde-a9ce-4de1-93e6-3c019e1520d2,Reverse Lunges,bodyweight,glute_max|hamstrings|calves|core,bodyweight,knee_dominant,,beginner
+cea594a5-f158-493b-adc2-4016ca1a0bd4,Single Arm Row,lats,biceps|rear_deltoids|forearms,dumbbell,horizontal_pull,,beginner
+ceaa0c34-9db0-4642-ad6a-c0125ad88c32,Wall Push Ups,chest,front_deltoids|triceps|core,bodyweight,horizontal_push,,beginner
+cf5916de-b5e4-434c-9cc3-20d729baec1e,Kettlebell Clean,ketllebell,lats|front_deltoids|calves,,,,intermediate
+cf8eef3a-8539-410a-9dac-da29caf914d6,Low Cable Curl V-Bar,biceps,,cable,elbow_flexion,,beginner
+cfa05b32-b753-4e84-a73f-1c2a92606930,Lying Dumbbell Skull Crusher,triceps,,dumbbell,,,intermediate
+cfa3229b-10a2-42cd-bdf0-4fa80ce51fd3,Drop dead push up into knee in,chest,,bodyweight,horizontal_push,,intermediate
+d059f2d7-4a9c-4f56-b754-55966afd5c1c,Sumo squats,glutes,adductors|hamstrings|core,bodyweight,knee_dominant,,beginner
+d06c3d04-aeb4-4b94-9a43-24e95201239c,Archer push up,chest,,bodyweight,horizontal_push,,advanced
+d0a73aa8-dc45-49dd-951d-de4825a74ada,Barbell Skull Crushers,triceps,forearm_flexors|front_deltoids|core,barbell,,,intermediate
+d0b4d724-b764-434e-a595-98c0d1ff76fb,Side plank pose (left),core,,bodyweight,core,,beginner
+d0fe829c-d734-4429-bcc1-7ac15f2e92e4,Psoas stretch,hip_flexors,abs|adductors|erector_spinae,,,,beginner
+d18679b0-3ce0-409b-9955-584976544f45,Close Grip Incline Dumbbell Press,chest,,dumbbell,,,intermediate
+d1faa0c0-7eac-4a49-8b40-9b3fa923d091,Incline Dumbbell Curl,biceps,,dumbbell,elbow_flexion,,intermediate
+d2122541-4c46-460f-be6a-7ea35e2d0624,Smith Machine Behind the Neck Press,shoulders,,machine,,,advanced
+d237c00f-e6f3-44f0-953b-5db4c970f873,Cable Rear Delt Fly,shoulders,,cable,,,intermediate
+d26ca6be-632d-4674-a520-6a2144d76137,Split squat (L),quads,,bodyweight,knee_dominant,,intermediate
+d30b1013-b7ae-47da-847e-e58e9ea770cc,One arm dumbbell fly,chest,,dumbbell,,,intermediate
+d33da8f6-37a9-4730-8399-c4c5be3a7f00,Knee push ups,chest,,bodyweight,horizontal_push,,beginner
+d39e64fd-25ce-4ab6-9d01-5674d92b5478,Seated Cable Row Wide Grip,back,,cable,horizontal_pull,,intermediate
+d3f23ea3-a3d3-46cd-940b-707efea0df5c,Cable Glute Kickback,glutes,,cable,,,beginner
+d4210b5a-f583-4039-8566-ed5a20e46eab,Dumbbell Scaption,shoulders,,dumbbell,,,intermediate
+d48bc33d-8daa-456a-9f07-32b42a3798e5,Clams side lying with knee lifts,glute_med,glute_max|hip_flexors|obliques|abductors,bodyweight,,,beginner
+d536723e-7e3f-460d-a6c5-e9993bfbec4c,Floor Press,chest,,barbell,,,intermediate
+d552a696-bf87-4bf7-9597-fa425d617874,Barbell Bench Press decline,lower_chest,triceps_lateral_head|front_deltoids|serratus_anterior,barbell|bench,,,intermediate
+d5dff683-d9a5-42ca-b325-47f7275f7def,Explosive sprinter lunge (right),quads,,bodyweight,knee_dominant,,intermediate
+d6c2798d-a077-41b9-9769-d5bd1a57caaa,Dumbbell Shoulder Press,shoulders,,dumbbell,,,
+d7078f6a-a0eb-47e6-9396-98b250afff34,Crab Walk,glutes,front_deltoids|calves|hip_flexors,bodyweight,,,beginner
+d749fe82-c106-48d7-9508-7ab1cb88ec1b,Chair Leg Extension,quads,hip flexors|core,,knee_dominant,,beginner
+d81d953b-b29d-438a-aeee-610523bca09d,Bulgarian split squat with Dumbbell,quads,glute_med|hip_flexors|erector_spinae,dumbbell,knee_dominant,,intermediate
+d8a67e85-0c9f-483d-b7fe-be049247ab1c,Dumbbell forward lunge,quads,,dumbbell,knee_dominant,,intermediate
+d8fcf6e7-3746-4f01-a943-fe45aed0fd31,Kettlebell Thruster,full_body,,,,,
+d921fc6e-a678-468b-9500-740437cb0265,Kettlebell Figure-8,ketllebell,forearm_flexors|adductors|rectus_abdominis|lower_back,,,,intermediate
+d93f6d37-76e1-4cdc-a39e-d39beabf97d5,Machine Shoulder Press,shoulders,,machine,,,beginner
+d9836ac9-8688-41b0-a99c-e03370f53c2c,Squats into fly jacks,chest,,bodyweight,knee_dominant,,intermediate
+d9df1e94-1051-407d-9c34-87720d1557a9,Explosive side to side push up,chest,,bodyweight,horizontal_push,,intermediate
+da022ba5-3a51-4861-9b25-232529d5de8e,Incline Machine Shoulder Press,shoulders,,machine,,,beginner
+da74be26-d3ba-403a-a16d-28ff3cf12396,Static Lunge on Machine,quads,,machine,knee_dominant,,beginner
+dadea1de-c228-4e36-99de-db68578de515,Dumbbell glute bridge,quads,,dumbbell,hip_hinge,,
+daeabed2-d92e-4de2-87c0-138bcc0009b4,Reverse Step Up,quads,glute_max|hamstrings|calves,,knee_dominant,,beginner
+db1a9d2c-5386-41aa-a84f-dad06ac7ea7c,Frog pose,glutes,,bodyweight,,,beginner
+db3c3c60-a406-45e8-a477-8c5c1bf41870,Revolved chair pose (left),core,,bodyweight,,,beginner
+db4a932d-2e11-4809-843e-cb3c1df4535b,Crescent lunge (right),quads,,bodyweight,knee_dominant,,beginner
+db7c0708-ea39-47cb-89c8-73e749abcfa6,Cable Hip Extension,glutes,,cable,elbow_extension,,beginner
+dbf6a8e4-19dc-4d01-8014-f195a1eb817c,Barbell Rows,back,,barbell,horizontal_pull,,intermediate
+dc848ac2-ca46-4c70-a8cc-dd2a76e546cf,Front Two-Dumbbell Raise,full_body,,dumbbell,,,intermediate
+dca87d2f-84de-4a2d-b0d8-2adcf68c10a8,Underhand Lat Pulldown,back,,cable|machine,vertical_pull,,beginner
+dd57e914-d0ef-4d6f-8724-d72f220b7422,Barbell Lunges,quads,glute_med|adductors|calves,barbell,knee_dominant,,intermediate
+dd76f6bd-dddd-4f97-bf96-29048ec2547e,Knee to Chest Stretch (R),full_body,,bodyweight,,,beginner
+ddfa0774-6077-4c9c-a590-1547fa987640,Goal Post Squeeze,middle_traps,rear_deltoids|rhomboids|upper_back,barbell,,,beginner
+de1d910d-89b5-4f79-9459-6fefa1dbf525,Lunges (Right),quads,,bodyweight,knee_dominant,,intermediate
+de5de9a5-08ca-462b-b704-eab3f48ab7b5,Seated Dumbbell Triceps Extension,triceps,,dumbbell,elbow_extension,,intermediate
+de70b78c-7dec-4a91-acc7-d75ae27eb765,Bent Over Dumbbell Rear Delt Raise,shoulders,,dumbbell,,,intermediate
+de7f1e4f-cb03-446d-b768-4a93baae1ab2,Barbell Incline Bench Press - Medium Grip,chest,,barbell|bench,,,
+ded0fb25-cb67-47a2-9a29-23e7f14ae6ac,Posterior upper arm stretch (right),full_body,,bodyweight,,,beginner
+dee6b124-faf4-4d03-a659-e49456892af1,Downward facing dog split (right),hamstrings,,bodyweight,,,beginner
+df37b949-000b-4b09-90a3-482d868ee55a,Froggers,full_body,,bodyweight,,,intermediate
+dfbfc890-af85-4be4-a8c6-782f666f538d,Lateral neck stretch (right),full_body,,bodyweight,,,beginner
+e0a7528b-5d24-4ddf-9d4c-d61958dc504c,Fire log pose (right),glutes,,bodyweight,,,beginner
+e17c7349-85bc-4608-a897-d8d2841a8b38,Standing One-Arm DBl Triceps Extension (R),triceps,,dumbbell,elbow_extension,,intermediate
+e1b68bd8-a3aa-45db-8d6f-cc470738a85e,Single Arm Lateral Raise,shoulders,,dumbbell,,,beginner
+e27c74a9-69aa-4b0f-aa5f-1c675d5fe26e,Reverse grip bent over rows,back,,dumbbell,horizontal_pull,,intermediate
+e30e5898-057a-48f9-b667-010ed488c3ea,Prone W to lifts,lower_traps,rotator_cuff|teres_minor|infraspinatus,bodyweight,,,beginner
+e396f5be-9c22-44ff-b825-d754d807f5fd,Boat pose,core,,bodyweight,,,beginner
+e3c47861-bcfa-41cf-a191-3524d8679a1c,Downward dog,full_body,,bodyweight,,,beginner
+e4241c30-f7d8-4051-85d7-7a95e221bf8c,Plank toe touches,core,,bodyweight,core,,
+e42e2ca3-664b-48bd-8cf7-e8a4313618bb,Standing Dumbbell Straight-Arm Front Delt,shoulders,,dumbbell,,,intermediate
+e5319ad1-2c9a-4442-b502-8ff972fc4dfc,Underhand Grip Cable Pushdown,triceps,,cable,elbow_extension,,beginner
+e60ce7d6-d899-4620-ac42-faa079614220,Incline Dumbbell Reverse Fly,shoulders,,dumbbell,,,intermediate
+e6286746-6da7-492e-9dc2-0688edeff3a9,Lunge With Spinal Twist,quads,,bodyweight,knee_dominant,,intermediate
+e6348f43-b8ab-4e91-a211-0d766e35c9fe,Push up jack plank into toe touches,chest,,bodyweight,horizontal_push,,
+e656576b-39d4-4623-a93d-c455bd640b01,Smith Machine Sumo Squat,quads,,machine,knee_dominant,,intermediate
+e6bd8a96-cc6e-4805-bb2d-6755c9350dd9,Child_s pose -Lower back,full_body,,bodyweight,,,intermediate
+e6c47dc5-3924-4b1d-a8ac-deb2ec1730aa,Standing High Cable Row,back,,cable,horizontal_pull,,intermediate
+e73256fc-b329-4dfa-834b-d0c485bcad72,Knee tucked Side plank up and downs (Left),core,,bodyweight,core,,
+e75d29c0-7af3-4e83-a351-6fff23443379,Front Barbell Squat,quads,core|erector_spinae|upper_back|hamstrings,barbell,knee_dominant,,intermediate
+e76eda64-fb67-4c90-b750-69d7a2e0f846,Warrior II (left),glutes,,bodyweight,,,beginner
+e7fa2b6f-4d2b-478a-a1c0-8bca51b04a13,Inchworm to pike push ups,chest,,bodyweight,horizontal_push,,intermediate
+e8a79472-7809-42d4-89cc-c3c351d86982,Deadstop push up into superman crunches,chest,,bodyweight,horizontal_push,,intermediate
+e8aacdde-8fce-438b-878b-3af1a611f2be,Dumbbell One-Arm Shoulder Press (R),shoulders,,dumbbell,,,intermediate
+e91bd54f-f605-491d-90e6-16515787389c,Dumbbell Row two arm bent over,back,biceps|rear_deltoids|forearms|erector_spinae,dumbbell,horizontal_pull,,intermediate
+ea1016da-2d73-4ff8-ad2a-9b36150d2f85,Dead Bug,bodyweight,,bodyweight,core,,
+ea7d466a-ecd9-4fcb-9a52-53716b513417,Chin-Up (Underhand),bodyweight,biceps_long_head|brachialis|lower_traps|core,bodyweight,,,intermediate
+ea856b4b-ef97-4fa6-81a1-269f060df9c5,Smith Machine Hip Thrust,glutes,hamstrings|quads|core|adductors,machine,hip_hinge,,intermediate
+eb37d0a0-1a45-482c-9c6a-1aef9744661c,Barbell Wrist Curl,forearm_flexors,wrist_flexors|forearm_extensors,barbell,elbow_flexion,,beginner
+eb57cdf4-30aa-4286-9f5c-a3994414c71d,Stability ball pike,abs,front_deltoids|quads|triceps,,,,advanced
+ebb04889-8d61-4172-9c51-65ebe6c73c75,Russian twists with flutter kicks,core,,bodyweight,core,,
+ec29a267-b5bc-406d-ae9a-043887d1dc06,Standing Reverse Curl,forearms,,barbell,elbow_flexion,,beginner
+ec545ed7-4724-454a-b730-37a425e80080,High Cable Fly,chest,,cable,,,intermediate
+ec7c9b41-cfd7-414a-8fbe-8c46f0d3af78,Seated Dumbbell Press,shoulders,,dumbbell,,,
+ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb,1 Leg Lateral Broad Jump,quads,glute_med|hip_flexors|tibialis_anterior,bodyweight,,,advanced
+ed1451e4-ceef-4aa9-a883-24b733b83edd,Butterfly crunches,core,,bodyweight,core,,intermediate
+ed54736f-d36d-46fa-ac16-08a44612eded,Side jump skaters,full_body,,bodyweight,,,intermediate
+eda711dc-d4c5-49e6-b323-d8180e41a871,Dumbbel calf raises,calves,gastrocnemius|soleus|forearm_flexors,dumbbell,,,beginner
+ee4ec1d3-6f4c-42bf-b338-ac175213a4e7,Chest Press Machine flat,chest,front_deltoids|triceps|serratus_anterior,machine,,,beginner
+ee79ed25-3455-4730-acd9-5173de6085c9,Ab Bridge Complex,core,front_deltoids|spinal_erectors|glute_max|quads,bodyweight,,,beginner
+eee3eb70-4e2c-430e-9c33-ed646287d9c2,Shoulder Press Machine,shoulders,triceps_long_head|upper_chest|serratus_anterior,machine,,,beginner
+ef04d753-d34b-4457-bcdb-0ec447d55101,Standing Single Leg Curl,hamstrings,,machine,hip_hinge,,beginner
+ef55de8d-6d24-4983-99e0-0f50286c7a1e,Seated Barbell Military Press,shoulders,,barbell,,,intermediate
+ef8b7a4f-a209-425b-90dd-d20c402c5b0d,Seated eagle arms (left),shoulders,,bodyweight,,,beginner
+efde17d4-3987-4416-9142-825a18329245,Single Arm Low Cable Curl,biceps,,cable,elbow_flexion,,beginner
+eff7ae70-1117-4d71-a35f-15db81a16242,One-Arm Kettlebell Military Press,shoulders,,,,,intermediate
+f03c074c-398c-4c33-abd9-980ec883fdbd,Cable Bicep Curl rope,biceps,brachialis|brachioradialis|forearm_flexors,cable,elbow_flexion,,beginner
+f181cc8e-9816-4205-b025-3b23cb30720b,Dumbbell Lying Rear Lateral Raise,shoulders,,dumbbell,,,
+f1c43226-fa20-4c2e-af66-0cd680f937df,Dumbbell Tricep Kickback,triceps,rear_deltoids|forearm_extensors|core,dumbbell,,,beginner
+f21fa91d-22fb-4b78-bc6a-50165e5cb8ad,High plank to low plank,core,,bodyweight,core,,
+f2224eab-4368-4bab-80a3-e0bddbed5a23,Elbow to knee plank,core,,bodyweight,core,,
+f28e1faf-4677-453e-9007-8329d7a67e2d,Bodyweight Squat (air squat),quads,,bodyweight,knee_dominant,,
+f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b,Bear plank shoulder taps - 30,core,,bodyweight,core,,
+f324d8f5-3c64-4a97-b4de-2fd60907e7d5,Side bend (left),core,,bodyweight,,,intermediate
+f34b7615-bfcc-4cd4-88f7-d7c68e910fe9,Dumbbell Bicep Curl Standing,biceps,brachialis|brachioradialis|forearm_flexors,dumbbell,elbow_flexion,,beginner
+f3b5098c-a02d-44ce-941e-2afca2f7329f,Single leg get up into lunge,quads,,bodyweight,knee_dominant,,intermediate
+f3d25890-dcd5-42b3-8246-a5f596029cc0,Figure Four Stretch (L),full_body,,bodyweight,,,beginner
+f4484f32-c4a6-4111-8681-7d3d05a43f81,Squat thruster,quads,,bodyweight,knee_dominant,,intermediate
+f49f3159-4eed-4d0d-a640-497886c309b0,Dumbbell double snatch,full_body,,dumbbell,,,advanced
+f4f814a7-7f9f-4d09-8c9a-f07c27176967,Sciatic nerve flossing nerve glide with a chair,hamstrings,gastrocnemius|soleus|glutes,,,,beginner
+f50de65b-ab30-4b37-a472-d4cab681916c,Knee raises,core,,bodyweight,,,intermediate
+f570def7-a724-48f5-87b7-66dfad7cc993,Warrior III (right),glutes,,bodyweight,,,beginner
+f5aa2b23-405b-48a1-9538-302a41160cbd,Seated Dumbbell Curl,biceps,,dumbbell,elbow_flexion,,
+f6489ee0-7630-4041-ae1d-8e620b58883b,Plank SeeSaw,core,,bodyweight,core,,
+f66596ba-3a70-406c-8ffa-ed6641a10e19,Dumbbell Side Bend (L),core,,dumbbell,,,
+f67b5c4a-a959-4b13-933e-633d4faeab95,Deadstop push up,chest,,bodyweight,horizontal_push,,intermediate
+f6d6ac54-751d-416e-8c9d-bc4b675cd505,Dumbbell Pullover,chest,lats|triceps_long_head|serratus_anterior|teres_major,dumbbell,,,intermediate
+f6fa126f-2811-454f-a542-39780209c9ec,Cable Diagonal Kickback,glutes,,cable,,,beginner
+f7122b18-1a1a-43a4-bb1c-76170240e7e8,Standing Cable Fly,chest,,cable,,,beginner
+f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc,Barbell Push Press,shoulders,triceps|quads|core|upper_traps,barbell,,,intermediate
+f7458e9c-56f8-4604-ba58-636ead67ffe2,Foward Lunges Bodyweight,quads,glute_med|adductors|erector_spinae,bodyweight,knee_dominant,,beginner
+f749ef2b-7e02-4c5b-94fd-abc1c876b0ee,Seated wide angle straddle,hamstrings,,bodyweight,,,beginner
+f77e760b-7f45-45b2-a34b-e8e8b3b1ab45,Reverse Fly,rear_deltoids,erector_spinae|teres_major|forearms,dumbbell,,,intermediate
+f79d8c98-d6ca-4d46-9704-6d89cf436808,Fire Hydrant Circles,glute_med,obliques|quads|erector_spinae,bodyweight,,,beginner
+f7c6095d-b060-48e6-81be-461e81a578a7,Smith Machine Sumo Squat,quads,,machine,knee_dominant,,intermediate
+f7d6b197-e10b-45bf-848b-e4be88299c28,Heel touches - v2,full_body,,bodyweight,,,intermediate
+f8255cfd-7c0e-4451-89a5-947009e4fd13,Chair running chair step knee touch,hip_flexors,core|rectus_femoris|adductors,,,,beginner
+f860eed0-1645-401e-bfe0-ddbc4ba2df90,Pushups,chest,,bodyweight,,,intermediate
+f8a04b5e-b762-48eb-8528-de28f5c321b7,Reverse Lunge with Kettlebell,quads,glute_max|hamstrings|erector_spinae|forearms,,knee_dominant,,intermediate
+f8d7664f-01f0-4a79-abd8-85bbe9f067ac,Posterior upper arm (left),full_body,,bodyweight,,,intermediate
+f8e77b58-2e1b-4695-ae24-17249ec2ad74,Standing Palm-In One-Arm Dumbbell Press (R,full_body,,dumbbell,,,intermediate
+f93fa069-3b1d-41f0-bb26-2322bc4ea1c1,Plank kick out,core,,bodyweight,core,,
+f96ea3ee-fb2f-4a0f-bc3b-7e63959450c5,Butterfly Stretch,glutes,,bodyweight,,,beginner
+fa0fd12d-1fd4-448f-9e21-ceda7b8f18eb,Dumbbell Lying Rear Lateral Raise - One arm,shoulders,,dumbbell,,,intermediate
+fa3347f7-0e8f-446b-a7f0-fbb0f6b22206,Gate pose (left),core,,bodyweight,,,beginner
+fa45710a-ee56-4648-811c-5eeaaeaff098,Band Leg press,quads,glute_max|hamstrings|abs,machine|band,,,beginner
+fa5618bb-f1c9-4911-aa11-f971d99b9fc2,Kettlebell Farmer Carry,ketllebell,,,,,
+fa6a3579-8bbe-47ab-b0dc-4d0545f16a34,Negative pull ups,back,,bodyweight,vertical_pull,,intermediate
+fa9f64d1-12a1-43be-a15d-45609a706c9c,Switching Lunges,quads,,bodyweight,knee_dominant,,intermediate
+faa8cd98-a788-4760-be99-0dfcced0920b,Standing Palm-In One-Arm Dumbbell Press (L,full_body,,dumbbell,,,intermediate
+fb48eccb-7f51-4de3-97f0-dc5ef75a6cee,Full range push ups,chest,,bodyweight,horizontal_push,,intermediate
+fbffd9c1-bffd-4fb0-ae4c-258834c5fcd2,Donkey Kick with Dumbbell,glutes,,dumbbell,,,intermediate
+fc11f2e5-3fcd-4682-bb4b-10c33951335a,Single Arm Lat Pulldown,back,,cable|machine,vertical_pull,,intermediate
+fc721ada-0004-40d7-9e1e-634dc9b34877,Behind the Head Curl with Cable,biceps,,cable,elbow_flexion,,advanced
+fcc15585-b472-487f-8367-7459ee909832,Dips on bench,back,,bodyweight|bench,horizontal_push,,
+fd2a8e1f-3efb-4e11-89fb-a479b7bf4a06,Lying EZ Bar Curl,biceps,,barbell,elbow_flexion,,intermediate
+fd93f455-3544-4c89-afa2-bcdf980aa53d,Crab hold to to taps,full_body,,bodyweight,,,intermediate
+fe06e1be-c429-485f-b36a-5e210ef03bc8,Half Roll Backs,abs,obliques|transverse_abdominis|hip_flexors,,,,beginner
+fee193c5-ec61-4e7f-aca8-a0ab268f6e26,Single Arm Lying Dumbbell Extension,triceps,,dumbbell,elbow_extension,,intermediate
+fef72790-359f-4f3f-9fcd-a80fb2c63b5f,Dumbbell Single leg deadlift,back,,dumbbell,hip_hinge,,intermediate
+fefcff8a-f513-48bd-9e6d-0c38de0e4a6b,Frog Stretch,full_body,,bodyweight,,,beginner
+ff106b50-02bd-4962-b9f0-ddbe247b8b3e,Lying Dumbbell Tricep Extension,triceps,,dumbbell,elbow_extension,,
+ff6872ae-e894-4e72-b5f8-59a55b576a6f,Dumbbell Goblet Squat,quadriceps,calves|forearms|abs,dumbbell,knee_dominant,,beginner
+ff71c077-37d0-4819-9336-14d4946755f2,Standing Quad Stretch (R),full_body,,bodyweight,,,beginner
+ffd0d6dc-27ff-4a99-afcc-673701fa9d3d,Single Arm Cable Tricep Pushdown,triceps,forearm_flexors|forearm_extensors|rear_deltoids,cable,elbow_extension,,beginner
+ffded4df-0bf5-4522-8c94-cf15492a8271,Box Jump,quads,calves|core|erector_spinae,,,,intermediate
+ffef6f38-6074-43b9-9256-2edc78dcf698,Deficit Calf Raise,bodyweight,,bodyweight,,,

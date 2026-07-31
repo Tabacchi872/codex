@@ -1,0 +1,12 @@
+area,table_or_view,query_strategy,status,notes
+architecture,public.exercises,record_kind=exercise active=true library_status<>hidden,PENDING,central view prepared
+coach_picker,public.selectable_exercises,view only,PENDING,existing code currently loads custom exercises separately
+client_library,public.selectable_exercises,view only,PENDING,isolated test required
+automatic_generator,public.selectable_exercises,view only,PENDING,bridge auto_program_eligible=false
+superadmin,public.selectable_exercises,view only,PENDING,technical bridge section must be separate
+legacy_resolver,public.exercise_identity_keys,exact key,PENDING,bridge UUID required
+manual_video,public.exercise_videos,legacy key before UUID,PENDING,code updated; runtime test unavailable
+ymove_fallback,public.exercise_external_links,manual_approved primary only,PENDING,no pilot link exists
+templates,public.workout_template_exercises,legacy key unchanged,PASS_READ_ONLY,9 references
+workout_days,public.workout_day_exercises,legacy key unchanged,PASS_READ_ONLY,3 references
+alternatives,public.exercise_alternatives,legacy key unchanged,PASS_READ_ONLY,4 references

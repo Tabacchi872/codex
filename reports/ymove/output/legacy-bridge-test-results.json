@@ -1,0 +1,17 @@
+{
+  "status": "TEST_PROJECT_NOT_CONFIGURED",
+  "productionProjectRef": "rkcecnzvzoigipjliwdk",
+  "productionModified": false,
+  "dockerAvailable": false,
+  "podmanAvailable": false,
+  "testProjectRef": null,
+  "architectureMigrationApplied": false,
+  "pilotMigrationApplied": false,
+  "rollbackExecuted": false,
+  "videoPriorityExecuted": false,
+  "legacyReferenceCount": 18,
+  "pilotExerciseCount": 0,
+  "pilotIdentityKeyCount": 0,
+  "pilotYmoveLinkCount": 0,
+  "decision": "BLOCKED"
+}

@@ -1,0 +1,3 @@
+﻿"TimeCreated","Provider","LogName","Level","EventId","DevicePath","Harddisk","DR","Volume","EventData","FullMessage"
+"2026-07-26T04:48:43","disk","System","Avviso","32","\Device\Harddisk0\DR0","Harddisk0","DR0",,"Data0=\Device\Harddisk0\DR0","Il driver ha rilevato che la cache in scrittura del dispositivo \Device\Harddisk0\DR0 è abilitata. I dati potrebbero essere danneggiati."
+"2026-07-26T04:46:58","disk","System","Avviso","34","\Device\Harddisk0\DR0","Harddisk0","DR0",,"Data0=\Device\Harddisk0\DR0","Il driver ha disabilitato la cache in scrittura sul dispositivo \Device\Harddisk0\DR0."

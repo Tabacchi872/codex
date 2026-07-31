@@ -1,0 +1,1164 @@
+{
+  "input_rows": 854,
+  "catalog_rows": 857,
+  "output_rows": 857,
+  "unique_output_ids": 857,
+  "missing_from_input": [
+    {
+      "external_exercise_id": "24030adc-de07-4547-a916-24acee3d5a3e",
+      "title": "Burpee",
+      "equipment": "bodyweight",
+      "primary_muscles": "full_body",
+      "movement_pattern": "",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    },
+    {
+      "external_exercise_id": "5058baec-15c8-4278-afa5-9621bb4e15b5",
+      "title": "Alternating Dumbbell Curl",
+      "equipment": "dumbbell",
+      "primary_muscles": "biceps",
+      "movement_pattern": "elbow_flexion",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    },
+    {
+      "external_exercise_id": "9fb9d7f3-6833-4f8d-97ce-f487f8fd5eca",
+      "title": "Romanian Deadlift",
+      "equipment": "barbell",
+      "primary_muscles": "hamstrings",
+      "movement_pattern": "hip_hinge",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    }
+  ],
+  "before": {
+    "approved_names": 18,
+    "researched_names": 59,
+    "final_equals_english": 164
+  },
+  "after": {
+    "validated": 204,
+    "duplicate_editorial": 0,
+    "research_required": 145,
+    "technical_review": 508,
+    "conflict": 0,
+    "empty_final_names": 653,
+    "final_equals_english": 8,
+    "duplicate_final_name_groups": 33
+  },
+  "duplicate_final_names": [
+    {
+      "normalized_name": "curl al cavo",
+      "count": 6,
+      "ids": [
+        "0087bb08-f325-4401-9b37-66dd93871570",
+        "037a9f51-9b02-4404-979a-6ad18f62fc9d",
+        "7cfe78ab-8d77-4142-8199-51d3f48b9430",
+        "9f3f94f9-275b-4c5c-bc97-0e5826023599",
+        "bfa76dd0-298b-4c70-b1fa-e662289d2ebe",
+        "ca7a2f9d-3af1-40cd-a33f-431f437a2902"
+      ]
+    },
+    {
+      "normalized_name": "tirata",
+      "count": 2,
+      "ids": [
+        "00cfe51b-59a3-4d61-b712-61ae99c1ca57",
+        "6362bdab-a7d7-49e8-85ab-fe1eb610cb4e"
+      ]
+    },
+    {
+      "normalized_name": "esplosivo affondo",
+      "count": 2,
+      "ids": [
+        "022ea5f2-88f3-4d42-b99d-c1026d6bc343",
+        "d5dff683-d9a5-42ca-b325-47f7275f7def"
+      ]
+    },
+    {
+      "normalized_name": "mountain climber",
+      "count": 10,
+      "ids": [
+        "061b3246-322a-41ed-a589-73fb9478651c",
+        "3798bfae-4ad3-404c-969d-0eeb2fcbdd56",
+        "4dd34460-26de-41b4-ba9f-66bcf4ed8e63",
+        "6c8af30b-31f1-4c84-b394-b4293607cf4f",
+        "7a21c59b-ee5d-4f55-867f-31ca24c8003b",
+        "7ade83ba-d8c1-4947-aab0-8a15506c70e5",
+        "8085b2a3-fc64-478c-b93a-bf86dab46fc0",
+        "8735c2a0-5c44-4a2d-ba45-932ba4d372cd",
+        "a5d77dca-e151-4f73-aadb-890366fe8abf",
+        "a97c208e-1c40-4410-b51a-a86e5cc37a04"
+      ]
+    },
+    {
+      "normalized_name": "crunch",
+      "count": 6,
+      "ids": [
+        "068d316f-52b0-4438-a7c9-ee21ceca2c2f",
+        "3bf0aada-8142-418e-8f7b-f506ecc63afb",
+        "4aa2b90d-e5da-47d6-abd5-4e1932324ed2",
+        "85d78505-04b8-4cf6-b277-c215eeb462a7",
+        "93e53831-f499-4d0b-b266-120445c24555",
+        "ed1451e4-ceef-4aa9-a883-24b733b83edd"
+      ]
+    },
+    {
+      "normalized_name": "seduta al muro",
+      "count": 2,
+      "ids": [
+        "0790eb48-18ee-4bae-9c32-b8049dad767f",
+        "ba260d30-e576-4f0b-8d9b-c14df6d419ee"
+      ]
+    },
+    {
+      "normalized_name": "burpee",
+      "count": 6,
+      "ids": [
+        "0a7821b6-c36b-4b5f-82b0-5c8ba765baae",
+        "909e8b98-9e33-4a45-8bfa-3b0d4a9cef56",
+        "aa60f379-a493-46d2-8e03-3ba2277f3e78",
+        "b126da42-0645-491c-83ae-e058822e074b",
+        "b160ea44-725a-415f-919a-4edad64d3ce3",
+        "c7dead12-7c46-4533-a0e9-dbc882cc498b"
+      ]
+    },
+    {
+      "normalized_name": "bear crawl",
+      "count": 2,
+      "ids": [
+        "0df165d9-3c63-4506-a2f1-6f64544fda5d",
+        "214c3916-f02f-456f-9750-70fd0679295a"
+      ]
+    },
+    {
+      "normalized_name": "estensione",
+      "count": 3,
+      "ids": [
+        "10014d85-339e-4573-876d-87b003c28671",
+        "2a4df469-77c8-4468-92cb-2003c90602dd",
+        "33869887-32ab-4c66-b033-3bef9e5de372"
+      ]
+    },
+    {
+      "normalized_name": "rematore al cavo",
+      "count": 8,
+      "ids": [
+        "109aec41-eaeb-4963-908a-e53b560789ee",
+        "412c612e-1822-4a22-aa3c-2461fd23a211",
+        "5025051b-e58e-42aa-ae78-5a9b11ef129c",
+        "60fa33db-7a56-4a6d-88a5-22f98a252ae1",
+        "911577a1-55e3-4bf2-b7a0-6456422c3393",
+        "94b012da-2a8d-449c-8a25-80cc1b0a1ba7",
+        "c2595904-d93e-4807-a7fe-70019fce408f",
+        "e6c47dc5-3924-4b1d-a8ac-deb2ec1730aa"
+      ]
+    },
+    {
+      "normalized_name": "croci ai cavi",
+      "count": 4,
+      "ids": [
+        "185e82b2-9e20-4021-aa84-65c564aca016",
+        "d237c00f-e6f3-44f0-953b-5db4c970f873",
+        "ec545ed7-4724-454a-b730-37a425e80080",
+        "f7122b18-1a1a-43a4-bb1c-76170240e7e8"
+      ]
+    },
+    {
+      "normalized_name": "sollevamento gambe",
+      "count": 3,
+      "ids": [
+        "19a378bd-eec2-4950-b8f2-c4179ef28294",
+        "a97548ad-e559-4380-a6b0-50cc210031b2",
+        "af2d3f82-2917-4e21-8df6-7acaf5f78ad5"
+      ]
+    },
+    {
+      "normalized_name": "lat machine",
+      "count": 2,
+      "ids": [
+        "1dfe9e16-f3bf-45c3-9536-b818c03d8bb8",
+        "6f53a194-8a37-42ec-87f1-2bfed82e9006"
+      ]
+    },
+    {
+      "normalized_name": "sumo squat con bilanciere",
+      "count": 2,
+      "ids": [
+        "1ffaf9e8-fe94-44e8-a20b-012ea58eba46",
+        "c8f3362d-fb00-481e-b428-e0b17f4ae681"
+      ]
+    },
+    {
+      "normalized_name": "affondi camminati",
+      "count": 4,
+      "ids": [
+        "21beb247-bf6f-41a7-b2d3-58c58d103ba0",
+        "620b30ac-bc0d-4b48-bec7-b685cf57f883",
+        "726c2b68-3da5-4dc7-a588-c8d3dd90d516",
+        "82bc1bbb-e706-4fb6-a02d-6e3948dd6343"
+      ]
+    },
+    {
+      "normalized_name": "step up a corpo libero",
+      "count": 2,
+      "ids": [
+        "2ca49b40-d285-4dfe-8dba-f51448b46c0a",
+        "9898b03d-3337-4ea6-93d6-812d2004693b"
+      ]
+    },
+    {
+      "normalized_name": "stacco da terra con bilanciere",
+      "count": 2,
+      "ids": [
+        "2fb79823-a759-4ceb-8b16-a26ab3cfb440",
+        "7d31d648-432b-4edd-97bc-afc2a3e9e59a"
+      ]
+    },
+    {
+      "normalized_name": "curl con manubri",
+      "count": 9,
+      "ids": [
+        "3175c898-09fe-4d02-82c2-de2a3834fdd4",
+        "339d8f8f-18e3-452a-ae66-f2b098382a84",
+        "430ce933-5f38-44b9-8b43-810da4ec536e",
+        "5058baec-15c8-4278-afa5-9621bb4e15b5",
+        "6891aa71-6e1f-4ea4-b9ac-f38ea207216a",
+        "9a8e40b3-446f-4362-9df4-461931927889",
+        "a921697a-e1ec-4941-bffd-f99e69b305b4",
+        "f34b7615-bfcc-4cd4-88f7-d7c68e910fe9",
+        "f5aa2b23-405b-48a1-9538-302a41160cbd"
+      ]
+    },
+    {
+      "normalized_name": "da sdraiato crunch",
+      "count": 2,
+      "ids": [
+        "3e840d86-0fd5-4ac2-b152-2bcc8ecc67c3",
+        "b2a0896a-3900-4a82-bd7d-30e4b74687e9"
+      ]
+    },
+    {
+      "normalized_name": "squat a corpo libero",
+      "count": 2,
+      "ids": [
+        "42ee935a-8052-4d1b-bde6-d64bb2389e57",
+        "f28e1faf-4677-453e-9007-8329d7a67e2d"
+      ]
+    },
+    {
+      "normalized_name": "dip su panca",
+      "count": 2,
+      "ids": [
+        "48b2c98e-b82f-49aa-b847-b871a69e1b95",
+        "79084f10-c317-4c40-ae0c-45d0b760298d"
+      ]
+    },
+    {
+      "normalized_name": "laterale allungamento",
+      "count": 2,
+      "ids": [
+        "50f6c403-a7eb-4c43-9723-c9c4ee7defc7",
+        "dfbfc890-af85-4be4-a8c6-782f666f538d"
+      ]
+    },
+    {
+      "normalized_name": "affondi indietro",
+      "count": 5,
+      "ids": [
+        "55df26c1-83f4-439a-89be-22c156a3e118",
+        "808799af-013a-4f71-94e7-3fdea59b9ecf",
+        "80b6b175-77a8-48ac-9a09-495d114d88ef",
+        "b3fdc5d4-1225-4f12-8b42-86fc0617aeb6",
+        "cea24bde-a9ce-4de1-93e6-3c019e1520d2"
+      ]
+    },
+    {
+      "normalized_name": "plank",
+      "count": 2,
+      "ids": [
+        "61410917-4fb1-41f8-86d5-16dc88fe380b",
+        "7e35442f-7c48-4d32-8e18-2761542f9b17"
+      ]
+    },
+    {
+      "normalized_name": "cavo estensione",
+      "count": 2,
+      "ids": [
+        "6413b465-6df0-4e2c-9f4b-ae36dc70ebbf",
+        "db7c0708-ea39-47cb-89c8-73e749abcfa6"
+      ]
+    },
+    {
+      "normalized_name": "push up presa larga",
+      "count": 2,
+      "ids": [
+        "67f7b774-4b0f-4252-b5df-2555e9f5d0c8",
+        "cbedc7e1-a023-41fb-938e-f62e0ffdb7d2"
+      ]
+    },
+    {
+      "normalized_name": "affondi con bilanciere",
+      "count": 2,
+      "ids": [
+        "714b176e-2963-43f0-ae0f-c71643cbe426",
+        "dd57e914-d0ef-4d6f-8724-d72f220b7422"
+      ]
+    },
+    {
+      "normalized_name": "in piedi allungamento",
+      "count": 4,
+      "ids": [
+        "75593cee-6a28-4842-8222-150647b2157b",
+        "83df9077-41ca-4376-b5de-f4ea0393b6f8",
+        "8b749c78-6f8d-46d7-ab75-bb42ed161ae1",
+        "ff71c077-37d0-4819-9336-14d4946755f2"
+      ]
+    },
+    {
+      "normalized_name": "su rialzo salto su rialzo",
+      "count": 2,
+      "ids": [
+        "768c2a0e-5824-42f9-8175-b296f0433c02",
+        "ffded4df-0bf5-4522-8c94-cf15492a8271"
+      ]
+    },
+    {
+      "normalized_name": "stacco da terra con kettlebell",
+      "count": 2,
+      "ids": [
+        "8f2f2d63-4e39-408b-b450-f88c27d8ae1a",
+        "94e15f81-eee6-418c-9c25-6201b6c9f23e"
+      ]
+    },
+    {
+      "normalized_name": "rematore con manubrio a un braccio",
+      "count": 2,
+      "ids": [
+        "ac7982bb-1a81-4870-ae78-ce37bb485601",
+        "bda6ae04-2619-43a7-8261-490d85444eb2"
+      ]
+    },
+    {
+      "normalized_name": "rematore con bilanciere",
+      "count": 2,
+      "ids": [
+        "b0c07cf7-545e-4c74-8224-3355a2669fb2",
+        "dbf6a8e4-19dc-4d01-8014-f195a1eb817c"
+      ]
+    },
+    {
+      "normalized_name": "bear plank con shoulder tap",
+      "count": 2,
+      "ids": [
+        "c2a135e7-1383-47c1-9757-4868ae9a8c55",
+        "f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b"
+      ]
+    }
+  ],
+  "required_checks": [
+    {
+      "ymove_title": "Barbell Curls",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Curl con bilanciere",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Barbell Rows",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Rematore con bilanciere",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Cable Bicep Curl bar",
+      "old_name": "Cavo Cavo",
+      "new_name": "Curl bicipiti al cavo con barra",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Cable Fly Low to High",
+      "old_name": "Cavo Cavo",
+      "new_name": "Croci ai cavi dal basso verso l’alto",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Dumbbell Arnold Press",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "Arnold press con manubri",
+      "selected_source": "generated_rule",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Bent Over Barbell Row Underhand Grip",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Rematore con bilanciere a busto flesso con presa supina",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Chest Press Machine flat",
+      "old_name": "Machine Machine",
+      "new_name": "Chest press orizzontale alla macchina",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Deadlift with Kettlebell",
+      "old_name": "Kettlebell Kettlebell",
+      "new_name": "Stacco da terra con kettlebell",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Archer push up",
+      "old_name": "Archer push up",
+      "new_name": "Push-up arciere",
+      "selected_source": "generated_rule",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Barbell Ab Rollout - On Knees",
+      "old_name": "Ab rollout in ginocchio con bilanciere",
+      "new_name": "Ab rollout in ginocchio con bilanciere",
+      "selected_source": "approved_italian_name",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    }
+  ],
+  "first70": [
+    {
+      "external_exercise_id": "005ba868-d8b1-499f-9a88-b2cf722e6bdf",
+      "ymove_title": "Figure Four Stretch (R)",
+      "old_name": "Allungamento",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0087bb08-f325-4401-9b37-66dd93871570",
+      "ymove_title": "High Cable Curl",
+      "old_name": "Cavo Cavo",
+      "new_name": "Curl al cavo",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "00a92c05-9865-489d-8495-a8f72af802a6",
+      "ymove_title": "Incline Machine Press",
+      "old_name": "Machine inclinato Machine",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "00c1f017-3a36-4a42-8866-fda39f906f5d",
+      "ymove_title": "Seated Side Bends",
+      "old_name": "Seated Side Bends",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "00cfe51b-59a3-4d61-b712-61ae99c1ca57",
+      "ymove_title": "Hanging Scapular Pull",
+      "old_name": "Tirata",
+      "new_name": "Tirata",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "01924d84-4c88-4476-b0dc-8fd92616b362",
+      "ymove_title": "Dumbbell upper cuts",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "022ea5f2-88f3-4d42-b99d-c1026d6bc343",
+      "ymove_title": "Explosive sprinter lunge (left)",
+      "old_name": "esplosivo Affondo",
+      "new_name": "esplosivo Affondo",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "028fd0e4-baf8-4633-9891-20613bdea1e8",
+      "ymove_title": "Jump knee tucks",
+      "old_name": "Salto",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "032ca17e-2678-46e4-baac-b7ef43c283e9",
+      "ymove_title": "Standing Dumbbell Triceps Extension",
+      "old_name": "In piedi Manubrio Estensione",
+      "new_name": "In piedi Manubrio Estensione",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "033964cc-ed58-4fe3-8850-cf78c66a85b9",
+      "ymove_title": "Hip hinge",
+      "old_name": "Anca",
+      "new_name": "",
+      "quality_score": 48,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "037a9f51-9b02-4404-979a-6ad18f62fc9d",
+      "ymove_title": "Overhead Cable Curl",
+      "old_name": "Cavo Cavo",
+      "new_name": "Curl al cavo",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "03be228e-9483-470b-ad6c-cdf3d43f7415",
+      "ymove_title": "Double Box Single Leg Lateral Hop",
+      "old_name": "monopodalico laterale su rialzo Rimbalzo",
+      "new_name": "monopodalico laterale su rialzo Rimbalzo",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "044f938a-5772-4a0e-b39a-8a85393830e7",
+      "ymove_title": "Tucked L-sit hold",
+      "old_name": "Tucked L-sit hold",
+      "new_name": "Tucked L-sit hold",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "04fccb0f-58a7-44b2-8676-573faad17634",
+      "ymove_title": "Pike hold knee bends",
+      "old_name": "Pike hold knee bends",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0501fca5-dd00-4948-8874-40cc851daaee",
+      "ymove_title": "Explosive jump squats",
+      "old_name": "esplosivo Squat",
+      "new_name": "esplosivo Squat",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "051a5802-da89-415d-a912-93162c89a4bf",
+      "ymove_title": "Behind the Neck Shoulder Press Machine",
+      "old_name": "Shoulder press alla macchina dietro la nuca",
+      "new_name": "Shoulder press alla macchina dietro la nuca",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "059690e8-f60d-4099-b3ae-93d18358a59a",
+      "ymove_title": "Bent Over Barbell Row",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "bent over"
+    },
+    {
+      "external_exercise_id": "05b2ec0e-92d4-4a93-bfed-c371747c072d",
+      "ymove_title": "Fire Hydrant",
+      "old_name": "Fire Hydrant",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "05c60c96-4b0d-4e83-8797-9e3eb9a9cab0",
+      "ymove_title": "Halo with dumbbell (R)",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "061b3246-322a-41ed-a589-73fb9478651c",
+      "ymove_title": "Side hurdel jumps to mountain climbers",
+      "old_name": "Arrampicata montana",
+      "new_name": "Mountain climber",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "068d316f-52b0-4438-a7c9-ee21ceca2c2f",
+      "ymove_title": "Crunches",
+      "old_name": "Crunch",
+      "new_name": "Crunch",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "069c1e6b-05f4-4390-a1c7-9b740e0bec4a",
+      "ymove_title": "Barbell Front Raise",
+      "old_name": "Alzate frontali con bilanciere",
+      "new_name": "Alzate frontali con bilanciere",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0790eb48-18ee-4bae-9c32-b8049dad767f",
+      "ymove_title": "Wall Sits",
+      "old_name": "Wall Sits",
+      "new_name": "Seduta al muro",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "07cd2836-405f-4b66-9b80-2d69b1fabb6a",
+      "ymove_title": "Reverse push ups",
+      "old_name": "Push-up",
+      "new_name": "",
+      "quality_score": 72,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0852e58d-42d4-4e7a-b612-a6d79e93e895",
+      "ymove_title": "Half moon (right)",
+      "old_name": "Half moon (right)",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "094f1299-cd52-4da7-b97f-c159208ed7d1",
+      "ymove_title": "Incline Dumbbell Rear Delt Raise",
+      "old_name": "Manubrio inclinato Manubrio",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "097903be-beaa-4283-9493-19eb90b59762",
+      "ymove_title": "Dumbbell deltoid fly",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0a095165-5eb4-4d96-a98e-d8374391f2cc",
+      "ymove_title": "Seated EZ Bar Curl",
+      "old_name": "Seduto Curl",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "barbell"
+    },
+    {
+      "external_exercise_id": "0a7821b6-c36b-4b5f-82b0-5c8ba765baae",
+      "ymove_title": "Shot Caller Burpee",
+      "old_name": "Burpee",
+      "new_name": "Burpee",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0af648a1-1d2e-438b-b687-b522c9eaa8bd",
+      "ymove_title": "Dumbbell shoulder punches",
+      "old_name": "Manubrio Spalla",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1",
+      "ymove_title": "Dumbbell Overhead Tricep Extension",
+      "old_name": "Manubrio Estensione",
+      "new_name": "Manubrio Estensione",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0b51bca9-c72f-4fc3-affd-0904de3cf8b4",
+      "ymove_title": "Single Arm Smith Machine Row",
+      "old_name": "Smith machine",
+      "new_name": "",
+      "quality_score": 36,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement|lost_technical_details",
+      "missing_technical_details": "one arm"
+    },
+    {
+      "external_exercise_id": "0b7c9826-2501-4938-a921-a6f62e66e890",
+      "ymove_title": "Squat to toe taps",
+      "old_name": "Squat",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0b7f1b84-6cb0-4875-824b-e86272668a2a",
+      "ymove_title": "Knee raises (Hanging)",
+      "old_name": "Alzata",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0ba53212-9702-4b66-bb9d-d7b9fa12abf2",
+      "ymove_title": "Inclined wide push up",
+      "old_name": "Push-up",
+      "new_name": "",
+      "quality_score": 40,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title|lost_technical_details",
+      "missing_technical_details": "incline"
+    },
+    {
+      "external_exercise_id": "0bc5f89b-dec0-483a-b98d-655998f8849d",
+      "ymove_title": "Inchworm",
+      "old_name": "Inchworm",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0bc74c4c-d382-46a4-95a8-d6229062aaf1",
+      "ymove_title": "inverted row",
+      "old_name": "Remata",
+      "new_name": "",
+      "quality_score": 36,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement|lost_technical_details",
+      "missing_technical_details": "barbell"
+    },
+    {
+      "external_exercise_id": "0c46de9c-4a97-405c-9fa2-aec5f5da73f0",
+      "ymove_title": "Seated Hammer Curl",
+      "old_name": "Seduto Curl",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "dumbbell"
+    },
+    {
+      "external_exercise_id": "0d0368ee-f03d-4ef9-95db-06a56434ea55",
+      "ymove_title": "Dumbbell Scissors",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0d3505ae-ce8d-4ad5-b8d0-8c172dd08969",
+      "ymove_title": "High Row Machine",
+      "old_name": "Machine Machine",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0de79ddc-e829-4543-942c-e385cc76ac5e",
+      "ymove_title": "Dumbbell Squat",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0df165d9-3c63-4506-a2f1-6f64544fda5d",
+      "ymove_title": "Forward to Reverse Bear Crawl",
+      "old_name": "Crawl",
+      "new_name": "Bear crawl",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0e19fa47-7a77-4fdf-86a0-66258725fa3d",
+      "ymove_title": "Box Toe Tap",
+      "old_name": "Box Toe Tap",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0e43c62b-bcf6-4115-8fa4-3049a4d8f24a",
+      "ymove_title": "Criss-cross jumping jacks",
+      "old_name": "Salto",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0e5f29cd-ff79-428a-bb1c-1753a9047f32",
+      "ymove_title": "Barbell Full Squat",
+      "old_name": "Full Squat Con bilanciere",
+      "new_name": "Full Squat Con bilanciere",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0ed37189-d6ea-48c0-83cb-587b44a7b546",
+      "ymove_title": "Sumo walk",
+      "old_name": "Sumo Sumo",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0f14071c-279d-4926-b41a-cb4dc900bb1d",
+      "ymove_title": "High plank toe touches",
+      "old_name": "Plancia",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement|too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0fed480a-62f6-44d9-a457-787ebcd1395f",
+      "ymove_title": "Single Arm Preacher Curl",
+      "old_name": "monopodalico Curl",
+      "new_name": "",
+      "quality_score": 52,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "dumbbell|one arm"
+    },
+    {
+      "external_exercise_id": "0ff4b70c-8c21-42a0-83c9-a0aa4fcc4b4a",
+      "ymove_title": "Swimmers",
+      "old_name": "Swimmers",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "0ff5e9fe-9d15-426a-8c06-fd62a198dc47",
+      "ymove_title": "Dumbbell shadow box",
+      "old_name": "Manubrio su rialzo Manubrio",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "10014d85-339e-4573-876d-87b003c28671",
+      "ymove_title": "Tricep extension knee ins",
+      "old_name": "Estensione",
+      "new_name": "Estensione",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "109aec41-eaeb-4963-908a-e53b560789ee",
+      "ymove_title": "High Cable Row",
+      "old_name": "Cavo Cavo",
+      "new_name": "Rematore al cavo",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "109f6115-f03d-48da-802a-2e2aa385678d",
+      "ymove_title": "Back Extension - Hyperextension",
+      "old_name": "Iperestensioni lombari alla panca romana",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "machine"
+    },
+    {
+      "external_exercise_id": "10a31695-e218-4819-b7d3-b67b1b5ac79d",
+      "ymove_title": "Close Grip Lat Pulldown",
+      "old_name": "Lat machine",
+      "new_name": "",
+      "quality_score": 52,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "cable|close"
+    },
+    {
+      "external_exercise_id": "10affa59-53b8-40a9-a06c-36b70d2bb005",
+      "ymove_title": "Russian twists",
+      "old_name": "Russian twists",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "10be21b8-de6f-4c33-9101-eadca351e663",
+      "ymove_title": "Crab walks into squats",
+      "old_name": "Squat",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "10d2c91e-60e8-416d-8c91-def45954009c",
+      "ymove_title": "Close Grip Plate Press",
+      "old_name": "presa stretta con disco Spinta",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "barbell"
+    },
+    {
+      "external_exercise_id": "1121f617-3012-4e15-a6d9-86ed9440acce",
+      "ymove_title": "Step Calf Raise",
+      "old_name": "Alzata",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "1158c681-55e9-4db0-bb73-3dab32d99aa5",
+      "ymove_title": "Barbell Curls",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Curl con bilanciere",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "1267bc89-80f9-46ad-9f94-e7e542854042",
+      "ymove_title": "Wide Grip Barbell Curl",
+      "old_name": "Bilanciere presa larga Bilanciere",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "1328cea8-8e8b-4a64-9f6a-10d8031b2f27",
+      "ymove_title": "Russian Twist - no weight",
+      "old_name": "Russian Twist - no weight",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "13351b5d-ef3f-4c6b-9f47-df62202d32b2",
+      "ymove_title": "Leg Press Close Stance - Glute Focus",
+      "old_name": "presa stretta Pressa per gambe",
+      "new_name": "",
+      "quality_score": 60,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "lost_technical_details",
+      "missing_technical_details": "machine"
+    },
+    {
+      "external_exercise_id": "14044ef0-8d9d-4d65-9365-0f1bc2dd3c11",
+      "ymove_title": "Walking knee raises",
+      "old_name": "Alzata",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "147a7908-fdd3-4f79-94ca-f9a69989e14c",
+      "ymove_title": "Single arm push up (R)",
+      "old_name": "Push-up",
+      "new_name": "",
+      "quality_score": 40,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title|lost_technical_details",
+      "missing_technical_details": "one arm"
+    },
+    {
+      "external_exercise_id": "14a3a8fe-dc12-4c4b-865b-d5e0514c54d4",
+      "ymove_title": "Dumbbell Skull Crushers",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "1523b6fd-d8b9-4406-b188-5d1545dd0cb2",
+      "ymove_title": "Reclined pigeon pose (left)",
+      "old_name": "Reclined pigeon pose (left)",
+      "new_name": "",
+      "quality_score": 44,
+      "validation_status": "RESEARCH_REQUIRED",
+      "rejection_reasons": "missing_main_movement|copied_english_title",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "1575dc75-93ab-4c7f-b924-4ed4eda2adc8",
+      "ymove_title": "Dumbbell Russian Twist",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "",
+      "quality_score": 20,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "repeated_or_equipment_only|consecutive_duplicate_words|missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "15ae3c6a-9e5c-43c6-a9df-6a1cd454e1c5",
+      "ymove_title": "Smith Machine Lunges",
+      "old_name": "Smith machine",
+      "new_name": "",
+      "quality_score": 68,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "missing_main_movement",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "16916d8d-2bce-459a-a87f-fa511936260c",
+      "ymove_title": "Seated Neutral Grip Cable Press",
+      "old_name": "Seduto Cavo presa neutra Spinta",
+      "new_name": "Seduto Cavo presa neutra Spinta",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "external_exercise_id": "16a76541-f17e-49fe-832c-27776a9ec2e3",
+      "ymove_title": "Scapula push ups",
+      "old_name": "Push-up",
+      "new_name": "",
+      "quality_score": 72,
+      "validation_status": "TECHNICAL_REVIEW",
+      "rejection_reasons": "too_generic_for_detailed_title",
+      "missing_technical_details": ""
+    }
+  ]
+}

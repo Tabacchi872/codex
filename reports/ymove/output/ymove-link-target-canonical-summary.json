@@ -1,0 +1,11 @@
+{
+  "targets": 3,
+  "canonical_ready": 0,
+  "orphaned": 3,
+  "ambiguous": 0,
+  "not_found": 0,
+  "pilot": "legacy:bicipiti-curl-bilanciere",
+  "pilot_status": "CREATE_CANONICAL_REQUIRED",
+  "database_modified": false,
+  "ymove_called": false
+}

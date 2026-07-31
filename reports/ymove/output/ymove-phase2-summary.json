@@ -1,0 +1,32 @@
+{
+  "masterRows": 857,
+  "catalogRows": 857,
+  "safeNames": 86,
+  "links": 6,
+  "creates": 27,
+  "reviews": 53,
+  "duplicateGroups": 33,
+  "missingRecovered": [
+    {
+      "id": "24030adc-de07-4547-a916-24acee3d5a3e",
+      "title": "Burpee",
+      "status": "VALIDATED",
+      "name": "Burpees"
+    },
+    {
+      "id": "5058baec-15c8-4278-afa5-9621bb4e15b5",
+      "title": "Alternating Dumbbell Curl",
+      "status": "VALIDATED",
+      "name": "Curl con manubri"
+    },
+    {
+      "id": "9fb9d7f3-6833-4f8d-97ce-f487f8fd5eca",
+      "title": "Romanian Deadlift",
+      "status": "TECHNICAL_REVIEW",
+      "name": ""
+    }
+  ],
+  "fitcoachCanonicalUuidRowsRead": 22,
+  "fitcoachLegacyMetadataRowsRead": 101,
+  "note": "No Supabase writes and no YMove API calls."
+}

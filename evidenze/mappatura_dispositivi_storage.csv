@@ -1,0 +1,2 @@
+﻿"DiskNumber","DevicePath","Model","Interface","SizeGB","MediaType","BusType","HealthStatus","OperationalStatus","Temperature","ReadErrorsTotal","WriteErrorsTotal","Wear","PowerOnHours","DriveLetters","FreeSpace"
+,"\Device\Harddisk0\DR0","KBG30ZMV512G TOSHIBA","SCSI","476,94","SSD","NVMe","Healthy",,,,,,,"C:","C: 226.91GB free of 475.6GB"

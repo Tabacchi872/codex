@@ -1,0 +1,4 @@
+requested_target,legacy_key,metadata_found,canonical_exercise_found,canonical_exercise_id,canonical_slug,canonical_name,active,library_status,identity_keys,final_status
+legacy:bicipiti-curl-bilanciere,bicipiti-curl-bilanciere,true,false,,, ,,,ORPHANED
+legacy:cardio-burpees,cardio-burpees,true,false,,, ,,,ORPHANED
+legacy:gambe-hip-thrust,gambe-hip-thrust,true,false,,, ,,,ORPHANED

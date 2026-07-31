@@ -1,0 +1,150 @@
+﻿{
+  "validatedPath": "C:\\Users\\987246\\OneDrive\\Desktop\\codex\\lavoro\\reports\\ymove\\output\\ymove-exercise-names-validated.csv",
+  "reviewPath": "C:\\Users\\987246\\OneDrive\\Desktop\\codex\\lavoro\\reports\\ymove\\output\\ymove-exercise-names-review.csv",
+  "summaryPath": "C:\\Users\\987246\\OneDrive\\Desktop\\codex\\lavoro\\reports\\ymove\\output\\ymove-exercise-names-validation-summary.json",
+  "input_rows": 854,
+  "output_rows": 857,
+  "unique_output_ids": 857,
+  "review_rows": 653,
+  "missing_from_input": [
+    {
+      "external_exercise_id": "24030adc-de07-4547-a916-24acee3d5a3e",
+      "title": "Burpee",
+      "equipment": "bodyweight",
+      "primary_muscles": "full_body",
+      "movement_pattern": "",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    },
+    {
+      "external_exercise_id": "5058baec-15c8-4278-afa5-9621bb4e15b5",
+      "title": "Alternating Dumbbell Curl",
+      "equipment": "dumbbell",
+      "primary_muscles": "biceps",
+      "movement_pattern": "elbow_flexion",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    },
+    {
+      "external_exercise_id": "9fb9d7f3-6833-4f8d-97ce-f487f8fd5eca",
+      "title": "Romanian Deadlift",
+      "equipment": "barbell",
+      "primary_muscles": "hamstrings",
+      "movement_pattern": "hip_hinge",
+      "body_position": "",
+      "reason": "Presente nel catalogo staging YMove, assente dal CSV di ingresso"
+    }
+  ],
+  "after": {
+    "validated": 204,
+    "duplicate_editorial": 0,
+    "research_required": 145,
+    "technical_review": 508,
+    "conflict": 0,
+    "empty_final_names": 653,
+    "final_equals_english": 8,
+    "duplicate_final_name_groups": 33
+  },
+  "required_checks": [
+    {
+      "ymove_title": "Barbell Curls",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Curl con bilanciere",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Barbell Rows",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Rematore con bilanciere",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Cable Bicep Curl bar",
+      "old_name": "Cavo Cavo",
+      "new_name": "Curl bicipiti al cavo con barra",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Cable Fly Low to High",
+      "old_name": "Cavo Cavo",
+      "new_name": "Croci ai cavi dal basso verso l’alto",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Dumbbell Arnold Press",
+      "old_name": "Manubrio Manubrio",
+      "new_name": "Arnold press con manubri",
+      "selected_source": "generated_rule",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Bent Over Barbell Row Underhand Grip",
+      "old_name": "Bilanciere Bilanciere",
+      "new_name": "Rematore con bilanciere a busto flesso con presa supina",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Chest Press Machine flat",
+      "old_name": "Machine Machine",
+      "new_name": "Chest press orizzontale alla macchina",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Deadlift with Kettlebell",
+      "old_name": "Kettlebell Kettlebell",
+      "new_name": "Stacco da terra con kettlebell",
+      "selected_source": "generated_rule",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Archer push up",
+      "old_name": "Archer push up",
+      "new_name": "Push-up arciere",
+      "selected_source": "generated_rule",
+      "quality_score": 96,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    },
+    {
+      "ymove_title": "Barbell Ab Rollout - On Knees",
+      "old_name": "Ab rollout in ginocchio con bilanciere",
+      "new_name": "Ab rollout in ginocchio con bilanciere",
+      "selected_source": "approved_italian_name",
+      "quality_score": 92,
+      "validation_status": "VALIDATED",
+      "rejection_reasons": "",
+      "missing_technical_details": ""
+    }
+  ]
+}

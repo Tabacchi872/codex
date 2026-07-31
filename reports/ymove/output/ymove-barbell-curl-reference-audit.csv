@@ -1,0 +1,11 @@
+table_name,column_name,matched_value,count
+public.exercise_movement_metadata,exercise_id,bicipiti-curl-bilanciere,1
+public.workout_template_exercises,exercise_id,bicipiti-curl-bilanciere,9
+public.workout_day_exercises,exercise_id,bicipiti-curl-bilanciere,3
+public.exercise_alternatives,source_exercise_id,bicipiti-curl-bilanciere,2
+public.exercise_alternatives,alternative_exercise_id,bicipiti-curl-bilanciere,2
+public.exercise_videos,exercise_id,bicipiti-curl-bilanciere,1
+public.exercise_progress_history,exercise_id,bicipiti-curl-bilanciere,0
+public.client_excluded_exercises,exercise_id,bicipiti-curl-bilanciere,0
+public.client_cycle_exercise_transitions,previous_exercise_id,bicipiti-curl-bilanciere,0
+public.client_cycle_exercise_transitions,new_exercise_id,bicipiti-curl-bilanciere,0

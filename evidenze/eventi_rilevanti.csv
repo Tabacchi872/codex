@@ -1,0 +1,8 @@
+﻿"Registro","Origine","IdEvento","Livello","Frequenza7Giorni","UltimaOccorrenza","MessaggioSintetico"
+"System","Microsoft-Windows-WHEA-Logger","17","Avviso","4039","2026-07-26T13:46:23","Si è verificato un errore hardware che è stato corretto. Componente: PCI Express Root Port Origine errore: Advanced Error Reporting (PCI Express) Bus primario:Dispositivo:Funzione: 0x0:0x1C:0x4 Bus secondario:Dispositivo:Funzione: 0x0:0x0:0x0 Nome dispositivo primario:PCI\VEN_8086&DEV_9DBC&SUBSYS_850D103C&REV_F0 Nome dispositivo secondario:"
+"System","Microsoft-Windows-WindowsUpdateClient","20","Errore","14","2026-07-26T08:40:16","Errore di installazione. Non è stato possibile installare il seguente aggiornamento, errore 0x80073D02: 9NMPJ99VJBWV-Microsoft.YourPhone."
+"Application","Microsoft-Windows-System-Restore","8303","Avviso","2","2026-07-26T08:41:48","Scoping unsuccessful for shadowcopy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy5 with error 0x80070057."
+"System","Service Control Manager","7009","Errore","1","2026-07-23T09:29:42","Timeout (30000 millisecondi) durante l'attesa della connessione del servizio RustDesk Service."
+"System","disk","34","Avviso","1","2026-07-26T04:46:58","Il driver ha disabilitato la cache in scrittura sul dispositivo \Device\Harddisk0\DR0."
+"System","disk","32","Avviso","1","2026-07-26T04:48:43","Il driver ha rilevato che la cache in scrittura del dispositivo \Device\Harddisk0\DR0 è abilitata. I dati potrebbero essere danneggiati."
+"System","Service Control Manager","7000","Errore","1","2026-07-23T09:29:42","Il servizio RustDesk Service non è stato avviato per il seguente errore: Il servizio non ha risposto alla richiesta di avvio o controllo nel tempo previsto."

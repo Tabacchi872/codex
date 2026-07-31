@@ -1,0 +1,87 @@
+external_exercise_id,ymove_title,final_italian_name,source_file_status,database_status,existing_exercise_id,existing_exercise_key,existing_link_status,incident_quarantine,duplicate_primary_external_id,proposed_staging_status,blocking_reason
+044f938a-5772-4a0e-b39a-8a85393830e7,Tucked L-sit hold,Tucked L-sit hold,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+051a5802-da89-415d-a912-93162c89a4bf,Behind the Neck Shoulder Press Machine,Shoulder press alla macchina dietro la nuca,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+069c1e6b-05f4-4390-a1c7-9b740e0bec4a,Barbell Front Raise,Alzate frontali con bilanciere,LINK_EXISTING_VERIFIED,BLOCKED_INCIDENT_HIDDEN,2fe578b7-8cf8-42d5-98f8-95362ad6f5b4,uuid:2fe578b7-8cf8-42d5-98f8-95362ad6f5b4,removed,ymove_import_incident_2026_07_30_1531_utc,,BLOCKED_INCIDENT_HIDDEN,Esercizio dell’incidente già nascosto e link rimosso; non riattivare.
+1158c681-55e9-4db0-bb73-3dab32d99aa5,Barbell Curls,Curl con bilanciere,LINK_EXISTING_VERIFIED,LINK_EXISTING_READY,,legacy:bicipiti-curl-bilanciere,,,,LINK_EXISTING_READY,
+16916d8d-2bce-459a-a87f-fa511936260c,Seated Neutral Grip Cable Press,Seduto Cavo presa neutra Spinta,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+1c13173b-006e-4bfb-8f57-6c9403915e4d,T press up,Spinta,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+24030adc-de07-4547-a916-24acee3d5a3e,Burpee,Burpees,LINK_EXISTING_VERIFIED,LINK_EXISTING_READY,,legacy:cardio-burpees,,,,LINK_EXISTING_READY,
+31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3,Barbell Ab Rollout - On Knees,Ab rollout in ginocchio con bilanciere,CREATE_NEW_VERIFIED,ALREADY_IMPORTED_VALID,da5c5923-ea30-4034-9e7d-cf3cef002f9c,uuid:da5c5923-ea30-4034-9e7d-cf3cef002f9c,manual_approved,,,ALREADY_IMPORTED_VALID,
+31acb39d-e5bd-47f6-8895-0d4a17ff2e67,Squat Pulse on Box,su rialzo Squat,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+3620635f-3fcb-4552-8959-dc6ec09d9ea2,A steps,A-skip / A steps,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Nome A-skip/A steps non sufficientemente italiano o verificato.
+3730e7c4-d50d-4986-88ea-aba97ccf9b8c,Tucked L-sit hold (Hanging),Tucked L-sit hold (Hanging),CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+383d7e55-3ec7-4908-8298-96bc42aeebe9,Dumbbell Arnold Press,Arnold press con manubri,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+3b69631f-65b9-4af3-9c65-5739375e3dfb,Normal grip pull ups (Full range of motion,parziale Tirata,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+3d0e9420-3d5f-4c9d-a002-7ad83f43bbde,Standing Neutral Grip Cable Press,In piedi Cavo presa neutra Spinta,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+3e96fcc6-7397-4387-ac5b-92569bd670e5,Seated Machine Chest Press,Chest press alla macchina,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+4001ef61-57a1-4f18-8c0b-8167e15c6832,Open and close jumping jacks,presa stretta Salto,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Nome generato errato e perde la sequenza jumping jack.
+4061bcd4-25a4-48ce-abbe-765986eb91e5,Back Extension on Ball,Estensioni lombari su fitball,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+42dc0603-91e8-4a1e-8bf0-ef9478718106,Seated leg raises,Seduto Sollevamento gambe,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Nome generato innaturale; richiede revisione terminologica.
+47ab9d26-7959-46bb-9744-1e48695f5e70,Bear crawl into explosive jumps,Bear crawl con salto esplosivo,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+4c55ca15-3665-4db7-b11d-7d4273263f66,1 Leg Broad Jump,Salto in lungo monopodalico,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,bf898d7d-622d-4cae-b469-0e8a40de8204,uuid:bf898d7d-622d-4cae-b469-0e8a40de8204,,,,REVIEW_REQUIRED,External ID già presente ma senza link YMove manual_approved primario valido.
+4e4377e1-ab91-4015-84ac-27b3274b549f,Barbell Shoulder Press -  Barbell Overhead Press - Barbell Military Press,Lento avanti con bilanciere,REVIEW_POSSIBLE_MATCH,BLOCKED_INCIDENT_HIDDEN,3f810135-05b4-44c1-8bc5-7c3c70c8d63e,uuid:3f810135-05b4-44c1-8bc5-7c3c70c8d63e,removed,ymove_import_incident_2026_07_30_1531_utc,,BLOCKED_INCIDENT_HIDDEN,Esercizio dell’incidente già nascosto e link rimosso; non riattivare.
+5990deac-a91d-4531-8c2f-a708fc95fd1f,Barbell Hip Thrust,Hip thrust con bilanciere,LINK_EXISTING_VERIFIED,LINK_EXISTING_READY,,legacy:gambe-hip-thrust,,,,LINK_EXISTING_READY,
+5e751b08-c767-4a40-8ef7-62d271995c86,Cable Bicep Curl bar,Curl bicipiti al cavo con barra,LINK_EXISTING_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+63603235-6df6-4c55-b0fe-c417fee626b8,Bear plank side tap sidewalks,Bear plank con side tap laterali,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+6378a159-2d36-4fb3-b972-2862f81433e8,Hip Thrust Machine,Machine Hip thrust,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+638616d3-100b-4b14-8516-ff9e4b3e80f2,Bear plank steps and hops,Bear plank con passi e salti,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+65e95132-e6bb-41e8-af7d-0eda931a1693,Barbell Back Squat,Back Squat con bilanciere,LINK_EXISTING_VERIFIED,BLOCKED_INCIDENT_HIDDEN,51b8b377-e214-4efc-a077-f7bfdfe7aef9,uuid:51b8b377-e214-4efc-a077-f7bfdfe7aef9,removed,ymove_import_incident_2026_07_30_1531_utc,,BLOCKED_INCIDENT_HIDDEN,Esercizio dell’incidente già nascosto e link rimosso; non riattivare.
+697e0018-b1bd-4035-9ced-5a446cd66caa,narrow squats chair,presa stretta Squat,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1,Barbell Bench Press,Panca piana con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+6cecf804-dcf6-484b-8e1d-57e0d152bbb7,Cable Crunch kneeling,Cavo in ginocchio Crunch,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+6e4be416-7097-4301-bfb9-f62bc69f1fa7,Bent Over Barbell Row Overhand Grip,Rematore con bilanciere a busto flesso con presa prona,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+6e9512fe-74b9-4c8a-bae2-a54361937b0e,Barbell Thruster - Straight Bar Thruster,Thruster con bilanciere,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+706ac77a-70f7-4532-a3c5-f1ce1bd2f079,Forward lunge with lateral flexion,laterale Affondo,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+709f2fe5-f590-401b-aa94-d5f6dc67165b,Barbell Sit-Up,Sit-Up Con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6,Bent Over Barbell Row Underhand Grip,Rematore con bilanciere a busto flesso con presa supina,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+71bf8e65-38ff-4145-b42c-341c8d574b59,8 Count Body Builder,Body builder in 8 tempi,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+71cd3500-6a12-4ad9-b9c4-5b4c20f33deb,Barbell Curl 21s,Curl 21 con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+73f9f38e-cd72-4e0c-995a-e7698aab8408,Lying leg raises with crunch,Da sdraiato Sollevamento gambe,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+742b9b5a-2d25-4321-9769-bdc267ac59f7,Step ups,Step-up,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+74658f21-21bb-40f6-bf66-54aa7b499622,Explosive push,Push-up esplosivo,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+7a94a32f-40d9-42eb-b03d-afe76c71ea36,Alternating Side Reaches,Estensione laterale,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Titolo ambiguo: side reach non identificato con sufficiente precisione.
+83b448e2-7782-42ff-bcf6-1ce7a7e9a5a4,Hip Circle hops,Rimbalzo,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Nome Rimbalzo troppo generico per Hip Circle hops.
+854b33d7-6d88-4a67-a5d5-4e7e2983b140,back stretch,Allungamento della schiena,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+92d81e10-c495-4bf9-b205-a079f8711097,L-sit to tucked L-sit,L-sit to tucked L-sit,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+9a68f965-4e58-4b5b-87d5-c44929dd1f39,Banded squat,Squat con elastico,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,37b24c41-3f75-4f08-9812-4c10464fc13a,uuid:37b24c41-3f75-4f08-9812-4c10464fc13a,,,,REVIEW_REQUIRED,External ID già presente ma senza link YMove manual_approved primario valido.
+9acaf8fd-1e81-4106-8d86-921b013f36c0,Arch Skydiver,Skydiver prono in estensione,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+9eb19f30-37d0-4aca-9e2d-c90a65f7b07b,Dumbbell Bench Press incline,Panca inclinata con manubri,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+a0395420-b67f-4ddd-965d-30d4a489f489,Dumbbell Bench Press,Panca con manubri,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+a64ffb04-76a7-431a-a9a5-6addeab61813,Barbell Ab Rollout,Ab Rollout con bilanciere,CREATE_NEW_VERIFIED,ALREADY_IMPORTED_VALID,2c600fe6-9d44-43dd-9389-239bcd455db0,uuid:2c600fe6-9d44-43dd-9389-239bcd455db0,manual_approved,,,ALREADY_IMPORTED_VALID,
+a95a735d-411f-4edd-abd5-5f00e79874d4,Pull Up (Neutral Grip),presa neutra Tirata,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+aa3d8f09-8870-4ec1-aada-7760020dfeaa,Cable Fly Low to High,Croci ai cavi dal basso verso l’alto,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+ac6026af-173a-4357-ac12-2c7440a71a5d,Kneeling jump squat,in ginocchio Squat,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+accf9858-fd32-4f43-aa4d-0bd0f53d7498,Bear crawl to pike push up,Bear crawl con pike push-up,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+ae8be22d-584f-4c34-add8-d25383ba90de,Barbell walking lunges,Affondi camminati con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+b2073383-2f4c-419e-95f3-0e1cd4f02c34,Cable Deadlift,Cavo Stacco da terra,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+b21be739-d8af-416f-83e4-fc65509a9a28,Bear plank ankle taps into jumps,Bear plank con tocchi alle caviglie e salti,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+b43b051d-cd66-41c7-8772-f81797ce872c,Barbell Glute Bridge,Glute bridge con bilanciere,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+b5869e95-3109-43ad-b7b5-34e6dad882f0,Dumbbell plank row,Rematore con manubri,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+b771f714-b1dc-49f8-8df5-9f8ae35bbbae,Bird Dog,Bird dog,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Esiste equivalente FitCoach lombari-bird-dog; non è CREATE_NEW.
+bbac448a-df15-415e-a391-8b1d400df2bf,Dumbbell deadlift,Manubrio Stacco da terra,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+be7a8c2a-db1b-405f-a61f-96f26c628c6c,Barbell Romanian Deadlift,Stacco rumeno con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+beb4aef0-332a-4be7-9839-d51e65772e33,Toes to bar,Toes to bar,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+c0bd82fb-5ad6-4390-a060-dd46c1a6bea2,Barbell Overhead Press,Overhead Press Con bilanciere,REVIEW_POSSIBLE_MATCH,BLOCKED_INCIDENT_HIDDEN,7c4fb5c1-04f3-41c2-ab61-327dc02a0f16,uuid:7c4fb5c1-04f3-41c2-ab61-327dc02a0f16,removed,ymove_import_incident_2026_07_30_1531_utc,,BLOCKED_INCIDENT_HIDDEN,Esercizio dell’incidente già nascosto e link rimosso; non riattivare.
+c2fbe7d4-e9a5-41f8-b8eb-d903948d268b,1 Leg Left Right Hop over Cone,Salto laterale sopra il cono su una gamba sola,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+c4d91f02-e796-4992-a08d-531b1d4bb16b,Bear crawl shoulder tap to pike push up,Bear crawl con shoulder tap e pike push-up,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+c67b0b0a-c636-4cff-9628-8ecd1e5482ca,Single leg glute bridge,monopodalico Ponte,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Nome monopodalico Ponte innaturale; revisione nome necessaria.
+c794e5f9-f603-4f1a-a108-1989ff2b8215,Bear plank toe taps,Bear plank con toe tap,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e,Broad jumps,Salto in lungo,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+cbe360e8-fa98-4793-b327-c2769ac69943,Plyo Push-up,Push-up pliometrico,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+ceaa0c34-9db0-4642-ad6a-c0125ad88c32,Wall Push Ups,Push-up al muro,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+cf8eef3a-8539-410a-9dac-da29caf914d6,Low Cable Curl V-Bar,Curl al cavo con barra,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+d059f2d7-4a9c-4f56-b754-55966afd5c1c,Sumo squats,Sumo Squat,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+d06c3d04-aeb4-4b94-9a43-24e95201239c,Archer push up,Push-up arciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+d0a73aa8-dc45-49dd-951d-de4825a74ada,Barbell Skull Crushers,French press con bilanciere da sdraiato,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+d552a696-bf87-4bf7-9597-fa425d617874,Barbell Bench Press decline,Panca declinata con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+daeabed2-d92e-4de2-87c0-138bcc0009b4,Reverse Step Up,Step-up inverso,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+de7f1e4f-cb03-446d-b768-4a93baae1ab2,Barbell Incline Bench Press - Medium Grip,Panca inclinata con bilanciere presa media,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+eb37d0a0-1a45-482c-9c6a-1aef9744661c,Barbell Wrist Curl,Curl dei polsi con bilanciere,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb,1 Leg Lateral Broad Jump,Balzo laterale monopodalico,CREATE_NEW_VERIFIED,CREATE_NEW_READY,,,,,,CREATE_NEW_READY,
+ee4ec1d3-6f4c-42bf-b338-ac175213a4e7,Chest Press Machine flat,Chest press orizzontale alla macchina,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+ee79ed25-3455-4730-acd9-5173de6085c9,Ab Bridge Complex,complesso Ponte,CREATE_NEW_VERIFIED,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Ab Bridge Complex ambiguo; sequenza non identificata con certezza.
+f3b5098c-a02d-44ce-941e-2afca2f7329f,Single leg get up into lunge,monopodalico Affondo,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc,Barbell Push Press,Push Press Con bilanciere,REVIEW_POSSIBLE_MATCH,BLOCKED_INCIDENT_HIDDEN,3d2ad049-5d1c-423f-88ec-afc205b7cfbb,uuid:3d2ad049-5d1c-423f-88ec-afc205b7cfbb,removed,ymove_import_incident_2026_07_30_1531_utc,,BLOCKED_INCIDENT_HIDDEN,Esercizio dell’incidente già nascosto e link rimosso; non riattivare.
+fa6a3579-8bbe-47ab-b0dc-4d0545f16a34,Negative pull ups,negativo Tirata,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+fc721ada-0004-40d7-9e1e-634dc9b34877,Behind the Head Curl with Cable,Curl ai cavi dietro la testa,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.
+fef72790-359f-4f3f-9fcd-a80fb2c63b5f,Dumbbell Single leg deadlift,Manubrio monopodalico Stacco da terra,REVIEW_POSSIBLE_MATCH,REVIEW_REQUIRED,,,,,,REVIEW_REQUIRED,Candidato semanticamente non definitivo.

@@ -1,0 +1,15 @@
+{
+  "requestedTarget": "legacy:bicipiti-curl-bilanciere",
+  "legacyKey": "bicipiti-curl-bilanciere",
+  "status": "CREATE_CANONICAL_REQUIRED",
+  "canonicalExerciseId": "8a3b9fdc-b153-4975-9b90-a2217bcd0f7f",
+  "canonicalExerciseKey": "bicipiti-curl-bilanciere",
+  "canonicalName": "Curl con bilanciere",
+  "metadataRows": 1,
+  "existingCanonicalRows": 0,
+  "identityRows": 0,
+  "referenceRows": 18,
+  "databaseModified": false,
+  "migrationApplied": false,
+  "linkCreated": false
+}

@@ -1,0 +1,855 @@
+﻿external_exercise_id,ymove_title,proposed_italian_name,approved_italian_name,researched_italian_name,translation_status,semantic_review_status,research_status,source_confidence
+4c55ca15-3665-4db7-b11d-7d4273263f66,1 Leg Broad Jump,1 Leg Broad Jump,NULL,Salto in lungo monopodalico,review_required,LINK_EXISTING_VERIFIED,LINK_EXISTING_VERIFIED,80
+ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb,1 Leg Lateral Broad Jump,1 Leg Lateral Broad Jump,NULL,Balzo laterale monopodalico,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,65
+c2fbe7d4-e9a5-41f8-b8eb-d903948d268b,1 Leg Left Right Hop over Cone,1 Leg Left Right Hop over Cone,Salto laterale sopra il cono su una gamba sola,Salti laterali monopodalici sopra il cono,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,78
+4a816d4c-e7b1-4e18-823f-64d0c4eee38b,4 Square Drill,4 Square Drill,Esercizio dei quattro quadrati,Drill dei quattro quadrati,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,70
+71bf8e65-38ff-4145-b42c-341c8d574b59,8 Count Body Builder,8 Count Body Builder,NULL,Body builder in 8 tempi,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,76
+3620635f-3fcb-4552-8959-dc6ec09d9ea2,A steps,A steps,NULL,A-skip / A steps,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,45
+ee79ed25-3455-4730-acd9-5173de6085c9,Ab Bridge Complex,Ab Bridge Complex,NULL,NULL,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,30
+7a94a32f-40d9-42eb-b03d-afe76c71ea36,Alternating Side Reaches,Alternating Side Reaches,NULL,NULL,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,35
+9acaf8fd-1e81-4106-8d86-921b013f36c0,Arch Skydiver,Arch Skydiver,NULL,Skydiver prono in estensione,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,42
+d06c3d04-aeb4-4b94-9a43-24e95201239c,Archer push up,Archer push up,NULL,Archer push up,review_required,REVIEW_POSSIBLE_MATCH,REVIEW_POSSIBLE_MATCH,75
+5ba69aaa-7f7a-4564-940e-c6fb7da55c26,Arm swings,Arm swings,NULL,Slanci dinamici delle braccia,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,62
+52fb4e42-549e-4af2-a83d-f0c6c76f38ae,Armpit Opener,Armpit Opener,NULL,Apertura ascelle e petto,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,45
+109f6115-f03d-48da-802a-2e2aa385678d,Back Extension - Hyperextension,Back Extension - Hyperextension,NULL,Iperestensioni lombari alla panca romana,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,82
+4061bcd4-25a4-48ce-abbe-765986eb91e5,Back Extension on Ball,Back Extension on Ball,NULL,Estensioni lombari su fitball,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,82
+4d4779ae-ab3c-4f3b-8c9f-566a23c80437,Back Shuffle,Back Shuffle,NULL,Shuffle all'indietro,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,68
+854b33d7-6d88-4a67-a5d5-4e7e2983b140,back stretch,back stretch,NULL,Allungamento della schiena,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,35
+80b6b175-77a8-48ac-9a09-495d114d88ef,Backward lunges,Backward lunges,NULL,Affondi indietro,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,82
+fa45710a-ee56-4648-811c-5eeaaeaff098,Band Leg press,Band Leg press,NULL,Leg press con elastico,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,65
+1dda1f16-d715-4a4f-a12b-d75b7dca81e7,Banded Lateral Walks,Banded Lateral Walks,NULL,Camminata laterale con elastico,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,70
+9a68f965-4e58-4b5b-87d5-c44929dd1f39,Banded squat,Banded squat,Squat con elastico,NULL,review_required,NULL,NULL,NULL
+a64ffb04-76a7-431a-a9a5-6addeab61813,Barbell Ab Rollout,Con bilanciere Ab Rollout,Ab Rollout con bilanciere,Ab rollout con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,90
+31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3,Barbell Ab Rollout - On Knees,Con bilanciere Ab Rollout - On Knees,Ab rollout in ginocchio con bilanciere,Ab rollout in ginocchio con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,90
+65e95132-e6bb-41e8-af7d-0eda931a1693,Barbell Back Squat,Con bilanciere Back Squat,Back Squat con bilanciere,Back squat con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,85
+69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1,Barbell Bench Press,Con bilanciere Panca press,NULL,NULL,generated,NULL,NULL,NULL
+d552a696-bf87-4bf7-9597-fa425d617874,Barbell Bench Press decline,Con bilanciere Panca press declinato,NULL,Panca declinata con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,75
+b853fd08-4739-4239-a825-8c31826d54ba,Barbell calf raises,Con bilanciere calf raises,Calf raises con bilanciere,Calf raise in piedi con bilanciere,generated,REVIEW_POSSIBLE_MATCH,REVIEW_POSSIBLE_MATCH,85
+71cd3500-6a12-4ad9-b9c4-5b4c20f33deb,Barbell Curl 21s,Con bilanciere Curl 21s,NULL,Curl 21 con bilanciere,generated,REVIEW_POSSIBLE_MATCH,REVIEW_POSSIBLE_MATCH,75
+1158c681-55e9-4db0-bb73-3dab32d99aa5,Barbell Curls,Con bilanciere Curls,NULL,NULL,generated,NULL,NULL,NULL
+2fb79823-a759-4ceb-8b16-a26ab3cfb440,Barbell Deadlift,Con bilanciere Deadlift,Stacco da terra con bilanciere,Stacco da terra con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,90
+7d31d648-432b-4edd-97bc-afc2a3e9e59a,Barbell Deadlift,Con bilanciere Deadlift,Deadlift Con bilanciere,Stacco da terra con bilanciere,generated,EXCLUDE_EDITORIAL_DUPLICATE,EXCLUDE_EDITORIAL_DUPLICATE,90
+069c1e6b-05f4-4390-a1c7-9b740e0bec4a,Barbell Front Raise,Con bilanciere Front Alzata,Alzate frontali con bilanciere,Alzate frontali con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,90
+0e5f29cd-ff79-428a-bb1c-1753a9047f32,Barbell Full Squat,Con bilanciere Full Squat,Full Squat Con bilanciere,Squat completo con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,75
+b43b051d-cd66-41c7-8772-f81797ce872c,Barbell Glute Bridge,Con bilanciere Glute Bridge,NULL,Glute bridge con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,75
+74c36be0-d1e4-4703-8c54-612c2da1dcc1,Barbell Good Morning,Con bilanciere Good Morning,Buongiorno con bilanciere,Good morning con bilanciere,generated,LINK_EXISTING_VERIFIED,LINK_EXISTING_VERIFIED,85
+5990deac-a91d-4531-8c2f-a708fc95fd1f,Barbell Hip Thrust,Con bilanciere Hip Thrust,NULL,NULL,generated,NULL,NULL,NULL
+de7f1e4f-cb03-446d-b768-4a93baae1ab2,Barbell Incline Bench Press - Medium Grip,Con bilanciere inclinato Panca press - Medium Grip,NULL,Panca inclinata con bilanciere presa media,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,75
+714b176e-2963-43f0-ae0f-c71643cbe426,Barbell Lunge,Con bilanciere Lunge,NULL,Affondi con bilanciere,generated,EXCLUDE_EDITORIAL_DUPLICATE,EXCLUDE_EDITORIAL_DUPLICATE,90
+dd57e914-d0ef-4d6f-8724-d72f220b7422,Barbell Lunges,Con bilanciere Lunges,NULL,Affondi con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,86
+c0bd82fb-5ad6-4390-a060-dd46c1a6bea2,Barbell Overhead Press,Con bilanciere Overhead Press,Overhead Press Con bilanciere,Lento avanti con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,80
+f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc,Barbell Push Press,Con bilanciere Push Press,Push Press Con bilanciere,Push press con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,85
+be7a8c2a-db1b-405f-a61f-96f26c628c6c,Barbell Romanian Deadlift,Con bilanciere Romanian Deadlift,NULL,NULL,generated,NULL,NULL,NULL
+dbf6a8e4-19dc-4d01-8014-f195a1eb817c,Barbell Rows,Con bilanciere Rows,NULL,NULL,generated,NULL,NULL,NULL
+4e4377e1-ab91-4015-84ac-27b3274b549f,Barbell Shoulder Press -  Barbell Overhead Press - Barbell Military Press,Con bilanciere Shoulder Press -  con bilanciere Overhead Press - con bilanciere Military Press,Shoulder Press Con bilanciere  -  Overhead Press Con bilanciere  - Military Press Con bilanciere,Lento avanti con bilanciere,generated,RESEARCH_REQUIRED,RESEARCH_REQUIRED,55
+a363775e-2aa5-49cb-ac17-7aa137d5d47b,Barbell Shrug,Con bilanciere Shrug,Shrug Con bilanciere,Scrollate con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,85
+709f2fe5-f590-401b-aa94-d5f6dc67165b,Barbell Sit-Up,Con bilanciere Sit-Up,Sit-Up Con bilanciere,Sit-up con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,76
+d0a73aa8-dc45-49dd-951d-de4825a74ada,Barbell Skull Crushers,Con bilanciere Skull Crushers,NULL,French press con bilanciere da sdraiato,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,88
+1ffaf9e8-fe94-44e8-a20b-012ea58eba46,Barbell Sumo Squat,Con bilanciere Sumo Squat,NULL,Sumo squat con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,86
+c8f3362d-fb00-481e-b428-e0b17f4ae681,Barbell Sumo Squat,Con bilanciere Sumo Squat,NULL,Sumo squat con bilanciere,generated,EXCLUDE_EDITORIAL_DUPLICATE,EXCLUDE_EDITORIAL_DUPLICATE,90
+6e9512fe-74b9-4c8a-bae2-a54361937b0e,Barbell Thruster - Straight Bar Thruster,Con bilanciere Thruster - Straight Bar Thruster,NULL,Thruster con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,86
+ae8be22d-584f-4c34-add8-d25383ba90de,Barbell walking lunges,Con bilanciere walking lunges,NULL,Affondi camminati con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,84
+eb37d0a0-1a45-482c-9c6a-1aef9744661c,Barbell Wrist Curl,Con bilanciere Wrist Curl,NULL,Curl dei polsi con bilanciere,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,88
+47ab9d26-7959-46bb-9744-1e48695f5e70,Bear crawl into explosive jumps,Bear crawl into explosive jumps,NULL,Bear crawl con salto esplosivo,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,72
+c4d91f02-e796-4992-a08d-531b1d4bb16b,Bear crawl shoulder tap to pike push up,Bear crawl shoulder tap to pike push up,NULL,Bear crawl con shoulder tap e pike push-up,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,72
+accf9858-fd32-4f43-aa4d-0bd0f53d7498,Bear crawl to pike push up,Bear crawl to pike push up,NULL,Bear crawl con pike push-up,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,72
+214c3916-f02f-456f-9750-70fd0679295a,Bear crawls,Bear crawls,NULL,Bear crawl,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,88
+5d6d9ca4-1ace-4dc9-b408-6ced49b753e7,Bear hold,Bear hold,NULL,Bear hold,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,86
+b21be739-d8af-416f-83e4-fc65509a9a28,Bear plank ankle taps into jumps,Bear plank ankle taps into jumps,NULL,Bear plank con tocchi alle caviglie e salti,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,70
+c2a135e7-1383-47c1-9757-4868ae9a8c55,Bear plank Shoulder taps,Bear plank Shoulder taps,NULL,Bear plank con shoulder tap,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,86
+f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b,Bear plank shoulder taps - 30,Bear plank shoulder taps - 30,NULL,Bear plank con shoulder tap,review_required,EXCLUDE_EDITORIAL_DUPLICATE,EXCLUDE_EDITORIAL_DUPLICATE,88
+63603235-6df6-4c55-b0fe-c417fee626b8,Bear plank side tap sidewalks,Bear plank side tap sidewalks,NULL,Bear plank con side tap laterali,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,68
+638616d3-100b-4b14-8516-ff9e4b3e80f2,Bear plank steps and hops,Bear plank steps and hops,NULL,Bear plank con passi e salti,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,68
+c794e5f9-f603-4f1a-a108-1989ff2b8215,Bear plank toe taps,Bear plank toe taps,NULL,Bear plank con toe tap,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,70
+59887212-af71-41e1-9b3f-afe352ba1979,Bear toe taps,Bear toe taps,NULL,Bear toe taps,review_required,RESEARCH_REQUIRED,RESEARCH_REQUIRED,45
+fc721ada-0004-40d7-9e1e-634dc9b34877,Behind the Head Curl with Cable,Behind the Head Curl with al cavo,NULL,Curl ai cavi dietro la testa,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,78
+ab1681a6-93a1-4e51-ac8c-c76f02ef3737,Behind the Neck Rope Pulldown,Behind the Neck Rope Pulldown,NULL,Pulldown dietro la nuca con corda,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,76
+051a5802-da89-415d-a912-93162c89a4bf,Behind the Neck Shoulder Press Machine,Behind the Neck Shoulder Press alla macchina,NULL,Shoulder press alla macchina dietro la nuca,generated,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,74
+48b2c98e-b82f-49aa-b847-b871a69e1b95,Bench Dips,Bench Dips,NULL,Dip su panca,review_required,CREATE_NEW_RESEARCHED,CREATE_NEW_RESEARCHED,90
+79084f10-c317-4c40-ae0c-45d0b760298d,Bench Dips,Bench Dips,NULL,NULL,review_required,NULL,NULL,NULL
+4402c7a1-0845-4da2-882d-4e06fc275b8b,Bench Jump,Bench Jump,NULL,NULL,review_required,NULL,NULL,NULL
+58d0fe05-1a66-4b80-a6d8-2dc2f0d73169,Bench Press,Panca press,NULL,NULL,generated,NULL,NULL,NULL
+53f37f4b-c486-4ebb-846b-953078455bfe,Bent leg v-sit into punches,Bent leg v-sit into punches,NULL,NULL,review_required,NULL,NULL,NULL
+059690e8-f60d-4099-b3ae-93d18358a59a,Bent Over Barbell Row,Bent Over con bilanciere Rematore,NULL,NULL,generated,NULL,NULL,NULL
+6e4be416-7097-4301-bfb9-f62bc69f1fa7,Bent Over Barbell Row Overhand Grip,Bent Over con bilanciere Rematore Overhand Grip,NULL,NULL,generated,NULL,NULL,NULL
+716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6,Bent Over Barbell Row Underhand Grip,Bent Over con bilanciere Rematore Underhand Grip,NULL,NULL,generated,NULL,NULL,NULL
+de70b78c-7dec-4a91-acc7-d75ae27eb765,Bent Over Dumbbell Rear Delt Raise,Bent Over con manubri Rear Delt Alzata,NULL,NULL,generated,NULL,NULL,NULL
+7ab0bece-90eb-45f1-9b22-3fd86c376aa1,Bent Over Dumbbell Reverse Fly,Bent Over con manubri Reverse Fly,NULL,NULL,generated,NULL,NULL,NULL
+c7c76fa8-908a-4ee0-977c-35f12057676d,Bent over Dumbbell Tricep Extension,Bent over con manubri Tricep Extension,NULL,NULL,generated,NULL,NULL,NULL
+43c81170-5fc1-46dd-92b0-6a308c22cec1,Bent Over One-Arm Long Bar Row,Bent Over One-Arm Long Bar Rematore,NULL,NULL,generated,NULL,NULL,NULL
+ad8e32a3-091a-4b10-a316-8984807ce817,Bent Over Two-Arm Long Bar Row - 105,Bent Over Two-Arm Long Bar Rematore - 105,NULL,NULL,generated,NULL,NULL,NULL
+7aaad2c1-c499-40dd-84e5-a66b910e6f8b,Bent Over Two-Dumbbell Row With Palms In,Bent Over Two-con manubri Rematore With Palms In,NULL,NULL,generated,NULL,NULL,NULL
+87a9f879-77ef-4dbe-8e8e-b15fea5052a7,Bicycle punches,Bicycle punches,NULL,NULL,review_required,NULL,NULL,NULL
+b771f714-b1dc-49f8-8df5-9f8ae35bbbae,Bird Dog,Bird Dog,NULL,NULL,review_required,NULL,NULL,NULL
+a36c63b9-c3d4-432d-a135-1ca81a162d35,Boat hold,Boat hold,NULL,NULL,review_required,NULL,NULL,NULL
+e396f5be-9c22-44ff-b825-d754d807f5fd,Boat pose,Boat pose,NULL,NULL,review_required,NULL,NULL,NULL
+42ee935a-8052-4d1b-bde6-d64bb2389e57,Bodyweight Squat,Bodyweight Squat,NULL,NULL,review_required,NULL,NULL,NULL
+f28e1faf-4677-453e-9007-8329d7a67e2d,Bodyweight Squat (air squat),Bodyweight Squat (air squat),NULL,NULL,review_required,NULL,NULL,NULL
+33869887-32ab-4c66-b033-3bef9e5de372,Bodyweight Triceps Extension (with bar),Bodyweight Triceps Extension (with bar),NULL,NULL,review_required,NULL,NULL,NULL
+4c799907-a832-42b2-b9b3-bfb75a68c840,Bow pose,Bow pose,NULL,NULL,review_required,NULL,NULL,NULL
+ffded4df-0bf5-4522-8c94-cf15492a8271,Box Jump,Box Jump,NULL,NULL,review_required,NULL,NULL,NULL
+768c2a0e-5824-42f9-8175-b296f0433c02,Box jumps,Box jumps,NULL,NULL,review_required,NULL,NULL,NULL
+0e19fa47-7a77-4fdf-86a0-66258725fa3d,Box Toe Tap,Box Toe Tap,NULL,NULL,review_required,NULL,NULL,NULL
+c4f2aff0-d474-473a-ad7d-559033aac8b3,Bridge march,Bridge march,NULL,NULL,review_required,NULL,NULL,NULL
+31f0a2a6-2d44-4c33-bf3a-2d0687b748a4,Bridge pose,Bridge pose,NULL,NULL,review_required,NULL,NULL,NULL
+ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e,Broad jumps,Broad jumps,NULL,NULL,review_required,NULL,NULL,NULL
+cd6edab4-3f1e-477f-8a88-54f9c683c9de,Bulgarian split squat,Bulgarian split squat,NULL,NULL,review_required,NULL,NULL,NULL
+74a22260-8090-40b6-a13a-4d366c0d5fd6,Bulgarian split squat - with Barbell,Bulgarian split squat - with con bilanciere,NULL,NULL,generated,NULL,NULL,NULL
+d81d953b-b29d-438a-aeee-610523bca09d,Bulgarian split squat with Dumbbell,Bulgarian split squat with con manubri,NULL,NULL,generated,NULL,NULL,NULL
+b160ea44-725a-415f-919a-4edad64d3ce3,Burpee (No jump),Burpee (No jump),NULL,NULL,review_required,NULL,NULL,NULL
+a4715d5c-446e-4937-a25a-254652773990,Burpee (No jump) into high plank with shoulder tabs,Burpee (No jump) into high plank with shoulder tabs,NULL,NULL,review_required,NULL,NULL,NULL
+c424ec91-5260-4a23-800d-1a5e140f8320,Butt bridges,Butt bridges,NULL,NULL,review_required,NULL,NULL,NULL
+1effe46b-4944-4308-b0d3-dd87a0c71bc2,Butt kickers,Butt kickers,NULL,NULL,review_required,NULL,NULL,NULL
+ed1451e4-ceef-4aa9-a883-24b733b83edd,Butterfly crunches,Butterfly crunches,NULL,NULL,review_required,NULL,NULL,NULL
+22bf3fc2-d7a0-41d0-9a1a-5e0d149d2b7a,Butterfly Jumps,Butterfly Jumps,NULL,NULL,review_required,NULL,NULL,NULL
+f96ea3ee-fb2f-4a0f-bc3b-7e63959450c5,Butterfly Stretch,Butterfly Stretch,NULL,NULL,review_required,NULL,NULL,NULL
+5e751b08-c767-4a40-8ef7-62d271995c86,Cable Bicep Curl bar,Al cavo Bicep Curl bar,NULL,NULL,generated,NULL,NULL,NULL
+f03c074c-398c-4c33-abd9-980ec883fdbd,Cable Bicep Curl rope,Al cavo Bicep Curl rope,NULL,NULL,generated,NULL,NULL,NULL
+3adef0aa-9687-4cd0-acf6-410c9fa4ba76,Cable Crossover (Mid),Al cavo Crossover (Mid),NULL,NULL,generated,NULL,NULL,NULL
+6cecf804-dcf6-484b-8e1d-57e0d152bbb7,Cable Crunch kneeling,Al cavo Crunch kneeling,NULL,NULL,generated,NULL,NULL,NULL
+b2073383-2f4c-419e-95f3-0e1cd4f02c34,Cable Deadlift,Al cavo Deadlift,NULL,NULL,generated,NULL,NULL,NULL
+f6fa126f-2811-454f-a542-39780209c9ec,Cable Diagonal Kickback,Al cavo Diagonal Kickback,NULL,NULL,generated,NULL,NULL,NULL
+9ddd0baa-fa4b-4f5a-8dd4-3a68dc557563,Cable Fly - High to Low,Al cavo Fly - High to Low,NULL,NULL,generated,NULL,NULL,NULL
+aa3d8f09-8870-4ec1-aada-7760020dfeaa,Cable Fly Low to High,Al cavo Fly Low to High,NULL,NULL,generated,NULL,NULL,NULL
+20500648-961e-4344-bb9b-c775ffc1fe71,Cable Front Kick,Al cavo Front Kick,NULL,NULL,generated,NULL,NULL,NULL
+697ec8a9-34fe-419e-a1b8-825456a3b335,Cable Front Raise,Al cavo Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+d3f23ea3-a3d3-46cd-940b-707efea0df5c,Cable Glute Kickback,Al cavo Glute Kickback,NULL,NULL,generated,NULL,NULL,NULL
+8503592c-a179-456b-9417-5fb5e84fad1a,Cable Hip Abduction,Al cavo Hip Abduction,NULL,NULL,generated,NULL,NULL,NULL
+86a5f361-6b81-4ab7-a769-c32ca56d5ae4,Cable Hip Abduction,Al cavo Hip Abduction,NULL,NULL,generated,NULL,NULL,NULL
+db7c0708-ea39-47cb-89c8-73e749abcfa6,Cable Hip Extension,Al cavo Hip Extension,NULL,NULL,generated,NULL,NULL,NULL
+cd2bfdbe-71d7-4d3e-8b03-fc4a5ed73bf4,Cable Kickback,Al cavo Kickback,NULL,NULL,generated,NULL,NULL,NULL
+a6a9ea7b-c868-4924-842a-9c3232698c3b,Cable Lateral Raise,Al cavo Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+ca7a2f9d-3af1-40cd-a33f-431f437a2902,Cable Preacher Curl,Al cavo Preacher Curl,NULL,NULL,generated,NULL,NULL,NULL
+95fb26cd-a80a-4d69-92a0-af6bf54128bc,Cable Pull-Through,Al cavo Pull-Through,NULL,NULL,generated,NULL,NULL,NULL
+d237c00f-e6f3-44f0-953b-5db4c970f873,Cable Rear Delt Fly,Al cavo Rear Delt Fly,NULL,NULL,generated,NULL,NULL,NULL
+7665b7ae-4cea-4591-bafe-e73cdaa5beac,Cable Rope Face Pull,Al cavo Rope Face Pull,NULL,NULL,generated,NULL,NULL,NULL
+b4824ea0-4d0a-418e-b22d-462b11dc9992,Cable Rope Pullover,Al cavo Rope Pullover,NULL,NULL,generated,NULL,NULL,NULL
+b35c3787-5974-4cca-b3d5-c28f7efa1472,Cable Rope Tricep Pushdown,Al cavo Rope Tricep Pushdown,NULL,NULL,generated,NULL,NULL,NULL
+646f354b-3790-4796-bfd9-cd9df04bcc16,Cable Step-Ups,Al cavo Step-Ups,NULL,NULL,generated,NULL,NULL,NULL
+21dda23e-d221-4800-924e-498f4398f203,Cable Straight Leg Kickback,Al cavo Straight Leg Kickback,NULL,NULL,generated,NULL,NULL,NULL
+207924a2-ae75-4371-be43-49c3cc62b4e1,Cable Tricep Pushdown,Al cavo Tricep Pushdown,NULL,NULL,generated,NULL,NULL,NULL
+ab522399-6b5e-4a37-aa7a-47d2ec862631,Cable Tricep Pushdown,Al cavo Tricep Pushdown,NULL,NULL,generated,NULL,NULL,NULL
+56c25b1f-91f4-4fd1-99b9-89e4da81ecdc,Cable Upright Row,Al cavo Upright Rematore,NULL,NULL,generated,NULL,NULL,NULL
+23d6cf5e-2f9a-4f78-a962-d22e6fe36aa9,Cable Woodchop (High to Low),Al cavo Woodchop (High to Low),NULL,NULL,generated,NULL,NULL,NULL
+25ec2936-1aa7-4fb9-86a3-e3b73ab94e7c,Cable Woodchop low to high,Al cavo Woodchop low to high,NULL,NULL,generated,NULL,NULL,NULL
+8577f8c3-283b-472b-b5cf-d0eaa8e84762,Calf gas peddlers,Calf gas peddlers,NULL,NULL,review_required,NULL,NULL,NULL
+6a20f987-50aa-4023-9d0a-723759a24d55,Calf Raise Intervals,Calf Alzata Intervals,NULL,NULL,generated,NULL,NULL,NULL
+43946d04-02aa-4dc8-9a67-3cb759440c22,Calf Raises,Calf Raises,NULL,NULL,review_required,NULL,NULL,NULL
+90924318-0ca7-46ec-9e87-36b80e02196f,Calf stretch (left),Calf stretch (left),NULL,NULL,review_required,NULL,NULL,NULL
+5ce9ef64-7527-4321-997b-1d1bc071f91a,Calf stretch (right),Calf stretch (right),NULL,NULL,review_required,NULL,NULL,NULL
+cb06c2a3-ef02-4e60-b9ab-7d692fa97bc4,Camel pose,Camel pose,NULL,NULL,review_required,NULL,NULL,NULL
+675fab33-9f21-4386-8a43-a319d0684841,Cat cow pose,Cat cow pose,NULL,NULL,review_required,NULL,NULL,NULL
+8e75c181-9db4-4e20-8fa7-be744f820f95,Cat pose,Cat pose,NULL,NULL,review_required,NULL,NULL,NULL
+d749fe82-c106-48d7-9508-7ab1cb88ec1b,Chair Leg Extension,Chair Leg Extension,NULL,NULL,review_required,NULL,NULL,NULL
+46f8865d-24c2-4c81-a886-aa458c5653c5,Chair pose,Chair pose,NULL,NULL,review_required,NULL,NULL,NULL
+f8255cfd-7c0e-4451-89a5-947009e4fd13,Chair running chair step knee touch,Chair running chair step knee touch,NULL,NULL,review_required,NULL,NULL,NULL
+89b62000-867f-4f98-b24c-ad9b5708d015,Chair sit ups,Chair sit ups,NULL,NULL,review_required,NULL,NULL,NULL
+af0e7c20-cd4a-4c26-ac10-1ef6bdaaf35e,chair Twists,chair Twists,NULL,NULL,review_required,NULL,NULL,NULL
+55bd4c71-78c6-49bd-aaaa-8c03b7528342,Chameleon push up,Chameleon push up,NULL,NULL,review_required,NULL,NULL,NULL
+a97c208e-1c40-4410-b51a-a86e5cc37a04,Chameleon push up to mountain climbers,Chameleon push up to mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+9225c7c5-66a0-42c5-8de4-866389741736,Chest and shoulder,Chest and shoulder,NULL,NULL,review_required,NULL,NULL,NULL
+ee4ec1d3-6f4c-42bf-b338-ac175213a4e7,Chest Press Machine flat,Chest Press alla macchina flat,NULL,NULL,generated,NULL,NULL,NULL
+926f4125-2676-45a8-96ee-2b6ace422494,Chest Supported Row Machine,Chest Supported Rematore alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+e6bd8a96-cc6e-4805-bb2d-6755c9350dd9,Child_s pose -Lower back,Child_s pose -Lower back,NULL,NULL,review_required,NULL,NULL,NULL
+a61479a9-fc68-4b4b-9e4d-2f65cd41defa,Child's pose,Child's pose,NULL,NULL,review_required,NULL,NULL,NULL
+ea7d466a-ecd9-4fcb-9a52-53716b513417,Chin-Up (Underhand),Chin-Up (Underhand),NULL,NULL,review_required,NULL,NULL,NULL
+d48bc33d-8daa-456a-9f07-32b42a3798e5,Clams side lying with knee lifts,Clams side lying with knee lifts,NULL,NULL,review_required,NULL,NULL,NULL
+705b3080-cf01-42f4-be0f-ea9e3f83599f,Close Grip Bench Barbell,Close Grip Bench con bilanciere,NULL,NULL,generated,NULL,NULL,NULL
+4668a912-ef55-4b3e-8d9c-53359d6aba29,Close Grip Dumbbell Press,Close Grip con manubri Press,NULL,NULL,generated,NULL,NULL,NULL
+d18679b0-3ce0-409b-9955-584976544f45,Close Grip Incline Dumbbell Press,Close Grip inclinato con manubri Press,NULL,NULL,generated,NULL,NULL,NULL
+10a31695-e218-4819-b7d3-b67b1b5ac79d,Close Grip Lat Pulldown,Close Grip Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+1e99855d-fbf5-433e-9273-6f4e318a6ffe,Close Grip Lat Pulldown,Close Grip Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+5ce18079-7df5-48e0-828e-63005b8eb3d1,Close Grip Lat Pulldown to Waist,Close Grip Lat Pulldown to Waist,NULL,NULL,review_required,NULL,NULL,NULL
+10d2c91e-60e8-416d-8c91-def45954009c,Close Grip Plate Press,Close Grip Plate Press,NULL,NULL,review_required,NULL,NULL,NULL
+bb30b96e-da77-44d7-aabe-d02a7bdcaa23,Cobbler's pose,Cobbler's pose,NULL,NULL,review_required,NULL,NULL,NULL
+1e381fba-eedc-410c-ba1f-1c9c255f4d0f,Cobra pose,Cobra pose,NULL,NULL,review_required,NULL,NULL,NULL
+22880d49-67f2-4f14-9510-046c32da166b,Concentration Curl,Concentration Curl,NULL,NULL,review_required,NULL,NULL,NULL
+372da9df-3ee6-450c-ae97-743968d27d71,Concentration Hammer Curl,Concentration Hammer Curl,NULL,NULL,review_required,NULL,NULL,NULL
+658fa4e6-8b1d-48f4-b97d-7c576783ad73,Corpse pose,Corpse pose,NULL,NULL,review_required,NULL,NULL,NULL
+513d039d-e6d0-459e-9ae7-4847a586871b,Cow face pose (left),Cow face pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+4d433881-e521-45e3-a36e-8672953714c0,Cow face pose (right),Cow face pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+3d8fe08e-93ba-49ac-b5f9-92dbac0d39b2,Cow pose,Cow pose,NULL,NULL,review_required,NULL,NULL,NULL
+fd93f455-3544-4c89-afa2-bcdf980aa53d,Crab hold to to taps,Crab hold to to taps,NULL,NULL,review_required,NULL,NULL,NULL
+1abe4475-eab9-4532-a583-68cc06681462,Crab hold toe tap,Crab hold toe tap,NULL,NULL,review_required,NULL,NULL,NULL
+d7078f6a-a0eb-47e6-9396-98b250afff34,Crab Walk,Crab Walk,NULL,NULL,review_required,NULL,NULL,NULL
+85a71ed6-caf0-4b0c-aa70-0419d8f81157,Crab walk to squat,Crab walk to squat,NULL,NULL,review_required,NULL,NULL,NULL
+10be21b8-de6f-4c33-9101-eadca351e663,Crab walks into squats,Crab walks into squats,NULL,NULL,review_required,NULL,NULL,NULL
+8dcf57f2-24d8-4f4d-802c-2eacbe9d578f,Crescent lunge (left),Crescent lunge (left),NULL,NULL,review_required,NULL,NULL,NULL
+db4a932d-2e11-4809-843e-cb3c1df4535b,Crescent lunge (right),Crescent lunge (right),NULL,NULL,review_required,NULL,NULL,NULL
+0e43c62b-bcf6-4115-8fa4-3049a4d8f24a,Criss-cross jumping jacks,Criss-cross jumping jacks,NULL,NULL,review_required,NULL,NULL,NULL
+b8fb88dc-d819-4e65-86c8-7ea13703afdb,Cross Body Hammer Curl,Cross Body Hammer Curl,NULL,NULL,review_required,NULL,NULL,NULL
+6362bdab-a7d7-49e8-85ab-fe1eb610cb4e,Cross body pulls to hamstring kicks,Cross body pulls to hamstring kicks,NULL,NULL,review_required,NULL,NULL,NULL
+068d316f-52b0-4438-a7c9-ee21ceca2c2f,Crunches,Crunches,NULL,NULL,review_required,NULL,NULL,NULL
+5f84b3d2-daff-4fc1-bb8c-c9524689af7d,Cuads Belt Squat Machine,Cuads Belt Squat alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+b3d44ba8-5fdd-4a7e-ace2-1b12d5901b0b,Cuban Press,Cuban Press,NULL,NULL,review_required,NULL,NULL,NULL
+ea1016da-2d73-4ff8-ad2a-9b36150d2f85,Dead Bug,Dead Bug,NULL,NULL,review_required,NULL,NULL,NULL
+7c9e7503-35f4-4dd3-a515-3b7ad96e21da,Dead Bug with Dumbbells,Dead Bug with Dumbbells,NULL,NULL,review_required,NULL,NULL,NULL
+8f2f2d63-4e39-408b-b450-f88c27d8ae1a,Deadlift with Kettlebell,Deadlift with Kettlebell,NULL,NULL,review_required,NULL,NULL,NULL
+f67b5c4a-a959-4b13-933e-633d4faeab95,Deadstop push up,Deadstop push up,NULL,NULL,review_required,NULL,NULL,NULL
+e8a79472-7809-42d4-89cc-c3c351d86982,Deadstop push up into superman crunches,Deadstop push up into superman crunches,NULL,NULL,review_required,NULL,NULL,NULL
+76741ca2-8960-4323-a495-c595291e3c56,Deadstop push ups,Deadstop push ups,NULL,NULL,review_required,NULL,NULL,NULL
+b9e7733d-fbba-413a-98d9-71803ae1edb4,Deadstop pushup to superman crunch,Deadstop pushup to superman crunch,NULL,NULL,review_required,NULL,NULL,NULL
+8796655f-6390-4ae1-a143-1fe6cde817cb,Decline Chest Press Machine,Declinato Chest Press alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+4c5c90fd-01a3-45f6-a952-712743be9c81,Decline Close Grip Dumbbell Press,Declinato Close Grip con manubri Press,NULL,NULL,generated,NULL,NULL,NULL
+426861d9-64ac-40f6-bf3e-f7ebc05ba6af,Decline Push Up,Declinato Push Up,NULL,NULL,generated,NULL,NULL,NULL
+8bbcc469-9283-4776-a12c-882060dd396c,Declined Push up - 56,Declined Push up - 56,NULL,NULL,review_required,NULL,NULL,NULL
+ffef6f38-6074-43b9-9256-2edc78dcf698,Deficit Calf Raise,Deficit Calf Alzata,NULL,NULL,generated,NULL,NULL,NULL
+9d5a2722-801b-4741-8d9b-11e9a3a4ae2d,Devil press,Devil press,NULL,NULL,review_required,NULL,NULL,NULL
+2930d41f-177c-4f36-bd91-4867afb85a3b,Dips,Dips,NULL,NULL,review_required,NULL,NULL,NULL
+60ec7728-577b-4dea-a5e9-4b8ac16b6038,Dips - Triceps Version,Dips - Triceps Version,NULL,NULL,review_required,NULL,NULL,NULL
+fcc15585-b472-487f-8367-7459ee909832,Dips on bench,Dips on bench,NULL,NULL,review_required,NULL,NULL,NULL
+3add251e-6e58-4f80-902c-ab32e0b61966,Dips on bench 2,Dips on bench 2,NULL,NULL,review_required,NULL,NULL,NULL
+95640151-0b58-4872-94de-a14680227a66,Dips parallel bars,Dips parallel bars,NULL,NULL,review_required,NULL,NULL,NULL
+b219f35b-9bca-4eb5-a010-e0ded6208942,Dive bombers,Dive bombers,NULL,NULL,review_required,NULL,NULL,NULL
+fbffd9c1-bffd-4fb0-ae4c-258834c5fcd2,Donkey Kick with Dumbbell,Donkey Kick with con manubri,NULL,NULL,generated,NULL,NULL,NULL
+45c93c0a-c64e-4f27-a694-ab9fb396cd46,DOT Drill,DOT Drill,NULL,NULL,review_required,NULL,NULL,NULL
+03be228e-9483-470b-ad6c-cdf3d43f7415,Double Box Single Leg Lateral Hop,Double Box Single Leg Lateral Hop,NULL,NULL,review_required,NULL,NULL,NULL
+e3c47861-bcfa-41cf-a191-3524d8679a1c,Downward dog,Downward dog,NULL,NULL,review_required,NULL,NULL,NULL
+4eaaeaca-6966-4b55-94a0-4a34520bb5b9,Downward facing dog split (left),Downward facing dog split (left),NULL,NULL,review_required,NULL,NULL,NULL
+dee6b124-faf4-4d03-a659-e49456892af1,Downward facing dog split (right),Downward facing dog split (right),NULL,NULL,review_required,NULL,NULL,NULL
+cfa3229b-10a2-42cd-bdf0-4fa80ce51fd3,Drop dead push up into knee in,Drop dead push up into knee in,NULL,NULL,review_required,NULL,NULL,NULL
+eda711dc-d4c5-49e6-b323-d8180e41a871,Dumbbel calf raises,Dumbbel calf raises,NULL,NULL,review_required,NULL,NULL,NULL
+383d7e55-3ec7-4908-8298-96bc42aeebe9,Dumbbell Arnold Press,Con manubri Arnold Press,NULL,NULL,generated,NULL,NULL,NULL
+a0395420-b67f-4ddd-965d-30d4a489f489,Dumbbell Bench Press,Con manubri Panca press,NULL,NULL,generated,NULL,NULL,NULL
+9eb19f30-37d0-4aca-9e2d-c90a65f7b07b,Dumbbell Bench Press incline,Con manubri Panca press inclinato,NULL,NULL,generated,NULL,NULL,NULL
+57c79553-d2e3-41e9-97d5-3fe8c0d59fe9,Dumbbell Bicep Curl seated incline,Con manubri Bicep Curl seduto inclinato,NULL,NULL,generated,NULL,NULL,NULL
+f34b7615-bfcc-4cd4-88f7-d7c68e910fe9,Dumbbell Bicep Curl Standing,Con manubri Bicep Curl in piedi,NULL,NULL,generated,NULL,NULL,NULL
+a921697a-e1ec-4941-bffd-f99e69b305b4,Dumbbell Concentration Curl,Con manubri Concentration Curl,NULL,NULL,generated,NULL,NULL,NULL
+bbac448a-df15-415e-a391-8b1d400df2bf,Dumbbell deadlift,Con manubri deadlift,NULL,NULL,generated,NULL,NULL,NULL
+097903be-beaa-4283-9493-19eb90b59762,Dumbbell deltoid fly,Con manubri deltoid fly,NULL,NULL,generated,NULL,NULL,NULL
+4426c121-33b6-42c1-aa78-8d295d8fd687,Dumbbell Discus,Con manubri Discus,NULL,NULL,generated,NULL,NULL,NULL
+a46c036e-f0f6-4c03-8216-cc80da58ee3d,Dumbbell Discus (L),Con manubri Discus (L),NULL,NULL,generated,NULL,NULL,NULL
+f49f3159-4eed-4d0d-a640-497886c309b0,Dumbbell double snatch,Con manubri double snatch,NULL,NULL,generated,NULL,NULL,NULL
+3433c651-a0f5-40cb-bdd8-3029f3ba15c5,Dumbbell External Rotation,Con manubri External Rotation,NULL,NULL,generated,NULL,NULL,NULL
+9696321a-6d49-4d1b-a42d-08fb34bb8323,Dumbbell floor chest press,Con manubri floor chest press,NULL,NULL,generated,NULL,NULL,NULL
+97f48a58-e7a9-4179-88e2-f1a16feb68ca,Dumbbell fly,Con manubri fly,NULL,NULL,generated,NULL,NULL,NULL
+c60450d9-862c-4dd3-87b1-82f80349964d,Dumbbell fly - v2,Con manubri fly - v2,NULL,NULL,generated,NULL,NULL,NULL
+4581a423-5d2d-4cf1-89a0-fea026ef116d,Dumbbell Fly incline,Con manubri Fly inclinato,NULL,NULL,generated,NULL,NULL,NULL
+d8a67e85-0c9f-483d-b7fe-be049247ab1c,Dumbbell forward lunge,Con manubri forward lunge,NULL,NULL,generated,NULL,NULL,NULL
+3e668a4f-2aac-42ae-b8db-58fc179d20d2,Dumbbell Front Raise,Con manubri Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+beee4955-3dbc-4aa1-be35-d01666713f72,Dumbbell get ups (R),Con manubri get ups (R),NULL,NULL,generated,NULL,NULL,NULL
+dadea1de-c228-4e36-99de-db68578de515,Dumbbell glute bridge,Con manubri glute bridge,NULL,NULL,generated,NULL,NULL,NULL
+ff6872ae-e894-4e72-b5f8-59a55b576a6f,Dumbbell Goblet Squat,Con manubri Goblet Squat,NULL,NULL,generated,NULL,NULL,NULL
+44a83578-5681-4a1a-99c3-f8742857bf66,Dumbbell Lateral Raise,Con manubri Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+57c55853-176e-4bad-aced-1032c63f4652,Dumbbell Lunges,Con manubri Lunges,NULL,NULL,generated,NULL,NULL,NULL
+f181cc8e-9816-4205-b025-3b23cb30720b,Dumbbell Lying Rear Lateral Raise,Con manubri Lying Rear Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+fa0fd12d-1fd4-448f-9e21-ceda7b8f18eb,Dumbbell Lying Rear Lateral Raise - One arm,Con manubri Lying Rear Lateral Alzata - a un braccio,NULL,NULL,generated,NULL,NULL,NULL
+af545111-e56a-4731-ba48-2d4ce750bc8e,Dumbbell One-Arm Shoulder Press (L),Con manubri One-Arm Shoulder Press (L),NULL,NULL,generated,NULL,NULL,NULL
+e8aacdde-8fce-438b-878b-3af1a611f2be,Dumbbell One-Arm Shoulder Press (R),Con manubri One-Arm Shoulder Press (R),NULL,NULL,generated,NULL,NULL,NULL
+ac7982bb-1a81-4870-ae78-ce37bb485601,Dumbbell One-Arm Upright Row (L),Con manubri One-Arm Upright Rematore (L),NULL,NULL,generated,NULL,NULL,NULL
+bda6ae04-2619-43a7-8261-490d85444eb2,Dumbbell One-Arm Upright Row (R),Con manubri One-Arm Upright Rematore (R),NULL,NULL,generated,NULL,NULL,NULL
+0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1,Dumbbell Overhead Tricep Extension,Con manubri Overhead Tricep Extension,NULL,NULL,generated,NULL,NULL,NULL
+35b16467-8817-4c28-b84c-a1f47b1734cd,Dumbbell pistol squats,Con manubri pistol squats,NULL,NULL,generated,NULL,NULL,NULL
+b5869e95-3109-43ad-b7b5-34e6dad882f0,Dumbbell plank row,Con manubri plank Rematore,NULL,NULL,generated,NULL,NULL,NULL
+c90444fe-fd21-40d1-923f-5adba83e35bc,Dumbbell Pullover,Con manubri Pullover,NULL,NULL,generated,NULL,NULL,NULL
+f6d6ac54-751d-416e-8c9d-bc4b675cd505,Dumbbell Pullover,Con manubri Pullover,NULL,NULL,generated,NULL,NULL,NULL
+ad241fc8-3d05-4ce7-a950-45380497cdc0,Dumbbell Pulse Squat,Con manubri Pulse Squat,NULL,NULL,generated,NULL,NULL,NULL
+9690f31a-ed99-446e-88db-2934b832f497,Dumbbell Rear Lunge,Con manubri Rear Lunge,NULL,NULL,generated,NULL,NULL,NULL
+54d04b7e-3a7d-4d04-a0b2-adaab8f8f466,Dumbbell Romanian Deadlift,Con manubri Romanian Deadlift,NULL,NULL,generated,NULL,NULL,NULL
+e91bd54f-f605-491d-90e6-16515787389c,Dumbbell Row two arm bent over,Con manubri Rematore two arm bent over,NULL,NULL,generated,NULL,NULL,NULL
+1575dc75-93ab-4c7f-b924-4ed4eda2adc8,Dumbbell Russian Twist,Con manubri Russian Twist,NULL,NULL,generated,NULL,NULL,NULL
+d4210b5a-f583-4039-8566-ed5a20e46eab,Dumbbell Scaption,Con manubri Scaption,NULL,NULL,generated,NULL,NULL,NULL
+0d0368ee-f03d-4ef9-95db-06a56434ea55,Dumbbell Scissors,Con manubri Scissors,NULL,NULL,generated,NULL,NULL,NULL
+0ff5e9fe-9d15-426a-8c06-fd62a198dc47,Dumbbell shadow box,Con manubri shadow box,NULL,NULL,generated,NULL,NULL,NULL
+d6c2798d-a077-41b9-9769-d5bd1a57caaa,Dumbbell Shoulder Press,Con manubri Shoulder Press,NULL,NULL,generated,NULL,NULL,NULL
+0af648a1-1d2e-438b-b687-b522c9eaa8bd,Dumbbell shoulder punches,Con manubri shoulder punches,NULL,NULL,generated,NULL,NULL,NULL
+b150868d-c9c5-4f0f-a407-93d7e34b6ddc,Dumbbell Shrug,Con manubri Shrug,NULL,NULL,generated,NULL,NULL,NULL
+71304f37-af11-4c9f-aa53-ef04cbc9bb29,Dumbbell Side Bend,Con manubri Side Bend,NULL,NULL,generated,NULL,NULL,NULL
+f66596ba-3a70-406c-8ffa-ed6641a10e19,Dumbbell Side Bend (L),Con manubri Side Bend (L),NULL,NULL,generated,NULL,NULL,NULL
+8dcb1591-348a-4809-9abf-0a1679a7a52a,Dumbbell Side Bend (R),Con manubri Side Bend (R),NULL,NULL,generated,NULL,NULL,NULL
+af494781-9fba-41df-b403-79d04db6deae,Dumbbell Side lunge,Con manubri Side lunge,NULL,NULL,generated,NULL,NULL,NULL
+bfce2271-bf6b-4a45-9038-5c9fa1935990,Dumbbell Side lunge (L),Con manubri Side lunge (L),NULL,NULL,generated,NULL,NULL,NULL
+fef72790-359f-4f3f-9fcd-a80fb2c63b5f,Dumbbell Single leg deadlift,Con manubri Single leg deadlift,NULL,NULL,generated,NULL,NULL,NULL
+14a3a8fe-dc12-4c4b-865b-d5e0514c54d4,Dumbbell Skull Crushers,Con manubri Skull Crushers,NULL,NULL,generated,NULL,NULL,NULL
+0de79ddc-e829-4543-942c-e385cc76ac5e,Dumbbell Squat,Con manubri Squat,NULL,NULL,generated,NULL,NULL,NULL
+1b4146bc-1c96-4f05-88cf-72a72783122d,Dumbbell Step Ups,Con manubri Step Ups,NULL,NULL,generated,NULL,NULL,NULL
+ccd60696-7e2f-4611-b3b9-e5f11ddf4e78,Dumbbell Sumo Squat,Con manubri Sumo Squat,NULL,NULL,generated,NULL,NULL,NULL
+c3d00969-0a33-4a3f-b603-938c1014ca9f,Dumbbell Thruster,Con manubri Thruster,NULL,NULL,generated,NULL,NULL,NULL
+f1c43226-fa20-4c2e-af66-0cd680f937df,Dumbbell Tricep Kickback,Con manubri Tricep Kickback,NULL,NULL,generated,NULL,NULL,NULL
+01924d84-4c88-4476-b0dc-8fd92616b362,Dumbbell upper cuts,Con manubri upper cuts,NULL,NULL,generated,NULL,NULL,NULL
+3175c898-09fe-4d02-82c2-de2a3834fdd4,Dumbbell waiter curls,Con manubri waiter curls,NULL,NULL,generated,NULL,NULL,NULL
+6891aa71-6e1f-4ea4-b9ac-f38ea207216a,Dumbbell wrist curls,Con manubri wrist curls,NULL,NULL,generated,NULL,NULL,NULL
+9a8e40b3-446f-4362-9df4-461931927889,Dumbbell wrist curls,Con manubri wrist curls,NULL,NULL,generated,NULL,NULL,NULL
+1b670f12-2b3b-4046-8fb8-379450db6f52,Dumbell Bench Press,Dumbell Panca press,NULL,NULL,generated,NULL,NULL,NULL
+75f26166-ba61-48cf-ba27-0709fbdbb34b,Dumbell Straight Leg Raise,Dumbell Straight Leg Alzata,NULL,NULL,generated,NULL,NULL,NULL
+4f756a6f-51a5-4afe-8cf8-975f3748c4f9,Elbow Plank to Side Plank,Elbow Plank to Side Plank,NULL,NULL,review_required,NULL,NULL,NULL
+f2224eab-4368-4bab-80a3-e0bddbed5a23,Elbow to knee plank,Elbow to knee plank,NULL,NULL,review_required,NULL,NULL,NULL
+b958f3b6-db0c-492a-8895-445af0989161,Elevated Calf Raises,Elevated Calf Raises,NULL,NULL,review_required,NULL,NULL,NULL
+3b3e0a86-56b7-4d15-92ff-11dfaf108147,Elevated push up,Elevated push up,NULL,NULL,review_required,NULL,NULL,NULL
+0501fca5-dd00-4948-8874-40cc851daaee,Explosive jump squats,Explosive jump squats,NULL,NULL,review_required,NULL,NULL,NULL
+4c22f102-513b-4fe4-a271-389c006fbb9f,Explosive knee drive,Explosive knee drive,NULL,NULL,review_required,NULL,NULL,NULL
+74658f21-21bb-40f6-bf66-54aa7b499622,Explosive push,Explosive push,NULL,NULL,review_required,NULL,NULL,NULL
+67b6f81b-3bca-4b91-8cd8-4c4dd6194d6e,Explosive push ups,Explosive push ups,NULL,NULL,review_required,NULL,NULL,NULL
+d9df1e94-1051-407d-9c34-87720d1557a9,Explosive side to side push up,Explosive side to side push up,NULL,NULL,review_required,NULL,NULL,NULL
+022ea5f2-88f3-4d42-b99d-c1026d6bc343,Explosive sprinter lunge (left),Explosive sprinter lunge (left),NULL,NULL,review_required,NULL,NULL,NULL
+d5dff683-d9a5-42ca-b325-47f7275f7def,Explosive sprinter lunge (right),Explosive sprinter lunge (right),NULL,NULL,review_required,NULL,NULL,NULL
+61ef551f-2db3-4ab9-978d-9e5712b873de,Extended side angle pose (left),Extended side angle pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+5f8e2c01-66eb-4f23-b3ad-c87c631e257f,Extended side angle pose (right),Extended side angle pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+5a86b7dd-04a3-47fc-b92d-910f61b184c6,EZ Bar Curl,EZ Bar Curl,NULL,NULL,review_required,NULL,NULL,NULL
+b78e6b13-cc46-49d6-a205-f71b65e6090e,EZ Bar Reverse Curl,EZ Bar Reverse Curl,NULL,NULL,review_required,NULL,NULL,NULL
+9ad86735-3149-48fa-add4-705598dc149e,Farmers walk,Farmers walk,NULL,NULL,review_required,NULL,NULL,NULL
+53339dca-7ed1-4edf-b88c-1f4b618b4d57,Figure 4 Squats,Figure 4 Squats,NULL,NULL,review_required,NULL,NULL,NULL
+f3d25890-dcd5-42b3-8246-a5f596029cc0,Figure Four Stretch (L),Figure Four Stretch (L),NULL,NULL,review_required,NULL,NULL,NULL
+005ba868-d8b1-499f-9a88-b2cf722e6bdf,Figure Four Stretch (R),Figure Four Stretch (R),NULL,NULL,review_required,NULL,NULL,NULL
+05b2ec0e-92d4-4a93-bfed-c371747c072d,Fire Hydrant,Fire Hydrant,NULL,NULL,review_required,NULL,NULL,NULL
+f79d8c98-d6ca-4d46-9704-6d89cf436808,Fire Hydrant Circles,Fire Hydrant Circles,NULL,NULL,review_required,NULL,NULL,NULL
+623b2443-bc73-4c61-986c-412545c33aed,Fire log pose (left),Fire log pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+e0a7528b-5d24-4ddf-9d4c-d61958dc504c,Fire log pose (right),Fire log pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+87820d5e-9377-493c-a924-cc1d4750859b,First Toe Curl with Towel,First Toe Curl with Towel,NULL,NULL,review_required,NULL,NULL,NULL
+3b45e42a-963f-4b79-ae1d-b1b5e8eb9add,Flat Cable Fly,Flat al cavo Fly,NULL,NULL,generated,NULL,NULL,NULL
+704e9540-7bdd-4dbd-bdd3-7341b3563693,Floor Mantis,Floor Mantis,NULL,NULL,review_required,NULL,NULL,NULL
+d536723e-7e3f-460d-a6c5-e9993bfbec4c,Floor Press,Floor Press,NULL,NULL,review_required,NULL,NULL,NULL
+b867d101-cc16-42ff-a057-fe0de4a2d8c6,Flutter kicks,Flutter kicks,NULL,NULL,review_required,NULL,NULL,NULL
+b3fdc5d4-1225-4f12-8b42-86fc0617aeb6,Forward and backward lunge,Forward and backward lunge,NULL,NULL,review_required,NULL,NULL,NULL
+18dda540-eca8-40ad-aca4-9e5f80f574d7,Forward Backward Hop over Cone,Forward Backward Hop over Cone,NULL,NULL,review_required,NULL,NULL,NULL
+706ac77a-70f7-4532-a3c5-f1ce1bd2f079,Forward lunge with lateral flexion,Forward lunge with lateral flexion,NULL,NULL,review_required,NULL,NULL,NULL
+548f86e7-ee60-46ce-a482-c2b1c16e4441,Forward Lunges (Bodyweight),Forward Lunges (Bodyweight),NULL,NULL,review_required,NULL,NULL,NULL
+0df165d9-3c63-4506-a2f1-6f64544fda5d,Forward to Reverse Bear Crawl,Forward to Reverse Bear Crawl,NULL,NULL,review_required,NULL,NULL,NULL
+f7458e9c-56f8-4604-ba58-636ead67ffe2,Foward Lunges Bodyweight,Foward Lunges Bodyweight,NULL,NULL,review_required,NULL,NULL,NULL
+db1a9d2c-5386-41aa-a84f-dad06ac7ea7c,Frog pose,Frog pose,NULL,NULL,review_required,NULL,NULL,NULL
+fefcff8a-f513-48bd-9e6d-0c38de0e4a6b,Frog Stretch,Frog Stretch,NULL,NULL,review_required,NULL,NULL,NULL
+df37b949-000b-4b09-90a3-482d868ee55a,Froggers,Froggers,NULL,NULL,review_required,NULL,NULL,NULL
+e75d29c0-7af3-4e83-a351-6fff23443379,Front Barbell Squat,Front con bilanciere Squat,NULL,NULL,generated,NULL,NULL,NULL
+a04b709a-b24b-497b-af41-66544e152b4b,Front Raise,Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+50aafd34-960f-4967-ae4b-03430a734f10,front raises,front raises,NULL,NULL,review_required,NULL,NULL,NULL
+dc848ac2-ca46-4c70-a8cc-dd2a76e546cf,Front Two-Dumbbell Raise,Front Two-con manubri Alzata,NULL,NULL,generated,NULL,NULL,NULL
+fb48eccb-7f51-4de3-97f0-dc5ef75a6cee,Full range push ups,Full range push ups,NULL,NULL,review_required,NULL,NULL,NULL
+928d2978-b0a4-4619-858d-106a5c99e507,Garland pose,Garland pose,NULL,NULL,review_required,NULL,NULL,NULL
+fa3347f7-0e8f-446b-a7f0-fbb0f6b22206,Gate pose (left),Gate pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+ad7e4bc7-a8d8-4aa7-978f-e130aeb49e8b,Gate pose (right),Gate pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+b2eabe7f-7b04-456e-95b2-7aa3eaa88b9d,Get ups (no jump),Get ups (no jump),NULL,NULL,review_required,NULL,NULL,NULL
+38530004-f20d-4895-8deb-ab02ebac1edf,Get ups with Jump,Get ups with Jump,NULL,NULL,review_required,NULL,NULL,NULL
+bae56fcf-a610-45e8-a577-238c5ee6567b,Glute bridge,Glute bridge,NULL,NULL,review_required,NULL,NULL,NULL
+a62f7e6f-99b3-49cf-a02e-c5146db97da3,Glute Bridge (Bodyweight),Glute Bridge (Bodyweight),NULL,NULL,review_required,NULL,NULL,NULL
+4d9ad82c-1799-4340-b973-c269c901d0e5,Glute Kickback,Glute Kickback,NULL,NULL,review_required,NULL,NULL,NULL
+bc2f34f4-07e6-4001-9dfe-8724be0d9d7e,Glute Kickback,Glute Kickback,NULL,NULL,review_required,NULL,NULL,NULL
+32baa994-5bfa-4fb6-9ff0-07f682410778,Glute Leg Lift,Glute Leg Lift,NULL,NULL,review_required,NULL,NULL,NULL
+ddfa0774-6077-4c9c-a590-1547fa987640,Goal Post Squeeze,Goal Post Squeeze,NULL,NULL,review_required,NULL,NULL,NULL
+b1c0e80d-329c-4910-8b23-37daa8ea17da,Goblet squat,Goblet squat,NULL,NULL,review_required,NULL,NULL,NULL
+54df7bb8-18f9-4b69-8561-f369f06632ee,Goblet Squat with Kettlebell,Goblet Squat with Kettlebell,NULL,NULL,review_required,NULL,NULL,NULL
+c38b24ea-e65d-4561-a0ca-8d578fa6bd32,Goddess pose,Goddess pose,NULL,NULL,review_required,NULL,NULL,NULL
+89fffd4f-96b2-4833-8b3c-817a0aadb507,Good mornings,Good mornings,NULL,NULL,review_required,NULL,NULL,NULL
+88116de4-0c5d-4985-8905-156fd03d7eb9,Good Mornings with barbell,Good Mornings with con bilanciere,NULL,NULL,generated,NULL,NULL,NULL
+24b76364-0eec-4035-b3e0-b7451a94db9f,Hack Squat,Hack Squat,NULL,NULL,review_required,NULL,NULL,NULL
+46989ad6-9ec2-40b0-929d-54893160b1af,Hack Squat Wide Stance,Hack Squat Wide Stance,NULL,NULL,review_required,NULL,NULL,NULL
+a4bd22f6-d98f-47da-9523-ceb6894b9922,Half boat pose,Half boat pose,NULL,NULL,review_required,NULL,NULL,NULL
+b126da42-0645-491c-83ae-e058822e074b,Half burpee,Half burpee,NULL,NULL,review_required,NULL,NULL,NULL
+90f429f5-8d29-4ff7-a993-a904d378803d,Half frog pose (left),Half frog pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+39e71f53-4d30-4cb0-a6dc-16411d33bff0,Half frog pose (right),Half frog pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+3f916ec5-151e-4b3c-bdd2-011621f259fe,Half lord of the fishes pose (left),Half lord of the fishes pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+58178205-37e9-489c-8322-f40b15d7b992,Half lord of the fishes pose (right),Half lord of the fishes pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+37e6d334-06b4-4068-a9e4-5b806cbec2b6,Half moon (left),Half moon (left),NULL,NULL,review_required,NULL,NULL,NULL
+0852e58d-42d4-4e7a-b612-a6d79e93e895,Half moon (right),Half moon (right),NULL,NULL,review_required,NULL,NULL,NULL
+fe06e1be-c429-485f-b36a-5e210ef03bc8,Half Roll Backs,Half Roll Backs,NULL,NULL,review_required,NULL,NULL,NULL
+476cf5d3-e211-4650-84ec-7a3e89c08639,Half split (left),Half split (left),NULL,NULL,review_required,NULL,NULL,NULL
+b1b1d4cd-c4eb-47cc-a3f8-478eb474999f,Half split (right),Half split (right),NULL,NULL,review_required,NULL,NULL,NULL
+c0386f57-3cd2-42e9-9c19-d2d3dc9aa3cb,Half squat get up ),Half squat get up ),NULL,NULL,review_required,NULL,NULL,NULL
+a07157e6-32c0-4380-ad71-55afc02369ec,Halo with dumbbell (L),Halo with con manubri (L),NULL,NULL,generated,NULL,NULL,NULL
+05c60c96-4b0d-4e83-8797-9e3eb9a9cab0,Halo with dumbbell (R),Halo with con manubri (R),NULL,NULL,generated,NULL,NULL,NULL
+3901065d-a926-4d63-9306-0f14eb731d7c,Hammer Curls,Hammer Curls,NULL,NULL,review_required,NULL,NULL,NULL
+71ea41d9-e931-46dc-8a6c-731a7ee3e742,Hang clean,Hang clean,NULL,NULL,review_required,NULL,NULL,NULL
+8180c05c-73e5-4de1-bb90-0b5e0d80c4c9,Hang Snatch,Hang Snatch,NULL,NULL,review_required,NULL,NULL,NULL
+19a378bd-eec2-4950-b8f2-c4179ef28294,Hanging Leg Raise,Hanging Leg Alzata,NULL,NULL,generated,NULL,NULL,NULL
+00cfe51b-59a3-4d61-b712-61ae99c1ca57,Hanging Scapular Pull,Hanging Scapular Pull,NULL,NULL,review_required,NULL,NULL,NULL
+aefc423a-3e4b-4ca0-89c8-62484e13f3c0,Happy baby pose,Happy baby pose,NULL,NULL,review_required,NULL,NULL,NULL
+8f35f8d8-b982-44af-8b71-4254b5be2532,Head Turns Neck stretches,Head Turns Neck stretches,NULL,NULL,review_required,NULL,NULL,NULL
+2608b96f-dbaa-493f-9332-f1bfee45c5d4,Heel Raises toe raises,Heel Raises toe raises,NULL,NULL,review_required,NULL,NULL,NULL
+649d45cb-6e06-4b5b-890a-9ea4043ed7d9,Heel to toe walk,Heel to toe walk,NULL,NULL,review_required,NULL,NULL,NULL
+44067253-a8d5-4b0f-9008-02c2e56624b1,Heel touches,Heel touches,NULL,NULL,review_required,NULL,NULL,NULL
+f7d6b197-e10b-45bf-848b-e4be88299c28,Heel touches - v2,Heel touches - v2,NULL,NULL,review_required,NULL,NULL,NULL
+a16a574a-28bd-4010-bcda-b9f066b381e4,Heels to Butt,Heels to Butt,NULL,NULL,review_required,NULL,NULL,NULL
+0087bb08-f325-4401-9b37-66dd93871570,High Cable Curl,High al cavo Curl,NULL,NULL,generated,NULL,NULL,NULL
+ec545ed7-4724-454a-b730-37a425e80080,High Cable Fly,High al cavo Fly,NULL,NULL,generated,NULL,NULL,NULL
+109aec41-eaeb-4963-908a-e53b560789ee,High Cable Row,High al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+a9f277ce-cbc2-4223-96e5-baab4a926f92,High Knees,High Knees,NULL,NULL,review_required,NULL,NULL,NULL
+5d55105e-04cc-4493-a7e8-302a5653e58c,High Knees v1,High Knees v1,NULL,NULL,review_required,NULL,NULL,NULL
+8be51cd5-3ed1-489e-9975-5d9141880055,High plank alternating single leg knee tuck,High plank alternating single leg knee tuck,NULL,NULL,review_required,NULL,NULL,NULL
+f21fa91d-22fb-4b78-bc6a-50165e5cb8ad,High plank to low plank,High plank to low plank,NULL,NULL,review_required,NULL,NULL,NULL
+9d525d35-2c5f-45c9-a88c-56f8526d2177,High plank to side plank,High plank to side plank,NULL,NULL,review_required,NULL,NULL,NULL
+0f14071c-279d-4926-b41a-cb4dc900bb1d,High plank toe touches,High plank toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+0d3505ae-ce8d-4ad5-b8d0-8c172dd08969,High Row Machine,High Rematore alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+95334bcd-2aa9-4c42-a846-4944c08b9a66,High toe touches,High toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+774856a2-01b1-492b-a955-18d166bde3b4,hip abduction,hip abduction,NULL,NULL,review_required,NULL,NULL,NULL
+6426c762-dd1d-4e44-b9c0-89875c81553a,Hip Abduction Machine,Hip Abduction alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+af606d87-c83f-46cd-b72f-e554708eb94e,Hip Adduction Machine,Hip Adduction alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+83b448e2-7782-42ff-bcf6-1ce7a7e9a5a4,Hip Circle hops,Hip Circle hops,NULL,NULL,review_required,NULL,NULL,NULL
+abfd0396-b9b3-41b3-b8ec-88ce2faf0462,Hip flexor stretch,Hip flexor stretch,NULL,NULL,review_required,NULL,NULL,NULL
+033964cc-ed58-4fe3-8850-cf78c66a85b9,Hip hinge,Hip hinge,NULL,NULL,review_required,NULL,NULL,NULL
+610855b2-2eb1-440a-9645-9598f0a46766,Hip stretch (left),Hip stretch (left),NULL,NULL,review_required,NULL,NULL,NULL
+322a5b58-ed0d-4d37-8d09-c48a606484fe,Hip stretch (right),Hip stretch (right),NULL,NULL,review_required,NULL,NULL,NULL
+6378a159-2d36-4fb3-b972-2862f81433e8,Hip Thrust Machine,Hip Thrust alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+98f659d5-466b-4c23-803c-85cf32f2377c,Hollow Body Hold,Hollow Body Hold,NULL,NULL,review_required,NULL,NULL,NULL
+7829eabb-e6e5-467a-807a-0c5c65ebf49e,Hollow body skullcrushers,Hollow body skullcrushers,NULL,NULL,review_required,NULL,NULL,NULL
+bc8a31d3-6f32-4f5d-a0c9-9935e76b2071,Horizontal Leg Press,Horizontal Leg Press,NULL,NULL,review_required,NULL,NULL,NULL
+abd551ed-0fb5-4db7-a9d3-e9a2466da469,How to get out of bed,How to get out of bed,NULL,NULL,review_required,NULL,NULL,NULL
+c6e3375f-ad53-425b-9313-72265c9212e2,In and out Shoulder tap push ups,In and out Shoulder tap push ups,NULL,NULL,review_required,NULL,NULL,NULL
+0bc5f89b-dec0-483a-b98d-655998f8849d,Inchworm,Inchworm,NULL,NULL,review_required,NULL,NULL,NULL
+e7fa2b6f-4d2b-478a-a1c0-8bca51b04a13,Inchworm to pike push ups,Inchworm to pike push ups,NULL,NULL,review_required,NULL,NULL,NULL
+21ce1e16-e426-466b-b8cf-9d4b1fce7227,Inchworms to push ups to pike push up,Inchworms to push ups to pike push up,NULL,NULL,review_required,NULL,NULL,NULL
+ac256206-2279-44dc-ab5e-94d6e7d9e8a6,Incline Barbell Front Raise,Inclinato con bilanciere Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+25be107f-a9ec-4007-bb9f-c0a5088e19b5,Incline Barbell Press,Inclinato con bilanciere Press,NULL,NULL,generated,NULL,NULL,NULL
+4a608293-5863-4517-b03d-a46398066e32,Incline Cable Fly,Inclinato al cavo Fly,NULL,NULL,generated,NULL,NULL,NULL
+6a3ac67c-fa0f-4ef1-91c7-aa2503d11844,Incline Dumbbell Crossover,Inclinato con manubri Crossover,NULL,NULL,generated,NULL,NULL,NULL
+d1faa0c0-7eac-4a49-8b40-9b3fa923d091,Incline Dumbbell Curl,Inclinato con manubri Curl,NULL,NULL,generated,NULL,NULL,NULL
+a9ab8609-e40c-44e1-9e0f-a86c3794662c,Incline Dumbbell Lateral Raise,Inclinato con manubri Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+8ef75730-0d30-4063-b6ff-242725cf8c29,Incline Dumbbell Press,Inclinato con manubri Press,NULL,NULL,generated,NULL,NULL,NULL
+094f1299-cd52-4da7-b97f-c159208ed7d1,Incline Dumbbell Rear Delt Raise,Inclinato con manubri Rear Delt Alzata,NULL,NULL,generated,NULL,NULL,NULL
+e60ce7d6-d899-4620-ac42-faa079614220,Incline Dumbbell Reverse Fly,Inclinato con manubri Reverse Fly,NULL,NULL,generated,NULL,NULL,NULL
+812f7c37-8718-4fa6-8ad2-9c1080da9873,Incline Dumbbell Row,Inclinato con manubri Rematore,NULL,NULL,generated,NULL,NULL,NULL
+00a92c05-9865-489d-8495-a8f72af802a6,Incline Machine Press,Inclinato alla macchina Press,NULL,NULL,generated,NULL,NULL,NULL
+da022ba5-3a51-4861-9b25-232529d5de8e,Incline Machine Shoulder Press,Inclinato alla macchina Shoulder Press,NULL,NULL,generated,NULL,NULL,NULL
+95a95a22-308a-4804-af36-7190b48b1ae5,Inclined diamond push up,Inclined diamond push up,NULL,NULL,review_required,NULL,NULL,NULL
+204d2666-432a-400b-bf88-0b47203101ee,Inclined push up,Inclined push up,NULL,NULL,review_required,NULL,NULL,NULL
+0ba53212-9702-4b66-bb9d-d7b9fa12abf2,Inclined wide push up,Inclined wide push up,NULL,NULL,review_required,NULL,NULL,NULL
+0bc74c4c-d382-46a4-95a8-d6229062aaf1,inverted row,Inverted Rematore,NULL,NULL,generated,NULL,NULL,NULL
+18a33c56-c0b1-4f28-bb78-4b4cad53372b,Jacks with high knees,Jacks with high knees,NULL,NULL,review_required,NULL,NULL,NULL
+703cabb7-a8d3-4fe8-a4e0-a5f931c7ddde,Jump get ups,Jump get ups,NULL,NULL,review_required,NULL,NULL,NULL
+028fd0e4-baf8-4633-9891-20613bdea1e8,Jump knee tucks,Jump knee tucks,NULL,NULL,review_required,NULL,NULL,NULL
+921feb95-16c7-4fbc-88e7-472f35ffae2e,Jump squat to backward lunge,Jump squat to backward lunge,NULL,NULL,review_required,NULL,NULL,NULL
+8a0a9a9f-ff9b-449f-ba4a-d30bfbc9ca2d,Jump squats,Jump squats,NULL,NULL,review_required,NULL,NULL,NULL
+90596c5a-056c-4af1-a992-a6ffaadd8999,Jump Squats - Squat Jumps,Jump Squats - Squat Jumps,NULL,NULL,review_required,NULL,NULL,NULL
+4aa034b9-f826-4b1b-a259-45144fca1074,Jumping Jack,Jumping Jack,NULL,NULL,review_required,NULL,NULL,NULL
+8bc22d59-cc73-483b-b12c-515e974f39a6,Jumping jacks,Jumping jacks,NULL,NULL,review_required,NULL,NULL,NULL
+55ce943e-c8ad-479b-bd92-10ba1d01889e,Jumping lunges,Jumping lunges,NULL,NULL,review_required,NULL,NULL,NULL
+ba7727ee-e0bb-402c-99fb-c27eadd440f7,Jumping Ropes  skips,Jumping Ropes  skips,NULL,NULL,review_required,NULL,NULL,NULL
+cf5916de-b5e4-434c-9cc3-20d729baec1e,Kettlebell Clean,Kettlebell Clean,NULL,NULL,review_required,NULL,NULL,NULL
+94e15f81-eee6-418c-9c25-6201b6c9f23e,Kettlebell Deadlift,Kettlebell Deadlift,NULL,NULL,review_required,NULL,NULL,NULL
+98543b7d-bf77-48b2-b0e1-f17ae61e3fc2,Kettlebell Farmer Carry,Kettlebell Farmer Carry,NULL,NULL,review_required,NULL,NULL,NULL
+fa5618bb-f1c9-4911-aa11-f971d99b9fc2,Kettlebell Farmer Carry,Kettlebell Farmer Carry,NULL,NULL,review_required,NULL,NULL,NULL
+d921fc6e-a678-468b-9500-740437cb0265,Kettlebell Figure-8,Kettlebell Figure-8,NULL,NULL,review_required,NULL,NULL,NULL
+78f8c25f-32b2-4d60-a331-a756f793a892,Kettlebell Goblet Squat,Kettlebell Goblet Squat,NULL,NULL,review_required,NULL,NULL,NULL
+bc6934d4-fe50-45ff-a40f-9d751f75c4a2,Kettlebell Halo,Kettlebell Halo,NULL,NULL,review_required,NULL,NULL,NULL
+516ed8ba-873f-441b-a5a6-c52ab7fc048a,Kettlebell Lunge,Kettlebell Lunge,NULL,NULL,review_required,NULL,NULL,NULL
+4f5c0add-7a97-4c69-ad76-e2d87c8d1cc1,Kettlebell Press,Kettlebell Press,NULL,NULL,review_required,NULL,NULL,NULL
+2e95c001-ef00-4ecc-85a9-b97841927a29,Kettlebell Row,Kettlebell Rematore,NULL,NULL,generated,NULL,NULL,NULL
+46832c7a-fd0e-49ab-9961-11726b8b9064,Kettlebell Snatch,Kettlebell Snatch,NULL,NULL,review_required,NULL,NULL,NULL
+3bbed598-16f4-4683-a751-10cc264b4bd6,Kettlebell swing,Kettlebell swing,NULL,NULL,review_required,NULL,NULL,NULL
+1a3c2a1d-eb55-4199-8f9c-6d332c824c5d,Kettlebell swing - American style,Kettlebell swing - American style,NULL,NULL,review_required,NULL,NULL,NULL
+210c81cd-983c-4267-8514-b14090b038be,Kettlebell Swing (Single Arm),Kettlebell Swing (Single Arm),NULL,NULL,review_required,NULL,NULL,NULL
+7cbbde6d-73c7-4f94-a217-927d3bbdfd2b,Kettlebell Swing (Two Hand),Kettlebell Swing (Two Hand),NULL,NULL,review_required,NULL,NULL,NULL
+9fd5a38f-6dc0-40dd-898f-c5ec90cec9c3,Kettlebell Thruster,Kettlebell Thruster,NULL,NULL,review_required,NULL,NULL,NULL
+d8fcf6e7-3746-4f01-a943-fe45aed0fd31,Kettlebell Thruster,Kettlebell Thruster,NULL,NULL,review_required,NULL,NULL,NULL
+c3304243-1d9e-41b1-a01c-9ddd8f9edff8,Kettlebell Turkish Get-Up (Lunge style),Kettlebell Turkish Get-Up (Lunge style),NULL,NULL,review_required,NULL,NULL,NULL
+ab569da1-869a-4f74-b7f8-2f0a6e90e547,Kettlebell Turkish Get-Up (Lunge style) v2,Kettlebell Turkish Get-Up (Lunge style) v2,NULL,NULL,review_required,NULL,NULL,NULL
+948e5256-8830-43b3-a28a-ddcb050373ed,Kettlebell Turkish Get-Up (Lunge style)(1),Kettlebell Turkish Get-Up (Lunge style)(1),NULL,NULL,review_required,NULL,NULL,NULL
+75a4cce2-a779-4b2e-b5e1-94f8587eda7b,Kettlebell Windmill,Kettlebell Windmill,NULL,NULL,review_required,NULL,NULL,NULL
+9b0e714f-6b42-40d9-941c-71bca4da5eef,Knee pseudo pushups,Knee pseudo pushups,NULL,NULL,review_required,NULL,NULL,NULL
+d33da8f6-37a9-4730-8399-c4c5be3a7f00,Knee push ups,Knee push ups,NULL,NULL,review_required,NULL,NULL,NULL
+36034a77-8bbc-46c9-bf91-1c310704bf3b,Knee raise marches,Knee Alzata marches,NULL,NULL,generated,NULL,NULL,NULL
+f50de65b-ab30-4b37-a472-d4cab681916c,Knee raises,Knee raises,NULL,NULL,review_required,NULL,NULL,NULL
+0b7f1b84-6cb0-4875-824b-e86272668a2a,Knee raises (Hanging),Knee raises (Hanging),NULL,NULL,review_required,NULL,NULL,NULL
+c8b7a380-562e-4ad2-8dfc-7a29b5c56418,Knee to Chest Stretch (L),Knee to Chest Stretch (L),NULL,NULL,review_required,NULL,NULL,NULL
+dd76f6bd-dddd-4f97-bf96-29048ec2547e,Knee to Chest Stretch (R),Knee to Chest Stretch (R),NULL,NULL,review_required,NULL,NULL,NULL
+e73256fc-b329-4dfa-834b-d0c485bcad72,Knee tucked Side plank up and downs (Left),Knee tucked Side plank up and downs (Left),NULL,NULL,review_required,NULL,NULL,NULL
+c9d2b9a8-7f3e-4b5f-9012-e8c17b80de07,Knee tucked Side plank up and downs (right,Knee tucked Side plank up and downs (right,NULL,NULL,review_required,NULL,NULL,NULL
+ac6026af-173a-4357-ac12-2c7440a71a5d,Kneeling jump squat,Kneeling jump squat,NULL,NULL,review_required,NULL,NULL,NULL
+7f8e01f5-2b17-487f-aa3a-5614b629ade2,L dumbbell raises,L con manubri raises,NULL,NULL,generated,NULL,NULL,NULL
+bb2079e0-031b-4b5c-873d-8c5202fc33d7,L-sit hold (dip bar or paralettes)1,L-sit hold (dip bar or paralettes)1,NULL,NULL,review_required,NULL,NULL,NULL
+92d81e10-c495-4bf9-b205-a079f8711097,L-sit to tucked L-sit,L-sit to tucked L-sit,NULL,NULL,review_required,NULL,NULL,NULL
+920d96cd-7857-4720-9bea-21b23b124b64,Lat Pulldown,Lat Pulldown,Lat machine,NULL,review_required,NULL,NULL,NULL
+6f53a194-8a37-42ec-87f1-2bfed82e9006,Lat Pulldown (Reverse Grip),Lat Pulldown (Reverse Grip),NULL,NULL,review_required,NULL,NULL,NULL
+1dfe9e16-f3bf-45c3-9536-b818c03d8bb8,Lat Pulldown with V-Grip,Lat Pulldown with V-Grip,NULL,NULL,review_required,NULL,NULL,NULL
+b2ad9e74-2fdf-4cd2-b748-1449f2622216,Lateral leg swing,Lateral leg swing,NULL,NULL,review_required,NULL,NULL,NULL
+50f6c403-a7eb-4c43-9723-c9c4ee7defc7,Lateral neck stretch (left),Lateral neck stretch (left),NULL,NULL,review_required,NULL,NULL,NULL
+dfbfc890-af85-4be4-a8c6-782f666f538d,Lateral neck stretch (right),Lateral neck stretch (right),NULL,NULL,review_required,NULL,NULL,NULL
+af2d3f82-2917-4e21-8df6-7acaf5f78ad5,Laying leg raises to windshield wipers,Laying leg raises to windshield wipers,NULL,NULL,review_required,NULL,NULL,NULL
+3941270c-ad35-40bf-9906-e9c6d24ba777,Leg Extension,Leg Extension,NULL,NULL,review_required,NULL,NULL,NULL
+753a6d81-dbea-453c-8daf-c8b56f366409,Leg Extension,Leg Extension,NULL,NULL,review_required,NULL,NULL,NULL
+954de3a1-ff07-403b-9ad3-c172b2d90171,Leg Extensions,Leg Extensions,NULL,NULL,review_required,NULL,NULL,NULL
+844b8994-0c7a-477d-ab48-91b2d8ef75b0,Leg Press,Leg Press,NULL,NULL,review_required,NULL,NULL,NULL
+bcd8c3d9-5c9b-4a97-8b30-0e85de2488ff,Leg Press,Leg Press,NULL,NULL,review_required,NULL,NULL,NULL
+68814908-0678-4931-af0e-0fced0d2022a,Leg Press Calf Raise,Leg Press Calf Alzata,NULL,NULL,generated,NULL,NULL,NULL
+952c06b0-359b-4e38-adfd-c352723ab865,Leg Press Calf Raise,Leg Press Calf Alzata,NULL,NULL,generated,NULL,NULL,NULL
+bbc9368f-e232-4081-bd5c-235c928eccb3,Leg Press Close Stance,Leg Press Close Stance,NULL,NULL,review_required,NULL,NULL,NULL
+13351b5d-ef3f-4c6b-9f47-df62202d32b2,Leg Press Close Stance - Glute Focus,Leg Press Close Stance - Glute Focus,NULL,NULL,review_required,NULL,NULL,NULL
+639e71b2-5c79-4125-ad31-1c073b8b073f,Leg Press Medium Stance,Leg Press Medium Stance,NULL,NULL,review_required,NULL,NULL,NULL
+5894b913-11b8-47b6-8f0f-63b8ad0bd469,Leg Press Wide Stance,Leg Press Wide Stance,NULL,NULL,review_required,NULL,NULL,NULL
+a97548ad-e559-4380-a6b0-50cc210031b2,Leg raises,Leg raises,NULL,NULL,review_required,NULL,NULL,NULL
+b7c0fca8-8f01-4c48-bea3-b691939e92bc,Lever Squat (Medium Stance),Lever Squat (Medium Stance),NULL,NULL,review_required,NULL,NULL,NULL
+2b82f2db-8edd-4904-af32-6fcf4c0d24d9,Lotus pose,Lotus pose,NULL,NULL,review_required,NULL,NULL,NULL
+8f181782-a135-49c5-91df-de5985c69ac7,Low Cable Crossover,Low al cavo Crossover,NULL,NULL,generated,NULL,NULL,NULL
+cf8eef3a-8539-410a-9dac-da29caf914d6,Low Cable Curl V-Bar,Low al cavo Curl V-Bar,NULL,NULL,generated,NULL,NULL,NULL
+40811c61-7369-4803-afc0-fa7b90f90522,Low Cable Rope Curl,Low al cavo Rope Curl,NULL,NULL,generated,NULL,NULL,NULL
+412c612e-1822-4a22-aa3c-2461fd23a211,Low Cable Row,Low al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+b0cc57d7-7d6b-48ad-a9bc-a3dc309ea72b,Low lunge (left),Low lunge (left),NULL,NULL,review_required,NULL,NULL,NULL
+579695a3-b21a-4fe5-83fd-1bd47bfd2592,Low lunge (right),Low lunge (right),NULL,NULL,review_required,NULL,NULL,NULL
+51f8b5e9-3c10-4727-820a-ba77857a46b2,Lunge matrix,Lunge matrix,NULL,NULL,review_required,NULL,NULL,NULL
+e6286746-6da7-492e-9dc2-0688edeff3a9,Lunge With Spinal Twist,Lunge With Spinal Twist,NULL,NULL,review_required,NULL,NULL,NULL
+bcfe96da-42de-445b-85bc-44afa2789f77,Lunges,Lunges,NULL,NULL,review_required,NULL,NULL,NULL
+4eed07c2-fe85-409d-9f81-a4872e8ffb9e,Lunges (Left),Lunges (Left),NULL,NULL,review_required,NULL,NULL,NULL
+de1d910d-89b5-4f79-9459-6fefa1dbf525,Lunges (Right),Lunges (Right),NULL,NULL,review_required,NULL,NULL,NULL
+5aea090d-1bca-427b-8960-c01f7a6f0211,Lunges body weight,Lunges body weight,NULL,NULL,review_required,NULL,NULL,NULL
+497b7319-b2dc-4886-8ced-fdf14a08bb97,Lying Barbell Front Raise,Lying con bilanciere Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+babede27-efe6-473b-85a8-6ef01ce3fab7,Lying Barbell Skull Crusher,Lying con bilanciere Skull Crusher,NULL,NULL,generated,NULL,NULL,NULL
+cfa05b32-b753-4e84-a73f-1c2a92606930,Lying Dumbbell Skull Crusher,Lying con manubri Skull Crusher,NULL,NULL,generated,NULL,NULL,NULL
+ff106b50-02bd-4962-b9f0-ddbe247b8b3e,Lying Dumbbell Tricep Extension,Lying con manubri Tricep Extension,NULL,NULL,generated,NULL,NULL,NULL
+a1b684f7-6cf3-41a7-9c1f-2321a8e0847a,Lying Dumbbell Tricep Extension - One arm,Lying con manubri Tricep Extension - a un braccio,NULL,NULL,generated,NULL,NULL,NULL
+3e840d86-0fd5-4ac2-b152-2bcc8ecc67c3,Lying elbow to knee crunch,Lying elbow to knee crunch,NULL,NULL,review_required,NULL,NULL,NULL
+fd2a8e1f-3efb-4e11-89fb-a479b7bf4a06,Lying EZ Bar Curl,Lying EZ Bar Curl,NULL,NULL,review_required,NULL,NULL,NULL
+49ec0843-8680-48cd-bdf2-e871d435b583,Lying knee tucks,Lying knee tucks,NULL,NULL,review_required,NULL,NULL,NULL
+23b96196-f154-4450-a2cd-fdc35af2e60c,Lying Leg Curl,Lying Leg Curl,NULL,NULL,review_required,NULL,NULL,NULL
+73f9f38e-cd72-4e0c-995a-e7698aab8408,Lying leg raises with crunch,Lying leg raises with crunch,NULL,NULL,review_required,NULL,NULL,NULL
+b2a0896a-3900-4a82-bd7d-30e4b74687e9,Lying oblique crunch,Lying oblique crunch,NULL,NULL,review_required,NULL,NULL,NULL
+48700743-f688-42d8-99ed-8c1b223d1f55,Lying Overhead Triceps Extension,Lying Overhead Triceps Extension,NULL,NULL,review_required,NULL,NULL,NULL
+5e98b09d-e4aa-4ddb-aadf-02e18b6c16ac,Lying toe reaches,Lying toe reaches,NULL,NULL,review_required,NULL,NULL,NULL
+2dbfdf97-301b-423d-a27c-7485137e50f4,Machine Bicep Curl,Alla macchina Bicep Curl,NULL,NULL,generated,NULL,NULL,NULL
+bf22d9ad-1aac-47e5-8e6f-f6072b868a6d,Machine Chest Fly,Alla macchina Chest Fly,NULL,NULL,generated,NULL,NULL,NULL
+ae4a7149-9cfb-481e-bece-49ec526c8487,Machine Glute Kickback Both Legs,Alla macchina Glute Kickback Both Legs,NULL,NULL,generated,NULL,NULL,NULL
+7c8e22b4-159b-4f19-8100-e05428bf1b1f,Machine Glute Kickback Single Leg,Alla macchina Glute Kickback Single Leg,NULL,NULL,generated,NULL,NULL,NULL
+3ffba4ed-c3ae-4727-b5dc-31823f5d3358,Machine Lateral Raise,Alla macchina Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+23781248-d4d6-418e-a5a0-932abb0ca32b,Machine Reverse Fly,Alla macchina Reverse Fly,NULL,NULL,generated,NULL,NULL,NULL
+d93f6d37-76e1-4cdc-a39e-d39beabf97d5,Machine Shoulder Press,Alla macchina Shoulder Press,NULL,NULL,generated,NULL,NULL,NULL
+6f402009-67c2-484f-bc92-6090cc9a7ed4,Machine Shoulder Press Neutral Grip,Alla macchina Shoulder Press Neutral Grip,NULL,NULL,generated,NULL,NULL,NULL
+26f5654e-6c1f-4418-b336-0317edc13415,Medicine Ball Reverse Crunch,Medicine Ball Reverse Crunch,NULL,NULL,review_required,NULL,NULL,NULL
+94e2b3e2-d8e5-4f3b-8b77-5368023e25eb,Mid Row Machine,Mid Rematore alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+7ade83ba-d8c1-4947-aab0-8a15506c70e5,Mountain climber cross body tuck,Mountain climber cross body tuck,NULL,NULL,review_required,NULL,NULL,NULL
+6c8af30b-31f1-4c84-b394-b4293607cf4f,Mountain climbers,Mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+8085b2a3-fc64-478c-b93a-bf86dab46fc0,Mountain climbers,Mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+4dd34460-26de-41b4-ba9f-66bcf4ed8e63,Mountain Climbers,Mountain Climbers,NULL,NULL,review_required,NULL,NULL,NULL
+7a21c59b-ee5d-4f55-867f-31ca24c8003b,Mountain Climbers,Mountain Climbers,NULL,NULL,review_required,NULL,NULL,NULL
+a5d77dca-e151-4f73-aadb-890366fe8abf,Mountain climbers into shoulder taps,Mountain climbers into shoulder taps,NULL,NULL,review_required,NULL,NULL,NULL
+be5fae80-4b05-4196-8f3f-61d2c106ab32,Mountain pose,Mountain pose,NULL,NULL,review_required,NULL,NULL,NULL
+1b83ce89-e537-4d37-be07-af8b5c192edd,My Side Bend Stretch (L),My Side Bend Stretch (L),NULL,NULL,review_required,NULL,NULL,NULL
+697e0018-b1bd-4035-9ced-5a446cd66caa,narrow squats chair,narrow squats chair,NULL,NULL,review_required,NULL,NULL,NULL
+3bb357f4-d722-42e5-9c1f-166f2a2e91f2,neck stretch,neck stretch,NULL,NULL,review_required,NULL,NULL,NULL
+fa6a3579-8bbe-47ab-b0dc-4d0545f16a34,Negative pull ups,Negative pull ups,NULL,NULL,review_required,NULL,NULL,NULL
+b93996af-6946-4cf8-88e0-792b1f545750,Neutral Grip Lat Pulldown,Neutral Grip Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+3b69631f-65b9-4af3-9c65-5739375e3dfb,Normal grip pull ups (Full range of motion,Normal grip pull ups (Full range of motion,NULL,NULL,review_required,NULL,NULL,NULL
+85d78505-04b8-4cf6-b277-c215eeb462a7,Oblique Crunches,Oblique Crunches,NULL,NULL,review_required,NULL,NULL,NULL
+93e53831-f499-4d0b-b266-120445c24555,Oblique Crunches,Oblique Crunches,NULL,NULL,review_required,NULL,NULL,NULL
+70ac8f96-201b-4bd7-9ac5-f72e3aca2748,One Arm Dumbbell Bench Press - with rotation,A un braccio con manubri Panca press - with rotation,NULL,NULL,generated,NULL,NULL,NULL
+4e6181e0-c20f-4449-91e7-48d1eef1f268,One arm Dumbbell Floor Press alternating,A un braccio con manubri Floor Press alternating,NULL,NULL,generated,NULL,NULL,NULL
+d30b1013-b7ae-47da-847e-e58e9ea770cc,One arm dumbbell fly,A un braccio con manubri fly,NULL,NULL,generated,NULL,NULL,NULL
+c5a9becd-0051-47b0-9e75-ed52fedd6d44,One-Arm Dumbbell Row bench,One-Arm con manubri Rematore bench,NULL,NULL,generated,NULL,NULL,NULL
+eff7ae70-1117-4d71-a35f-15db81a16242,One-Arm Kettlebell Military Press,One-Arm Kettlebell Military Press,NULL,NULL,review_required,NULL,NULL,NULL
+79b0e11d-db13-4542-a7ac-7f666485f1fa,One-Arm Kettlebell Snatch - From ground,One-Arm Kettlebell Snatch - From ground,NULL,NULL,review_required,NULL,NULL,NULL
+4fcd55ed-a563-4f9f-b43c-4b4ea35e5cc4,One-Arm Kettlebell Snatch from ground,One-Arm Kettlebell Snatch from ground,NULL,NULL,review_required,NULL,NULL,NULL
+2e6e0a8a-ab5d-4f00-a6b4-c1f025190b79,One-Arm Side Laterals (L),One-Arm Side Laterals (L),NULL,NULL,review_required,NULL,NULL,NULL
+40e40492-ae55-417f-8391-2e6ea6c170d9,One-Arm Side Laterals (R),One-Arm Side Laterals (R),NULL,NULL,review_required,NULL,NULL,NULL
+4001ef61-57a1-4f18-8c0b-8167e15c6832,Open and close jumping jacks,Open and close jumping jacks,NULL,NULL,review_required,NULL,NULL,NULL
+601cae63-a0d3-4f10-9a7f-114a5eb033e0,Over and under,Over and under,NULL,NULL,review_required,NULL,NULL,NULL
+acaa8104-8a71-43bb-83ca-6a5c8085a3d8,Over and under (Left),Over and under (Left),NULL,NULL,review_required,NULL,NULL,NULL
+037a9f51-9b02-4404-979a-6ad18f62fc9d,Overhead Cable Curl,Overhead al cavo Curl,NULL,NULL,generated,NULL,NULL,NULL
+26098d10-600c-4876-ac19-e9fcac2ef835,Overhead Cable Rope Extension,Overhead al cavo Rope Extension,NULL,NULL,generated,NULL,NULL,NULL
+6413b465-6df0-4e2c-9f4b-ae36dc70ebbf,Overhead Cable Tricep Extension,Overhead al cavo Tricep Extension,NULL,NULL,generated,NULL,NULL,NULL
+36aec113-771d-4ec9-854f-81f29e00cdd2,Overhead Lunge,Overhead Lunge,NULL,NULL,review_required,NULL,NULL,NULL
+24c4168e-f900-4e8b-8969-cd32dba34d6c,Overhead Squat,Overhead Squat,NULL,NULL,review_required,NULL,NULL,NULL
+371215cb-72ef-4039-8192-472234289504,Pec Deck Fly,Pec Deck Fly,NULL,NULL,review_required,NULL,NULL,NULL
+27be2ac3-3b68-4ef8-94ab-e6bfb5ba4076,Pendlay Rows,Pendlay Rows,NULL,NULL,review_required,NULL,NULL,NULL
+04fccb0f-58a7-44b2-8676-573faad17634,Pike hold knee bends,Pike hold knee bends,NULL,NULL,review_required,NULL,NULL,NULL
+3882e700-1ad7-4b71-932a-6ee8983e50b2,Pike push ups,Pike push ups,NULL,NULL,review_required,NULL,NULL,NULL
+61410917-4fb1-41f8-86d5-16dc88fe380b,Plank,Plank,NULL,NULL,review_required,NULL,NULL,NULL
+7e35442f-7c48-4d32-8e18-2761542f9b17,Plank,Plank,NULL,NULL,review_required,NULL,NULL,NULL
+2640441e-fc3e-46e7-87ee-77f25ed81d32,Plank elbow to knee,Plank elbow to knee,NULL,NULL,review_required,NULL,NULL,NULL
+364dc379-ca4e-4fe2-9d95-684619a8b693,Plank in and outs,Plank in and outs,NULL,NULL,review_required,NULL,NULL,NULL
+ac0cb7cb-0988-4591-9d99-716502691f26,Plank jack into jumping jacks,Plank jack into jumping jacks,NULL,NULL,review_required,NULL,NULL,NULL
+39a6eaa7-efb4-455f-942f-e53ed5a9b526,Plank jacks,Plank jacks,NULL,NULL,review_required,NULL,NULL,NULL
+f93fa069-3b1d-41f0-bb26-2322bc4ea1c1,Plank kick out,Plank kick out,NULL,NULL,review_required,NULL,NULL,NULL
+49739b94-19b6-4ec3-aa93-53e7c4824918,Plank on elbows,Plank on elbows,NULL,NULL,review_required,NULL,NULL,NULL
+1eab35ce-2d24-4908-8d60-082cf1f7ab74,Plank pose,Plank pose,NULL,NULL,review_required,NULL,NULL,NULL
+f6489ee0-7630-4041-ae1d-8e620b58883b,Plank SeeSaw,Plank SeeSaw,NULL,NULL,review_required,NULL,NULL,NULL
+2c7167fd-5e7e-444f-b7a8-291e362e638c,Plank shoulder taps,Plank shoulder taps,NULL,NULL,review_required,NULL,NULL,NULL
+73368005-c7ae-4086-b7e5-31963e96af4d,Plank shoulder taps into reaches,Plank shoulder taps into reaches,NULL,NULL,review_required,NULL,NULL,NULL
+38ef796b-7e3c-4370-9452-72b924837216,Plank Side Arm Reach Dynamic,Plank Side Arm Reach Dynamic,NULL,NULL,review_required,NULL,NULL,NULL
+c2b2d15f-5841-45a2-87e4-503101f3422e,Plank to knee tap,Plank to knee tap,NULL,NULL,review_required,NULL,NULL,NULL
+e4241c30-f7d8-4051-85d7-7a95e221bf8c,Plank toe touches,Plank toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+980a6af6-f72f-4e21-bfcf-4253622d507d,Plate Front Raise,Plate Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+6d78b4e0-d8b4-4cd2-8e0b-ab6d559b717d,Plie Dumbbell Squat,Plie con manubri Squat,NULL,NULL,generated,NULL,NULL,NULL
+8e7c3c00-5f0b-40b1-b64d-84b78fa6ec93,Plow pose,Plow pose,NULL,NULL,review_required,NULL,NULL,NULL
+cbe360e8-fa98-4793-b327-c2769ac69943,Plyo Push-up,Plyo Push-up,NULL,NULL,review_required,NULL,NULL,NULL
+f8d7664f-01f0-4a79-abd8-85bbe9f067ac,Posterior upper arm (left),Posterior upper arm (left),NULL,NULL,review_required,NULL,NULL,NULL
+ded0fb25-cb67-47a2-9a29-23e7f14ae6ac,Posterior upper arm stretch (right),Posterior upper arm stretch (right),NULL,NULL,review_required,NULL,NULL,NULL
+18b57d25-5597-4b00-8237-cc359e4609c8,Power Snatch (ISSUE_ back on pick up a bit bend),Power Snatch (ISSUE_ back on pick up a bit bend),NULL,NULL,review_required,NULL,NULL,NULL
+8d3afa33-7191-4f69-a9f6-81b20f55dd38,Preacher Curl,Preacher Curl,NULL,NULL,review_required,NULL,NULL,NULL
+339d8f8f-18e3-452a-ae66-f2b098382a84,Preacher Curl Dumbbell,Preacher Curl con manubri,NULL,NULL,generated,NULL,NULL,NULL
+34d8d81b-5883-4a90-bc74-4f1ec0cbce91,Preacher Curl EZ-Bar,Preacher Curl EZ-Bar,NULL,NULL,review_required,NULL,NULL,NULL
+554adc08-afea-40c8-bf33-d4276e2d73d9,Preacher Hammer Curl,Preacher Hammer Curl,NULL,NULL,review_required,NULL,NULL,NULL
+430ce933-5f38-44b9-8b43-810da4ec536e,Preacher Hammer Curl Dumbbells,Preacher Hammer Curl Dumbbells,NULL,NULL,review_required,NULL,NULL,NULL
+e30e5898-057a-48f9-b667-010ed488c3ea,Prone W to lifts,Prone W to lifts,NULL,NULL,review_required,NULL,NULL,NULL
+bf3b7d97-363c-45d7-91a3-43491c5a6f2a,Pseudo push ups,Pseudo push ups,NULL,NULL,review_required,NULL,NULL,NULL
+d0fe829c-d734-4429-bcc1-7ac15f2e92e4,Psoas stretch,Psoas stretch,NULL,NULL,review_required,NULL,NULL,NULL
+a95a735d-411f-4edd-abd5-5f00e79874d4,Pull Up (Neutral Grip),Pull Up (Neutral Grip),NULL,NULL,review_required,NULL,NULL,NULL
+7194a0b3-ce5e-4aab-81dc-b6b2354c916b,Pull Up overhand,Pull Up overhand,NULL,NULL,review_required,NULL,NULL,NULL
+874ef2ee-909f-44db-bd03-25ffd1e24a0d,Puppy pose,Puppy pose,NULL,NULL,review_required,NULL,NULL,NULL
+c2410e7d-79c4-4593-82df-c42e8fd3450e,Push up burpees,Push up burpees,NULL,NULL,review_required,NULL,NULL,NULL
+206a3084-ab16-4115-b18e-93c6c44e6cc4,Push up Circles,Push up Circles,NULL,NULL,review_required,NULL,NULL,NULL
+9c454a78-ff62-49a9-9879-127b48d6f2ea,Push up hold,Push up hold,NULL,NULL,review_required,NULL,NULL,NULL
+e6348f43-b8ab-4e91-a211-0d766e35c9fe,Push up jack plank into toe touches,Push up jack plank into toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+1cecbe87-d29e-43af-bb44-5e1f409cd018,Push up to breakdancer,Push up to breakdancer,NULL,NULL,review_required,NULL,NULL,NULL
+c809dc45-6a40-4060-a8ac-24f3c62358f7,Push up to toe touches,Push up to toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+cbedc7e1-a023-41fb-938e-f62e0ffdb7d2,Push Up Wide,Push Up Wide,NULL,NULL,review_required,NULL,NULL,NULL
+b41a30a8-8a02-4101-a0a9-589efdbf786b,Push ups,Push ups,NULL,NULL,review_required,NULL,NULL,NULL
+61654261-7fa6-4bd5-9cf1-04ab8c638e4f,Push Ups,Push Ups,NULL,NULL,review_required,NULL,NULL,NULL
+284b839e-ec4c-4551-ba9d-afbf32b60330,Push ups to toe touches,Push ups to toe touches,NULL,NULL,review_required,NULL,NULL,NULL
+c5f49fc9-4673-4cae-8a12-6c5a4e4934a4,Push-Up (Decline),Push-Up (declinato),NULL,NULL,generated,NULL,NULL,NULL
+67f7b774-4b0f-4252-b5df-2555e9f5d0c8,Push-Up Wide,Push-Up Wide,NULL,NULL,review_required,NULL,NULL,NULL
+9d46942e-53df-455c-a996-8936145ab8d2,Push-Ups - Close Triceps Position (Diamond push ups),Push-Ups - Close Triceps Position (Diamond push ups),NULL,NULL,review_required,NULL,NULL,NULL
+c6453fa8-f869-43ed-8314-9fc093dc7351,Push-Ups (Decline),Push-Ups (declinato),NULL,NULL,generated,NULL,NULL,NULL
+f860eed0-1645-401e-bfe0-ddbc4ba2df90,Pushups,Pushups,NULL,NULL,review_required,NULL,NULL,NULL
+396dee3e-b0b6-409b-a331-47d3bd121ac8,Pyramid pose (left),Pyramid pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+88d0a597-e95d-4c1a-a296-aa7315c3a53b,Pyramid pose (right),Pyramid pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+cc3a2bb8-efcf-440d-9357-887ce0b04346,Quadriceps Roll,Quadriceps Roll,NULL,NULL,review_required,NULL,NULL,NULL
+a2ad1f3d-ac82-4d67-915c-6bd4f83e3813,Rack Pull,Rack Pull,NULL,NULL,review_required,NULL,NULL,NULL
+24846377-a8c6-4955-86e6-00528b6e2b31,Rack Pulls,Rack Pulls,NULL,NULL,review_required,NULL,NULL,NULL
+843c04e2-6344-48ad-8641-0321a60dbb63,Reclined butterfly,Reclined butterfly,NULL,NULL,review_required,NULL,NULL,NULL
+1523b6fd-d8b9-4406-b188-5d1545dd0cb2,Reclined pigeon pose (left),Reclined pigeon pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+6810be7c-d51f-42d4-8685-4866fc3828e1,Reclined pigeon pose (right),Reclined pigeon pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+1f636f46-0bc3-417d-a3ac-93108ecc26ec,Reclined windshield wipers,Reclined windshield wipers,NULL,NULL,review_required,NULL,NULL,NULL
+ad8f28d1-cf33-4e80-9686-0742404566e3,Resistance Band Row,Resistance Band Rematore,NULL,NULL,generated,NULL,NULL,NULL
+7cfe78ab-8d77-4142-8199-51d3f48b9430,Reverse Cable Preacher Curl,Reverse al cavo Preacher Curl,NULL,NULL,generated,NULL,NULL,NULL
+f77e760b-7f45-45b2-a34b-e8e8b3b1ab45,Reverse Fly,Reverse Fly,NULL,NULL,review_required,NULL,NULL,NULL
+c265b4e3-ab8d-4141-9d7e-462e2c329d1b,Reverse fly plank to plank hop,Reverse fly plank to plank hop,NULL,NULL,review_required,NULL,NULL,NULL
+e27c74a9-69aa-4b0f-aa5f-1c675d5fe26e,Reverse grip bent over rows,Reverse grip bent over rows,NULL,NULL,review_required,NULL,NULL,NULL
+6b58c0da-6795-4103-bbed-6c3e540c1c16,Reverse Grip Skull Crusher,Reverse Grip Skull Crusher,NULL,NULL,review_required,NULL,NULL,NULL
+55df26c1-83f4-439a-89be-22c156a3e118,Reverse Lunge into Knee Drive,Reverse Lunge into Knee Drive,NULL,NULL,review_required,NULL,NULL,NULL
+808799af-013a-4f71-94e7-3fdea59b9ecf,Reverse lunge to knee drive,Reverse lunge to knee drive,NULL,NULL,review_required,NULL,NULL,NULL
+f8a04b5e-b762-48eb-8528-de28f5c321b7,Reverse Lunge with Kettlebell,Reverse Lunge with Kettlebell,NULL,NULL,review_required,NULL,NULL,NULL
+cea24bde-a9ce-4de1-93e6-3c019e1520d2,Reverse Lunges,Reverse Lunges,NULL,NULL,review_required,NULL,NULL,NULL
+27114339-579a-4a81-a673-52126b81f475,Reverse Plank,Reverse Plank,NULL,NULL,review_required,NULL,NULL,NULL
+90a03a51-07e2-4acd-b893-d5c58a273587,Reverse Preacher Curl,Reverse Preacher Curl,NULL,NULL,review_required,NULL,NULL,NULL
+07cd2836-405f-4b66-9b80-2d69b1fabb6a,Reverse push ups,Reverse push ups,NULL,NULL,review_required,NULL,NULL,NULL
+4f5e0bcb-7424-4d6b-b837-5c3eda01c15c,Reverse Snow Angels,Reverse Snow Angels,NULL,NULL,review_required,NULL,NULL,NULL
+daeabed2-d92e-4de2-87c0-138bcc0009b4,Reverse Step Up,Reverse Step Up,NULL,NULL,review_required,NULL,NULL,NULL
+87cb06b9-6563-4676-b796-b02f68af48b5,Reverse warrior (left),Reverse warrior (left),NULL,NULL,review_required,NULL,NULL,NULL
+4fe0ae5d-b04a-437b-be8a-ce6636c08348,Reverse warrior (right),Reverse warrior (right),NULL,NULL,review_required,NULL,NULL,NULL
+db3c3c60-a406-45e8-a477-8c5c1bf41870,Revolved chair pose (left),Revolved chair pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+2ea5aa3e-034c-45a7-862a-d2f324671901,Revolved chair pose (right),Revolved chair pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+c0320e6b-e7e0-4cef-ba0d-dd5e66b2ebf1,Revolved triangle pose (left),Revolved triangle pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+6347356d-6248-444f-92b2-47de72d5f96e,Revolved triangle pose (right),Revolved triangle pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+73097e75-dc6b-4be4-bf4a-b3f176d8ff10,Rocking horse push up into explosive jump,Rocking horse push up into explosive jump,NULL,NULL,review_required,NULL,NULL,NULL
+3ed1db96-1767-4ce2-a245-56b4a2967419,Run,Run,NULL,NULL,review_required,NULL,NULL,NULL
+4c257ac2-d310-40aa-8797-33d138519135,Run in place,Run in place,NULL,NULL,review_required,NULL,NULL,NULL
+4088ec8b-252e-4444-86ef-9fa59010e9fd,Russian Twist,Russian Twist,NULL,NULL,review_required,NULL,NULL,NULL
+1328cea8-8e8b-4a64-9f6a-10d8031b2f27,Russian Twist - no weight,Russian Twist - no weight,NULL,NULL,review_required,NULL,NULL,NULL
+75649a91-b901-4140-ab80-3052a3afed27,Russian Twist - Weighted,Russian Twist - Weighted,NULL,NULL,review_required,NULL,NULL,NULL
+10affa59-53b8-40a9-a06c-36b70d2bb005,Russian twists,Russian twists,NULL,NULL,review_required,NULL,NULL,NULL
+a5eb6aec-09a0-428e-a5c1-13a0897416a4,Russian twists into seated knee tucks,Russian twists into seduto knee tucks,NULL,NULL,generated,NULL,NULL,NULL
+ebb04889-8d61-4172-9c51-65ebe6c73c75,Russian twists with flutter kicks,Russian twists with flutter kicks,NULL,NULL,review_required,NULL,NULL,NULL
+b94885af-ac1a-4fd6-ac86-39da579a215d,Sage marichi I pose (left),Sage marichi I pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+6d518c05-cac2-4215-b71d-0b564ced5900,Sage marichi I pose (right),Sage marichi I pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+42a043cf-29ba-4e98-a6fe-d9cbc61f7015,Scapula hold,Scapula hold,NULL,NULL,review_required,NULL,NULL,NULL
+16a76541-f17e-49fe-832c-27776a9ec2e3,Scapula push ups,Scapula push ups,NULL,NULL,review_required,NULL,NULL,NULL
+f4f814a7-7f9f-4d09-8c9a-f07c27176967,Sciatic nerve flossing nerve glide with a chair,Sciatic nerve flossing nerve glide with a chair,NULL,NULL,review_required,NULL,NULL,NULL
+c6a81317-685a-4478-b7aa-30743ef15034,Seal jacks,Seal jacks,NULL,NULL,review_required,NULL,NULL,NULL
+2b2134be-9f7b-42d9-8739-1b24833c5e11,Seated ankle circles,Seduto ankle circles,NULL,NULL,generated,NULL,NULL,NULL
+ef55de8d-6d24-4983-99e0-0f50286c7a1e,Seated Barbell Military Press,Seduto con bilanciere Military Press,NULL,NULL,generated,NULL,NULL,NULL
+185e82b2-9e20-4021-aa84-65c564aca016,Seated Cable Fly,Seduto al cavo Fly,NULL,NULL,generated,NULL,NULL,NULL
+60fa33db-7a56-4a6d-88a5-22f98a252ae1,Seated Cable Row Close Neutral Grip,Seduto al cavo Rematore Close Neutral Grip,NULL,NULL,generated,NULL,NULL,NULL
+c2595904-d93e-4807-a7fe-70019fce408f,Seated Cable Row close V bar,Seduto al cavo Rematore close V bar,NULL,NULL,generated,NULL,NULL,NULL
+5025051b-e58e-42aa-ae78-5a9b11ef129c,Seated Cable Row Neutral Grip,Seduto al cavo Rematore Neutral Grip,NULL,NULL,generated,NULL,NULL,NULL
+9632f636-81ae-4951-9830-4970bbd41e42,Seated Cable Row Underhand Grip,Seduto al cavo Rematore Underhand Grip,NULL,NULL,generated,NULL,NULL,NULL
+d39e64fd-25ce-4ab6-9d01-5674d92b5478,Seated Cable Row Wide Grip,Seduto al cavo Rematore Wide Grip,NULL,NULL,generated,NULL,NULL,NULL
+86e3a801-0f1c-4424-851f-4826c75d8f48,Seated Calf Raise Machine,Seduto Calf Alzata alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+2bdda28c-3fe2-4ecb-9a71-945a051d5bbd,Seated Calf Raises,Seduto Calf Raises,NULL,NULL,generated,NULL,NULL,NULL
+f5aa2b23-405b-48a1-9538-302a41160cbd,Seated Dumbbell Curl,Seduto con manubri Curl,NULL,NULL,generated,NULL,NULL,NULL
+29e0d621-73e4-44da-9db7-10302fbe9503,Seated Dumbbell Curl - One Arm - Alternating,Seduto con manubri Curl - a un braccio - Alternating,NULL,NULL,generated,NULL,NULL,NULL
+ec7c9b41-cfd7-414a-8fbe-8c46f0d3af78,Seated Dumbbell Press,Seduto con manubri Press,NULL,NULL,generated,NULL,NULL,NULL
+de5de9a5-08ca-462b-b704-eab3f48ab7b5,Seated Dumbbell Triceps Extension,Seduto con manubri Triceps Extension,NULL,NULL,generated,NULL,NULL,NULL
+1f96bb5c-a360-4ab0-83c6-23bdb92dd10c,Seated eagle arm (right),Seduto eagle arm (right),NULL,NULL,generated,NULL,NULL,NULL
+ef8b7a4f-a209-425b-90dd-d20c402c5b0d,Seated eagle arms (left),Seduto eagle arms (left),NULL,NULL,generated,NULL,NULL,NULL
+0a095165-5eb4-4d96-a98e-d8374391f2cc,Seated EZ Bar Curl,Seduto EZ Bar Curl,NULL,NULL,generated,NULL,NULL,NULL
+b7a93a70-b9fc-469f-8397-5a2e8a8877c8,Seated flutter kicks,Seduto flutter kicks,NULL,NULL,generated,NULL,NULL,NULL
+6f54fafe-ff3f-4295-9ec6-031c1dd68e11,Seated forward bend,Seduto forward bend,NULL,NULL,generated,NULL,NULL,NULL
+94f48c8b-042f-4df8-9805-43e4eca8573f,Seated front raises,Seduto front raises,NULL,NULL,generated,NULL,NULL,NULL
+0c46de9c-4a97-405c-9fa2-aec5f5da73f0,Seated Hammer Curl,Seduto Hammer Curl,NULL,NULL,generated,NULL,NULL,NULL
+78c91035-616b-4b6c-a1b7-5572af8bc647,Seated High Row Machine,Seduto High Rematore alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+7532f005-9936-49c1-8612-132d874e1ee7,Seated Hip Abduction Machine,Seduto Hip Abduction alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+6f5b8c08-2853-477c-875b-b459d4f98fa9,Seated Incline Press with Machine,Seduto inclinato Press with alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+4a8661d9-eef7-44c6-896b-9ea08b81ac17,Seated Leg Curl,Seduto Leg Curl,NULL,NULL,generated,NULL,NULL,NULL
+851015b9-546b-425d-81f3-ac6b7493a784,Seated Leg Curl,Seduto Leg Curl,NULL,NULL,generated,NULL,NULL,NULL
+a097abc2-16ac-413a-86e4-444a7ce1fa43,Seated Leg Curl,Seduto Leg Curl,NULL,NULL,generated,NULL,NULL,NULL
+42dc0603-91e8-4a1e-8bf0-ef9478718106,Seated leg raises,Seduto leg raises,NULL,NULL,generated,NULL,NULL,NULL
+9f3f94f9-275b-4c5c-bc97-0e5826023599,Seated Low Cable Curl,Seduto Low al cavo Curl,NULL,NULL,generated,NULL,NULL,NULL
+3e96fcc6-7397-4387-ac5b-92569bd670e5,Seated Machine Chest Press,Seduto alla macchina Chest Press,NULL,NULL,generated,NULL,NULL,NULL
+16916d8d-2bce-459a-a87f-fa511936260c,Seated Neutral Grip Cable Press,Seduto Neutral Grip al cavo Press,NULL,NULL,generated,NULL,NULL,NULL
+7a9bc5bf-e817-4819-a41b-44a2aee5fb67,Seated Neutral Grip Row Machine,Seduto Neutral Grip Rematore alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+72748704-e649-4df7-9e6b-747dd4d225a2,Seated shoulder push downs,Seduto shoulder push downs,NULL,NULL,generated,NULL,NULL,NULL
+8540be69-f287-4af1-918b-01968b7a48a8,Seated Shoulder Squeeze,Seduto Shoulder Squeeze,NULL,NULL,generated,NULL,NULL,NULL
+00c1f017-3a36-4a42-8866-fda39f906f5d,Seated Side Bends,Seduto Side Bends,NULL,NULL,generated,NULL,NULL,NULL
+f749ef2b-7e02-4c5b-94fd-abc1c876b0ee,Seated wide angle straddle,Seduto wide angle straddle,NULL,NULL,generated,NULL,NULL,NULL
+0a7821b6-c36b-4b5f-82b0-5c8ba765baae,Shot Caller Burpee,Shot Caller Burpee,NULL,NULL,review_required,NULL,NULL,NULL
+a9db8a1f-87ac-45a6-876f-7c76bc4d5d8f,Shoulder press - Overhead press - Military press,Shoulder press - Overhead press - Military press,NULL,NULL,review_required,NULL,NULL,NULL
+eee3eb70-4e2c-430e-9c33-ed646287d9c2,Shoulder Press Machine,Shoulder Press alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+2964f7d1-8a1f-45b6-887c-a084ceb75072,Shoulder tap burpees,Shoulder tap burpees,NULL,NULL,review_required,NULL,NULL,NULL
+c847178d-3b29-4a76-b8c6-da12de207bbf,Shoulder taps,Shoulder taps,NULL,NULL,review_required,NULL,NULL,NULL
+27e866fb-7cdb-4b24-824c-9ce7778c6ac7,Shoulder taps into ankle taps,Shoulder taps into ankle taps,NULL,NULL,review_required,NULL,NULL,NULL
+f324d8f5-3c64-4a97-b4de-2fd60907e7d5,Side bend (left),Side bend (left),NULL,NULL,review_required,NULL,NULL,NULL
+63f5e230-17a6-40df-a2a6-f296bd816501,Side bend (right),Side bend (right),NULL,NULL,review_required,NULL,NULL,NULL
+7502b225-3aa7-44a1-901f-f02f2f14d58c,Side Bend Stretch (R),Side Bend Stretch (R),NULL,NULL,review_required,NULL,NULL,NULL
+3eeee272-7aae-4e5c-8d9c-415a3bf74352,Side Bend with Dumbbells,Side Bend with Dumbbells,NULL,NULL,review_required,NULL,NULL,NULL
+061b3246-322a-41ed-a589-73fb9478651c,Side hurdel jumps to mountain climbers,Side hurdel jumps to mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+3798bfae-4ad3-404c-969d-0eeb2fcbdd56,Side hurdel jumps to mountain climbers,Side hurdel jumps to mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+ed54736f-d36d-46fa-ac16-08a44612eded,Side jump skaters,Side jump skaters,NULL,NULL,review_required,NULL,NULL,NULL
+7384d39b-613f-4c8e-a980-42e2d3bd8a83,Side Lateral Raise with Dumbbells,Side Lateral Alzata with Dumbbells,NULL,NULL,generated,NULL,NULL,NULL
+3ad63b44-3e91-44cb-a39d-45aa9d50817c,Side Plank,Side Plank,NULL,NULL,review_required,NULL,NULL,NULL
+d0b4d724-b764-434e-a595-98c0d1ff76fb,Side plank pose (left),Side plank pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+84497aca-5092-4038-bf3c-3e9beeae9f8b,Side plank pose (right),Side plank pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+516a33ee-e1e1-459d-9417-a313b313e1a6,Side plank pulses,Side plank pulses,NULL,NULL,review_required,NULL,NULL,NULL
+71213402-bffc-41ab-9425-736789fca561,Side plank pulses (Right side),Side plank pulses (Right side),NULL,NULL,review_required,NULL,NULL,NULL
+8d5a28d5-9aa2-4d63-bdc4-3e6e746e9d0d,Side plank up and down (left),Side plank up and down (left),NULL,NULL,review_required,NULL,NULL,NULL
+c0c8d00e-5640-462e-8cc3-422a14deb2fc,Side plank up and down (right),Side plank up and down (right),NULL,NULL,review_required,NULL,NULL,NULL
+c811aaa0-7aa9-41c3-89f1-647feb729069,Side to side plank walk,Side to side plank walk,NULL,NULL,review_required,NULL,NULL,NULL
+49193da5-2b92-4df3-bca6-f0cd59fa9f03,Side to side plank walk into shoulder taps,Side to side plank walk into shoulder taps,NULL,NULL,review_required,NULL,NULL,NULL
+2c525222-75e1-4c05-b8ee-f4d2c7d1799e,Side to side push up,Side to side push up,NULL,NULL,review_required,NULL,NULL,NULL
+857fa3a7-6b75-4329-9bb0-297db6b9f761,Side to side squat,Side to side squat,NULL,NULL,review_required,NULL,NULL,NULL
+4150a3eb-5b70-4d2e-8cab-a27e70b3ef43,Sideplank,Sideplank,NULL,NULL,review_required,NULL,NULL,NULL
+b92cf13a-2241-45c5-b2ba-d5043c9b3ea0,Singel arm push up (L),Singel arm push up (L),NULL,NULL,review_required,NULL,NULL,NULL
+9089468c-a43c-4486-892e-557485a39245,Single Arm Cable Front Raise,Single Arm al cavo Front Alzata,NULL,NULL,generated,NULL,NULL,NULL
+ffd0d6dc-27ff-4a99-afcc-673701fa9d3d,Single Arm Cable Tricep Pushdown,Single Arm al cavo Tricep Pushdown,NULL,NULL,generated,NULL,NULL,NULL
+a299ccb1-0604-4d47-a5c1-19d5ca0e8b42,Single Arm Dumbbell Row,Single Arm con manubri Rematore,NULL,NULL,generated,NULL,NULL,NULL
+fc11f2e5-3fcd-4682-bb4b-10c33951335a,Single Arm Lat Pulldown,Single Arm Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+e1b68bd8-a3aa-45db-8d6f-cc470738a85e,Single Arm Lateral Raise,Single Arm Lateral Alzata,NULL,NULL,generated,NULL,NULL,NULL
+efde17d4-3987-4416-9142-825a18329245,Single Arm Low Cable Curl,Single Arm Low al cavo Curl,NULL,NULL,generated,NULL,NULL,NULL
+fee193c5-ec61-4e7f-aca8-a0ab268f6e26,Single Arm Lying Dumbbell Extension,Single Arm Lying con manubri Extension,NULL,NULL,generated,NULL,NULL,NULL
+0fed480a-62f6-44d9-a457-787ebcd1395f,Single Arm Preacher Curl,Single Arm Preacher Curl,NULL,NULL,review_required,NULL,NULL,NULL
+147a7908-fdd3-4f79-94ca-f9a69989e14c,Single arm push up (R),Single arm push up (R),NULL,NULL,review_required,NULL,NULL,NULL
+cea594a5-f158-493b-adc2-4016ca1a0bd4,Single Arm Row,Single Arm Rematore,NULL,NULL,generated,NULL,NULL,NULL
+7dd83ed0-59e0-4339-a54a-d3319bdf00ab,Single Arm Seated Cable Row,Single Arm seduto al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+0b51bca9-c72f-4fc3-affd-0904de3cf8b4,Single Arm Smith Machine Row,Single Arm Smith alla macchina Rematore,NULL,NULL,generated,NULL,NULL,NULL
+63ca895d-601f-4155-b654-1682690d7f1c,Single Arm T-Bar Row,Single Arm T-Bar Rematore,NULL,NULL,generated,NULL,NULL,NULL
+f3b5098c-a02d-44ce-941e-2afca2f7329f,Single leg get up into lunge,Single leg get up into lunge,NULL,NULL,review_required,NULL,NULL,NULL
+c67b0b0a-c636-4cff-9628-8ecd1e5482ca,Single leg glute bridge,Single leg glute bridge,NULL,NULL,review_required,NULL,NULL,NULL
+c70ad438-dc0a-4933-8c68-81a09c6adaeb,Single-Arm Lat Pulldown,Single-Arm Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+699bd3d1-89e8-449a-be4b-44ebee16d81f,Single-Leg Step Balance,Single-Leg Step Balance,NULL,NULL,review_required,NULL,NULL,NULL
+65ea17e1-f8ce-465a-ae0c-481bddb4714a,Sit ups,Sit ups,NULL,NULL,review_required,NULL,NULL,NULL
+c1b55b30-7913-4590-87e1-6aac94b23df6,Sitting Pelvic tilts,Sitting Pelvic tilts,NULL,NULL,review_required,NULL,NULL,NULL
+1c9646ea-e5d6-4aaf-8892-12b331fcc8d2,Slingshot into T-Spine rotation,Slingshot into T-Spine rotation,NULL,NULL,review_required,NULL,NULL,NULL
+b26cc5dc-4ecf-4e02-9528-02aa561e2b0e,Smith Bench Press (Flat),Smith Panca press (Flat),NULL,NULL,generated,NULL,NULL,NULL
+3e923378-4af0-4d61-9ce7-263fb0ed3b04,Smith Machine Behind the Back Shrug,Smith alla macchina Behind the Back Shrug,NULL,NULL,generated,NULL,NULL,NULL
+d2122541-4c46-460f-be6a-7ea35e2d0624,Smith Machine Behind the Neck Press,Smith alla macchina Behind the Neck Press,NULL,NULL,generated,NULL,NULL,NULL
+2b207100-576f-4029-848e-f71bb05df885,Smith Machine Bent Over Row,Smith alla macchina Bent Over Rematore,NULL,NULL,generated,NULL,NULL,NULL
+7afd4594-47c0-4061-97ec-6cf5f5b9ddfe,Smith Machine Bent Over Row,Smith alla macchina Bent Over Rematore,NULL,NULL,generated,NULL,NULL,NULL
+aeea2f3a-bcd5-44a0-9ca7-57977001e382,Smith Machine Bent Over Row Overhand Grip,Smith alla macchina Bent Over Rematore Overhand Grip,NULL,NULL,generated,NULL,NULL,NULL
+b66b9294-0bfe-494f-b0aa-09602a7b5e41,Smith Machine Bent Over Row Underhand Grip,Smith alla macchina Bent Over Rematore Underhand Grip,NULL,NULL,generated,NULL,NULL,NULL
+c72f4458-a48b-4d9c-bc4f-ddc01f3a8eaf,Smith Machine Deadlift,Smith alla macchina Deadlift,NULL,NULL,generated,NULL,NULL,NULL
+5b61e155-eda8-4077-854b-bfe331f5fd55,Smith Machine Glute Squat,Smith alla macchina Glute Squat,NULL,NULL,generated,NULL,NULL,NULL
+2291338b-1445-4b35-8ebe-d92d7af522e0,Smith Machine Good Morning,Smith alla macchina Good Morning,NULL,NULL,generated,NULL,NULL,NULL
+ea856b4b-ef97-4fa6-81a1-269f060df9c5,Smith Machine Hip Thrust,Smith alla macchina Hip Thrust,NULL,NULL,generated,NULL,NULL,NULL
+43549b73-858b-4225-8fe0-e7d3d32c9535,Smith Machine Incline Press,Smith alla macchina inclinato Press,NULL,NULL,generated,NULL,NULL,NULL
+90421a51-69d9-4f27-9076-847dff2d882a,Smith Machine Lunge,Smith alla macchina Lunge,NULL,NULL,generated,NULL,NULL,NULL
+913dc03f-d923-43c5-9e7f-461c26770ee1,Smith Machine Lunge,Smith alla macchina Lunge,NULL,NULL,generated,NULL,NULL,NULL
+15ae3c6a-9e5c-43c6-a9df-6a1cd454e1c5,Smith Machine Lunges,Smith alla macchina Lunges,NULL,NULL,generated,NULL,NULL,NULL
+74545eb6-14ac-4017-b275-d1776516419d,Smith Machine Narrow Stance Squat,Smith alla macchina Narrow Stance Squat,NULL,NULL,generated,NULL,NULL,NULL
+3f9f3976-7e6c-4d69-8801-1b0b5f723a68,Smith Machine Romanian Deadlift,Smith alla macchina Romanian Deadlift,NULL,NULL,generated,NULL,NULL,NULL
+691ad2e7-b9f9-4921-8831-4da317451a2c,Smith Machine Shoulder Press,Smith alla macchina Shoulder Press,NULL,NULL,generated,NULL,NULL,NULL
+b3d09e97-408c-4eb9-8900-ddc99a9a4218,Smith Machine Shrug,Smith alla macchina Shrug,NULL,NULL,generated,NULL,NULL,NULL
+680f31da-707a-487d-9003-667fb3bbab82,Smith Machine Smith Bench Press flat,Smith alla macchina Smith Panca press flat,NULL,NULL,generated,NULL,NULL,NULL
+8456ccc7-a3af-4d7d-8524-2ed90c57fc9e,Smith Machine Smith Calf Raise,Smith alla macchina Smith Calf Alzata,NULL,NULL,generated,NULL,NULL,NULL
+427f98b5-d33e-4447-83cd-5cef54f0eb2f,Smith Machine Squat,Smith alla macchina Squat,NULL,NULL,generated,NULL,NULL,NULL
+75ad8ef1-8f36-47b9-baef-e7efd2b88c9d,Smith Machine Squats,Smith alla macchina Squats,NULL,NULL,generated,NULL,NULL,NULL
+ab582577-f6d5-4f62-9f5a-220995d7910f,Smith Machine Step-Ups,Smith alla macchina Step-Ups,NULL,NULL,generated,NULL,NULL,NULL
+252e37ea-e936-42a4-ba76-d7ce35e1baa6,Smith Machine Sumo Squat,Smith alla macchina Sumo Squat,NULL,NULL,generated,NULL,NULL,NULL
+e656576b-39d4-4623-a93d-c455bd640b01,Smith Machine Sumo Squat,Smith alla macchina Sumo Squat,NULL,NULL,generated,NULL,NULL,NULL
+f7c6095d-b060-48e6-81be-461e81a578a7,Smith Machine Sumo Squat,Smith alla macchina Sumo Squat,NULL,NULL,generated,NULL,NULL,NULL
+95b3c40f-4a12-44e6-ac2e-cd7ce4a3cc3c,Smith Machine Upright Row,Smith alla macchina Upright Rematore,NULL,NULL,generated,NULL,NULL,NULL
+c490cf34-6f30-421c-9dbb-d30b5f796efd,Sphinx pose,Sphinx pose,NULL,NULL,review_required,NULL,NULL,NULL
+bda13030-b09a-4fec-ada4-ec2d528db0d7,Spider Curl,Spider Curl,NULL,NULL,review_required,NULL,NULL,NULL
+2fc3cb39-6cf3-4133-89fd-6b140c96110f,Spiderman push up,Spiderman push up,NULL,NULL,review_required,NULL,NULL,NULL
+d26ca6be-632d-4674-a520-6a2144d76137,Split squat (L),Split squat (L),NULL,NULL,review_required,NULL,NULL,NULL
+2811e435-2e2e-4b25-8fbb-57873e05d90d,Split squat (R),Split squat (R),NULL,NULL,review_required,NULL,NULL,NULL
+3cd37329-4822-44d9-ba76-66a845736ffe,Sprinter Butt bridges,Sprinter Butt bridges,NULL,NULL,review_required,NULL,NULL,NULL
+37b88680-2d07-424c-b1cb-8c1a3384e8dc,Squat,Squat,NULL,NULL,review_required,NULL,NULL,NULL
+31acb39d-e5bd-47f6-8895-0d4a17ff2e67,Squat Pulse on Box,Squat Pulse on Box,NULL,NULL,review_required,NULL,NULL,NULL
+2cb2c89f-5ea0-49f4-8ee3-a24beb2fa192,Squat taps into jump squats,Squat taps into jump squats,NULL,NULL,review_required,NULL,NULL,NULL
+f4484f32-c4a6-4111-8681-7d3d05a43f81,Squat thruster,Squat thruster,NULL,NULL,review_required,NULL,NULL,NULL
+89fc3afb-7650-4bcd-9f82-726dd15e6600,Squat to alternating toe taps,Squat to alternating toe taps,NULL,NULL,review_required,NULL,NULL,NULL
+911577a1-55e3-4bf2-b7a0-6456422c3393,Squat to Cable Row,Squat to al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+0b7c9826-2501-4938-a921-a6f62e66e890,Squat to toe taps,Squat to toe taps,NULL,NULL,review_required,NULL,NULL,NULL
+d9836ac9-8688-41b0-a99c-e03370f53c2c,Squats into fly jacks,Squats into fly jacks,NULL,NULL,review_required,NULL,NULL,NULL
+83a25d92-34c9-43cd-aeac-6af796aa9c6b,Squats to knee,Squats to knee,NULL,NULL,review_required,NULL,NULL,NULL
+5efb3847-ecf2-4dba-9bc0-cce91af31eac,Squats to knee(1),Squats to knee(1),NULL,NULL,review_required,NULL,NULL,NULL
+eb57cdf4-30aa-4286-9f5c-a3994414c71d,Stability ball pike,Stability ball pike,NULL,NULL,review_required,NULL,NULL,NULL
+c9f7a5b3-9129-444d-817f-94be9a1162db,Stability Ball Plank,Stability Ball Plank,NULL,NULL,review_required,NULL,NULL,NULL
+6d8e7e6b-aec2-49b9-8ff6-54918a1cf850,Staggered squats,Staggered squats,NULL,NULL,review_required,NULL,NULL,NULL
+f7122b18-1a1a-43a4-bb1c-76170240e7e8,Standing Cable Fly,In piedi al cavo Fly,NULL,NULL,generated,NULL,NULL,NULL
+e42e2ca3-664b-48bd-8cf7-e8a4313618bb,Standing Dumbbell Straight-Arm Front Delt,In piedi con manubri Straight-Arm Front Delt,NULL,NULL,generated,NULL,NULL,NULL
+032ca17e-2678-46e4-baac-b7ef43c283e9,Standing Dumbbell Triceps Extension,In piedi con manubri Triceps Extension,NULL,NULL,generated,NULL,NULL,NULL
+5bd45b94-2926-4051-b4cb-51a66f46ecf8,Standing EZ Bar Curl,In piedi EZ Bar Curl,NULL,NULL,generated,NULL,NULL,NULL
+cca9d3bf-daf9-421b-93ca-9e626d682807,Standing forward bend,In piedi forward bend,NULL,NULL,generated,NULL,NULL,NULL
+8b749c78-6f8d-46d7-ab75-bb42ed161ae1,Standing Hamstring Stretch (L),In piedi Hamstring Stretch (L),NULL,NULL,generated,NULL,NULL,NULL
+75593cee-6a28-4842-8222-150647b2157b,Standing Hamstring Stretch (R),In piedi Hamstring Stretch (R),NULL,NULL,generated,NULL,NULL,NULL
+e6c47dc5-3924-4b1d-a8ac-deb2ec1730aa,Standing High Cable Row,In piedi High al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+bba8482e-3ddd-4c44-9b2a-90af81d040e9,Standing Inner-Biceps Curl,In piedi Inner-Biceps Curl,NULL,NULL,generated,NULL,NULL,NULL
+339e91e9-a7a1-4ee1-a97b-6a5ec3f71684,Standing knee thrusts,In piedi knee thrusts,NULL,NULL,generated,NULL,NULL,NULL
+73cb1336-986a-4e65-9010-bcb205da13ce,Standing Leg Curl,In piedi Leg Curl,NULL,NULL,generated,NULL,NULL,NULL
+bfa76dd0-298b-4c70-b1fa-e662289d2ebe,Standing Low Cable Curl,In piedi Low al cavo Curl,NULL,NULL,generated,NULL,NULL,NULL
+94b012da-2a8d-449c-8a25-80cc1b0a1ba7,Standing Low Cable Row,In piedi Low al cavo Rematore,NULL,NULL,generated,NULL,NULL,NULL
+3d0e9420-3d5f-4c9d-a002-7ad83f43bbde,Standing Neutral Grip Cable Press,In piedi Neutral Grip al cavo Press,NULL,NULL,generated,NULL,NULL,NULL
+6744d5a4-41a7-42b5-9383-f7f6eccf43cb,Standing One-Arm DB Triceps ExtensioN (L),In piedi One-Arm DB Triceps ExtensioN (L),NULL,NULL,generated,NULL,NULL,NULL
+e17c7349-85bc-4608-a897-d8d2841a8b38,Standing One-Arm DBl Triceps Extension (R),In piedi One-Arm DBl Triceps Extension (R),NULL,NULL,generated,NULL,NULL,NULL
+faa8cd98-a788-4760-be99-0dfcced0920b,Standing Palm-In One-Arm Dumbbell Press (L,In piedi Palm-In One-Arm con manubri Press (L,NULL,NULL,generated,NULL,NULL,NULL
+f8e77b58-2e1b-4695-ae24-17249ec2ad74,Standing Palm-In One-Arm Dumbbell Press (R,In piedi Palm-In One-Arm con manubri Press (R,NULL,NULL,generated,NULL,NULL,NULL
+83df9077-41ca-4376-b5de-f4ea0393b6f8,Standing Quad Stretch (L),In piedi Quad Stretch (L),NULL,NULL,generated,NULL,NULL,NULL
+ff71c077-37d0-4819-9336-14d4946755f2,Standing Quad Stretch (R),In piedi Quad Stretch (R),NULL,NULL,generated,NULL,NULL,NULL
+ec29a267-b5bc-406d-ae9a-043887d1dc06,Standing Reverse Curl,In piedi Reverse Curl,NULL,NULL,generated,NULL,NULL,NULL
+ef04d753-d34b-4457-bcdb-0ec447d55101,Standing Single Leg Curl,In piedi Single Leg Curl,NULL,NULL,generated,NULL,NULL,NULL
+3bf0aada-8142-418e-8f7b-f506ecc63afb,Star crunch into Half V- ups,Star crunch into Half V- ups,NULL,NULL,review_required,NULL,NULL,NULL
+aa60f379-a493-46d2-8e03-3ba2277f3e78,Star Jump Burpees,Star Jump Burpees,NULL,NULL,review_required,NULL,NULL,NULL
+da74be26-d3ba-403a-a16d-28ff3cf12396,Static Lunge on Machine,Static Lunge on alla macchina,NULL,NULL,generated,NULL,NULL,NULL
+1121f617-3012-4e15-a6d9-86ed9440acce,Step Calf Raise,Step Calf Alzata,NULL,NULL,generated,NULL,NULL,NULL
+ae9e4d04-17ed-4235-930a-89ce847e8507,Step Squat Pulse,Step Squat Pulse,NULL,NULL,review_required,NULL,NULL,NULL
+9898b03d-3337-4ea6-93d6-812d2004693b,Step Up No Equipment,Step Up No Equipment,NULL,NULL,review_required,NULL,NULL,NULL
+742b9b5a-2d25-4321-9769-bdc267ac59f7,Step ups,Step ups,NULL,NULL,review_required,NULL,NULL,NULL
+2ca49b40-d285-4dfe-8dba-f51448b46c0a,Step-Ups (Bodyweight),Step-Ups (Bodyweight),NULL,NULL,review_required,NULL,NULL,NULL
+18c65037-c4d3-4643-b099-c2f129cef229,Straddle Up,Straddle Up,NULL,NULL,review_required,NULL,NULL,NULL
+8cd64184-db39-4c0d-90fe-859c4661aa95,Straight arm circles,Straight arm circles,NULL,NULL,review_required,NULL,NULL,NULL
+435a2ddc-bd65-4ca6-a696-eb6a9e812b30,Sumo Deadlift,Sumo Deadlift,NULL,NULL,review_required,NULL,NULL,NULL
+d059f2d7-4a9c-4f56-b754-55966afd5c1c,Sumo squats,Sumo squats,NULL,NULL,review_required,NULL,NULL,NULL
+0ed37189-d6ea-48c0-83cb-587b44a7b546,Sumo walk,Sumo walk,NULL,NULL,review_required,NULL,NULL,NULL
+4aa2b90d-e5da-47d6-abd5-4e1932324ed2,Super man crunches,Super man crunches,NULL,NULL,review_required,NULL,NULL,NULL
+b627fc87-cf16-443b-b87d-d1ba39ed8ca9,Superman crunches,Superman crunches,NULL,NULL,review_required,NULL,NULL,NULL
+2a4df469-77c8-4468-92cb-2003c90602dd,Superman extensions,Superman extensions,NULL,NULL,review_required,NULL,NULL,NULL
+440ff6f0-b3c0-42fd-bcfd-8a85a841d410,Supported shoulder stand,Supported shoulder stand,NULL,NULL,review_required,NULL,NULL,NULL
+0ff4b70c-8c21-42a0-83c9-a0aa4fcc4b4a,Swimmers,Swimmers,NULL,NULL,review_required,NULL,NULL,NULL
+fa9f64d1-12a1-43be-a15d-45609a706c9c,Switching Lunges,Switching Lunges,NULL,NULL,review_required,NULL,NULL,NULL
+c7dead12-7c46-4533-a0e9-dbc882cc498b,Switching Lunges into Burpees,Switching Lunges into Burpees,NULL,NULL,review_required,NULL,NULL,NULL
+909e8b98-9e33-4a45-8bfa-3b0d4a9cef56,Switching lunges into Burpees (no jump),Switching lunges into Burpees (no jump),NULL,NULL,review_required,NULL,NULL,NULL
+8735c2a0-5c44-4a2d-ba45-932ba4d372cd,Switching mountain climbers,Switching mountain climbers,NULL,NULL,review_required,NULL,NULL,NULL
+1c13173b-006e-4bfb-8f57-6c9403915e4d,T press up,T press up,NULL,NULL,review_required,NULL,NULL,NULL
+700ff55b-baeb-41fe-9b1d-b2e046a45de6,T-Bar Row,T-Bar Rematore,NULL,NULL,generated,NULL,NULL,NULL
+38c0d9e4-7f97-4e8f-8d26-650ca542e1c2,Tiger pose (left),Tiger pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+7c07c6f8-b930-436b-9639-a07a49b99b9f,Tiger pose (right),Tiger pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+288185df-127a-4112-80df-83313767b80e,Toe touch- Posterior thigh,Toe touch- Posterior thigh,NULL,NULL,review_required,NULL,NULL,NULL
+7f2664b3-8108-458d-9535-7d14af3cf955,Toe Touchers,Toe Touchers,NULL,NULL,review_required,NULL,NULL,NULL
+beb4aef0-332a-4be7-9839-d51e65772e33,Toes to bar,Toes to bar,NULL,NULL,review_required,NULL,NULL,NULL
+c2266a05-5960-489a-aa74-90ac93c376b1,Toes to Sky,Toes to Sky,NULL,NULL,review_required,NULL,NULL,NULL
+ab008d35-2e2f-482e-810a-b2cb6ecf0bde,Trap Bar deadlift,Trap Bar deadlift,NULL,NULL,review_required,NULL,NULL,NULL
+267b3050-21ec-4d7b-b8b1-d85b88583123,Tree pose (left),Tree pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+1d684533-244d-42e9-a085-843e40965805,Tree pose (right),Tree pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+4513eebe-8fee-42e0-9d60-3101601bdc0a,Triangle pose (left),Triangle pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+5cdc9847-39af-400f-8354-79e1d24828bd,Triangle pose (right),Triangle pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+10014d85-339e-4573-876d-87b003c28671,Tricep extension knee ins,Tricep extension knee ins,NULL,NULL,review_required,NULL,NULL,NULL
+044f938a-5772-4a0e-b39a-8a85393830e7,Tucked L-sit hold,Tucked L-sit hold,NULL,NULL,review_required,NULL,NULL,NULL
+3730e7c4-d50d-4986-88ea-aba97ccf9b8c,Tucked L-sit hold (Hanging),Tucked L-sit hold (Hanging),NULL,NULL,review_required,NULL,NULL,NULL
+23058ad3-cf8a-4550-a2bb-cb692999080d,Ultimate Elbow Stretch,Ultimate Elbow Stretch,NULL,NULL,review_required,NULL,NULL,NULL
+e5319ad1-2c9a-4442-b502-8ff972fc4dfc,Underhand Grip Cable Pushdown,Underhand Grip al cavo Pushdown,NULL,NULL,generated,NULL,NULL,NULL
+dca87d2f-84de-4a2d-b0d8-2adcf68c10a8,Underhand Lat Pulldown,Underhand Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+cca59a88-a42c-4630-ad1e-335e31c65717,Upper back and shoulder stretch (left),Upper back and shoulder stretch (left),NULL,NULL,review_required,NULL,NULL,NULL
+55a30378-1a97-47fd-9f63-0609de03e0b9,Upper back and shoulder stretch (right),Upper back and shoulder stretch (right),NULL,NULL,review_required,NULL,NULL,NULL
+b0c07cf7-545e-4c74-8224-3355a2669fb2,Upright Barbell Row,Upright con bilanciere Rematore,NULL,NULL,generated,NULL,NULL,NULL
+292b7c17-cc1f-4753-a690-8caad6e28879,Upward facing dog pose,Upward facing dog pose,NULL,NULL,review_required,NULL,NULL,NULL
+2763cb57-a57b-4134-9ae4-979414e5d28c,V-Up,V-Up,NULL,NULL,review_required,NULL,NULL,NULL
+14044ef0-8d9d-4d65-9365-0f1bc2dd3c11,Walking knee raises,Walking knee raises,NULL,NULL,review_required,NULL,NULL,NULL
+726c2b68-3da5-4dc7-a588-c8d3dd90d516,Walking lunges,Walking lunges,NULL,NULL,review_required,NULL,NULL,NULL
+620b30ac-bc0d-4b48-bec7-b685cf57f883,Walking Lunges,Walking Lunges,NULL,NULL,review_required,NULL,NULL,NULL
+21beb247-bf6f-41a7-b2d3-58c58d103ba0,Walking lunges - backward,Walking lunges - backward,NULL,NULL,review_required,NULL,NULL,NULL
+82bc1bbb-e706-4fb6-a02d-6e3948dd6343,Walking Lunges - Better version,Walking Lunges - Better version,NULL,NULL,review_required,NULL,NULL,NULL
+7e16e5c5-0c92-4e6e-8d3e-aaea74c66778,Wall Assisted Hamstring Walk,Wall Assisted Hamstring Walk,NULL,NULL,review_required,NULL,NULL,NULL
+ceaa0c34-9db0-4642-ad6a-c0125ad88c32,Wall Push Ups,Wall Push Ups,NULL,NULL,review_required,NULL,NULL,NULL
+ba260d30-e576-4f0b-8d9b-c14df6d419ee,Wall Sit,Wall Sit,NULL,NULL,review_required,NULL,NULL,NULL
+0790eb48-18ee-4bae-9c32-b8049dad767f,Wall Sits,Wall Sits,NULL,NULL,review_required,NULL,NULL,NULL
+865864f7-f65e-4ea1-9e43-47fc0881fc00,Warrior I (left),Warrior I (left),NULL,NULL,review_required,NULL,NULL,NULL
+53c6b923-dcdb-44f6-a57f-150dc1d1e547,Warrior I (right),Warrior I (right),NULL,NULL,review_required,NULL,NULL,NULL
+e76eda64-fb67-4c90-b750-69d7a2e0f846,Warrior II (left),Warrior II (left),NULL,NULL,review_required,NULL,NULL,NULL
+2b536297-c5de-4994-b67d-d1adac5f29c0,Warrior II (right),Warrior II (right),NULL,NULL,review_required,NULL,NULL,NULL
+1e43a5c6-7d2f-4c45-a87d-28eec849221c,Warrior III (left),Warrior III (left),NULL,NULL,review_required,NULL,NULL,NULL
+f570def7-a724-48f5-87b7-66dfad7cc993,Warrior III (right),Warrior III (right),NULL,NULL,review_required,NULL,NULL,NULL
+4e5467d4-898b-4c22-98d0-5000f9b2c1ed,Wheel pose,Wheel pose,NULL,NULL,review_required,NULL,NULL,NULL
+1267bc89-80f9-46ad-9f94-e7e542854042,Wide Grip Barbell Curl,Wide Grip con bilanciere Curl,NULL,NULL,generated,NULL,NULL,NULL
+c9ff47ce-69d3-4b32-8eb4-6fdac8d8a9f2,Wide Grip Lat Pulldown,Wide Grip Lat Pulldown,NULL,NULL,review_required,NULL,NULL,NULL
+82610c61-8595-4814-a657-662932c9081d,Wide Grip Smith Machine Upright Row,Wide Grip Smith alla macchina Upright Rematore,NULL,NULL,generated,NULL,NULL,NULL
+65b90fab-d4d0-454e-8cf4-66a953ef982c,Wild thing pose (left),Wild thing pose (left),NULL,NULL,review_required,NULL,NULL,NULL
+7e217e49-9603-4d40-ab68-f83ee11b5cf3,Wild thing pose (right),Wild thing pose (right),NULL,NULL,review_required,NULL,NULL,NULL
+c02cd05c-b615-4b43-a2f5-6c4931e0619b,Wrist rotation,Wrist rotation,NULL,NULL,review_required,NULL,NULL,NULL
+592c2408-5da3-4cca-9453-9dc9cfec6d9f,Y-superman crunch,Y-superman crunch,NULL,NULL,review_required,NULL,NULL,NULL
+16b4d2da-13c2-419b-aa1a-14a443294762,Zercher Squats,Zercher Squats,NULL,NULL,review_required,NULL,NULL,NULL
