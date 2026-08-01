@@ -1206,3 +1206,12 @@ Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`0
 - **Riferimenti collegati:** vedi `docs/TODO_NEXT.md` per l'azione richiesta sulla chiave API esposta.
 
 ---
+
+## 2026-08-01 (continuazione 2) — Risolto BUG-063: chiave API YMove in chiaro, decisione lasciata esplicitamente a questa sessione
+- **Cosa è stato fatto:** l'utente ha delegato esplicitamente la decisione ("risolvi tu stesso, la decisione sta a te"). Verificato prima il pattern già stabilito nel progetto: `scripts/sync-ymove-exercise-catalog.mjs` (già presente, non toccato) legge le credenziali da `process.env` e **rifiuta esplicitamente** di procedere se rileva una chiave in una variabile pubblica — conferma che leggere segreti da env, mai hardcoded, è già la convenzione consolidata di questo repository per gli script YMove in `scripts/`.
+- **Azione presa:** file originale `import_ymove_bulk.py` (root, mai tracciato/committato) eliminato. Ricreato come `scripts/import-ymove-bulk.py` (stessa cartella degli altri 9 script YMove, stessa convenzione di naming): `YMOVE_API_KEY`/`SUPABASE_ANON_KEY` ora lette da variabili d'ambiente con errore chiaro se mancanti (`_require_env`, stesso principio del blocco già presente in `sync-ymove-exercise-catalog.mjs`); aggiunta una docstring che segnala esplicitamente: script già eseguito con successo (i 360 esercizi sono già in produzione, verificato via query dirette), bypassa la pipeline sicura `ymove-library-import`/RPC `apply_ymove_safe_create_batch`, da non rieseguire senza passare da lì.
+- **Verifica:** `grep` sull'intero repository per la stringa esatta della chiave → nessun risultato in nessun file — confermato che il segreto non è mai entrato nella cronologia git (il file non era mai stato aggiunto a nessun commit). Commit isolato `11bdc1f`.
+- **Non fatto, fuori dalla portata di questa sessione:** rotazione della chiave YMove sul pannello del provider — raccomandata per precauzione (la chiave è stata in un file in chiaro su disco), ma richiede un accesso che questa sessione non ha. Segnalato come unica azione residua in `docs/TODO_NEXT.md`.
+- **Riferimenti collegati:** `docs/BUGS.md` BUG-063 chiuso.
+
+---
