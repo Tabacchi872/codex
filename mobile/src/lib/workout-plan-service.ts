@@ -475,6 +475,7 @@ type WorkoutTemplateRow = {
   progression_notes: string | null;
   deload_week: boolean;
   is_system: boolean;
+  is_ymove: boolean;
   source_template_id: string | null;
   workout_template_days: TemplateDayRow[];
 };
@@ -496,12 +497,13 @@ type WorkoutTemplateSummaryRow = {
   muscle_focus: string | null;
   intensity: string | null;
   is_system: boolean;
+  is_ymove: boolean;
   workout_template_days: { id: string; workout_template_exercises: { exercise_id: string }[] }[];
 };
 
 const TEMPLATE_METADATA_COLUMNS =
   'id,folder_id,name,description,goal,level,sort_order,duration_weeks,sessions_per_week,estimated_session_minutes,' +
-  'equipment,location,training_style,muscle_focus,intensity,progression_notes,deload_week,is_system,source_template_id';
+  'equipment,location,training_style,muscle_focus,intensity,progression_notes,deload_week,is_system,is_ymove,source_template_id';
 
 const SELECT_TEMPLATE_DETAIL =
   `${TEMPLATE_METADATA_COLUMNS},` +
@@ -514,7 +516,7 @@ const SELECT_TEMPLATE_DETAIL =
 // modello (serie/reps/note) per ogni riga della lista.
 const SELECT_TEMPLATE_SUMMARY =
   'id,folder_id,name,description,goal,level,sort_order,duration_weeks,sessions_per_week,estimated_session_minutes,' +
-  'equipment,location,training_style,muscle_focus,intensity,is_system,workout_template_days(id,workout_template_exercises(exercise_id))';
+  'equipment,location,training_style,muscle_focus,intensity,is_system,is_ymove,workout_template_days(id,workout_template_exercises(exercise_id))';
 
 function mapTemplateExerciseRow(e: TemplateExerciseRow): TemplateExercise {
   return {
@@ -555,6 +557,7 @@ function mapTemplateRow(row: WorkoutTemplateRow): WorkoutTemplate {
     progressionNotes: row.progression_notes ?? '',
     deloadWeek: row.deload_week,
     isSystem: row.is_system,
+    isYmove: row.is_ymove,
     sourceTemplateId: row.source_template_id,
     days: sortedDays.map((d) => ({
       id: d.id,
@@ -586,6 +589,7 @@ function mapTemplateSummaryRow(row: WorkoutTemplateSummaryRow): WorkoutTemplateS
     muscleFocus: row.muscle_focus ?? '',
     intensity: row.intensity ?? '',
     isSystem: row.is_system,
+    isYmove: row.is_ymove,
     dayCount: row.workout_template_days.length,
     exerciseCount: exerciseIds.length,
     exerciseIds,

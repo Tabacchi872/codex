@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronRight, Dumbbell, Filter, Folder, Pencil, Search, Sparkles, Trash2, X } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -362,11 +362,22 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
   // righe piatte — "la ricerca puo' trovare anche modelli professionali;
   // selezionando un risultato professionale apre il suo dettaglio" — mai
   // annidati dentro un'altra sezione da aprire.
-  const systemTemplateCount = templates.filter((t) => t.isSystem).length;
+  // Due librerie di sistema distinte, mai mescolate: "Allenamenti
+  // professionali" (18 modelli curati a mano) e "Allenamenti YMove" (modelli
+  // costruiti sul catalogo YMove già importato, workout_templates.is_ymove).
+  // Stessa logica applicata a entrambe: cartella virtuale in radice quando
+  // nessuna ricerca/filtro è attivo, righe piatte tra i risultati altrimenti.
+  const professionalTemplateCount = templates.filter((t) => t.isSystem && !t.isYmove).length;
+  const ymoveTemplateCount = templates.filter((t) => t.isSystem && t.isYmove).length;
   const showProfessionalFolder = isRoot && !systemResultsActive;
-  const systemTemplates =
+  const showYmoveFolder = isRoot && !systemResultsActive;
+  const professionalTemplates =
     isRoot && systemResultsActive
-      ? templates.filter((t) => t.isSystem && matchesSearchAndFilters(t)).sort((a, b) => a.name.localeCompare(b.name))
+      ? templates.filter((t) => t.isSystem && !t.isYmove && matchesSearchAndFilters(t)).sort((a, b) => a.name.localeCompare(b.name))
+      : [];
+  const ymoveTemplates =
+    isRoot && systemResultsActive
+      ? templates.filter((t) => t.isSystem && t.isYmove && matchesSearchAndFilters(t)).sort((a, b) => a.name.localeCompare(b.name))
       : [];
   const subfolders = isRoot && filters.folderId ? [] : folders.filter((f) => f.parentFolderId === folderId).sort((a, b) => a.name.localeCompare(b.name));
   const personalItems = templates
@@ -376,22 +387,30 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
   type Row =
     | { key: string; kind: 'section'; title: string; subtitle?: string }
     | { key: string; kind: 'professional-folder' }
+    | { key: string; kind: 'ymove-folder' }
     | { key: string; kind: 'folder'; folder: TemplateFolder }
     | { key: string; kind: 'template'; template: WorkoutTemplateSummary };
 
   const rows: Row[] = [
     ...(showProfessionalFolder ? [{ key: 'professional-folder', kind: 'professional-folder' as const }] : []),
-    ...(systemTemplates.length > 0
+    ...(showYmoveFolder ? [{ key: 'ymove-folder', kind: 'ymove-folder' as const }] : []),
+    ...(professionalTemplates.length > 0
       ? [
           { key: 'section-pro', kind: 'section' as const, title: 'Professionali', subtitle: 'Risultati tra i modelli professionali, pronti da assegnare' },
-          ...systemTemplates.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
+          ...professionalTemplates.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
+        ]
+      : []),
+    ...(ymoveTemplates.length > 0
+      ? [
+          { key: 'section-ymove', kind: 'section' as const, title: 'Allenamenti YMove', subtitle: 'Risultati tra i modelli YMove, pronti da assegnare' },
+          ...ymoveTemplates.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
         ]
       : []),
     ...(isRoot ? [{ key: 'section-mine', kind: 'section' as const, title: 'La mia libreria', subtitle: 'I tuoi modelli personali, organizzati in cartelle' }] : []),
     ...subfolders.map((folder) => ({ key: `folder-${folder.id}`, kind: 'folder' as const, folder })),
     ...personalItems.map((template) => ({ key: `template-${template.id}`, kind: 'template' as const, template })),
   ];
-  const hasAnyResults = systemTemplates.length > 0 || subfolders.length > 0 || personalItems.length > 0;
+  const hasAnyResults = professionalTemplates.length > 0 || ymoveTemplates.length > 0 || subfolders.length > 0 || personalItems.length > 0;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -444,7 +463,7 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
             {searchOrFiltersActive ? (
               <Text style={[styles.resultsCount, { color: colors.inkSoft }]}>
                 {hasAnyResults
-                  ? `${systemTemplates.length + personalItems.length} ${systemTemplates.length + personalItems.length === 1 ? 'risultato' : 'risultati'}`
+                  ? `${professionalTemplates.length + ymoveTemplates.length + personalItems.length} ${professionalTemplates.length + ymoveTemplates.length + personalItems.length === 1 ? 'risultato' : 'risultati'}`
                   : 'Nessun risultato'}
               </Text>
             ) : null}
@@ -468,7 +487,24 @@ export function TemplateLibraryScreen({ folderId }: { folderId: string | null })
             );
           }
           if (item.kind === 'professional-folder') {
-            return <ProfessionalFolderRow modelCount={systemTemplateCount} onPress={() => router.push('/schede/professionali')} />;
+            return (
+              <SystemFolderRow
+                label="Allenamenti professionali"
+                modelCount={professionalTemplateCount}
+                icon={<Sparkles size={22} color={colors.moss} />}
+                onPress={() => router.push('/schede/professionali')}
+              />
+            );
+          }
+          if (item.kind === 'ymove-folder') {
+            return (
+              <SystemFolderRow
+                label="Allenamenti YMove"
+                modelCount={ymoveTemplateCount}
+                icon={<Dumbbell size={22} color={colors.moss} />}
+                onPress={() => router.push('/schede/allenamenti-ymove')}
+              />
+            );
           }
           if (item.kind === 'folder') {
             return (
@@ -565,22 +601,31 @@ function FolderRow({
   );
 }
 
-// Cartella VIRTUALE, non una riga di public.template_folders: nessun id,
-// nessun coach_id, non rinominabile/eliminabile/spostabile (mai un
-// AppIconButton di modifica, a differenza di FolderRow). Un solo Pressable
-// per l'intera riga (AppPressableCard, non FolderRow's AppCard+Pressable
-// interno) perche' qui non serve alcuna seconda azione affiancata.
-function ProfessionalFolderRow({ modelCount, onPress }: { modelCount: number; onPress: () => void }) {
+// Cartella VIRTUALE (professionale o YMove), non una riga di
+// public.template_folders: nessun id, nessun coach_id, non
+// rinominabile/eliminabile/spostabile (mai un AppIconButton di modifica, a
+// differenza di FolderRow). Un solo Pressable per l'intera riga
+// (AppPressableCard, non FolderRow's AppCard+Pressable interno) perche' qui
+// non serve alcuna seconda azione affiancata.
+function SystemFolderRow({
+  label,
+  modelCount,
+  icon,
+  onPress,
+}: {
+  label: string;
+  modelCount: number;
+  icon: ReactNode;
+  onPress: () => void;
+}) {
   const { colors } = useAppTheme();
   return (
-    <AppPressableCard onPress={onPress} accessibilityLabel="Apri Allenamenti professionali" style={styles.folderRow}>
+    <AppPressableCard onPress={onPress} accessibilityLabel={`Apri ${label}`} style={styles.folderRow}>
       <View style={[styles.folderRowMain, { flex: 1 }]}>
-        <View style={[styles.folderIcon, { backgroundColor: colors.mossSoft }]}>
-          <Sparkles size={22} color={colors.moss} />
-        </View>
+        <View style={[styles.folderIcon, { backgroundColor: colors.mossSoft }]}>{icon}</View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.folderName, { color: colors.ink }]} numberOfLines={1}>
-            Allenamenti professionali
+            {label}
           </Text>
           <Text style={[styles.templateMeta, { color: colors.inkSoft }]}>{modelCount} modelli completi</Text>
         </View>

@@ -43,21 +43,78 @@ const PROFESSIONAL_CATEGORIES: { goal: string; label: string }[] = [
   { goal: 'Performance', label: 'Performance' },
 ];
 
-// Cartella "Allenamenti professionali": interamente VIRTUALE, nessuna riga in
-// public.template_folders, nessun coach_id, non rinominabile/eliminabile/
-// spostabile — sola lettura, raggiunta da schede/professionali/index.tsx
-// (goal=null, mostra le 7 sottocategorie) e
-// schede/professionali/[goal].tsx (una sottocategoria, goal valorizzato,
-// mostra solo i modelli di sistema con quel goal). NIENTE clientId qui, mai
-// (stessa regola di TemplateLibraryScreen) — "Duplica nella mia libreria" e
-// il resto delle azioni sul modello restano intatti in
-// schede/modello/[templateId].tsx, non toccato: questa schermata naviga li'
-// esattamente come faceva prima la sezione "Professionali" della radice.
-export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
+// Sottocategorie della libreria "Allenamenti YMove" (2026-08): stesso
+// mapping goal->label di PROFESSIONAL_CATEGORIES, solo 5 delle 7 (nessun
+// modello YMove per 'Casa'/'Performance' al momento — la categoria compare
+// comunque con 0 modelli se un domani ne verranno aggiunti, coerente con
+// "riusa le categorie esistenti, non crearne di duplicate": stessi VALORI
+// di goal della libreria professionale, non un secondo vocabolario). I dati
+// sono scritti da
+// supabase/migrations/20260816150000_workout_templates_ymove_catalog.sql.
+const YMOVE_CATEGORIES: { goal: string; label: string }[] = [
+  { goal: 'Dimagrimento', label: 'Dimagrimento' },
+  { goal: 'Massa muscolare', label: 'Massa muscolare' },
+  { goal: 'Ricomposizione corporea', label: 'Ricomposizione corporea' },
+  { goal: 'Forza', label: 'Forza e Powerbuilding' },
+  { goal: 'Principianti', label: 'Principianti' },
+];
+
+type LibraryVariant = 'professional' | 'ymove';
+
+const VARIANT_CONFIG: Record<
+  LibraryVariant,
+  {
+    categories: { goal: string; label: string }[];
+    matches: (t: WorkoutTemplateSummary) => boolean;
+    rootTitle: string;
+    loadingLabel: string;
+    emptyLabel: string;
+    rootPath: '/schede/professionali' | '/schede/allenamenti-ymove';
+    categoryRoute: '/schede/professionali/[goal]' | '/schede/allenamenti-ymove/[goal]';
+    rootSearchPlaceholder: string;
+  }
+> = {
+  professional: {
+    categories: PROFESSIONAL_CATEGORIES,
+    // I modelli YMove sono anch'essi is_system=true (stesse regole di
+    // sola-lettura/duplicazione): esclusi qui esplicitamente perche' vivono
+    // nella loro libreria distinta (variant='ymove'), mai mescolati.
+    matches: (t) => t.isSystem && !t.isYmove,
+    rootTitle: 'Allenamenti professionali',
+    loadingLabel: 'Caricamento allenamenti professionali…',
+    emptyLabel: 'Nessun modello professionale disponibile.',
+    rootPath: '/schede/professionali',
+    categoryRoute: '/schede/professionali/[goal]',
+    rootSearchPlaceholder: 'Cerca tra i modelli professionali',
+  },
+  ymove: {
+    categories: YMOVE_CATEGORIES,
+    matches: (t) => t.isSystem && t.isYmove,
+    rootTitle: 'Allenamenti YMove',
+    loadingLabel: 'Caricamento allenamenti YMove…',
+    emptyLabel: 'Nessun modello YMove disponibile in questa categoria.',
+    rootPath: '/schede/allenamenti-ymove',
+    categoryRoute: '/schede/allenamenti-ymove/[goal]',
+    rootSearchPlaceholder: 'Cerca tra i modelli YMove',
+  },
+};
+
+// Cartella "Allenamenti professionali"/"Allenamenti YMove": interamente
+// VIRTUALE, nessuna riga in public.template_folders, nessun coach_id, non
+// rinominabile/eliminabile/spostabile — sola lettura, raggiunta da
+// schede/professionali/index.tsx e schede/allenamenti-ymove/index.tsx
+// (goal=null, mostra le sottocategorie) e le rispettive .../[goal].tsx (una
+// sottocategoria, goal valorizzato, mostra solo i modelli di sistema con
+// quel goal E quella variante). NIENTE clientId qui, mai (stessa regola di
+// TemplateLibraryScreen) — "Duplica nella mia libreria" e il resto delle
+// azioni sul modello restano intatti in schede/modello/[templateId].tsx,
+// non toccato: questa schermata naviga li' esattamente come prima.
+export function ProfessionalLibraryScreen({ goal, variant = 'professional' }: { goal: string | null; variant?: LibraryVariant }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
+  const config = VARIANT_CONFIG[variant];
 
   const [templates, setTemplates] = useState<WorkoutTemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +157,7 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <ActivityIndicator />
-        <Text style={{ color: colors.inkSoft, marginTop: AppSpacing[2] }}>Caricamento allenamenti professionali…</Text>
+        <Text style={{ color: colors.inkSoft, marginTop: AppSpacing[2] }}>{config.loadingLabel}</Text>
       </View>
     );
   }
@@ -117,22 +174,23 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
     );
   }
 
-  const activeCategory = goal !== null ? (PROFESSIONAL_CATEGORIES.find((c) => c.goal === goal) ?? null) : null;
+  const activeCategory = goal !== null ? (config.categories.find((c) => c.goal === goal) ?? null) : null;
   if (goal !== null && !activeCategory) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <Text style={{ color: colors.ink, fontWeight: '700' }}>Categoria non trovata.</Text>
         <View style={{ marginTop: AppSpacing[3] }}>
-          <AppButton label="Torna ad Allenamenti professionali" onPress={() => router.replace('/schede/professionali')} />
+          <AppButton label={`Torna a ${config.rootTitle}`} onPress={() => router.replace(config.rootPath)} />
         </View>
       </View>
     );
   }
 
-  // Ambito FISSO ai soli modelli di sistema: "dentro Allenamenti
-  // professionali, ricerca e filtri operano solo sui modelli di sistema" —
-  // mai un modello personale del coach compare qui, in nessun caso.
-  const systemTemplates = templates.filter((t) => t.isSystem);
+  // Ambito FISSO ai soli modelli di sistema DI QUESTA VARIANTE: "dentro
+  // Allenamenti professionali/YMove, ricerca e filtri operano solo sui
+  // modelli di sistema di quella libreria" — mai un modello personale del
+  // coach ne' un modello dell'altra libreria compare qui, in nessun caso.
+  const systemTemplates = templates.filter(config.matches);
   const categoryTemplates = activeCategory ? systemTemplates.filter((t) => t.goal === activeCategory.goal) : [];
   const scopedTemplates = activeCategory ? categoryTemplates : systemTemplates;
 
@@ -165,7 +223,7 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
     | { key: string; kind: 'template'; template: WorkoutTemplateSummary };
 
   const rows: Row[] = showCategories
-    ? PROFESSIONAL_CATEGORIES.map((c) => ({
+    ? config.categories.map((c) => ({
         key: `category-${c.goal}`,
         kind: 'category' as const,
         goal: c.goal,
@@ -177,9 +235,9 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((template) => ({ key: template.id, kind: 'template' as const, template }));
 
-  const title = activeCategory ? activeCategory.label : 'Allenamenti professionali';
+  const title = activeCategory ? activeCategory.label : config.rootTitle;
   const subtitle = activeCategory ? `${categoryTemplates.length} modelli in questa categoria` : `${systemTemplates.length} modelli completi`;
-  const backFallback = activeCategory ? '/schede/professionali' : '/schede';
+  const backFallback = activeCategory ? config.rootPath : '/schede';
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -208,14 +266,14 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
               activeFilterCount={activeFilterCount}
               showKindFilter={false}
               showFolderFilter={false}
-              searchPlaceholder={activeCategory ? 'Cerca in questa categoria' : 'Cerca tra i modelli professionali'}
+              searchPlaceholder={activeCategory ? 'Cerca in questa categoria' : config.rootSearchPlaceholder}
             />
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: AppSpacing[2] }} />}
         ListEmptyComponent={
           <Text style={{ color: colors.inkSoft, fontSize: AppFontSize.sm }}>
-            {searchOrFiltersActive ? 'Nessun risultato per la ricerca o i filtri selezionati.' : 'Nessun modello professionale disponibile.'}
+            {searchOrFiltersActive ? 'Nessun risultato per la ricerca o i filtri selezionati.' : config.emptyLabel}
           </Text>
         }
         renderItem={({ item }) => {
@@ -224,7 +282,7 @@ export function ProfessionalLibraryScreen({ goal }: { goal: string | null }) {
               <CategoryRow
                 label={item.label}
                 count={item.count}
-                onPress={() => router.push({ pathname: '/schede/professionali/[goal]', params: { goal: item.goal } })}
+                onPress={() => router.push({ pathname: config.categoryRoute, params: { goal: item.goal } })}
               />
             );
           }

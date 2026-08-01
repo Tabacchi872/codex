@@ -69,6 +69,11 @@ export type WorkoutTemplate = {
   progressionNotes: string;
   deloadWeek: boolean;
   isSystem: boolean;
+  // Sottoinsieme dei modelli di sistema (isSystem sempre true quando questo
+  // e' true): popolato solo dalla libreria "Allenamenti YMove", esercizi
+  // presi dal catalogo YMove gia' importato — vedi
+  // components/professional-library-screen.tsx (variant='ymove').
+  isYmove: boolean;
   sourceTemplateId?: string | null;
   days: TemplateDay[];
 };
@@ -92,6 +97,7 @@ export type WorkoutTemplateSummary = {
   muscleFocus: string;
   intensity: string;
   isSystem: boolean;
+  isYmove: boolean;
   dayCount: number;
   exerciseCount: number;
   // Id degli esercizi contenuti nel modello (tutti i giorni, senza duplicati
