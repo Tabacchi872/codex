@@ -9,7 +9,7 @@ import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
 import { ScreenBackground } from '@/components/screen-background';
 import { TemplateFolderPickerModal } from '@/components/template-folder-picker-modal';
 import { ThemedText } from '@/components/themed-text';
-import { AppBadge, AppButton, AppCard, BackHeader } from '@/components/ui';
+import { AppBadge, AppButton, AppCard, AppPressableCard, BackHeader } from '@/components/ui';
 import { WorkoutTemplateForm } from '@/components/workout-template-form';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
@@ -305,8 +305,20 @@ export default function ModelloDettaglioScreen() {
                 </View>
                 {day.exercises.map((te) => {
                   const exercise = resolveExercise(te.exerciseId);
+                  const exerciseName = exercise?.name ?? te.exerciseId;
                   return (
-                    <AppCard key={te.id} style={styles.exerciseRow}>
+                    <AppPressableCard
+                      key={te.id}
+                      style={styles.exerciseRow}
+                      accessibilityLabel={`Apri dettaglio esercizio ${exerciseName}`}
+                      // Stesso identificatore (te.exerciseId, UUID o chiave
+                      // legacy indifferentemente) e stessa route gia' usate da
+                      // WorkoutTemplateForm.onOpenDetails (modalita' modifica
+                      // di questa stessa schermata) e da workout-plan-form.tsx
+                      // — nessun planId/clientId/workoutExerciseId: non e' una
+                      // sessione reale, esercizi/[id].tsx apre correttamente la
+                      // vista libreria generica quando planId e' assente.
+                      onPress={() => router.push({ pathname: '/esercizi/[id]', params: { id: te.exerciseId } })}>
                       {exercise ? (
                         <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={52} />
                       ) : (
@@ -316,7 +328,7 @@ export default function ModelloDettaglioScreen() {
                       )}
                       <View style={styles.exerciseCopy}>
                         <ThemedText type="smallBold" numberOfLines={2}>
-                          {exercise?.name ?? te.exerciseId}
+                          {exerciseName}
                         </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
                           {te.sets} serie · {te.repsMin && te.repsMax ? `${te.repsMin}-${te.repsMax} rip.` : `${te.reps} rip.`} · recupero {te.restSeconds}s
@@ -324,7 +336,7 @@ export default function ModelloDettaglioScreen() {
                           {te.notes ? ` · ${te.notes}` : ''}
                         </ThemedText>
                       </View>
-                    </AppCard>
+                    </AppPressableCard>
                   );
                 })}
               </View>
