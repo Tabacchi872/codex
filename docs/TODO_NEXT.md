@@ -4,6 +4,7 @@ Prossimi passi prioritizzati per **FitCoach Pro** (nome definito in `mobile/src/
 
 ## Priorità alta
 
+- [ ] **AZIONE RICHIESTA — chiave API YMove esposta in chiaro (2026-08-01, BUG-063), non committata:** `import_ymove_bulk.py` (root del repo, non tracciato) contiene `YMOVE_API_KEY` e `SUPABASE_ANON_KEY` hardcoded. Consigliato: 1) ruotare la chiave YMove per precauzione (non risulta committata, ma è comunque stata in un file in chiaro); 2) decidere il destino del file — ripulirlo (credenziali da env) e tenerlo, escluderlo via `.gitignore`, o eliminarlo (i 360 esercizi sono già in produzione, lo script potrebbe non servire più); 3) lo script bypassa la pipeline sicura `ymove-library-import` — se va rieseguito, va rifatto passando dalla RPC `apply_ymove_safe_create_batch`, non da insert REST diretti. Vedi `docs/BUGS.md` BUG-063.
 - [ ] **Archivio esercizi YMove (360) nel picker area coach — fatto (2026-08-01), mai cliccato dal vivo:** nuova tab "Archivio" in `YMoveExercisePicker` (accanto a "Cerca live"), sfoglia i 360 esercizi gia' importati con filtri muscolo/attrezzatura, video lazy solo su tap "Anteprima". Vedi `docs/WORKLOG.md` 2026-08-01. Verifica manuale richiesta:
   1. Aprire "Libreria YMove" in creazione/modifica scheda → tab "Archivio" → filtrare per muscolo e attrezzatura → verificare che i risultati combacino.
   2. Aprire l'anteprima di 2-3 esercizi diversi → verificare che il video/thumbnail arrivi (non scaduto/errore) e che "Riprova" funzioni su un link scaduto.

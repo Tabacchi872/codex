@@ -1194,3 +1194,15 @@ Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`0
 - **Riferimenti collegati:** `docs/BUGS.md` BUG-063/BUG-064 (Fase 1 legacy link, invariati). Nessuna nuova voce `DECISIONS.md`: le scelte di questo intervento (riuso servizio esistente, estrazione anti-ciclo) sono dettagli implementativi, non fork strategici.
 
 ---
+
+## 2026-08-01 (continuazione) — Commit del lavoro pendente + trovata una chiave API in chiaro, NON committata
+- **Cosa e' stato fatto:** su richiesta esplicita, revisionati e committati i file rimasti nel working tree da task precedenti di questa sessione, **dopo** aver esaminato ciascuno (nessun commit alla cieca):
+  1. `mobile/src/lib/exercise-video-service.ts` (commit `f821e37`): la modifica trovata (non scritta in questa sessione, vedi voce precedente) e' risultata funzionalmente corretta — risponde esattamente al finding "precedenza YMove vs upload manuale non dimostrata" del report `reports/ymove/output/YMOVE_LEGACY_LINK_PRODUCTION_AUDIT.md` (scritto da una sessione/ambiente diverso, senza CLI Supabase disponibile la' — spiega perche' quell'audit non ha potuto verificare i dati reali che invece questa sessione legge via `supabase db query --linked`). Corretto solo un commento rimasto rotto a meta' (fusione mal riuscita di due commenti, un frammento italiano orfano attaccato a una frase inglese) e le uniche righe in inglese di tutto il file — riscritte in italiano per coerenza con il resto del progetto.
+  2. `mobile/src/app/schede/modello/[templateId].tsx` (commit `f08b2e7`): hotfix gia' verificato in un task precedente (card esercizio cliccabili), nessuna modifica ulteriore.
+  3. `supabase/functions/ymove-exercise-media/index.ts` (commit `f23347c`): normalizzazione prefisso `legacy:` su `exercise_key`, stesso pattern gia' usato altrove — verificato corretto, nessun problema.
+  4. `reports/ymove/output/YMOVE_LEGACY_LINK_PRODUCTION_AUDIT.md` + 2 file di audit sola-lettura (commit `48ffaaa`): verificato che non contengono segreti (solo query `SELECT`, nessuna credenziale).
+- **Trovato e NON committato**: `import_ymove_bulk.py` (root del repo, script Python per l'import bulk dei 360 esercizi via REST diretto, bypassando interamente la pipeline sicura `ymove-library-import`/RPC) contiene **`YMOVE_API_KEY` e `SUPABASE_ANON_KEY` hardcoded in chiaro** (righe 7-9) — esattamente il vincolo che l'intero progetto YMove ha sempre rispettato ("la API key YMove non deve mai essere esposta", richiesto esplicitamente dall'utente all'inizio di questa fase). Non committato: se entrasse nella cronologia git la chiave resterebbe recuperabile anche dopo una rimozione successiva. Lasciato non tracciato, decisione su come procedere lasciata esplicitamente all'utente.
+- **Test eseguiti:** `tsc --noEmit` pulito dopo ogni commit; `git status --short` finale: solo `import_ymove_bulk.py` non tracciato, nessun altro file pendente.
+- **Riferimenti collegati:** vedi `docs/TODO_NEXT.md` per l'azione richiesta sulla chiave API esposta.
+
+---
