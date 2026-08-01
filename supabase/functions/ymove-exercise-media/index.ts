@@ -21,6 +21,10 @@ function pickString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
+function normalizeLegacyExerciseKey(value: string): string {
+  return value.startsWith('legacy:') ? value.slice('legacy:'.length) : value;
+}
+
 async function callYmoveDetail(externalId: string, apiKey: string): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
@@ -75,7 +79,8 @@ Deno.serve(async (req) => {
   }
 
   const exerciseId = pickString(payload.exercise_id);
-  const exerciseKey = pickString(payload.exercise_key);
+  const requestedExerciseKey = pickString(payload.exercise_key);
+  const exerciseKey = requestedExerciseKey ? normalizeLegacyExerciseKey(requestedExerciseKey) : null;
   if (!exerciseId && !exerciseKey) {
     return json({ ok: false, code: 'invalid_payload', message: 'exercise_id o exercise_key mancante.' }, 400);
   }
