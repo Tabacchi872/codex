@@ -154,6 +154,29 @@ export async function listCustomExercisesForCurrentCoach(): Promise<FitCoachExer
   return listCustomExercisesForCoach(session.data.user.id);
 }
 
+// Archivio YMove gia' importato in blocco (public.exercises, source='ymove',
+// popolato dalla pipeline supabase/functions/ymove-library-import — 360
+// esercizi al momento in cui e' stato scritto questo commento): a differenza
+// di createOrReuseExerciseFromYmove sotto, qui NON si chiama mai l'API YMove
+// ne' si crea/traduce nulla — sono gia' righe reali in tabella, si leggono e
+// basta. Usata da YMoveArchiveBrowser (tab "Archivio" del picker) per
+// popolare la lista sfogliabile con filtri muscolo/attrezzatura; il video di
+// ogni esercizio resta comunque sempre richiesto live (getYmoveExerciseDetail),
+// mai salvato qui.
+export async function listYmoveArchiveExercises(): Promise<FitCoachExerciseServiceResult<Exercise[]>> {
+  if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
+
+  const { data, error } = await supabase
+    .from('exercises')
+    .select(SELECT_COLUMNS)
+    .eq('source', 'ymove')
+    .order('name');
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore lettura archivio YMove: ${error.message}` };
+  }
+  return { ok: true, data: (data as ExerciseRow[]).map(mapRow) };
+}
+
 export type CustomExerciseInput = {
   name: string;
   primaryMuscleGroup: ExerciseMuscleGroupId;

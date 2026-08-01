@@ -4,6 +4,12 @@ Prossimi passi prioritizzati per **FitCoach Pro** (nome definito in `mobile/src/
 
 ## Priorità alta
 
+- [ ] **Archivio esercizi YMove (360) nel picker area coach — fatto (2026-08-01), mai cliccato dal vivo:** nuova tab "Archivio" in `YMoveExercisePicker` (accanto a "Cerca live"), sfoglia i 360 esercizi gia' importati con filtri muscolo/attrezzatura, video lazy solo su tap "Anteprima". Vedi `docs/WORKLOG.md` 2026-08-01. Verifica manuale richiesta:
+  1. Aprire "Libreria YMove" in creazione/modifica scheda → tab "Archivio" → filtrare per muscolo e attrezzatura → verificare che i risultati combacino.
+  2. Aprire l'anteprima di 2-3 esercizi diversi → verificare che il video/thumbnail arrivi (non scaduto/errore) e che "Riprova" funzioni su un link scaduto.
+  3. "Aggiungi alla scheda" dall'archivio → verificare che l'esercizio compaia davvero nel workout in editing, con lo stesso comportamento di un esercizio aggiunto da "Cerca live".
+  4. Verificare che passare da una tab all'altra non perda lo stato della ricerca live in corso.
+  5. Trovato un file non tracciato `import_ymove_bulk.py` nella root del repo (probabile script usato per popolare i 360 esercizi, non esaminato in questo intervento, fuori scope) — da verificare/pulire se non piu' necessario.
 - [ ] **YMove Legacy Link — Fase 1 fatta in due parti (2026-07-31), decisione utente + verifica reale richieste prima di andare oltre:** codice riscritto per collegare video YMove a esercizi legacy (libreria locale mobile) via `exercise_external_links.exercise_key` testuale, senza bridge UUID (vedi `docs/WORKLOG.md` 2026-07-31, `docs/DECISIONS.md`). Le due migration in conflitto architetturale sono già state spostate in `supabase/pending_migrations/` (commit `32426dd`). **Nessun deploy, nessun link applicato, nessuna migration in coda.** Prossimi passi in ordine:
   1. **Committare presto**: tra le due parti di questo intervento, modifiche non committate a file tracciati sono state perse (revert dell'albero di lavoro tra sessioni) — incluso un meccanismo di fallback video più ampio (lookup `exercise_identity_keys`) di provenienza precedente, mai ricostruito perché fuori scope di entrambi i comandi ricevuti. Se quel meccanismo serviva, va richiesto esplicitamente; nel frattempo, committare i due file toccati (`supabase/functions/ymove-library-import/index.ts` va prima aggiunto a git, è ancora non tracciato) per non rischiare di perderli di nuovo.
   2. Deploy di `supabase/functions/ymove-library-import` in un ambiente di staging/test.

@@ -1,20 +1,19 @@
-import { useEvent } from 'expo';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { Dumbbell, Play, RefreshCw } from 'lucide-react-native';
+import { RefreshCw } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Card } from './card';
 import { Pill } from './pill';
 import { ThemedText } from './themed-text';
 import { ThemedTextInput } from './themed-text-input';
 import { AppButton } from './ui';
+import { YMoveArchiveBrowser } from './ymove-archive-browser';
+import { PreviewVideo, YMoveResultThumbnail } from './ymove-preview-shared';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { createOrReuseExerciseFromYmove } from '@/lib/fitcoach-exercises-service';
 import { getYmoveExerciseDetail, searchYmoveExercises, type YmoveExerciseDetail, type YmoveExerciseSummary } from '@/lib/ymove-service';
-import { fetchYmoveThumbnail, getCachedYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
 import type { Exercise } from '@/types/training';
 
 export type YmoveVideoLinkSelection = { ymoveExerciseId: string; ymoveSlug: string | null };
@@ -55,6 +54,11 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const compact = width < 390;
+  // 'search' (default): comportamento originale invariato, ricerca live
+  // sull'intero catalogo YMove + import on-demand. 'archive' (nuovo): sfoglia
+  // i 360 esercizi gia' importati in blocco (public.exercises, source='ymove')
+  // senza mai chiamare l'API di ricerca YMove — vedi ymove-archive-browser.tsx.
+  const [activeTab, setActiveTab] = useState<'search' | 'archive'>('search');
   const [name, setName] = useState('');
   const [muscle, setMuscle] = useState('');
   const [equipment, setEquipment] = useState('');
@@ -108,116 +112,90 @@ export function YMoveExercisePicker({ mode = 'import', onExerciseAdded, onVideoL
         </Pressable>
       </View>
 
-      <ThemedTextInput value={name} onChangeText={setName} placeholder="Cerca per nome" onSubmitEditing={handleSearch} />
-      <View style={[styles.filterRow, compact && styles.stackRow]}>
-        <View style={styles.filterField}>
-          <ThemedTextInput value={muscle} onChangeText={setMuscle} placeholder="Muscolo" onSubmitEditing={handleSearch} />
-        </View>
-        <View style={styles.filterField}>
-          <ThemedTextInput value={equipment} onChangeText={setEquipment} placeholder="Attrezzatura" onSubmitEditing={handleSearch} />
-        </View>
-      </View>
-      <View style={[styles.filterRow, compact && styles.stackRow]}>
-        <View style={styles.filterField}>
-          <ThemedTextInput value={type} onChangeText={setType} placeholder="Tipologia" onSubmitEditing={handleSearch} />
-        </View>
-        <View style={styles.filterField}>
-          <ThemedTextInput value={difficulty} onChangeText={setDifficulty} placeholder="Difficolta'" onSubmitEditing={handleSearch} />
-        </View>
-      </View>
-
-      <AppButton label="Cerca" onPress={handleSearch} loading={loading} disabled={loading} fullWidth />
-
-      {loading && results.length === 0 && !error ? (
-        <View style={styles.initialLoading}>
-          <ActivityIndicator />
-          <ThemedText type="small" themeColor="textSecondary">
-            Caricamento esercizi YMove...
-          </ThemedText>
-        </View>
-      ) : null}
-
-      {error ? (
-        <View style={styles.errorBlock}>
-          <ThemedText type="small" themeColor="statusExpired">
-            {error}
-          </ThemedText>
-          <Pressable onPress={handleSearch} hitSlop={6} style={[styles.retryButton, { borderColor: theme.border }]}>
-            <RefreshCw size={14} color={theme.text} />
-            <ThemedText type="small">Riprova</ThemedText>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!loading && searched && results.length === 0 && !error ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          Nessun esercizio trovato su YMove con questi filtri.
-        </ThemedText>
-      ) : null}
-
-      {results
-        // Difensivo: results dovrebbe gia' contenere solo elementi validi
-        // (filtrati da searchYmoveExercises), ma non ci si affida solo a
-        // quello — un elemento null/senza id/senza title viene scartato qui
-        // invece di rompere key={item.id} o il rendering di YMoveResultRow.
-        .filter((item): item is YmoveExerciseSummary => Boolean(item) && Boolean(item.id) && Boolean(item.title))
-        .map((item) => (
-          <YMoveResultRow
-            key={item.id}
-            item={item}
-            mode={mode}
-            onExerciseAdded={onExerciseAdded}
-            onVideoLinkSelected={onVideoLinkSelected}
-          />
-        ))}
-    </Card>
-  );
-}
-
-// Miniatura lazy per una card di risultato ricerca (non l'anteprima completa
-// nel dettaglio, ne' l'immagine di ExerciseThumbnail che serve invece per gli
-// esercizi gia' assegnati a una scheda): richiede il dettaglio SOLO se non
-// gia' in cache (fetchYmoveThumbnail/ymove-thumbnail-cache.ts gia' deduplica
-// e limita a 2 richieste concorrenti globali), mai per tutti i risultati
-// contemporaneamente al primo render della lista. Se l'immagine fallisce a
-// caricare (URL scaduto, rete), richiede il dettaglio una sola volta e poi
-// resta sul placeholder (mai un loop di retry).
-function YMoveResultThumbnail({ item }: { item: YmoveExerciseSummary }) {
-  const theme = useTheme();
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null | undefined>(() => getCachedYmoveThumbnail(item.id));
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    if (thumbnailUrl !== undefined) return;
-    let cancelled = false;
-    fetchYmoveThumbnail(item.id).then((url) => {
-      if (!cancelled) setThumbnailUrl(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [item.id, thumbnailUrl]);
-
-  const showImage = Boolean(thumbnailUrl) && !imageFailed;
-
-  return (
-    <View style={[styles.resultThumbnail, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-      {showImage ? (
-        <Image
-          source={{ uri: thumbnailUrl as string }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          onError={() => setImageFailed(true)}
+      <View style={styles.tabRow}>
+        <AppButton
+          label="Cerca live"
+          onPress={() => setActiveTab('search')}
+          variant={activeTab === 'search' ? undefined : 'outline'}
+          size="sm"
         />
+        <AppButton
+          label="Archivio"
+          onPress={() => setActiveTab('archive')}
+          variant={activeTab === 'archive' ? undefined : 'outline'}
+          size="sm"
+        />
+      </View>
+
+      {activeTab === 'archive' ? (
+        <YMoveArchiveBrowser mode={mode} onExerciseAdded={onExerciseAdded} onVideoLinkSelected={onVideoLinkSelected} />
       ) : (
-        <Dumbbell size={20} color={theme.textSecondary} />
+        <>
+          <ThemedTextInput value={name} onChangeText={setName} placeholder="Cerca per nome" onSubmitEditing={handleSearch} />
+          <View style={[styles.filterRow, compact && styles.stackRow]}>
+            <View style={styles.filterField}>
+              <ThemedTextInput value={muscle} onChangeText={setMuscle} placeholder="Muscolo" onSubmitEditing={handleSearch} />
+            </View>
+            <View style={styles.filterField}>
+              <ThemedTextInput value={equipment} onChangeText={setEquipment} placeholder="Attrezzatura" onSubmitEditing={handleSearch} />
+            </View>
+          </View>
+          <View style={[styles.filterRow, compact && styles.stackRow]}>
+            <View style={styles.filterField}>
+              <ThemedTextInput value={type} onChangeText={setType} placeholder="Tipologia" onSubmitEditing={handleSearch} />
+            </View>
+            <View style={styles.filterField}>
+              <ThemedTextInput value={difficulty} onChangeText={setDifficulty} placeholder="Difficolta'" onSubmitEditing={handleSearch} />
+            </View>
+          </View>
+
+          <AppButton label="Cerca" onPress={handleSearch} loading={loading} disabled={loading} fullWidth />
+
+          {loading && results.length === 0 && !error ? (
+            <View style={styles.initialLoading}>
+              <ActivityIndicator />
+              <ThemedText type="small" themeColor="textSecondary">
+                Caricamento esercizi YMove...
+              </ThemedText>
+            </View>
+          ) : null}
+
+          {error ? (
+            <View style={styles.errorBlock}>
+              <ThemedText type="small" themeColor="statusExpired">
+                {error}
+              </ThemedText>
+              <Pressable onPress={handleSearch} hitSlop={6} style={[styles.retryButton, { borderColor: theme.border }]}>
+                <RefreshCw size={14} color={theme.text} />
+                <ThemedText type="small">Riprova</ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {!loading && searched && results.length === 0 && !error ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Nessun esercizio trovato su YMove con questi filtri.
+            </ThemedText>
+          ) : null}
+
+          {results
+            // Difensivo: results dovrebbe gia' contenere solo elementi validi
+            // (filtrati da searchYmoveExercises), ma non ci si affida solo a
+            // quello — un elemento null/senza id/senza title viene scartato qui
+            // invece di rompere key={item.id} o il rendering di YMoveResultRow.
+            .filter((item): item is YmoveExerciseSummary => Boolean(item) && Boolean(item.id) && Boolean(item.title))
+            .map((item) => (
+              <YMoveResultRow
+                key={item.id}
+                item={item}
+                mode={mode}
+                onExerciseAdded={onExerciseAdded}
+                onVideoLinkSelected={onVideoLinkSelected}
+              />
+            ))}
+        </>
       )}
-      {item.hasVideo ? (
-        <View style={styles.resultPlayBadge} pointerEvents="none">
-          <Play size={11} color="#fff" fill="#fff" />
-        </View>
-      ) : null}
-    </View>
+    </Card>
   );
 }
 
@@ -298,7 +276,7 @@ function YMoveResultRow({
     <Card style={styles.resultCard}>
       <View style={styles.resultHeader}>
         <Pressable onPress={togglePreview} hitSlop={4}>
-          <YMoveResultThumbnail item={item} />
+          <YMoveResultThumbnail ymoveExerciseId={item.id} hasVideo={item.hasVideo} />
         </Pressable>
         <View style={styles.resultHeaderText}>
           <ThemedText type="smallBold" numberOfLines={2} style={styles.resultTitle}>{item.title}</ThemedText>
@@ -373,69 +351,6 @@ function YMoveResultRow({
   );
 }
 
-// Anteprima video PRIMA dell'import: usa direttamente l'URL gia' ottenuto da
-// GET /exercises/:id (mai salvato). Se il player fallisce, "Riprova" ripete
-// la stessa chiamata per ottenere un URL fresco (gli URL YMove scadono).
-function PreviewVideo({ detail, onRefetch }: { detail: YmoveExerciseDetail; onRefetch: () => void }) {
-  const source = detail.videoUrl ?? detail.videoHlsUrl;
-
-  if (!source) {
-    if (detail.thumbnailUrl) {
-      return <Image source={{ uri: detail.thumbnailUrl }} style={styles.thumbnail} resizeMode="cover" />;
-    }
-    return (
-      <ThemedText type="small" themeColor="textSecondary">
-        Nessun video disponibile per questo esercizio.
-      </ThemedText>
-    );
-  }
-
-  return <PreviewVideoPlayer source={source} thumbnailUrl={detail.thumbnailUrl} onRefetch={onRefetch} />;
-}
-
-function PreviewVideoPlayer({
-  source,
-  thumbnailUrl,
-  onRefetch,
-}: {
-  source: string;
-  thumbnailUrl: string | null;
-  onRefetch: () => void;
-}) {
-  const player = useVideoPlayer(source, (p) => {
-    p.loop = false;
-  });
-  const { status } = useEvent(player, 'statusChange', { status: player.status });
-
-  if (status === 'error') {
-    return (
-      <View style={styles.previewError}>
-        <ThemedText type="small" themeColor="statusExpired">
-          Il video non e' piu' raggiungibile (link scaduto).
-        </ThemedText>
-        <Pressable onPress={onRefetch} hitSlop={6} style={styles.retryButton}>
-          <RefreshCw size={14} />
-          <ThemedText type="small">Riprova</ThemedText>
-        </Pressable>
-      </View>
-    );
-  }
-
-  return (
-    <View>
-      {thumbnailUrl && status === 'loading' ? (
-        // Poster decorativo mostrato SOPRA la VideoView durante il caricamento
-        // (zIndex 1): senza pointerEvents="none" intercetterebbe i tocchi
-        // destinati ai controlli del player.
-        <View style={styles.thumbnailOverlay} pointerEvents="none">
-          <Image source={{ uri: thumbnailUrl }} style={[StyleSheet.absoluteFill, { borderRadius: Radius.md }]} resizeMode="cover" />
-        </View>
-      ) : null}
-      <VideoView player={player} style={styles.video} nativeControls />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     gap: Spacing.three,
@@ -444,6 +359,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
   },
   filterRow: {
     flexDirection: 'row',
@@ -483,23 +402,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 21,
   },
-  resultThumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  resultPlayBadge: {
-    position: 'absolute',
-    bottom: 3,
-    right: 3,
-    backgroundColor: '#00000099',
-    borderRadius: 999,
-    padding: 3,
-  },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -531,23 +433,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.three,
     paddingVertical: 4,
-  },
-  video: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: Radius.md,
-    backgroundColor: '#000',
-  },
-  thumbnail: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: Radius.md,
-  },
-  thumbnailOverlay: {
-    position: 'absolute',
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: Radius.md,
-    zIndex: 1,
   },
 });
