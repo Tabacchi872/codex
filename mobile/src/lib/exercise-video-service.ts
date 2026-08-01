@@ -194,6 +194,32 @@ export type ExerciseVideoInfo =
   | { source: 'upload'; videoUrl: string }
   | { source: 'ymove'; ymoveExerciseId: string; ymoveSlug: string | null };
 
+type StoredExerciseVideoRow = {
+  exercise_id?: string | null;
+  video_path?: string | null;
+  video_url?: string | null;
+  ymove_exercise_id?: string | null;
+  ymove_slug?: string | null;
+};
+
+// Sceglie quale riga rappresenta il video quando la query può restituirne
+// più di una per lo stesso esercizio (vedi lookupIds sotto: si cerca sia la
+// chiave così com'è sia la sua forma senza prefisso "legacy:" — se in
+// passato la stessa riga è stata scritta una volta con prefisso e una senza,
+// possono coesistere due righe distinte). Un file caricato manualmente ha
+// sempre priorità su un collegamento YMove, anche se la riga trovata per
+// prima contiene entrambi i tipi di metadati.
+export function preferredExerciseVideoInfo(rows: StoredExerciseVideoRow[]): ExerciseVideoInfo | null {
+  const manual = rows.find((row) => Boolean(row.video_path || row.video_url));
+  if (manual?.video_url) return { source: 'upload', videoUrl: manual.video_url };
+
+  const ymove = rows.find((row) => row.ymove_exercise_id);
+  if (ymove?.ymove_exercise_id) {
+    return { source: 'ymove', ymoveExerciseId: ymove.ymove_exercise_id, ymoveSlug: ymove.ymove_slug ?? null };
+  }
+  return null;
+}
+
 // Legge il video visibile per l'utente autenticato corrente (coach: il
 // proprio; cliente: quello del proprio coach) — la RLS di exercise_videos fa
 // tutto il lavoro di scoping, questa funzione non deve sapere il ruolo di chi
@@ -202,31 +228,27 @@ export type ExerciseVideoInfo =
 export async function getExerciseVideo(exerciseId: string): Promise<VideoServiceResult<ExerciseVideoInfo | null>> {
   if (!isReady() || !supabase) return notConfigured();
 
+  const normalizedExerciseId = normalizeLegacyKey(exerciseId);
+  const lookupIds = Array.from(new Set([exerciseId, normalizedExerciseId].filter(Boolean)));
   const { data, error } = await supabase
     .from('exercise_videos')
-    .select('video_url,ymove_exercise_id,ymove_slug')
-    .eq('exercise_id', exerciseId)
-    .limit(1)
-    .maybeSingle();
+    .select('exercise_id,video_path,video_url,ymove_exercise_id,ymove_slug')
+    .in('exercise_id', lookupIds);
   if (error) {
     return { ok: false, code: 'db_error', message: error.message };
   }
 
-  // Il collegamento YMove ha sempre priorita' nel discriminare la sorgente:
-  // in quel caso video_url resta sempre null nella riga, ma NON significa
-  // "nessun video" — significa "il video e' su YMove, va richiesto live".
-  if (data?.ymove_exercise_id) {
-    return { ok: true, data: { source: 'ymove', ymoveExerciseId: data.ymove_exercise_id, ymoveSlug: data.ymove_slug } };
-  }
-  if (data?.video_url) {
-    return { ok: true, data: { source: 'upload', videoUrl: data.video_url } };
-  }
+  // Un file caricato manualmente ha sempre priorità su un collegamento YMove
+  // (vedi preferredExerciseVideoInfo sopra) — ma per una riga YMove video_url
+  // resta sempre null: non significa "nessun video", va sempre richiesto
+  // live tramite ymove-service.ts.
+  const storedVideo = preferredExerciseVideoInfo((data ?? []) as StoredExerciseVideoRow[]);
+  if (storedVideo) return { ok: true, data: storedVideo };
 
   // Nessuna riga exercise_videos valorizzata (o nessuna riga affatto): prova
   // il collegamento YMove approvato in exercise_external_links (YMove Legacy
   // Link, Fase 1) — exercise_key li' e' sempre memorizzata SENZA prefisso
   // "legacy:", quindi va normalizzata prima del confronto.
-  const normalizedExerciseId = normalizeLegacyKey(exerciseId);
   const { data: externalLink, error: externalLinkError } = await supabase
     .from('exercise_external_links')
     .select('external_exercise_id')
@@ -262,19 +284,24 @@ export async function listExerciseVideosForCoach(
 
   const { data, error } = await supabase
     .from('exercise_videos')
-    .select('exercise_id,video_url,ymove_exercise_id,ymove_slug')
+    .select('exercise_id,video_path,video_url,ymove_exercise_id,ymove_slug')
     .eq('coach_id', coachId);
   if (error) {
     return { ok: false, code: 'db_error', message: error.message };
   }
 
   const map: Record<string, ExerciseVideoInfo> = {};
+  const rowsByExercise = new Map<string, StoredExerciseVideoRow[]>();
   for (const row of data ?? []) {
-    if (row.ymove_exercise_id) {
-      map[row.exercise_id] = { source: 'ymove', ymoveExerciseId: row.ymove_exercise_id, ymoveSlug: row.ymove_slug };
-    } else if (row.video_url) {
-      map[row.exercise_id] = { source: 'upload', videoUrl: row.video_url };
-    }
+    const key = row.exercise_id;
+    if (!key) continue;
+    const rows = rowsByExercise.get(key) ?? [];
+    rows.push(row as StoredExerciseVideoRow);
+    rowsByExercise.set(key, rows);
+  }
+  for (const [exerciseId, rows] of rowsByExercise) {
+    const preferred = preferredExerciseVideoInfo(rows);
+    if (preferred) map[exerciseId] = preferred;
   }
   return { ok: true, data: map };
 }
