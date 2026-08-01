@@ -1229,3 +1229,10 @@ Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`0
 - **Non fatto, resta da fare:** nessun click reale nella UI (nessun tool di automazione disponibile in questo ambiente) — checklist di verifica manuale in `docs/TODO_NEXT.md`. Nessun deploy Edge Function, nessuna chiamata YMove, nessun `git push`, come richiesto esplicitamente.
 
 ---
+
+## 2026-08-01 (chiusura) — Libreria "Allenamenti YMove": YMOVE_TEMPLATE_LIBRARY_LIVE, verifica browser BROWSER_VERIFIED_BY_USER
+- **Cosa è stato fatto:** l'utente ha eseguito personalmente la verifica manuale nel browser su `http://localhost:8082` (nessun tool di automazione browser disponibile in questa sessione, mai dichiarato testato dall'agente). Esito riportato: navigazione Modelli → Allenamenti YMove → 5 categorie coi conteggi attesi → Massa muscolare/Dimagrimento/Forza e Powerbuilding/Principianti → Upper/Lower YMove con Workout A/B/C/D ed esercizi → tap esercizio/ritorno funzionanti → Ricomposizione corporea con stato vuoto corretto → ricerca funzionante → nessun errore evidente. **Non coperto da questa verifica** (segnalato esplicitamente in `docs/TODO_NEXT.md`, non dato per assunto): duplicazione verso libreria personale e assegnazione a un cliente reale — corretti per costruzione lato codice (vedi voce precedente), ma mai cliccati.
+- **Nessuna modifica funzionale** in questa chiusura: solo memoria di progetto aggiornata (`docs/TODO_NEXT.md`, voce esistente segnata `[x]` invece di duplicata) ed eventuale push del lavoro già committato.
+- **Riferimenti collegati:** vedi voce precedente (2026-08-01/02) per il dettaglio tecnico completo (migration, gate di revisione, verifiche read-only).
+
+---
