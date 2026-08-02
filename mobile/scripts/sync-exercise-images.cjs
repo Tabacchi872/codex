@@ -1,22 +1,32 @@
-// Collega le foto/illustrazioni reali degli esercizi LOCALI (i 58 di
-// src/data/exercise-library.ts) al registro che ExerciseThumbnail legge
+// Collega le foto/illustrazioni reali degli esercizi (101 locali di
+// src/data/exercise-library.ts + 360 YMove gia' importati in
+// public.exercises) al registro che ExerciseThumbnail legge
 // (src/data/image-registry.ts), senza mai richiedere un file inesistente
-// (Metro fallirebbe la build) e senza toccare voci non sue (es. future
-// entry 'ymove-*'/'custom-*' aggiunte da altri strumenti).
+// (Metro fallirebbe la build) e senza toccare voci non sue (es. future entry
+// 'custom-*' aggiunte da altri strumenti).
 //
 // Come si usa:
-//   1. Metti i file in mobile/assets/images/exercises/, nome = id esercizio
-//      (es. petto-panca-piana.jpg — stesso id di exercise-library.ts).
+//   1. Metti i file in mobile/assets/images/exercises/:
+//      - esercizi locali: nome = id esercizio (es. petto-panca-piana.jpg,
+//        stesso id di exercise-library.ts);
+//      - esercizi YMove: nome = filename_previsto di
+//        scripts/ymove-image-manifest.csv (es.
+//        ymove-2fb79823-a759-4ceb-8b16-a26ab3cfb440.jpg — stessa chiave
+//        'ymove-<ymove_exercise_id>' generata da normalizeCatalogId in
+//        data/exercise-image-catalog.ts, MAI l'id FitCoach dell'esercizio).
 //   2. node mobile/scripts/sync-exercise-images.cjs
 //   3. Il comando riscrive image-registry.ts con SOLO i file che esistono
-//      davvero su disco per questi 58 id, aggiunge --check per verificare
-//      senza scrivere (usato anche in CI/pre-commit se servisse in futuro).
+//      davvero su disco per questi 461 esercizi, aggiunge --check per
+//      verificare senza scrivere (usato anche in CI/pre-commit se servisse).
 //
-// Nessuna chiamata di rete, nessuna dipendenza da YMove: legge solo file
-// locali. Esegue src/data/exercise-library.ts (TypeScript reale, non una
-// copia/regex) tramite lo stesso pattern gia' in uso in
-// verify-superadmin-payment-fixtures.cjs (transpileModule + vm), cosi' la
-// lista dei 58 id e' sempre quella VERA, mai una copia che puo' disallinearsi.
+// Nessuna chiamata YMove: gli esercizi locali vengono letti eseguendo il vero
+// exercise-library.ts (TypeScript reale, non una copia/regex, stesso pattern
+// di verify-superadmin-payment-fixtures.cjs); gli esercizi YMove vengono letti
+// da scripts/ymove-image-manifest.csv, un export gia' fatto UNA VOLTA da
+// Supabase (public.exercises, source='ymove') — questo script legge solo quel
+// CSV, mai l'API YMove ne' il database a ogni esecuzione. Se il catalogo
+// YMove importato cambia, rigenera prima il CSV (stessa query), poi rilancia
+// questo script.
 
 const fs = require('fs');
 const path = require('path');
@@ -27,6 +37,7 @@ const MOBILE_ROOT = path.join(__dirname, '..');
 const SRC_ROOT = path.join(MOBILE_ROOT, 'src');
 const IMAGES_DIR = path.join(MOBILE_ROOT, 'assets', 'images', 'exercises');
 const REGISTRY_FILE = path.join(SRC_ROOT, 'data', 'image-registry.ts');
+const YMOVE_MANIFEST_FILE = path.join(__dirname, 'ymove-image-manifest.csv');
 const REGISTRY_REQUIRE_PREFIX = '../../assets/images/exercises/';
 
 const checkOnly = process.argv.includes('--check');
@@ -69,12 +80,12 @@ function loadTsModule(absPath) {
 }
 
 // ---- Stessa identica costruzione dei candidati di
-// data/exercise-image-catalog.ts (buildImageCandidates): id + estensione, e
-// (se presente) il nome del file video con estensione immagine. Duplicata
-// qui deliberatamente (script Node standalone, non importa moduli .tsx) — se
-// cambia la' va aggiornata anche qui, stesso principio di
-// normalizeCatalogId/buildImageCandidates.
-function imageCandidatesFor(exercise) {
+// data/exercise-image-catalog.ts (buildImageCandidates) per un esercizio
+// LOCALE: id + estensione, e (se presente) il nome del file video con
+// estensione immagine. Duplicata qui deliberatamente (script Node standalone,
+// non importa moduli .tsx) — se cambia la' va aggiornata anche qui, stesso
+// principio di normalizeCatalogId/buildImageCandidates.
+function localImageCandidates(exercise) {
   const candidates = new Set();
   candidates.add(`${exercise.id}.jpg`);
   candidates.add(`${exercise.id}.png`);
@@ -85,10 +96,68 @@ function imageCandidatesFor(exercise) {
   return [...candidates];
 }
 
+// ---- Stessa chiave di normalizeCatalogId per un esercizio YMove
+// ('ymove-<ymove_exercise_id>', MAI l'id FitCoach) + entrambe le estensioni.
+function ymoveImageCandidates(ymoveExerciseId) {
+  const catalogId = `ymove-${ymoveExerciseId}`;
+  return [`${catalogId}.jpg`, `${catalogId}.png`];
+}
+
+// ---- Parser CSV minimale ma corretto (RFC4126: campi tra virgolette con
+// virgole/virgolette doppie interne) — evita un naive split(',') che
+// romperebbe su un'attrezzatura tipo "Bilanciere, panca piana".
+function parseCsv(source) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i];
+    if (inQuotes) {
+      if (c === '"' && source[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') {
+        inQuotes = false;
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && source[i + 1] === '\n') i++;
+      row.push(field);
+      field = '';
+      if (row.length > 1 || row[0] !== '') rows.push(row);
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  const header = rows.shift() ?? [];
+  return rows.map((cols) => Object.fromEntries(header.map((key, idx) => [key, cols[idx] ?? ''])));
+}
+
+function loadYmoveManifest() {
+  if (!fs.existsSync(YMOVE_MANIFEST_FILE)) {
+    console.error(`Manifest YMove non trovato: ${path.relative(MOBILE_ROOT, YMOVE_MANIFEST_FILE)}`);
+    console.error('Rigeneralo prima con un export read-only di public.exercises (source=\'ymove\').');
+    process.exit(1);
+  }
+  return parseCsv(fs.readFileSync(YMOVE_MANIFEST_FILE, 'utf8'));
+}
+
 // ---- Legge le voci ATTUALI di image-registry.ts (chiave -> path del
 // require) senza eseguirlo: alle voci NON di questo script (es. future
-// 'ymove-*'/'custom-*') non deve succedere nulla, vanno preservate cosi'
-// come sono anche se questo run non le tocca.
+// entry 'custom-*') non deve succedere nulla, vanno preservate cosi' come
+// sono anche se questo run non le tocca.
 function readCurrentRegistryEntries() {
   const source = fs.readFileSync(REGISTRY_FILE, 'utf8');
   const entries = new Map();
@@ -113,12 +182,14 @@ function writeRegistry(entries) {
 // registrata qui. ExerciseThumbnail mostra un placeholder grafico coerente
 // col gruppo muscolare finche' un esercizio non ha una voce qui.
 //
-// Le voci per gli esercizi locali (src/data/exercise-library.ts) sono
+// Le voci per gli esercizi locali (src/data/exercise-library.ts, chiave =
+// id esercizio) e per gli esercizi YMove (public.exercises, chiave =
+// 'ymove-<ymove_exercise_id>', vedi scripts/ymove-image-manifest.csv) sono
 // generate automaticamente da scripts/sync-exercise-images.cjs — non
 // aggiungerle/rimuoverle a mano, rilancia lo script dopo aver aggiunto o
 // tolto un file in assets/images/exercises/. Voci di altra origine (es.
-// esercizi YMove/custom, se e quando implementate) restano gestite altrove e
-// non vengono toccate da questo script.
+// esercizi custom, se e quando implementati) restano gestite altrove e non
+// vengono toccate da questo script.
 export const IMAGE_REGISTRY: Record<string, number> = {${body}};
 
 export function resolveImageSource(imageFile: string): number | null {
@@ -128,6 +199,28 @@ export function resolveImageSource(imageFile: string): number | null {
   fs.writeFileSync(REGISTRY_FILE, content, 'utf8');
 }
 
+// ---- Applica una sorgente (elenco di {label, candidates}) al registro in
+// costruzione: aggiorna/rimuove SOLO le chiavi che questa sorgente potrebbe
+// generare, mai quelle di un'altra sorgente o di provenienza esterna allo
+// script. Ritorna { covered, missing } (etichette leggibili per il report).
+function applySource(nextEntries, filesOnDisk, items) {
+  const covered = [];
+  const missing = [];
+  for (const { label, candidates } of items) {
+    const foundFile = candidates.find((file) => filesOnDisk.has(file));
+    for (const candidate of candidates) {
+      if (candidate !== foundFile) nextEntries.delete(candidate);
+    }
+    if (foundFile) {
+      nextEntries.set(foundFile, `${REGISTRY_REQUIRE_PREFIX}${foundFile}`);
+      covered.push(label);
+    } else {
+      missing.push(label);
+    }
+  }
+  return { covered, missing };
+}
+
 function main() {
   if (!fs.existsSync(IMAGES_DIR)) {
     console.error(`Cartella non trovata: ${IMAGES_DIR}`);
@@ -135,43 +228,30 @@ function main() {
   }
 
   const { EXERCISE_LIBRARY } = loadTsModule(path.join(SRC_ROOT, 'data', 'exercise-library.ts'));
+  const ymoveRows = loadYmoveManifest();
   const filesOnDisk = new Set(fs.readdirSync(IMAGES_DIR).filter((f) => f !== 'README.md'));
 
   const currentEntries = readCurrentRegistryEntries();
   const nextEntries = new Map(currentEntries);
 
-  const covered = [];
-  const missing = [];
+  const localItems = EXERCISE_LIBRARY.map((exercise) => ({ label: exercise.id, candidates: localImageCandidates(exercise) }));
+  const ymoveItems = ymoveRows.map((row) => ({
+    label: `${row.exercise_id} (${row.nome})`,
+    candidates: ymoveImageCandidates(row.ymove_exercise_id),
+  }));
 
-  for (const exercise of EXERCISE_LIBRARY) {
-    const candidates = imageCandidatesFor(exercise);
-    const foundFile = candidates.find((file) => filesOnDisk.has(file));
-
-    // Ogni possibile nome file di QUESTO esercizio va rimosso dal registro se
-    // non esiste piu' su disco (es. immagine cancellata dopo un run
-    // precedente) — tocca solo le chiavi che questo esercizio potrebbe aver
-    // generato, mai chiavi di altri esercizi/altra origine.
-    for (const candidate of candidates) {
-      if (candidate !== foundFile) nextEntries.delete(candidate);
-    }
-
-    if (foundFile) {
-      nextEntries.set(foundFile, `${REGISTRY_REQUIRE_PREFIX}${foundFile}`);
-      covered.push(exercise.id);
-    } else {
-      missing.push(exercise.id);
-    }
-  }
+  const local = applySource(nextEntries, filesOnDisk, localItems);
+  const ymove = applySource(nextEntries, filesOnDisk, ymoveItems);
 
   const changed = JSON.stringify([...currentEntries.entries()].sort()) !== JSON.stringify([...nextEntries.entries()].sort());
 
-  console.log(`Esercizi locali totali: ${EXERCISE_LIBRARY.length}`);
-  console.log(`Con immagine reale collegata: ${covered.length}`);
-  console.log(`Ancora su placeholder: ${missing.length}`);
-  if (missing.length > 0) {
-    console.log('\nId mancanti (aggiungi il file in assets/images/exercises/ e rilancia):');
-    for (const id of missing) console.log(`  - ${id}.jpg (o .png)`);
-  }
+  const totalCount = EXERCISE_LIBRARY.length + ymoveRows.length;
+  const totalCovered = local.covered.length + ymove.covered.length;
+  const totalMissing = local.missing.length + ymove.missing.length;
+
+  console.log(`Esercizi locali: ${EXERCISE_LIBRARY.length} (con immagine: ${local.covered.length}, mancanti: ${local.missing.length})`);
+  console.log(`Esercizi YMove:  ${ymoveRows.length} (con immagine: ${ymove.covered.length}, mancanti: ${ymove.missing.length})`);
+  console.log(`Totale:          ${totalCount} (con immagine: ${totalCovered}, mancanti: ${totalMissing})`);
 
   if (checkOnly) {
     if (changed) {

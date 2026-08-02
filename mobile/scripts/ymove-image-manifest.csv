@@ -1,0 +1,361 @@
+exercise_id,ymove_exercise_id,nome,gruppo_muscolare,attrezzatura,filename_previsto
+b591df0d-f681-4ca5-86b1-7ca13a594205,0a3889f4-1d3e-401a-b966-76e3f3aeff74,Criss-Cross,abs,mat,ymove-0a3889f4-1d3e-401a-b966-76e3f3aeff74.png
+ba32282d-bb64-40d6-a40a-b17326bc0439,20c81369-14ad-4959-a6d0-f651c013f3f0,Double Leg Stretch,abs,mat,ymove-20c81369-14ad-4959-a6d0-f651c013f3f0.png
+a7d6adf7-9924-496e-95b0-f21d84fe6dc1,71304f37-af11-4c9f-aa53-ef04cbc9bb29,Dumbbell Side Bend,abs,dumbbell,ymove-71304f37-af11-4c9f-aa53-ef04cbc9bb29.png
+a659e746-3528-49d0-9807-41ff98a8cd5c,109f6115-f03d-48da-802a-2e2aa385678d,Back Extension - Hyperextension,back,machine,ymove-109f6115-f03d-48da-802a-2e2aa385678d.png
+65c1b360-af01-43b5-88fa-41da784d0a75,2fb79823-a759-4ceb-8b16-a26ab3cfb440,Barbell Deadlift,back,barbell,ymove-2fb79823-a759-4ceb-8b16-a26ab3cfb440.png
+dbc5917a-99a9-4a5e-90b0-5c2e30670e20,dbf6a8e4-19dc-4d01-8014-f195a1eb817c,Barbell Rows,back,barbell,ymove-dbf6a8e4-19dc-4d01-8014-f195a1eb817c.png
+16d51fef-a972-4e36-adfc-8803e3c8a330,ab1681a6-93a1-4e51-ac8c-c76f02ef3737,Behind the Neck Rope Pulldown,back,cable,ymove-ab1681a6-93a1-4e51-ac8c-c76f02ef3737.png
+41cc10f0-7dc8-412b-a6db-a4b6104163bb,059690e8-f60d-4099-b3ae-93d18358a59a,Bent Over Barbell Row,back,barbell,ymove-059690e8-f60d-4099-b3ae-93d18358a59a.png
+6056fa62-8615-4600-8522-bbe9518a0b94,6e4be416-7097-4301-bfb9-f62bc69f1fa7,Bent Over Barbell Row Overhand Grip,back,barbell,ymove-6e4be416-7097-4301-bfb9-f62bc69f1fa7.png
+311b925f-744e-4bb0-829e-8c420d411332,716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6,Bent Over Barbell Row Underhand Grip,back,barbell,ymove-716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6.png
+cfa97f92-4171-4f80-9b72-b43833dc4020,43c81170-5fc1-46dd-92b0-6a308c22cec1,Bent Over One-Arm Long Bar Row,back,barbell,ymove-43c81170-5fc1-46dd-92b0-6a308c22cec1.png
+fbb8940e-1785-416b-9e3d-68c677cac2c1,ad8e32a3-091a-4b10-a316-8984807ce817,Bent Over Two-Arm Long Bar Row - 105,back,barbell,ymove-ad8e32a3-091a-4b10-a316-8984807ce817.png
+b6a0a436-367b-4cb5-a5a3-f58a03d45028,7aaad2c1-c499-40dd-84e5-a66b910e6f8b,Bent Over Two-Dumbbell Row With Palms In,back,dumbbell,ymove-7aaad2c1-c499-40dd-84e5-a66b910e6f8b.png
+dbf0c846-add4-414b-abfd-5324ca68e714,4c799907-a832-42b2-b9b3-bfb75a68c840,Bow pose,back,bodyweight,ymove-4c799907-a832-42b2-b9b3-bfb75a68c840.png
+0761d49f-973b-472a-8b7b-a0eae879f535,b4824ea0-4d0a-418e-b22d-462b11dc9992,Cable Rope Pullover,back,cable,ymove-b4824ea0-4d0a-418e-b22d-462b11dc9992.png
+d9a1f929-03d3-4d32-b501-69e0ec4367e0,7a3e1ef1-c6d4-4e06-84a5-44168e1f15bc,Cable Seated Row straight bar,back,cable,ymove-7a3e1ef1-c6d4-4e06-84a5-44168e1f15bc.png
+986e0fe0-eb0c-4fa7-9505-3c63790d8d62,1aac7a76-7ffb-4277-9a5f-ad25c315b2db,Cable Straight Arm Pulldown bar,back,cable,ymove-1aac7a76-7ffb-4277-9a5f-ad25c315b2db.png
+80f609f4-9f6b-4b70-a071-b6adaa4540b0,cb06c2a3-ef02-4e60-b9ab-7d692fa97bc4,Camel pose,back,bodyweight,ymove-cb06c2a3-ef02-4e60-b9ab-7d692fa97bc4.png
+bb0a228e-d2ee-434d-ade3-023c0da53406,675fab33-9f21-4386-8a43-a319d0684841,Cat cow pose,back,bodyweight,ymove-675fab33-9f21-4386-8a43-a319d0684841.png
+f27ee8bd-5d3b-4a85-802c-93d211679b92,8e75c181-9db4-4e20-8fa7-be744f820f95,Cat pose,back,bodyweight,ymove-8e75c181-9db4-4e20-8fa7-be744f820f95.png
+a6f9d2f8-4210-41ed-ae34-1a28081bb477,a6d1285b-5ae1-4646-b10b-5522e937a4a6,Chest Supported Barbell Row,back,barbell,ymove-a6d1285b-5ae1-4646-b10b-5522e937a4a6.png
+6a62983b-7ad2-49f7-aea4-4e12d205236f,926f4125-2676-45a8-96ee-2b6ace422494,Chest Supported Row Machine,back,machine,ymove-926f4125-2676-45a8-96ee-2b6ace422494.png
+009e33ca-3928-4a16-981e-f28a0206693a,2248c45e-bf19-4c70-9fcc-d828d3e5fea2,Chest Supported Row T-bar,back,machine,ymove-2248c45e-bf19-4c70-9fcc-d828d3e5fea2.png
+dd061625-bb62-463d-8dc0-215330c21c14,a61479a9-fc68-4b4b-9e4d-2f65cd41defa,Child's pose,back,bodyweight,ymove-a61479a9-fc68-4b4b-9e4d-2f65cd41defa.png
+dc4339c1-8340-4dc2-8843-695e35356545,10a31695-e218-4819-b7d3-b67b1b5ac79d,Close Grip Lat Pulldown,back,cable,ymove-10a31695-e218-4819-b7d3-b67b1b5ac79d.png
+127835ae-4c79-4718-9822-0e7012c6a27f,1e99855d-fbf5-433e-9273-6f4e318a6ffe,Close Grip Lat Pulldown,back,cable,ymove-1e99855d-fbf5-433e-9273-6f4e318a6ffe.png
+05cb1324-67e8-454a-a485-bf4a253b2143,a02b83af-37e2-4eea-b4cb-4fccac596e8b,Close Grip Lat Pulldown (V-Bar),back,cable,ymove-a02b83af-37e2-4eea-b4cb-4fccac596e8b.png
+2e2426c2-0ab2-4b85-9d82-3d62ca4f61d7,5ce18079-7df5-48e0-828e-63005b8eb3d1,Close Grip Lat Pulldown to Waist,back,cable,ymove-5ce18079-7df5-48e0-828e-63005b8eb3d1.png
+763e1c73-bb75-4062-b34c-56abb71f8c7a,1e381fba-eedc-410c-ba1f-1c9c255f4d0f,Cobra pose,back,bodyweight,ymove-1e381fba-eedc-410c-ba1f-1c9c255f4d0f.png
+b5dc6676-3493-4e76-a05f-bc95c70583a3,3d8fe08e-93ba-49ac-b5f9-92dbac0d39b2,Cow pose,back,bodyweight,ymove-3d8fe08e-93ba-49ac-b5f9-92dbac0d39b2.png
+e089523c-18dd-4ba5-9db9-35277233445c,fcc15585-b472-487f-8367-7459ee909832,Dips on bench,back,bodyweight,ymove-fcc15585-b472-487f-8367-7459ee909832.png
+690b87e3-c9e7-479d-bd5c-6aa023dc9ebe,6d1c2a4d-870c-42c0-b798-aabc9a78308b,Double kettlebell row,back,kettlebell,ymove-6d1c2a4d-870c-42c0-b798-aabc9a78308b.png
+81de3e09-086b-48d6-a9d2-b793c651dfde,b96131da-b1ba-4495-b8fb-c6107517ee2f,Dual Cable Lat Pulldown,back,cable,ymove-b96131da-b1ba-4495-b8fb-c6107517ee2f.png
+7858f90c-347c-463d-b000-9acda35c1c8d,204c969e-37a0-44b2-a4db-d82f27eadb46,Dumbbell Gorilla Row,back,dumbbell,ymove-204c969e-37a0-44b2-a4db-d82f27eadb46.png
+1b3dcd4f-95ba-48ed-9e3a-e4390ec41033,ac7982bb-1a81-4870-ae78-ce37bb485601,Dumbbell One-Arm Upright Row (L),back,dumbbell,ymove-ac7982bb-1a81-4870-ae78-ce37bb485601.png
+949b0f4c-bed7-4b59-b4fd-885e322c92a1,bda6ae04-2619-43a7-8261-490d85444eb2,Dumbbell One-Arm Upright Row (R),back,dumbbell,ymove-bda6ae04-2619-43a7-8261-490d85444eb2.png
+ead8bd94-61ca-4b67-b613-c6f41b23e6d7,b5869e95-3109-43ad-b7b5-34e6dad882f0,Dumbbell plank row,back,dumbbell,ymove-b5869e95-3109-43ad-b7b5-34e6dad882f0.png
+18333ed7-1d7e-4238-95fd-a8caab99e799,dbaed692-a239-426b-ad64-3e0da09c7d92,Dumbbell Renegade Row,back,dumbbell,ymove-dbaed692-a239-426b-ad64-3e0da09c7d92.png
+e16e5c38-afbf-41fb-a8fd-264ece0e1e45,e91bd54f-f605-491d-90e6-16515787389c,Dumbbell Row two arm bent over,back,dumbbell,ymove-e91bd54f-f605-491d-90e6-16515787389c.png
+21c2471d-6cda-4e23-ac68-fb5b4ad19420,b150868d-c9c5-4f0f-a407-93d7e34b6ddc,Dumbbell Shrug,back,dumbbell,ymove-b150868d-c9c5-4f0f-a407-93d7e34b6ddc.png
+930f096b-62d4-42d6-b069-a97c60f4d9c8,fef72790-359f-4f3f-9fcd-a80fb2c63b5f,Dumbbell Single leg deadlift,back,dumbbell,ymove-fef72790-359f-4f3f-9fcd-a80fb2c63b5f.png
+1594d8a1-4289-4948-bf27-9d29de6dee53,5058baec-15c8-4278-afa5-9621bb4e15b5,Alternating Dumbbell Curl,biceps,dumbbell,ymove-5058baec-15c8-4278-afa5-9621bb4e15b5.png
+8d13dbdb-2c12-447b-99c0-948a3c029c7a,71cd3500-6a12-4ad9-b9c4-5b4c20f33deb,Barbell Curl 21s,biceps,barbell,ymove-71cd3500-6a12-4ad9-b9c4-5b4c20f33deb.png
+e059a5e9-44a8-4286-98c2-871d1d371f1e,1158c681-55e9-4db0-bb73-3dab32d99aa5,Barbell Curls,biceps,barbell,ymove-1158c681-55e9-4db0-bb73-3dab32d99aa5.png
+99feb474-714e-4316-9208-d1a86edee061,fc721ada-0004-40d7-9e1e-634dc9b34877,Behind the Head Curl with Cable,biceps,cable,ymove-fc721ada-0004-40d7-9e1e-634dc9b34877.png
+bdb2f9a6-930d-42ff-a386-8b8312084e6e,5e751b08-c767-4a40-8ef7-62d271995c86,Cable Bicep Curl bar,biceps,cable,ymove-5e751b08-c767-4a40-8ef7-62d271995c86.png
+ba6e6558-30a9-4357-b639-8962cd36ac84,f03c074c-398c-4c33-abd9-980ec883fdbd,Cable Bicep Curl rope,biceps,cable,ymove-f03c074c-398c-4c33-abd9-980ec883fdbd.png
+c1a8bbd8-f937-4221-b906-e7aebd9c7500,ca7a2f9d-3af1-40cd-a33f-431f437a2902,Cable Preacher Curl,biceps,cable,ymove-ca7a2f9d-3af1-40cd-a33f-431f437a2902.png
+b43b9122-2bd5-479c-85f5-64a23da144f0,22880d49-67f2-4f14-9510-046c32da166b,Concentration Curl,biceps,dumbbell,ymove-22880d49-67f2-4f14-9510-046c32da166b.png
+dfd5e73c-2169-4204-8603-de7ca9991393,372da9df-3ee6-450c-ae97-743968d27d71,Concentration Hammer Curl,biceps,dumbbell,ymove-372da9df-3ee6-450c-ae97-743968d27d71.png
+ae8d46db-158c-4265-8f25-65b570a617d0,b8fb88dc-d819-4e65-86c8-7ea13703afdb,Cross Body Hammer Curl,biceps,dumbbell,ymove-b8fb88dc-d819-4e65-86c8-7ea13703afdb.png
+07fa7883-5028-428d-b6bf-1ade4bf0c2f5,57c79553-d2e3-41e9-97d5-3fe8c0d59fe9,Dumbbell Bicep Curl seated incline,biceps,dumbbell,ymove-57c79553-d2e3-41e9-97d5-3fe8c0d59fe9.png
+547ecde0-b38b-4f87-ac09-1772c40fca52,f34b7615-bfcc-4cd4-88f7-d7c68e910fe9,Dumbbell Bicep Curl Standing,biceps,dumbbell,ymove-f34b7615-bfcc-4cd4-88f7-d7c68e910fe9.png
+0235d406-1f0a-4d5d-8030-c499acf304e1,a921697a-e1ec-4941-bffd-f99e69b305b4,Dumbbell Concentration Curl,biceps,dumbbell,ymove-a921697a-e1ec-4941-bffd-f99e69b305b4.png
+40495e2c-6204-49ce-8499-7a0c7bb5654e,6ffb0130-cbe5-4395-b86b-2a2c31be79b8,Dumbbell Curl,biceps,dumbbell,ymove-6ffb0130-cbe5-4395-b86b-2a2c31be79b8.png
+7dadeb96-351b-4e0e-bbd6-736e69b5b1f1,3175c898-09fe-4d02-82c2-de2a3834fdd4,Dumbbell waiter curls,biceps,dumbbell,ymove-3175c898-09fe-4d02-82c2-de2a3834fdd4.png
+90f72652-08c0-4a6e-9690-15156c263f4a,5a86b7dd-04a3-47fc-b92d-910f61b184c6,EZ Bar Curl,biceps,barbell,ymove-5a86b7dd-04a3-47fc-b92d-910f61b184c6.png
+7162ce04-8e82-4723-bb47-eecc4b5ba07f,79084f10-c317-4c40-ae0c-45d0b760298d,Bench Dips,bodyweight,bodyweight,ymove-79084f10-c317-4c40-ae0c-45d0b760298d.png
+f2c3b6ba-75f0-4485-9d2a-085f70d530d6,b771f714-b1dc-49f8-8df5-9f8ae35bbbae,Bird Dog,bodyweight,bodyweight,ymove-b771f714-b1dc-49f8-8df5-9f8ae35bbbae.png
+1e0320b0-9e82-4793-977c-1d7f6ea25190,ea7d466a-ecd9-4fcb-9a52-53716b513417,Chin-Up (Underhand),bodyweight,bodyweight,ymove-ea7d466a-ecd9-4fcb-9a52-53716b513417.png
+a773e59d-436a-4966-9209-60e42f6577ed,ea1016da-2d73-4ff8-ad2a-9b36150d2f85,Dead Bug,bodyweight,bodyweight,ymove-ea1016da-2d73-4ff8-ad2a-9b36150d2f85.png
+2fba1631-facd-4410-8075-fa06a871b177,ffef6f38-6074-43b9-9256-2edc78dcf698,Deficit Calf Raise,bodyweight,bodyweight,ymove-ffef6f38-6074-43b9-9256-2edc78dcf698.png
+2e696248-2b2b-44bb-87b5-ee1392c86046,b958f3b6-db0c-492a-8895-445af0989161,Elevated Calf Raises,bodyweight,bodyweight,ymove-b958f3b6-db0c-492a-8895-445af0989161.png
+066c677d-a976-4f63-9b18-2f3b63025a58,548f86e7-ee60-46ce-a482-c2b1c16e4441,Forward Lunges (Bodyweight),bodyweight,free weights,ymove-548f86e7-ee60-46ce-a482-c2b1c16e4441.png
+c409d126-8230-4b71-aba7-d1bf8b41b48b,b78e6b13-cc46-49d6-a205-f71b65e6090e,EZ Bar Reverse Curl,brachioradialis,barbell,ymove-b78e6b13-cc46-49d6-a205-f71b65e6090e.png
+357a1917-13d4-477a-8799-33de2e0d1471,b853fd08-4739-4239-a825-8c31826d54ba,Barbell calf raises,calves,barbell,ymove-b853fd08-4739-4239-a825-8c31826d54ba.png
+96e9c7a6-e3b0-4937-85f8-dd2833dfdd16,8577f8c3-283b-472b-b5cf-d0eaa8e84762,Calf gas peddlers,calves,bodyweight,ymove-8577f8c3-283b-472b-b5cf-d0eaa8e84762.png
+c74bb6d1-10c1-4a42-a97b-fa9c9408ee30,6a20f987-50aa-4023-9d0a-723759a24d55,Calf Raise Intervals,calves,bodyweight,ymove-6a20f987-50aa-4023-9d0a-723759a24d55.png
+7850c2d1-bf6c-426e-b0d4-35344b062cae,43946d04-02aa-4dc8-9a67-3cb759440c22,Calf Raises,calves,box,ymove-43946d04-02aa-4dc8-9a67-3cb759440c22.png
+5a785619-7cc6-413d-a833-9db4a8aee862,90924318-0ca7-46ec-9e87-36b80e02196f,Calf stretch (left),calves,bodyweight,ymove-90924318-0ca7-46ec-9e87-36b80e02196f.png
+090638db-8aa9-4ea0-be70-00ea52b84bf7,5ce9ef64-7527-4321-997b-1d1bc071f91a,Calf stretch (right),calves,bodyweight,ymove-5ce9ef64-7527-4321-997b-1d1bc071f91a.png
+22d2e159-7d5f-4f3f-8f1b-f25436d8aed5,eda711dc-d4c5-49e6-b323-d8180e41a871,Dumbbel calf raises,calves,dumbbell,ymove-eda711dc-d4c5-49e6-b323-d8180e41a871.png
+f96d9d8d-3c02-45b4-8844-acf431612f32,18dda540-eca8-40ad-aca4-9e5f80f574d7,Forward Backward Hop over Cone,calves,cone,ymove-18dda540-eca8-40ad-aca4-9e5f80f574d7.png
+c405eb3a-96e4-4b60-8059-d87db829f411,4d4779ae-ab3c-4f3b-8c9f-566a23c80437,Back Shuffle,cardiovascular_system,bodyweight,ymove-4d4779ae-ab3c-4f3b-8c9f-566a23c80437.png
+5568eb87-084b-4edd-8121-00d62137deb0,d06c3d04-aeb4-4b94-9a43-24e95201239c,Archer push up,chest,bodyweight,ymove-d06c3d04-aeb4-4b94-9a43-24e95201239c.png
+2f91f12e-4770-42dc-aa63-d43d62a7d9b6,52fb4e42-549e-4af2-a83d-f0c6c76f38ae,Armpit Opener,chest,chair,ymove-52fb4e42-549e-4af2-a83d-f0c6c76f38ae.png
+6a9cdc28-7432-4ed1-9938-c0185ca3652f,69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1,Barbell Bench Press,chest,barbell,ymove-69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1.png
+5ea85917-336a-4495-9cf5-8b915089c77e,de7f1e4f-cb03-446d-b768-4a93baae1ab2,Barbell Incline Bench Press - Medium Grip,chest,barbell,ymove-de7f1e4f-cb03-446d-b768-4a93baae1ab2.png
+d7db16ad-b48c-46d9-a3d2-f8dcf8ae4993,c4d91f02-e796-4992-a08d-531b1d4bb16b,Bear crawl shoulder tap to pike push up,chest,bodyweight,ymove-c4d91f02-e796-4992-a08d-531b1d4bb16b.png
+4a6a3957-d92c-4349-a9c0-c8b160a62f9c,accf9858-fd32-4f43-aa4d-0bd0f53d7498,Bear crawl to pike push up,chest,bodyweight,ymove-accf9858-fd32-4f43-aa4d-0bd0f53d7498.png
+d50e421a-23ed-4a43-8983-1e33c1b167f4,58d0fe05-1a66-4b80-a6d8-2dc2f0d73169,Bench Press,chest,barbell,ymove-58d0fe05-1a66-4b80-a6d8-2dc2f0d73169.png
+c14d29f9-a660-4c54-84d1-c527da808449,3adef0aa-9687-4cd0-acf6-410c9fa4ba76,Cable Crossover (Mid),chest,machine,ymove-3adef0aa-9687-4cd0-acf6-410c9fa4ba76.png
+f3ee0643-e0b8-4719-8589-3bdf8beaea19,9ddd0baa-fa4b-4f5a-8dd4-3a68dc557563,Cable Fly - High to Low,chest,machine,ymove-9ddd0baa-fa4b-4f5a-8dd4-3a68dc557563.png
+98be3958-0b80-4c86-b051-7eaf135411f0,aa3d8f09-8870-4ec1-aada-7760020dfeaa,Cable Fly Low to High,chest,cable,ymove-aa3d8f09-8870-4ec1-aada-7760020dfeaa.png
+916e56b4-d8ee-4f7f-95d5-3fa3d7add9d0,55bd4c71-78c6-49bd-aaaa-8c03b7528342,Chameleon push up,chest,bodyweight,ymove-55bd4c71-78c6-49bd-aaaa-8c03b7528342.png
+c6af3547-f036-4998-ab86-f68c76d6bb8c,a97c208e-1c40-4410-b51a-a86e5cc37a04,Chameleon push up to mountain climbers,chest,bodyweight,ymove-a97c208e-1c40-4410-b51a-a86e5cc37a04.png
+4db4c733-72eb-4684-a350-d6d57ccd02b7,ee4ec1d3-6f4c-42bf-b338-ac175213a4e7,Chest Press Machine flat,chest,machine,ymove-ee4ec1d3-6f4c-42bf-b338-ac175213a4e7.png
+f688cecb-c106-44d9-a3eb-d25c374b85ea,4668a912-ef55-4b3e-8d9c-53359d6aba29,Close Grip Dumbbell Press,chest,dumbbell,ymove-4668a912-ef55-4b3e-8d9c-53359d6aba29.png
+d25aad24-4e4f-4f02-b6c9-6edd7c398210,d18679b0-3ce0-409b-9955-584976544f45,Close Grip Incline Dumbbell Press,chest,dumbbell,ymove-d18679b0-3ce0-409b-9955-584976544f45.png
+849df0a2-584d-4b17-9f9f-b652079abb9e,10d2c91e-60e8-416d-8c91-def45954009c,Close Grip Plate Press,chest,barbell,ymove-10d2c91e-60e8-416d-8c91-def45954009c.png
+20845701-e6df-4912-a430-2437b3fd84a4,f67b5c4a-a959-4b13-933e-633d4faeab95,Deadstop push up,chest,bodyweight,ymove-f67b5c4a-a959-4b13-933e-633d4faeab95.png
+13e28602-cebe-45bd-a3e3-581af1a24548,e8a79472-7809-42d4-89cc-c3c351d86982,Deadstop push up into superman crunches,chest,bodyweight,ymove-e8a79472-7809-42d4-89cc-c3c351d86982.png
+950f7a0e-c712-433e-90e0-0639e0cfc22d,76741ca2-8960-4323-a495-c595291e3c56,Deadstop push ups,chest,bodyweight,ymove-76741ca2-8960-4323-a495-c595291e3c56.png
+157f14a3-d637-4f4d-89de-5d6a0707b4f2,b9e7733d-fbba-413a-98d9-71803ae1edb4,Deadstop pushup to superman crunch,chest,bodyweight,ymove-b9e7733d-fbba-413a-98d9-71803ae1edb4.png
+544fe2ae-6ac9-4e1c-8c21-60789bb90a85,8796655f-6390-4ae1-a143-1fe6cde817cb,Decline Chest Press Machine,chest,machine,ymove-8796655f-6390-4ae1-a143-1fe6cde817cb.png
+2dbff01f-d048-4633-a72f-21517b3bef3f,4c5c90fd-01a3-45f6-a952-712743be9c81,Decline Close Grip Dumbbell Press,chest,dumbbell,ymove-4c5c90fd-01a3-45f6-a952-712743be9c81.png
+512fd422-0fcc-4b79-b68b-0642c9b6620e,e2db8bfd-34b1-451a-853d-b2e483b5844d,Decline Dumbbell Press,chest,dumbbell,ymove-e2db8bfd-34b1-451a-853d-b2e483b5844d.png
+fb7e6ff2-1bb0-4f33-9d5f-779576438912,426861d9-64ac-40f6-bf3e-f7ebc05ba6af,Decline Push Up,chest,box,ymove-426861d9-64ac-40f6-bf3e-f7ebc05ba6af.png
+a83bbf7b-5f61-4332-ad34-ceba9ce23370,8bbcc469-9283-4776-a12c-882060dd396c,Declined Push up - 56,chest,bodyweight,ymove-8bbcc469-9283-4776-a12c-882060dd396c.png
+8b78e10d-e9d2-426d-ad76-b8135fa4c142,2930d41f-177c-4f36-bd91-4867afb85a3b,Dips,chest,bodyweight,ymove-2930d41f-177c-4f36-bd91-4867afb85a3b.png
+42a3ce79-0d8b-426a-9038-a090f62b495a,60ec7728-577b-4dea-a5e9-4b8ac16b6038,Dips - Triceps Version,chest,bodyweight,ymove-60ec7728-577b-4dea-a5e9-4b8ac16b6038.png
+7265079c-022d-403f-ae8a-9db6b77f5cbf,3add251e-6e58-4f80-902c-ab32e0b61966,Dips on bench 2,chest,bodyweight,ymove-3add251e-6e58-4f80-902c-ab32e0b61966.png
+75f83438-b6c0-4341-b767-65a7f9a20187,cfa3229b-10a2-42cd-bdf0-4fa80ce51fd3,Drop dead push up into knee in,chest,bodyweight,ymove-cfa3229b-10a2-42cd-bdf0-4fa80ce51fd3.png
+4094e13c-536e-46a7-8146-3dbb0b036193,a0395420-b67f-4ddd-965d-30d4a489f489,Dumbbell Bench Press,chest,dumbbell,ymove-a0395420-b67f-4ddd-965d-30d4a489f489.png
+106f312e-b8a1-43bc-9bae-798e0a728a83,097903be-beaa-4283-9493-19eb90b59762,Dumbbell deltoid fly,chest,dumbbell,ymove-097903be-beaa-4283-9493-19eb90b59762.png
+441bf445-7bd3-49e1-ae88-121da314f64a,9696321a-6d49-4d1b-a42d-08fb34bb8323,Dumbbell floor chest press,chest,dumbbell,ymove-9696321a-6d49-4d1b-a42d-08fb34bb8323.png
+5a7691e4-d3b7-47db-a29f-9062aae47309,82eabf60-6d7a-4930-b8be-29f1f737d345,Dumbbell floor press,chest,dumbbell,ymove-82eabf60-6d7a-4930-b8be-29f1f737d345.png
+c75ac0e9-6832-465c-8055-361bc74dd850,97f48a58-e7a9-4179-88e2-f1a16feb68ca,Dumbbell fly,chest,dumbbell,ymove-97f48a58-e7a9-4179-88e2-f1a16feb68ca.png
+7f8b4fd1-9c04-4f30-9ff8-09ab627f2557,c60450d9-862c-4dd3-87b1-82f80349964d,Dumbbell fly - v2,chest,dumbbell,ymove-c60450d9-862c-4dd3-87b1-82f80349964d.png
+9daf6b84-07f3-465c-8852-49cb031dcd83,f6d6ac54-751d-416e-8c9d-bc4b675cd505,Dumbbell Pullover,chest,dumbbell,ymove-f6d6ac54-751d-416e-8c9d-bc4b675cd505.png
+12c3e231-6cf7-4753-bc45-8ee57f4a96ef,1b670f12-2b3b-4046-8fb8-379450db6f52,Dumbell Bench Press,chest,dumbbell,ymove-1b670f12-2b3b-4046-8fb8-379450db6f52.png
+6e502c2a-74f9-4a4b-9109-dce3da5a8654,3b3e0a86-56b7-4d15-92ff-11dfaf108147,Elevated push up,chest,bodyweight,ymove-3b3e0a86-56b7-4d15-92ff-11dfaf108147.png
+21f94444-592d-46e6-bd5a-7f539a2a2659,67b6f81b-3bca-4b91-8cd8-4c4dd6194d6e,Explosive push ups,chest,bodyweight,ymove-67b6f81b-3bca-4b91-8cd8-4c4dd6194d6e.png
+f4d15d9c-e12d-4ab9-9dfb-6bc8a6227bbb,d9df1e94-1051-407d-9c34-87720d1557a9,Explosive side to side push up,chest,bodyweight,ymove-d9df1e94-1051-407d-9c34-87720d1557a9.png
+3a498165-7b34-4592-9a6f-ec6fdad867c9,3b45e42a-963f-4b79-ae1d-b1b5e8eb9add,Flat Cable Fly,chest,cable,ymove-3b45e42a-963f-4b79-ae1d-b1b5e8eb9add.png
+0e138fb5-bab1-4e56-9746-ab0968e1e22b,d536723e-7e3f-460d-a6c5-e9993bfbec4c,Floor Press,chest,barbell,ymove-d536723e-7e3f-460d-a6c5-e9993bfbec4c.png
+3e3ef293-715a-4d47-8794-35f9f70b2fec,fb48eccb-7f51-4de3-97f0-dc5ef75a6cee,Full range push ups,chest,bodyweight,ymove-fb48eccb-7f51-4de3-97f0-dc5ef75a6cee.png
+51d1cb48-928a-446e-87e1-60fe0f16b843,ee79ed25-3455-4730-acd9-5173de6085c9,Ab Bridge Complex,core,bodyweight,ymove-ee79ed25-3455-4730-acd9-5173de6085c9.png
+f5430e7e-f1c6-4306-8095-db974e0de223,a64ffb04-76a7-431a-a9a5-6addeab61813,Barbell Ab Rollout,core,barbell,ymove-a64ffb04-76a7-431a-a9a5-6addeab61813.png
+c33d50f4-a032-4fd0-af8f-0174a0bc0b46,31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3,Barbell Ab Rollout - On Knees,core,barbell,ymove-31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3.png
+2649c5dd-67e7-46d7-af0b-b543a0860cdb,709f2fe5-f590-401b-aa94-d5f6dc67165b,Barbell Sit-Up,core,barbell,ymove-709f2fe5-f590-401b-aa94-d5f6dc67165b.png
+f3021f79-a7f4-4cee-b028-29593150dda0,5d6d9ca4-1ace-4dc9-b408-6ced49b753e7,Bear hold,core,bodyweight,ymove-5d6d9ca4-1ace-4dc9-b408-6ced49b753e7.png
+9d95dcd0-74a3-4a35-b275-01e5480a58de,b21be739-d8af-416f-83e4-fc65509a9a28,Bear plank ankle taps into jumps,core,bodyweight,ymove-b21be739-d8af-416f-83e4-fc65509a9a28.png
+d1d4fe39-70f0-40e5-8bb4-3128b7f4b3eb,c2a135e7-1383-47c1-9757-4868ae9a8c55,Bear plank Shoulder taps,core,bodyweight,ymove-c2a135e7-1383-47c1-9757-4868ae9a8c55.png
+c5a8b2b0-a400-4781-a716-b0d4a608b432,f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b,Bear plank shoulder taps - 30,core,bodyweight,ymove-f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b.png
+b70ae5e8-6c9e-4a1c-b985-0a79091595ea,63603235-6df6-4c55-b0fe-c417fee626b8,Bear plank side tap sidewalks,core,bodyweight,ymove-63603235-6df6-4c55-b0fe-c417fee626b8.png
+6bdeeb0b-b55b-414e-ba2e-ee166942353e,638616d3-100b-4b14-8516-ff9e4b3e80f2,Bear plank steps and hops,core,bodyweight,ymove-638616d3-100b-4b14-8516-ff9e4b3e80f2.png
+684fe371-56ce-49d2-81b7-96a196b05dcd,c794e5f9-f603-4f1a-a108-1989ff2b8215,Bear plank toe taps,core,bodyweight,ymove-c794e5f9-f603-4f1a-a108-1989ff2b8215.png
+ba8e4824-b2b4-4dab-adea-6325f7b9e6da,87a9f879-77ef-4dbe-8e8e-b15fea5052a7,Bicycle punches,core,bodyweight,ymove-87a9f879-77ef-4dbe-8e8e-b15fea5052a7.png
+5db8d41a-6b72-4710-992f-b2ec292f1130,a36c63b9-c3d4-432d-a135-1ca81a162d35,Boat hold,core,bodyweight,ymove-a36c63b9-c3d4-432d-a135-1ca81a162d35.png
+297f4021-0616-4331-bd29-b2d4a56245b8,e396f5be-9c22-44ff-b825-d754d807f5fd,Boat pose,core,bodyweight,ymove-e396f5be-9c22-44ff-b825-d754d807f5fd.png
+38a4e34a-1bd6-45ed-bdf6-5f0484b6b5c2,a4715d5c-446e-4937-a25a-254652773990,Burpee (No jump) into high plank with shoulder tabs,core,bodyweight,ymove-a4715d5c-446e-4937-a25a-254652773990.png
+66053a02-07f4-4e86-9672-6af16e332ebc,ed1451e4-ceef-4aa9-a883-24b733b83edd,Butterfly crunches,core,bodyweight,ymove-ed1451e4-ceef-4aa9-a883-24b733b83edd.png
+86cbb55b-1b17-402d-bb31-1653bda627ac,23d6cf5e-2f9a-4f78-a962-d22e6fe36aa9,Cable Woodchop (High to Low),core,machine,ymove-23d6cf5e-2f9a-4f78-a962-d22e6fe36aa9.png
+1951ee12-983b-41fc-b57b-5c4d2ddcb07d,89b62000-867f-4f98-b24c-ad9b5708d015,Chair sit ups,core,bodyweight,ymove-89b62000-867f-4f98-b24c-ad9b5708d015.png
+317446c0-20a0-4af9-b49b-ddb99ef3bed2,068d316f-52b0-4438-a7c9-ee21ceca2c2f,Crunches,core,bodyweight,ymove-068d316f-52b0-4438-a7c9-ee21ceca2c2f.png
+b1449a9f-2088-45a2-9c1d-72cb71e56de1,7c9e7503-35f4-4dd3-a515-3b7ad96e21da,Dead Bug with Dumbbells,core,dumbbell,ymove-7c9e7503-35f4-4dd3-a515-3b7ad96e21da.png
+d424fdce-d643-47ee-81b5-f893ef2fef30,f66596ba-3a70-406c-8ffa-ed6641a10e19,Dumbbell Side Bend (L),core,dumbbell,ymove-f66596ba-3a70-406c-8ffa-ed6641a10e19.png
+f36839a4-ec19-4790-b807-8167a0085653,8dcb1591-348a-4809-9abf-0a1679a7a52a,Dumbbell Side Bend (R),core,dumbbell,ymove-8dcb1591-348a-4809-9abf-0a1679a7a52a.png
+18fd8af3-7514-4f45-baae-9227594245c7,4f756a6f-51a5-4afe-8cf8-975f3748c4f9,Elbow Plank to Side Plank,core,bodyweight,ymove-4f756a6f-51a5-4afe-8cf8-975f3748c4f9.png
+1c3a7bc0-6994-4dd5-855d-7bac3fe2e010,f2224eab-4368-4bab-80a3-e0bddbed5a23,Elbow to knee plank,core,bodyweight,ymove-f2224eab-4368-4bab-80a3-e0bddbed5a23.png
+2cb18845-ea52-4106-bab2-70aaf6347a56,b867d101-cc16-42ff-a057-fe0de4a2d8c6,Flutter kicks,core,bodyweight,ymove-b867d101-cc16-42ff-a057-fe0de4a2d8c6.png
+c764ea53-7504-4b53-96bc-402f930e215d,fa3347f7-0e8f-446b-a7f0-fbb0f6b22206,Gate pose (left),core,bodyweight,ymove-fa3347f7-0e8f-446b-a7f0-fbb0f6b22206.png
+c4e204b8-d7b2-4376-997a-a73ba48246fb,ad7e4bc7-a8d8-4aa7-978f-e130aeb49e8b,Gate pose (right),core,bodyweight,ymove-ad7e4bc7-a8d8-4aa7-978f-e130aeb49e8b.png
+5526e711-86de-4a20-a5d1-ba53548db088,9acaf8fd-1e81-4106-8d86-921b013f36c0,Arch Skydiver,erector_spinae,bodyweight,ymove-9acaf8fd-1e81-4106-8d86-921b013f36c0.png
+ff3f110d-fd3f-4823-9d54-66bb254ed8ad,4061bcd4-25a4-48ce-abbe-765986eb91e5,Back Extension on Ball,erector_spinae,stability ball,ymove-4061bcd4-25a4-48ce-abbe-765986eb91e5.png
+cb32e037-942f-428f-b3ba-3396612cd268,eb37d0a0-1a45-482c-9c6a-1aef9744661c,Barbell Wrist Curl,forearm_flexors,barbell,ymove-eb37d0a0-1a45-482c-9c6a-1aef9744661c.png
+f400efa5-d531-403b-aea1-9202960d663c,87820d5e-9377-493c-a924-cc1d4750859b,First Toe Curl with Towel,forearm_flexors,towel,ymove-87820d5e-9377-493c-a924-cc1d4750859b.png
+85698a50-7ae4-44a3-9ebe-51f41b74f429,9a8e40b3-446f-4362-9df4-461931927889,Dumbbell wrist curls,forearms,dumbbell,ymove-9a8e40b3-446f-4362-9df4-461931927889.png
+99f495e7-5885-49f7-bd36-dbec44a1c1e7,6891aa71-6e1f-4ea4-b9ac-f38ea207216a,Dumbbell wrist curls,forearms,dumbbell,ymove-6891aa71-6e1f-4ea4-b9ac-f38ea207216a.png
+bbf7d09f-cc0f-4617-8016-85a05977fdaf,9ad86735-3149-48fa-add4-705598dc149e,Farmers walk,forearms,dumbbell,ymove-9ad86735-3149-48fa-add4-705598dc149e.png
+01c3d13d-2bdf-4867-86a4-7dc9f7b7a071,a04b709a-b24b-497b-af41-66544e152b4b,Front Raise,front_deltoids,dumbbell,ymove-a04b709a-b24b-497b-af41-66544e152b4b.png
+552d3e4e-be59-4a18-8d72-243accb13422,50aafd34-960f-4967-ae4b-03430a734f10,front raises,front_deltoids,dumbbell,ymove-50aafd34-960f-4967-ae4b-03430a734f10.png
+b9b09ed2-d42a-4a3b-92e1-139351ba577d,e739df3d-e51d-4c84-aac5-bd09a2c11618,Barbell Clean,full body,barbell,ymove-e739df3d-e51d-4c84-aac5-bd09a2c11618.png
+77f1f1c7-276a-48d6-ab2a-2aa88d93c15e,e8dd3973-ac46-457f-93e8-a6c18a6da75c,Dumbbell Hang Clean to Press,full body,dumbbell,ymove-e8dd3973-ac46-457f-93e8-a6c18a6da75c.png
+95b39884-5c69-4015-9c41-e9603ed94c67,71bf8e65-38ff-4145-b42c-341c8d574b59,8 Count Body Builder,full_body,bodyweight,ymove-71bf8e65-38ff-4145-b42c-341c8d574b59.png
+aeb88593-b9ff-4009-8557-8c0331bfb24f,7d31d648-432b-4edd-97bc-afc2a3e9e59a,Barbell Deadlift,full_body,barbell,ymove-7d31d648-432b-4edd-97bc-afc2a3e9e59a.png
+e4184416-a2b8-4d64-9c04-8e3e03b6b7fc,47ab9d26-7959-46bb-9744-1e48695f5e70,Bear crawl into explosive jumps,full_body,bodyweight,ymove-47ab9d26-7959-46bb-9744-1e48695f5e70.png
+f125e930-66ae-45fe-ba8d-05ced77c7e58,214c3916-f02f-456f-9750-70fd0679295a,Bear crawls,full_body,bodyweight,ymove-214c3916-f02f-456f-9750-70fd0679295a.png
+b6d39e19-d036-4840-9856-c12d550b1b5e,59887212-af71-41e1-9b3f-afe352ba1979,Bear toe taps,full_body,bodyweight,ymove-59887212-af71-41e1-9b3f-afe352ba1979.png
+9fd55fea-beab-4d25-9669-59289fe1dd2d,4402c7a1-0845-4da2-882d-4e06fc275b8b,Bench Jump,full_body,bodyweight,ymove-4402c7a1-0845-4da2-882d-4e06fc275b8b.png
+b07de305-87f7-4887-bee1-58e7ca2b0b8e,53f37f4b-c486-4ebb-846b-953078455bfe,Bent leg v-sit into punches,full_body,bodyweight,ymove-53f37f4b-c486-4ebb-846b-953078455bfe.png
+92a23d34-138a-4e77-9776-f93ecccf9d61,ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e,Broad jumps,full_body,bodyweight,ymove-ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e.png
+d2adc6a8-0bb7-4b88-9595-9c9316485477,24030adc-de07-4547-a916-24acee3d5a3e,Burpee,full_body,bodyweight,ymove-24030adc-de07-4547-a916-24acee3d5a3e.png
+ccf3a409-b228-4c54-9d72-f1ca10e34ad1,b160ea44-725a-415f-919a-4edad64d3ce3,Burpee (No jump),full_body,bodyweight,ymove-b160ea44-725a-415f-919a-4edad64d3ce3.png
+216f3804-a718-4051-b058-698027918147,1effe46b-4944-4308-b0d3-dd87a0c71bc2,Butt kickers,full_body,bodyweight,ymove-1effe46b-4944-4308-b0d3-dd87a0c71bc2.png
+9655ca3c-f7bc-488a-a45d-1fba3dd83950,22bf3fc2-d7a0-41d0-9a1a-5e0d149d2b7a,Butterfly Jumps,full_body,bodyweight,ymove-22bf3fc2-d7a0-41d0-9a1a-5e0d149d2b7a.png
+65ef37db-a408-4fb1-be01-fab967585c6a,b2073383-2f4c-419e-95f3-0e1cd4f02c34,Cable Deadlift,full_body,cable,ymove-b2073383-2f4c-419e-95f3-0e1cd4f02c34.png
+0deeba5f-aef6-418e-919e-a286cd4f6cc4,9225c7c5-66a0-42c5-8de4-866389741736,Chest and shoulder,full_body,bodyweight,ymove-9225c7c5-66a0-42c5-8de4-866389741736.png
+27679c8f-8b79-4ded-80de-6da46b506f55,e6bd8a96-cc6e-4805-bb2d-6755c9350dd9,Child_s pose -Lower back,full_body,bodyweight,ymove-e6bd8a96-cc6e-4805-bb2d-6755c9350dd9.png
+0cd4bebc-cfbe-4084-8d03-e3c7f749515a,055d7dcd-575a-4515-9e7e-129c93cbb8c2,Clean and Jerk,full_body,barbell,ymove-055d7dcd-575a-4515-9e7e-129c93cbb8c2.png
+a1be7836-f240-4269-b34d-4a7813d4677b,658fa4e6-8b1d-48f4-b97d-7c576783ad73,Corpse pose,full_body,bodyweight,ymove-658fa4e6-8b1d-48f4-b97d-7c576783ad73.png
+04a1b0f7-9239-4feb-86ba-6ebbfa607275,fd93f455-3544-4c89-afa2-bcdf980aa53d,Crab hold to to taps,full_body,bodyweight,ymove-fd93f455-3544-4c89-afa2-bcdf980aa53d.png
+980316da-fafb-485d-bb06-b7724cbb01c8,1abe4475-eab9-4532-a583-68cc06681462,Crab hold toe tap,full_body,bodyweight,ymove-1abe4475-eab9-4532-a583-68cc06681462.png
+3fd04913-0531-41f2-af26-a0e85562ad00,0e43c62b-bcf6-4115-8fa4-3049a4d8f24a,Criss-cross jumping jacks,full_body,bodyweight,ymove-0e43c62b-bcf6-4115-8fa4-3049a4d8f24a.png
+ca535328-61e4-4eea-ae88-5952e3e0621e,8f2f2d63-4e39-408b-b450-f88c27d8ae1a,Deadlift with Kettlebell,full_body,kettlebell,ymove-8f2f2d63-4e39-408b-b450-f88c27d8ae1a.png
+83dd2152-cccf-4ec4-8419-0363c3bcb909,9d5a2722-801b-4741-8d9b-11e9a3a4ae2d,Devil press,full_body,dumbbell,ymove-9d5a2722-801b-4741-8d9b-11e9a3a4ae2d.png
+fa9d97de-09da-4c54-aaea-af31240357db,b219f35b-9bca-4eb5-a010-e0ded6208942,Dive bombers,full_body,bodyweight,ymove-b219f35b-9bca-4eb5-a010-e0ded6208942.png
+383e1277-7b34-48bd-b253-906fdfc87eb2,e3c47861-bcfa-41cf-a191-3524d8679a1c,Downward dog,full_body,bodyweight,ymove-e3c47861-bcfa-41cf-a191-3524d8679a1c.png
+79d21da5-8f39-419a-b0d9-f2ca1f30cd9c,4426c121-33b6-42c1-aa78-8d295d8fd687,Dumbbell Discus,full_body,dumbbell,ymove-4426c121-33b6-42c1-aa78-8d295d8fd687.png
+bb61222a-3ac3-4831-841a-97f501765129,a46c036e-f0f6-4c03-8216-cc80da58ee3d,Dumbbell Discus (L),full_body,dumbbell,ymove-a46c036e-f0f6-4c03-8216-cc80da58ee3d.png
+d433f88e-f4d0-4975-83bd-fa414e7da177,f49f3159-4eed-4d0d-a640-497886c309b0,Dumbbell double snatch,full_body,dumbbell,ymove-f49f3159-4eed-4d0d-a640-497886c309b0.png
+6ec01dfb-641b-4d13-a9e2-8270283f0ef2,3433c651-a0f5-40cb-bdd8-3029f3ba15c5,Dumbbell External Rotation,full_body,dumbbell,ymove-3433c651-a0f5-40cb-bdd8-3029f3ba15c5.png
+daf6baf9-d015-4f5b-bb5b-17564b8473d3,beee4955-3dbc-4aa1-be35-d01666713f72,Dumbbell get ups (R),full_body,dumbbell,ymove-beee4955-3dbc-4aa1-be35-d01666713f72.png
+056dc9d7-fe21-457c-8e1d-dc12e70225fc,0d0368ee-f03d-4ef9-95db-06a56434ea55,Dumbbell Scissors,full_body,dumbbell,ymove-0d0368ee-f03d-4ef9-95db-06a56434ea55.png
+fd04bb56-b631-4dc5-8bd5-015c071c20d3,0ff5e9fe-9d15-426a-8c06-fd62a198dc47,Dumbbell shadow box,full_body,dumbbell,ymove-0ff5e9fe-9d15-426a-8c06-fd62a198dc47.png
+3a363dac-5c6c-4c34-9bff-f99a21682435,22be389b-6b65-4cac-af19-8cec6f4a363f,Dumbbell Snatch,full_body,dumbbell,ymove-22be389b-6b65-4cac-af19-8cec6f4a363f.png
+3048e050-560e-44e5-b44c-72caddd3888a,01924d84-4c88-4476-b0dc-8fd92616b362,Dumbbell upper cuts,full_body,dumbbell,ymove-01924d84-4c88-4476-b0dc-8fd92616b362.png
+b7fe780d-263d-4ed1-9ab9-dbc9058f0fa3,4c22f102-513b-4fe4-a271-389c006fbb9f,Explosive knee drive,full_body,bodyweight,ymove-4c22f102-513b-4fe4-a271-389c006fbb9f.png
+e54a5c71-be82-49a3-b54c-453c14eebc59,74658f21-21bb-40f6-bf66-54aa7b499622,Explosive push,full_body,bodyweight,ymove-74658f21-21bb-40f6-bf66-54aa7b499622.png
+05e60cf1-ebc2-45bd-8f9d-e5196df53bb4,f3d25890-dcd5-42b3-8246-a5f596029cc0,Figure Four Stretch (L),full_body,bodyweight,ymove-f3d25890-dcd5-42b3-8246-a5f596029cc0.png
+9506cf9e-2f26-4bbb-9612-5d62d6ed5979,005ba868-d8b1-499f-9a88-b2cf722e6bdf,Figure Four Stretch (R),full_body,bodyweight,ymove-005ba868-d8b1-499f-9a88-b2cf722e6bdf.png
+213f6062-f886-4987-8f96-9d06d01fd59a,0df165d9-3c63-4506-a2f1-6f64544fda5d,Forward to Reverse Bear Crawl,full_body,bodyweight,ymove-0df165d9-3c63-4506-a2f1-6f64544fda5d.png
+b878e2c0-600c-4bc6-9ac0-55d6411df04c,fefcff8a-f513-48bd-9e6d-0c38de0e4a6b,Frog Stretch,full_body,bodyweight,ymove-fefcff8a-f513-48bd-9e6d-0c38de0e4a6b.png
+f9faf5e6-5f36-406c-9d89-a4a43e54573b,df37b949-000b-4b09-90a3-482d868ee55a,Froggers,full_body,bodyweight,ymove-df37b949-000b-4b09-90a3-482d868ee55a.png
+a8120a8c-20dc-47bc-af41-9b784b71e2d3,dc848ac2-ca46-4c70-a8cc-dd2a76e546cf,Front Two-Dumbbell Raise,full_body,dumbbell,ymove-dc848ac2-ca46-4c70-a8cc-dd2a76e546cf.png
+8ed0f644-8fa7-4dc6-b319-7af31a7b41a3,1dda1f16-d715-4a4f-a12b-d75b7dca81e7,Banded Lateral Walks,glute_med,band,ymove-1dda1f16-d715-4a4f-a12b-d75b7dca81e7.png
+d2eaaf97-a467-42a5-b49c-7aeb34e0a9ef,d48bc33d-8daa-456a-9f07-32b42a3798e5,Clams side lying with knee lifts,glute_med,bodyweight,ymove-d48bc33d-8daa-456a-9f07-32b42a3798e5.png
+35cde02d-51e7-471d-8a2d-abd865d2b299,f79d8c98-d6ca-4d46-9704-6d89cf436808,Fire Hydrant Circles,glute_med,bodyweight,ymove-f79d8c98-d6ca-4d46-9704-6d89cf436808.png
+38e06843-8be5-45b6-a213-5ba1b67b95cc,4c55ca15-3665-4db7-b11d-7d4273263f66,1 Leg Broad Jump,glutes,bodyweight,ymove-4c55ca15-3665-4db7-b11d-7d4273263f66.png
+7d778eb3-0f58-4830-8957-7d688d321363,b43b051d-cd66-41c7-8772-f81797ce872c,Barbell Glute Bridge,glutes,barbell,ymove-b43b051d-cd66-41c7-8772-f81797ce872c.png
+745a1200-9d2d-4b8e-ac02-c155e4674ea2,5990deac-a91d-4531-8c2f-a708fc95fd1f,Barbell Hip Thrust,glutes,barbell,ymove-5990deac-a91d-4531-8c2f-a708fc95fd1f.png
+5e475653-42bd-4f6d-9b8b-ec6ae4e5c877,c4f2aff0-d474-473a-ad7d-559033aac8b3,Bridge march,glutes,bodyweight,ymove-c4f2aff0-d474-473a-ad7d-559033aac8b3.png
+2f28319b-fb97-4415-9967-7f2365a86356,31f0a2a6-2d44-4c33-bf3a-2d0687b748a4,Bridge pose,glutes,bodyweight,ymove-31f0a2a6-2d44-4c33-bf3a-2d0687b748a4.png
+d591764f-92aa-400c-a29c-59aeadb4b9a7,c424ec91-5260-4a23-800d-1a5e140f8320,Butt bridges,glutes,bodyweight,ymove-c424ec91-5260-4a23-800d-1a5e140f8320.png
+2fab7faf-27fc-4e87-ace5-396d56d8ccba,f96ea3ee-fb2f-4a0f-bc3b-7e63959450c5,Butterfly Stretch,glutes,bodyweight,ymove-f96ea3ee-fb2f-4a0f-bc3b-7e63959450c5.png
+7da29a55-c564-4f04-a7d1-6b290cf1e041,f6fa126f-2811-454f-a542-39780209c9ec,Cable Diagonal Kickback,glutes,cable,ymove-f6fa126f-2811-454f-a542-39780209c9ec.png
+cc7785ad-15a7-4c49-b372-b1c12d8276d2,d3f23ea3-a3d3-46cd-940b-707efea0df5c,Cable Glute Kickback,glutes,cable,ymove-d3f23ea3-a3d3-46cd-940b-707efea0df5c.png
+7f9c16ef-c520-43cf-9eac-c88ea2d06b02,8503592c-a179-456b-9417-5fb5e84fad1a,Cable Hip Abduction,glutes,cable,ymove-8503592c-a179-456b-9417-5fb5e84fad1a.png
+32f30c66-cb5e-44e5-a162-6028a9519726,86a5f361-6b81-4ab7-a769-c32ca56d5ae4,Cable Hip Abduction,glutes,cable,ymove-86a5f361-6b81-4ab7-a769-c32ca56d5ae4.png
+54193b3d-cc5a-484e-ae50-d92a93d13c5a,db7c0708-ea39-47cb-89c8-73e749abcfa6,Cable Hip Extension,glutes,cable,ymove-db7c0708-ea39-47cb-89c8-73e749abcfa6.png
+5c5b6370-953b-4db3-b0ed-4ab2b02853c8,cd2bfdbe-71d7-4d3e-8b03-fc4a5ed73bf4,Cable Kickback,glutes,cable,ymove-cd2bfdbe-71d7-4d3e-8b03-fc4a5ed73bf4.png
+4ffbc4bf-e596-46dd-88f9-7199cd6042dc,21dda23e-d221-4800-924e-498f4398f203,Cable Straight Leg Kickback,glutes,cable,ymove-21dda23e-d221-4800-924e-498f4398f203.png
+fd552790-714d-47f9-b760-06a6d115779c,bb30b96e-da77-44d7-aabe-d02a7bdcaa23,Cobbler's pose,glutes,bodyweight,ymove-bb30b96e-da77-44d7-aabe-d02a7bdcaa23.png
+9a9a32f2-a147-4962-b2af-7ee97a3c7a3e,d7078f6a-a0eb-47e6-9396-98b250afff34,Crab Walk,glutes,bodyweight,ymove-d7078f6a-a0eb-47e6-9396-98b250afff34.png
+a9d21f24-cb8e-4f02-9273-b7c745a78762,fbffd9c1-bffd-4fb0-ae4c-258834c5fcd2,Donkey Kick with Dumbbell,glutes,dumbbell,ymove-fbffd9c1-bffd-4fb0-ae4c-258834c5fcd2.png
+d3136842-6684-413a-adca-1c7ffcf9e6ab,f049bccf-868e-4d76-9cc1-18a0e37e1b66,Dumbbell Hip Thrust,glutes,dumbbell,ymove-f049bccf-868e-4d76-9cc1-18a0e37e1b66.png
+435fde23-32f3-476d-8614-52e7a94d8547,f46b69fa-049b-4cab-aad0-1ff3f2a1503e,Dumbbell Sumo Deadlift,glutes,dumbbell,ymove-f46b69fa-049b-4cab-aad0-1ff3f2a1503e.png
+778c8b62-e21b-4555-b97c-25e1fad3338a,ccd60696-7e2f-4611-b3b9-e5f11ddf4e78,Dumbbell Sumo Squat,glutes,dumbbell,ymove-ccd60696-7e2f-4611-b3b9-e5f11ddf4e78.png
+cc471cd3-025b-41ca-8671-f6b80ad349d8,53339dca-7ed1-4edf-b88c-1f4b618b4d57,Figure 4 Squats,glutes,bodyweight,ymove-53339dca-7ed1-4edf-b88c-1f4b618b4d57.png
+384585ba-9dfd-4add-87d1-eed27b73ab56,05b2ec0e-92d4-4a93-bfed-c371747c072d,Fire Hydrant,glutes,bodyweight,ymove-05b2ec0e-92d4-4a93-bfed-c371747c072d.png
+f2a31d1c-118d-4fe4-9ebd-c5bd07841971,623b2443-bc73-4c61-986c-412545c33aed,Fire log pose (left),glutes,bodyweight,ymove-623b2443-bc73-4c61-986c-412545c33aed.png
+ad235f40-d00e-4726-be88-624e239b074a,e0a7528b-5d24-4ddf-9d4c-d61958dc504c,Fire log pose (right),glutes,bodyweight,ymove-e0a7528b-5d24-4ddf-9d4c-d61958dc504c.png
+7afbcd0a-0e55-42d7-a102-8dd268791453,db1a9d2c-5386-41aa-a84f-dad06ac7ea7c,Frog pose,glutes,bodyweight,ymove-db1a9d2c-5386-41aa-a84f-dad06ac7ea7c.png
+0d08c298-0c8c-4f19-aa03-dcb5dadb40f2,928d2978-b0a4-4619-858d-106a5c99e507,Garland pose,glutes,bodyweight,ymove-928d2978-b0a4-4619-858d-106a5c99e507.png
+97e76a72-07b9-450c-8109-99d06d6ce9fc,74c36be0-d1e4-4703-8c54-612c2da1dcc1,Barbell Good Morning,hamstrings,barbell,ymove-74c36be0-d1e4-4703-8c54-612c2da1dcc1.png
+157b3ccc-4f2b-46b8-88ab-898069fe6dc7,be7a8c2a-db1b-405f-a61f-96f26c628c6c,Barbell Romanian Deadlift,hamstrings,barbell,ymove-be7a8c2a-db1b-405f-a61f-96f26c628c6c.png
+ff0daea2-8485-4127-8b40-cab1469eb4af,6362bdab-a7d7-49e8-85ab-fe1eb610cb4e,Cross body pulls to hamstring kicks,hamstrings,bodyweight,ymove-6362bdab-a7d7-49e8-85ab-fe1eb610cb4e.png
+5dcfa3b4-a785-4b6d-90c3-ef28088e73f0,4eaaeaca-6966-4b55-94a0-4a34520bb5b9,Downward facing dog split (left),hamstrings,bodyweight,ymove-4eaaeaca-6966-4b55-94a0-4a34520bb5b9.png
+20beba78-4431-40aa-804d-53e819abf732,dee6b124-faf4-4d03-a659-e49456892af1,Downward facing dog split (right),hamstrings,bodyweight,ymove-dee6b124-faf4-4d03-a659-e49456892af1.png
+ce51cee0-ae88-4a4f-9a70-1695aa7a8222,54d04b7e-3a7d-4d04-a0b2-adaab8f8f466,Dumbbell Romanian Deadlift,hamstrings,dumbbell,ymove-54d04b7e-3a7d-4d04-a0b2-adaab8f8f466.png
+cabd56d5-e61d-428d-8bca-8f13487e52f7,e1b10987-45be-4416-8d9c-4dea00db3ca0,Dumbbell Stiff Leg Deadlift,hamstrings,dumbbell,ymove-e1b10987-45be-4416-8d9c-4dea00db3ca0.png
+6e7f52d3-7b6b-4a20-a855-58e3c55ed1e8,3620635f-3fcb-4552-8959-dc6ec09d9ea2,A steps,hip_flexors,bodyweight,ymove-3620635f-3fcb-4552-8959-dc6ec09d9ea2.png
+05c43695-8fc7-43c2-9c7b-67b3b1bfa946,f8255cfd-7c0e-4451-89a5-947009e4fd13,Chair running chair step knee touch,hip_flexors,chair,ymove-f8255cfd-7c0e-4451-89a5-947009e4fd13.png
+4a1fa324-d6ce-44a2-9af7-e74e87375805,44a83578-5681-4a1a-99c3-f8742857bf66,Dumbbell Lateral Raise,lateral_deltoids,dumbbell,ymove-44a83578-5681-4a1a-99c3-f8742857bf66.png
+c4f35731-5195-43e5-bdef-ea4f40cdda2c,c90444fe-fd21-40d1-923f-5adba83e35bc,Dumbbell Pullover,lats,dumbbell,ymove-c90444fe-fd21-40d1-923f-5adba83e35bc.png
+97a5a4b4-49e0-47c4-967a-c398d86a152c,95fb26cd-a80a-4d69-92a0-af6bf54128bc,Cable Pull-Through,legs,machine,ymove-95fb26cd-a80a-4d69-92a0-af6bf54128bc.png
+f6bc8eb6-d270-46bd-9998-ec87fd237901,ca09df2f-e2d6-4acf-864e-e43c7b202c00,Dumbbell box squat,legs,dumbbell,ymove-ca09df2f-e2d6-4acf-864e-e43c7b202c00.png
+d93e0c15-34c8-4d0c-9212-7e5b359fcb20,a1ba1671-4626-4e4f-a37f-98182e36e57c,Dumbbell Lunge,legs,dumbbell,ymove-a1ba1671-4626-4e4f-a37f-98182e36e57c.png
+2c731282-7d03-4c16-ae16-b5d388fbc404,54511b29-e4df-4539-ab7a-3a9e98393d90,Dumbbell Reverse Lunge,legs,dumbbell,ymove-54511b29-e4df-4539-ab7a-3a9e98393d90.png
+0650cbe2-e770-46d1-9520-0159ad767f92,67b7b672-3989-49cf-8741-6b6de5c43dfd,Dumbbell Static Lunges,legs,dumbbell,ymove-67b7b672-3989-49cf-8741-6b6de5c43dfd.png
+f3e77fd8-de88-486f-8adc-2adf62750fbd,75f26166-ba61-48cf-ba27-0709fbdbb34b,Dumbell Straight Leg Raise,lower_abs,dumbbell,ymove-75f26166-ba61-48cf-ba27-0709fbdbb34b.png
+e1d6fb03-f21e-4a03-aecb-a4f76b3c1292,854b33d7-6d88-4a67-a5d5-4e7e2983b140,back stretch,lower_back,chair,ymove-854b33d7-6d88-4a67-a5d5-4e7e2983b140.png
+729d5759-0942-49b2-af28-fcd40c63b497,704e9540-7bdd-4dbd-bdd3-7341b3563693,Floor Mantis,lower_back,bodyweight,ymove-704e9540-7bdd-4dbd-bdd3-7341b3563693.png
+7321478d-03e0-4cde-a560-6fce08ca345e,d552a696-bf87-4bf7-9597-fa425d617874,Barbell Bench Press decline,lower_chest,barbell,ymove-d552a696-bf87-4bf7-9597-fa425d617874.png
+b620d63b-e31a-425c-a11a-eeaeba65cfad,95640151-0b58-4872-94de-a14680227a66,Dips parallel bars,lower_chest,machine,ymove-95640151-0b58-4872-94de-a14680227a66.png
+2c0c6beb-b5ea-43e9-a953-475054c8e332,7a94a32f-40d9-42eb-b03d-afe76c71ea36,Alternating Side Reaches,obliques,chair,ymove-7a94a32f-40d9-42eb-b03d-afe76c71ea36.png
+525364c2-1da0-4c53-ad25-b222328623b2,25ec2936-1aa7-4fb9-86a3-e3b73ab94e7c,Cable Woodchop low to high,obliques,cable,ymove-25ec2936-1aa7-4fb9-86a3-e3b73ab94e7c.png
+33af6373-ffd1-4782-8131-fb928831a58c,af0e7c20-cd4a-4c26-ac10-1ef6bdaaf35e,chair Twists,obliques,chair,ymove-af0e7c20-cd4a-4c26-ac10-1ef6bdaaf35e.png
+ae878f99-638e-4c3a-8dd4-afa135f23e22,1575dc75-93ab-4c7f-b924-4ed4eda2adc8,Dumbbell Russian Twist,obliques,dumbbell,ymove-1575dc75-93ab-4c7f-b924-4ed4eda2adc8.png
+414b6753-2f43-4392-a8b7-32200b2e81ca,ff6872ae-e894-4e72-b5f8-59a55b576a6f,Dumbbell Goblet Squat,quadriceps,dumbbell,ymove-ff6872ae-e894-4e72-b5f8-59a55b576a6f.png
+90ebc159-18ec-461f-8673-1c725faa509e,ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb,1 Leg Lateral Broad Jump,quads,bodyweight,ymove-ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb.png
+9ebf9e74-3013-4bc3-845f-22d113469b46,c2fbe7d4-e9a5-41f8-b8eb-d903948d268b,1 Leg Left Right Hop over Cone,quads,cone,ymove-c2fbe7d4-e9a5-41f8-b8eb-d903948d268b.png
+21a9fd77-dea4-43ae-bbe8-51e14d4a1f10,4a816d4c-e7b1-4e18-823f-64d0c4eee38b,4 Square Drill,quads,bodyweight,ymove-4a816d4c-e7b1-4e18-823f-64d0c4eee38b.png
+eefd2427-8a45-4fb8-9b0c-ec332146208e,80b6b175-77a8-48ac-9a09-495d114d88ef,Backward lunges,quads,bodyweight,ymove-80b6b175-77a8-48ac-9a09-495d114d88ef.png
+08b006cd-2281-4836-bcc5-b168708e7928,fa45710a-ee56-4648-811c-5eeaaeaff098,Band Leg press,quads,band,ymove-fa45710a-ee56-4648-811c-5eeaaeaff098.png
+b162b87a-5dd4-4a32-b4b2-f4052a42192a,9a68f965-4e58-4b5b-87d5-c44929dd1f39,Banded squat,quads,band,ymove-9a68f965-4e58-4b5b-87d5-c44929dd1f39.png
+a0a04272-c27b-4a7b-9beb-0b6b3d4423e2,65e95132-e6bb-41e8-af7d-0eda931a1693,Barbell Back Squat,quads,barbell,ymove-65e95132-e6bb-41e8-af7d-0eda931a1693.png
+a816d266-2101-4653-9174-ac0e79f33bb2,0e5f29cd-ff79-428a-bb1c-1753a9047f32,Barbell Full Squat,quads,barbell,ymove-0e5f29cd-ff79-428a-bb1c-1753a9047f32.png
+f426456e-6089-441d-aec0-eedcc2f5e2c8,714b176e-2963-43f0-ae0f-c71643cbe426,Barbell Lunge,quads,barbell,ymove-714b176e-2963-43f0-ae0f-c71643cbe426.png
+e28c56f9-e629-4365-9d12-a97076376897,dd57e914-d0ef-4d6f-8724-d72f220b7422,Barbell Lunges,quads,barbell,ymove-dd57e914-d0ef-4d6f-8724-d72f220b7422.png
+bd37dd72-631e-4cfa-a830-0e39b6cb8861,0d43fa50-1c75-417d-87cd-353373322cf9,Barbell Overhead Squat,quads,barbell,ymove-0d43fa50-1c75-417d-87cd-353373322cf9.png
+7fcdc630-85ef-4dbe-ad23-364a49481dc9,53303ff9-7fd7-4f57-ad5a-343eb2387bd5,Barbell Reverse Lunge,quads,barbell,ymove-53303ff9-7fd7-4f57-ad5a-343eb2387bd5.png
+519a1e30-82d3-417e-abe0-5f5a9d83cebc,1ffaf9e8-fe94-44e8-a20b-012ea58eba46,Barbell Sumo Squat,quads,barbell,ymove-1ffaf9e8-fe94-44e8-a20b-012ea58eba46.png
+6e2bf08f-19a1-4376-bafd-6eafb198e00a,c8f3362d-fb00-481e-b428-e0b17f4ae681,Barbell Sumo Squat,quads,barbell,ymove-c8f3362d-fb00-481e-b428-e0b17f4ae681.png
+25decea4-96a4-4dd4-9c71-1ee9e653c7c9,6e9512fe-74b9-4c8a-bae2-a54361937b0e,Barbell Thruster - Straight Bar Thruster,quads,barbell,ymove-6e9512fe-74b9-4c8a-bae2-a54361937b0e.png
+b072e586-6950-49e2-b418-9b8f37d70273,ae8be22d-584f-4c34-add8-d25383ba90de,Barbell walking lunges,quads,barbell,ymove-ae8be22d-584f-4c34-add8-d25383ba90de.png
+97182619-8a87-4b66-8bd2-891666df2e5c,42ee935a-8052-4d1b-bde6-d64bb2389e57,Bodyweight Squat,quads,bodyweight,ymove-42ee935a-8052-4d1b-bde6-d64bb2389e57.png
+478d6661-0ca4-4e39-8b24-225376aedd84,f28e1faf-4677-453e-9007-8329d7a67e2d,Bodyweight Squat (air squat),quads,bodyweight,ymove-f28e1faf-4677-453e-9007-8329d7a67e2d.png
+577d4216-30bd-404b-a2d0-7ab89fdec02b,ffded4df-0bf5-4522-8c94-cf15492a8271,Box Jump,quads,box,ymove-ffded4df-0bf5-4522-8c94-cf15492a8271.png
+a6465401-67db-4e07-ba1d-ef0141b0c17c,768c2a0e-5824-42f9-8175-b296f0433c02,Box jumps,quads,box,ymove-768c2a0e-5824-42f9-8175-b296f0433c02.png
+f14fccfe-0f5e-43c9-a30d-afbdd1e2fa1b,904cda06-db9f-4bc6-8894-f30dc1c349a6,Box Squat,quads,barbell,ymove-904cda06-db9f-4bc6-8894-f30dc1c349a6.png
+4c90297f-795e-41d0-bb43-1bcb69551c53,0e19fa47-7a77-4fdf-86a0-66258725fa3d,Box Toe Tap,quads,box,ymove-0e19fa47-7a77-4fdf-86a0-66258725fa3d.png
+c6983039-08a2-4058-8902-607882dca8c3,cd6edab4-3f1e-477f-8a88-54f9c683c9de,Bulgarian split squat,quads,bodyweight,ymove-cd6edab4-3f1e-477f-8a88-54f9c683c9de.png
+f1c6bbf7-fd0f-4f6e-84ca-9beef9cef9da,74a22260-8090-40b6-a13a-4d366c0d5fd6,Bulgarian split squat - with Barbell,quads,barbell,ymove-74a22260-8090-40b6-a13a-4d366c0d5fd6.png
+c44c154c-aaf8-4bd7-a61a-3e4f155215bf,d81d953b-b29d-438a-aeee-610523bca09d,Bulgarian split squat with Dumbbell,quads,dumbbell,ymove-d81d953b-b29d-438a-aeee-610523bca09d.png
+ee3f580e-1f45-447e-bdc6-068df21a43d0,20500648-961e-4344-bb9b-c775ffc1fe71,Cable Front Kick,quads,cable,ymove-20500648-961e-4344-bb9b-c775ffc1fe71.png
+c24f48cb-c295-4c5d-bb38-36f227dc53ca,646f354b-3790-4796-bfd9-cd9df04bcc16,Cable Step-Ups,quads,cable,ymove-646f354b-3790-4796-bfd9-cd9df04bcc16.png
+1985f5c0-f5c1-44ba-8055-98cd809e930c,d749fe82-c106-48d7-9508-7ab1cb88ec1b,Chair Leg Extension,quads,chair,ymove-d749fe82-c106-48d7-9508-7ab1cb88ec1b.png
+783f6684-1210-4777-9d15-fb865aaef69a,46f8865d-24c2-4c81-a886-aa458c5653c5,Chair pose,quads,bodyweight,ymove-46f8865d-24c2-4c81-a886-aa458c5653c5.png
+dfc03e90-a5e7-4c4b-9d57-7b04d6c93aaf,85a71ed6-caf0-4b0c-aa70-0419d8f81157,Crab walk to squat,quads,bodyweight,ymove-85a71ed6-caf0-4b0c-aa70-0419d8f81157.png
+eac074ee-d7e3-413c-a374-f67bd4623bc5,10be21b8-de6f-4c33-9101-eadca351e663,Crab walks into squats,quads,bodyweight,ymove-10be21b8-de6f-4c33-9101-eadca351e663.png
+b4fe5a2c-877b-465e-b4b8-bf9998de4adf,8dcf57f2-24d8-4f4d-802c-2eacbe9d578f,Crescent lunge (left),quads,bodyweight,ymove-8dcf57f2-24d8-4f4d-802c-2eacbe9d578f.png
+b9824a33-ccdb-403d-8332-1b017fe29db0,db4a932d-2e11-4809-843e-cb3c1df4535b,Crescent lunge (right),quads,bodyweight,ymove-db4a932d-2e11-4809-843e-cb3c1df4535b.png
+e8b71817-a12c-4f2b-a8ce-1480c6a9757f,5f84b3d2-daff-4fc1-bb8c-c9524689af7d,Cuads Belt Squat Machine,quads,machine,ymove-5f84b3d2-daff-4fc1-bb8c-c9524689af7d.png
+b735837b-8996-4a6d-8919-4822a0335a7c,45c93c0a-c64e-4f27-a694-ab9fb396cd46,DOT Drill,quads,bodyweight,ymove-45c93c0a-c64e-4f27-a694-ab9fb396cd46.png
+ffcec2b5-668c-483d-9de4-cb1def7c76e1,03be228e-9483-470b-ad6c-cdf3d43f7415,Double Box Single Leg Lateral Hop,quads,box,ymove-03be228e-9483-470b-ad6c-cdf3d43f7415.png
+7c51d227-af66-4b51-9157-fe791a3e4798,b23e2608-820b-43ad-9a35-a7e0aaddfa80,Dumbbell Cossack Squat,quads,dumbbell,ymove-b23e2608-820b-43ad-9a35-a7e0aaddfa80.png
+72afd35b-e8ba-426a-aaca-7ec841a2d7a5,bbac448a-df15-415e-a391-8b1d400df2bf,Dumbbell deadlift,quads,dumbbell,ymove-bbac448a-df15-415e-a391-8b1d400df2bf.png
+9eefc9ec-96bb-489d-bfa4-3ba4f7640bd0,d8a67e85-0c9f-483d-b7fe-be049247ab1c,Dumbbell forward lunge,quads,dumbbell,ymove-d8a67e85-0c9f-483d-b7fe-be049247ab1c.png
+f127d41f-d866-46fa-af39-6da6ccd79b87,4b1bb79a-5a59-4d93-a938-62f906ba4dc2,Dumbbell Front Squat,quads,dumbbell,ymove-4b1bb79a-5a59-4d93-a938-62f906ba4dc2.png
+76112647-fcb2-484a-b8cb-4d4682d80921,dadea1de-c228-4e36-99de-db68578de515,Dumbbell glute bridge,quads,dumbbell,ymove-dadea1de-c228-4e36-99de-db68578de515.png
+9991ba43-5607-4a23-9698-427f03237912,57c55853-176e-4bad-aced-1032c63f4652,Dumbbell Lunges,quads,dumbbell,ymove-57c55853-176e-4bad-aced-1032c63f4652.png
+13d5b011-0064-44bd-9b75-31b135852aee,35b16467-8817-4c28-b84c-a1f47b1734cd,Dumbbell pistol squats,quads,dumbbell,ymove-35b16467-8817-4c28-b84c-a1f47b1734cd.png
+62f4f189-7653-4303-90bd-e1b7964c5436,ad241fc8-3d05-4ce7-a950-45380497cdc0,Dumbbell Pulse Squat,quads,dumbbell,ymove-ad241fc8-3d05-4ce7-a950-45380497cdc0.png
+4982aecc-2f8e-40fc-8a93-8e48118a73fc,9690f31a-ed99-446e-88db-2934b832f497,Dumbbell Rear Lunge,quads,dumbbell,ymove-9690f31a-ed99-446e-88db-2934b832f497.png
+0c537b94-5ebb-4a5b-94e6-add423b40af4,af494781-9fba-41df-b403-79d04db6deae,Dumbbell Side lunge,quads,dumbbell,ymove-af494781-9fba-41df-b403-79d04db6deae.png
+64a5d94a-5191-4fc3-b147-6691b65e63dc,bfce2271-bf6b-4a45-9038-5c9fa1935990,Dumbbell Side lunge (L),quads,dumbbell,ymove-bfce2271-bf6b-4a45-9038-5c9fa1935990.png
+52744405-0f28-4484-a25c-55d145ed4fbe,f8f6f9cf-6f29-4969-8665-576f8ca3a285,Dumbbell Split Squat,quads,dumbbell,ymove-f8f6f9cf-6f29-4969-8665-576f8ca3a285.png
+228c0e6c-0145-4090-a01c-7d501a49ef01,0de79ddc-e829-4543-942c-e385cc76ac5e,Dumbbell Squat,quads,dumbbell,ymove-0de79ddc-e829-4543-942c-e385cc76ac5e.png
+bad11882-6290-4319-b419-b9e6e2fec62a,1b4146bc-1c96-4f05-88cf-72a72783122d,Dumbbell Step Ups,quads,dumbbell,ymove-1b4146bc-1c96-4f05-88cf-72a72783122d.png
+a51032d6-b530-4496-a497-03659e806521,c3d00969-0a33-4a3f-b603-938c1014ca9f,Dumbbell Thruster,quads,dumbbell,ymove-c3d00969-0a33-4a3f-b603-938c1014ca9f.png
+553329c1-5dc2-4b1e-8e13-ad6dd4c4a09a,0501fca5-dd00-4948-8874-40cc851daaee,Explosive jump squats,quads,bodyweight,ymove-0501fca5-dd00-4948-8874-40cc851daaee.png
+1e2dde07-df7b-4929-ab8e-ee24824b5b0c,022ea5f2-88f3-4d42-b99d-c1026d6bc343,Explosive sprinter lunge (left),quads,bodyweight,ymove-022ea5f2-88f3-4d42-b99d-c1026d6bc343.png
+5bdb1083-e270-4fc1-bd22-754eded8b182,d5dff683-d9a5-42ca-b325-47f7275f7def,Explosive sprinter lunge (right),quads,bodyweight,ymove-d5dff683-d9a5-42ca-b325-47f7275f7def.png
+de432643-3562-45f6-b551-3f978cb09348,61ef551f-2db3-4ab9-978d-9e5712b873de,Extended side angle pose (left),quads,bodyweight,ymove-61ef551f-2db3-4ab9-978d-9e5712b873de.png
+31b5a07a-92ae-4cb4-b70c-217a851f16cf,5f8e2c01-66eb-4f23-b3ad-c87c631e257f,Extended side angle pose (right),quads,bodyweight,ymove-5f8e2c01-66eb-4f23-b3ad-c87c631e257f.png
+c041d6ea-f30e-4229-82f0-9663502178c0,b3fdc5d4-1225-4f12-8b42-86fc0617aeb6,Forward and backward lunge,quads,bodyweight,ymove-b3fdc5d4-1225-4f12-8b42-86fc0617aeb6.png
+928331e1-3384-4a55-9515-6dba3850f9b6,706ac77a-70f7-4532-a3c5-f1ce1bd2f079,Forward lunge with lateral flexion,quads,bodyweight,ymove-706ac77a-70f7-4532-a3c5-f1ce1bd2f079.png
+6f118012-b226-4a50-b8ea-3cbe5072c372,f7458e9c-56f8-4604-ba58-636ead67ffe2,Foward Lunges Bodyweight,quads,bodyweight,ymove-f7458e9c-56f8-4604-ba58-636ead67ffe2.png
+35266434-369e-4687-8861-1f24a3a9a837,e75d29c0-7af3-4e83-a351-6fff23443379,Front Barbell Squat,quads,barbell,ymove-e75d29c0-7af3-4e83-a351-6fff23443379.png
+fe791fe8-3e0f-43f1-8dcd-485606c0ca44,6cecf804-dcf6-484b-8e1d-57e0d152bbb7,Cable Crunch kneeling,rectus_abdominis,cable,ymove-6cecf804-dcf6-484b-8e1d-57e0d152bbb7.png
+4201f92b-c55e-4209-965c-252011b2781b,f1501452-252e-48ee-ae83-d52b567771b8,Alternating Dumbbell Snatch,shoulders,dumbbell,ymove-f1501452-252e-48ee-ae83-d52b567771b8.png
+005826f4-a8d7-43ed-8ba4-6d3def339716,5ba69aaa-7f7a-4564-940e-c6fb7da55c26,Arm swings,shoulders,bodyweight,ymove-5ba69aaa-7f7a-4564-940e-c6fb7da55c26.png
+c705c9a5-c43d-4b41-8df0-ea403f22efcc,069c1e6b-05f4-4390-a1c7-9b740e0bec4a,Barbell Front Raise,shoulders,barbell,ymove-069c1e6b-05f4-4390-a1c7-9b740e0bec4a.png
+25420680-74ae-4e14-a37a-9df38dc6472f,c0bd82fb-5ad6-4390-a060-dd46c1a6bea2,Barbell Overhead Press,shoulders,barbell,ymove-c0bd82fb-5ad6-4390-a060-dd46c1a6bea2.png
+d9a8c776-8879-4850-9606-17a22c3cfabb,f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc,Barbell Push Press,shoulders,barbell,ymove-f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc.png
+4f405704-5e16-45ba-b7be-09c547ec86db,4e4377e1-ab91-4015-84ac-27b3274b549f,Barbell Shoulder Press -  Barbell Overhead Press - Barbell Military Press,shoulders,barbell,ymove-4e4377e1-ab91-4015-84ac-27b3274b549f.png
+1b8316a9-c822-45d3-8663-dc4b5aec86cb,a363775e-2aa5-49cb-ac17-7aa137d5d47b,Barbell Shrug,shoulders,barbell,ymove-a363775e-2aa5-49cb-ac17-7aa137d5d47b.png
+e74f7a34-abe9-424d-ac93-45aafe56cbe1,051a5802-da89-415d-a912-93162c89a4bf,Behind the Neck Shoulder Press Machine,shoulders,machine,ymove-051a5802-da89-415d-a912-93162c89a4bf.png
+35f0d220-1e6f-40c8-afca-f0adbe19e5ac,de70b78c-7dec-4a91-acc7-d75ae27eb765,Bent Over Dumbbell Rear Delt Raise,shoulders,dumbbell,ymove-de70b78c-7dec-4a91-acc7-d75ae27eb765.png
+61bd94f9-116f-4dae-8f93-6baf7ce9f64c,7ab0bece-90eb-45f1-9b22-3fd86c376aa1,Bent Over Dumbbell Reverse Fly,shoulders,dumbbell,ymove-7ab0bece-90eb-45f1-9b22-3fd86c376aa1.png
+e024338a-c6c0-4127-ab7b-7838d97616d2,9871678b-11f9-4670-8135-ca27079d54b8,Cable External Rotation,shoulders,cable,ymove-9871678b-11f9-4670-8135-ca27079d54b8.png
+f4f7c4ed-b5bf-40d6-8448-0a60cb3ea864,697ec8a9-34fe-419e-a1b8-825456a3b335,Cable Front Raise,shoulders,cable,ymove-697ec8a9-34fe-419e-a1b8-825456a3b335.png
+d94cf5b6-c897-4f08-8840-6b3b83771b25,ef8cf0d4-b04a-40f7-a46d-4dfcd5934e17,Cable Internal Rotation,shoulders,cable,ymove-ef8cf0d4-b04a-40f7-a46d-4dfcd5934e17.png
+f15bee0f-60f1-45f9-8fdb-bcf582871263,a6a9ea7b-c868-4924-842a-9c3232698c3b,Cable Lateral Raise,shoulders,cable,ymove-a6a9ea7b-c868-4924-842a-9c3232698c3b.png
+00c3cadf-9196-4475-b420-682ee6388b17,d237c00f-e6f3-44f0-953b-5db4c970f873,Cable Rear Delt Fly,shoulders,cable,ymove-d237c00f-e6f3-44f0-953b-5db4c970f873.png
+69406ca5-ead5-4c41-9843-2784c01551c8,7665b7ae-4cea-4591-bafe-e73cdaa5beac,Cable Rope Face Pull,shoulders,cable,ymove-7665b7ae-4cea-4591-bafe-e73cdaa5beac.png
+d9996a07-9b83-4811-b2c9-a301c2932fd4,56c25b1f-91f4-4fd1-99b9-89e4da81ecdc,Cable Upright Row,shoulders,machine,ymove-56c25b1f-91f4-4fd1-99b9-89e4da81ecdc.png
+7615a784-865a-4b29-a33a-a6ac25659729,513d039d-e6d0-459e-9ae7-4847a586871b,Cow face pose (left),shoulders,bodyweight,ymove-513d039d-e6d0-459e-9ae7-4847a586871b.png
+5295d6db-6d3e-44fc-8ad3-20920a9693c2,4d433881-e521-45e3-a36e-8672953714c0,Cow face pose (right),shoulders,bodyweight,ymove-4d433881-e521-45e3-a36e-8672953714c0.png
+41bcc417-5b10-4e59-abb7-db95a3e3721b,b3d44ba8-5fdd-4a7e-ace2-1b12d5901b0b,Cuban Press,shoulders,dumbbell,ymove-b3d44ba8-5fdd-4a7e-ace2-1b12d5901b0b.png
+d71a3d9e-5b6f-488b-91d6-de498f91ad0b,8ab9416a-f74f-4840-8fb3-f0a58ff0a370,Dual Cable Lateral Raise,shoulders,cable,ymove-8ab9416a-f74f-4840-8fb3-f0a58ff0a370.png
+183c7c2d-c373-4734-8c80-54b54d862649,383d7e55-3ec7-4908-8298-96bc42aeebe9,Dumbbell Arnold Press,shoulders,dumbbell,ymove-383d7e55-3ec7-4908-8298-96bc42aeebe9.png
+1a645e43-03ac-419d-a448-d4130e6e063e,3e668a4f-2aac-42ae-b8db-58fc179d20d2,Dumbbell Front Raise,shoulders,dumbbell,ymove-3e668a4f-2aac-42ae-b8db-58fc179d20d2.png
+27b3f127-22a7-4d64-88bd-d2d225a3d72f,f181cc8e-9816-4205-b025-3b23cb30720b,Dumbbell Lying Rear Lateral Raise,shoulders,dumbbell,ymove-f181cc8e-9816-4205-b025-3b23cb30720b.png
+68f06d1a-5891-4f9e-ae47-88a51f550472,fa0fd12d-1fd4-448f-9e21-ceda7b8f18eb,Dumbbell Lying Rear Lateral Raise - One arm,shoulders,dumbbell,ymove-fa0fd12d-1fd4-448f-9e21-ceda7b8f18eb.png
+b7f0dbda-5bcf-44f2-a6f1-8f8181b6b47a,af545111-e56a-4731-ba48-2d4ce750bc8e,Dumbbell One-Arm Shoulder Press (L),shoulders,dumbbell,ymove-af545111-e56a-4731-ba48-2d4ce750bc8e.png
+4e9a646f-3f21-4e4c-b8db-4b775d8d3d27,e8aacdde-8fce-438b-878b-3af1a611f2be,Dumbbell One-Arm Shoulder Press (R),shoulders,dumbbell,ymove-e8aacdde-8fce-438b-878b-3af1a611f2be.png
+d24d94ea-6a02-41da-ad63-01d07008466a,4903985f-2091-4fb3-bd33-c15175018e34,Dumbbell Overhead Press,shoulders,dumbbell,ymove-4903985f-2091-4fb3-bd33-c15175018e34.png
+13cf9e1b-4dc1-4374-a586-195de83cc1c5,10cb9f36-2a7d-4968-8674-812122ff729f,Dumbbell push jerks,shoulders,dumbbell,ymove-10cb9f36-2a7d-4968-8674-812122ff729f.png
+c0d6c68a-8e6b-492b-ae67-3aa4ce0adb00,19738fb2-3ae8-4f3d-b683-c1dbb31754a8,Dumbbell Push Press,shoulders,dumbbell,ymove-19738fb2-3ae8-4f3d-b683-c1dbb31754a8.png
+78248ace-6495-4525-b8ae-fc560575d5a5,d4210b5a-f583-4039-8566-ed5a20e46eab,Dumbbell Scaption,shoulders,dumbbell,ymove-d4210b5a-f583-4039-8566-ed5a20e46eab.png
+da1b120e-c5a9-4434-9530-a52ce1f1f697,d6c2798d-a077-41b9-9769-d5bd1a57caaa,Dumbbell Shoulder Press,shoulders,dumbbell,ymove-d6c2798d-a077-41b9-9769-d5bd1a57caaa.png
+fdb28b09-a948-4b24-8ac1-666c9de45e4e,0af648a1-1d2e-438b-b687-b522c9eaa8bd,Dumbbell shoulder punches,shoulders,dumbbell,ymove-0af648a1-1d2e-438b-b687-b522c9eaa8bd.png
+0fe7c5ef-f260-4a6d-9a44-38d86e3e958e,585a0ee4-7ade-4701-9e6b-098955d495fe,Dumbbell Upright Row,shoulders,dumbbell,ymove-585a0ee4-7ade-4701-9e6b-098955d495fe.png
+c31dec83-a8e7-475a-a00c-c706802a851c,d0a73aa8-dc45-49dd-951d-de4825a74ada,Barbell Skull Crushers,triceps,barbell,ymove-d0a73aa8-dc45-49dd-951d-de4825a74ada.png
+96679980-4d8b-47f0-a6d3-33ed69957bf0,48b2c98e-b82f-49aa-b847-b871a69e1b95,Bench Dips,triceps,bodyweight,ymove-48b2c98e-b82f-49aa-b847-b871a69e1b95.png
+ad3dadf7-877a-434b-ab43-d97a41068251,c7c76fa8-908a-4ee0-977c-35f12057676d,Bent over Dumbbell Tricep Extension,triceps,dumbbell,ymove-c7c76fa8-908a-4ee0-977c-35f12057676d.png
+da0f9565-fe4e-485f-8acd-6d7fba9860ff,33869887-32ab-4c66-b033-3bef9e5de372,Bodyweight Triceps Extension (with bar),triceps,bodyweight,ymove-33869887-32ab-4c66-b033-3bef9e5de372.png
+d1ff496f-80d4-4a4c-b536-d4110130afdb,b35c3787-5974-4cca-b3d5-c28f7efa1472,Cable Rope Tricep Pushdown,triceps,cable,ymove-b35c3787-5974-4cca-b3d5-c28f7efa1472.png
+86c37f52-7230-4e81-b87f-cd6cd2be71a6,ab522399-6b5e-4a37-aa7a-47d2ec862631,Cable Tricep Pushdown,triceps,cable,ymove-ab522399-6b5e-4a37-aa7a-47d2ec862631.png
+0b97de85-7d9b-4c9c-ad86-6e8802e55c1f,207924a2-ae75-4371-be43-49c3cc62b4e1,Cable Tricep Pushdown,triceps,cable,ymove-207924a2-ae75-4371-be43-49c3cc62b4e1.png
+01d82cfc-0c3f-465d-a6bd-61aaeb684e9f,705b3080-cf01-42f4-be0f-ea9e3f83599f,Close Grip Bench Barbell,triceps,barbell,ymove-705b3080-cf01-42f4-be0f-ea9e3f83599f.png
+a2fc0621-652f-4ec8-8f9d-91a2a080ed09,0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1,Dumbbell Overhead Tricep Extension,triceps,dumbbell,ymove-0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1.png
+ba7897c7-d40b-4694-80fd-35f6ceb96181,900d036e-2a57-4d16-b6b5-c58c2f96dd62,Dumbbell Overhead Tricep Extension - Single arm,triceps,dumbbell,ymove-900d036e-2a57-4d16-b6b5-c58c2f96dd62.png
+19e3fd0f-3b8d-450a-b852-46e669fe5793,14a3a8fe-dc12-4c4b-865b-d5e0514c54d4,Dumbbell Skull Crushers,triceps,dumbbell,ymove-14a3a8fe-dc12-4c4b-865b-d5e0514c54d4.png
+9710d1cc-d1a2-4b38-9f2b-ef3abf0b4e44,f1c43226-fa20-4c2e-af66-0cd680f937df,Dumbbell Tricep Kickback,triceps,dumbbell,ymove-f1c43226-fa20-4c2e-af66-0cd680f937df.png
+94f9eb94-407b-4473-9a61-236469aea7b3,9eb19f30-37d0-4aca-9e2d-c90a65f7b07b,Dumbbell Bench Press incline,upper_chest,dumbbell,ymove-9eb19f30-37d0-4aca-9e2d-c90a65f7b07b.png
+71f9ffc3-414a-4c0d-9507-511b4753ea01,4581a423-5d2d-4cf1-89a0-fea026ef116d,Dumbbell Fly incline,upper_chest,dumbbell,ymove-4581a423-5d2d-4cf1-89a0-fea026ef116d.png
