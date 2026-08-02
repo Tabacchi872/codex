@@ -11,22 +11,23 @@
 //   deve consumare il limite mensile dei video) — solo coach/superadmin.
 // - 'detail': un singolo esercizio con video/thumbnail/istruzioni — sempre
 //   permesso a coach/superadmin (serve anche per l'anteprima PRIMA di
-//   importare); un cliente deve avere un coach reale collegato
-//   (coach_clients, status active/invited) E che quell'id YMove sia
-//   raggiungibile da QUEL coach in almeno uno dei due modi (2026-07-13,
-//   corretto): (a) esercizio importato in FitCoach (public.exercises,
-//   source='ymove' — condiviso globalmente tra coach, nessuno scoping
-//   aggiuntivo necessario), oppure (b) collegato come video di un esercizio
-//   locale storico/custom del PROPRIO coach (exercise_videos.ymove_exercise_
-//   id, mai di un coach diverso). Prima veniva controllato solo il caso (a):
-//   un video collegato solo tramite (b) faceva rispondere 'forbidden' al
-//   cliente anche quando il coach lo vedeva regolarmente (bug segnalato
-//   dall'utente: placeholder con la lettera lato cliente). Vedi
-//   docs/YMOVE_INTEGRATION.md per il limite architetturale onesto residuo:
-//   non esiste oggi un modo di verificare qui "e' davvero nella scheda di
-//   QUESTO cliente", perche' le schede vivono solo lato app (AsyncStorage),
-//   mai su Supabase — questo resta il controllo piu' forte possibile con i
-//   dati reali disponibili lato server oggi.
+//   importare); un cliente e' autorizzato SOLO se quell'id YMove appartiene
+//   davvero a un esercizio presente in uno dei suoi workout_day_exercises
+//   reali (2026-08-02, sostituisce il precedente requisito fisso di un
+//   coach_clients attivo — vedi clientOwnsYmoveExercise sotto per i dettagli:
+//   stessa relazione client_id/coach_id gia' fidata dalla RLS
+//   workout_day_exercises_client_read/workout_days_client_read, valida sia
+//   per piani self_guided — coach_id null, motore automatico, nessun coach
+//   necessario — sia per piani coach_guided — richiede un coach_clients
+//   attivo per QUEL coach). Prima un cliente self_guided (senza alcun coach)
+//   riceveva SEMPRE 'forbidden' — "Nessun coach collegato a questo
+//   account." — anche per un esercizio realmente nel proprio programma
+//   generato dal motore automatico (bug segnalato dall'utente: video visibile
+//   al coach, "Video non disponibile" al cliente self_guided). Per un piano
+//   self_guided viene richiesto anche Client Pro attivo ORA (stessa
+//   entitlement di assign_initial_auto_program()/run_cycle_review()): la
+//   verifica ownership da sola non copre il caso di un abbonamento scaduto,
+//   perche' i dati del programma restano leggibili anche dopo la scadenza.
 // - 'translate' (2026-07-13, provider Azure Translator; esteso 2026-07-13
 //   continuazione per l'associazione automatica dei video YMove): due formati
 //   riconosciuti in body.texts, sempre solo coach/superadmin —
@@ -430,6 +431,161 @@ function ymoveErrorResponse(result: { status: number; body: unknown }): Response
   );
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Rimuove il prefisso "legacy:" (solo lato costanti/UI superadmin), stessa
+// normalizzazione di normalizeLegacyKey in mobile/src/lib/exercise-video-
+// service.ts e normalizeLegacyExerciseKey in ymove-library-import/index.ts.
+function normalizeLegacyKey(value: string): string {
+  return value.startsWith('legacy:') ? value.slice('legacy:'.length) : value;
+}
+
+// Cliente puo' vedere il DETAIL/video YMove di ymoveId SOLO se quell'esercizio
+// e' realmente presente in un workout_day_exercises di un piano che gli
+// appartiene DAVVERO (2026-08-02, sostituisce il vecchio controllo basato solo
+// su coach_clients — vedi commento sopra il chiamante). "Appartiene davvero" e'
+// la STESSA relazione gia' fidata dalla RLS workout_day_exercises_client_read/
+// workout_days_client_read (auto_program_schema_core.sql): workout_plans.
+// client_id = auth.uid() (mai un id passato dal frontend, sempre callerId
+// risolto dal JWT), e workout_plans.coach_id e' NULL (piano self_guided, motore
+// automatico — nessun coach necessario) OPPURE esiste un coach_clients con
+// status active/invited per QUEL coach specifico (piano coach_guided). Un
+// esercizio nel workout puo' essere referenziato in forma UUID
+// (workout_day_exercises.exercise_id = public.exercises.id::text, esercizio
+// YMove importato/condiviso globalmente) oppure chiave locale testuale
+// (esercizio storico/custom del coach, con un video YMove collegato via
+// exercise_external_links — link globale approvato — o via exercise_videos —
+// collegamento del PROPRIO coach, mai di un coach diverso).
+//
+// self_guided (coach_id null): oltre all'ownership, richiede anche Client Pro
+// attivo ORA — stessa entitlement gia' verificata da assign_initial_auto_
+// program()/run_cycle_review() per l'intero sistema "programmi automatici"
+// (public._has_active_client_pro_entitlement, replicata qui in query dirette
+// sulle stesse tabelle invece che via RPC, per non dipendere da un GRANT
+// EXECUTE non garantito al service_role): l'accesso normale alla scheda e' gia'
+// bloccato lato app se l'abbonamento scade (auth-gate.tsx), ma questa Edge
+// Function e' raggiungibile anche a gate app bypassato — senza questo
+// controllo un cliente self_guided con abbonamento scaduto potrebbe comunque
+// continuare a consumare il limite mensile YMove chiamando 'detail'
+// direttamente. Nessun controllo simile per coach_guided: la sua scheda non e'
+// mai stata gated su Client Pro, comportamento invariato.
+async function clientOwnsYmoveExercise(
+  // deno-lint-ignore no-explicit-any
+  supabaseAdmin: any,
+  callerId: string,
+  ymoveId: string,
+): Promise<boolean> {
+  const { data: coachLinkRow } = await supabaseAdmin
+    .from('coach_clients')
+    .select('coach_id')
+    .eq('client_id', callerId)
+    .in('status', ['active', 'invited'])
+    .maybeSingle();
+  const myActiveCoachId: string | null = coachLinkRow?.coach_id ?? null;
+
+  const { data: myPlans } = await supabaseAdmin.from('workout_plans').select('id, coach_id').eq('client_id', callerId);
+  const eligiblePlans = ((myPlans ?? []) as { id: string; coach_id: string | null }[]).filter(
+    (p) => p.coach_id === null || p.coach_id === myActiveCoachId,
+  );
+  if (eligiblePlans.length === 0) return false;
+
+  const { data: days } = await supabaseAdmin
+    .from('workout_days')
+    .select('id')
+    .in(
+      'workout_plan_id',
+      eligiblePlans.map((p) => p.id),
+    );
+  const dayIds = ((days ?? []) as { id: string }[]).map((d) => d.id);
+  if (dayIds.length === 0) return false;
+
+  const { data: exerciseRows } = await supabaseAdmin.from('workout_day_exercises').select('exercise_id').in('workout_day_id', dayIds);
+  const ownedExerciseIds = Array.from(
+    new Set(((exerciseRows ?? []) as { exercise_id: string }[]).map((r) => r.exercise_id).filter(Boolean)),
+  );
+  if (ownedExerciseIds.length === 0) return false;
+
+  const ownedUuidIds = ownedExerciseIds.filter((id) => UUID_RE.test(id));
+  const ownedLegacyKeys = Array.from(new Set(ownedExerciseIds.map(normalizeLegacyKey)));
+
+  const [{ data: importedMatch }, { data: legacyLinkMatch }] = await Promise.all([
+    ownedUuidIds.length > 0
+      ? supabaseAdmin
+          .from('exercises')
+          .select('id')
+          .eq('ymove_exercise_id', ymoveId)
+          .eq('source', 'ymove')
+          .eq('active', true)
+          .in('id', ownedUuidIds)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabaseAdmin
+      .from('exercise_external_links')
+      .select('exercise_key')
+      .eq('provider', 'ymove')
+      .eq('match_status', 'manual_approved')
+      .eq('is_primary', true)
+      .eq('external_exercise_id', ymoveId)
+      .in('exercise_key', ownedLegacyKeys)
+      .maybeSingle(),
+  ]);
+  if (importedMatch || legacyLinkMatch) {
+    return await hasEntitlementIfSelfGuided(supabaseAdmin, callerId, eligiblePlans);
+  }
+
+  if (myActiveCoachId) {
+    const { data: coachVideoMatch } = await supabaseAdmin
+      .from('exercise_videos')
+      .select('exercise_id')
+      .eq('coach_id', myActiveCoachId)
+      .eq('ymove_exercise_id', ymoveId)
+      .in('exercise_id', ownedLegacyKeys)
+      .maybeSingle();
+    if (coachVideoMatch) return true; // sempre coach_guided (myActiveCoachId valorizzato): nessun gate entitlement.
+  }
+
+  return false;
+}
+
+// Se il match e' avvenuto su un piano self_guided (coach_id null), richiede
+// anche Client Pro attivo ORA — vedi commento sopra clientOwnsYmoveExercise.
+// Se il match e' avvenuto solo su piani coach_guided, nessun gate aggiuntivo.
+async function hasEntitlementIfSelfGuided(
+  // deno-lint-ignore no-explicit-any
+  supabaseAdmin: any,
+  callerId: string,
+  eligiblePlans: { id: string; coach_id: string | null }[],
+): Promise<boolean> {
+  const hasSelfGuidedPlan = eligiblePlans.some((p) => p.coach_id === null);
+  if (!hasSelfGuidedPlan) return true;
+
+  // Due query separate (mai un join embedded via !inner, per non dipendere da
+  // una sintassi meno comune non verificabile senza un deploy reale): stessa
+  // lettura fatta da public._has_active_client_pro_entitlement, replicata qui
+  // sulle stesse tabelle invece che via RPC (vedi commento sopra).
+  const { data: activeSubs } = await supabaseAdmin
+    .from('user_subscriptions')
+    .select('package_id, expires_at')
+    .eq('user_id', callerId)
+    .eq('status', 'active')
+    .eq('payment_provider', 'revenuecat');
+  const subs = (activeSubs ?? []) as { package_id: string; expires_at: string | null }[];
+  const notExpired = subs.filter((row) => !row.expires_at || new Date(row.expires_at) > new Date());
+  if (notExpired.length === 0) return false;
+
+  const { data: packages } = await supabaseAdmin
+    .from('subscription_packages')
+    .select('id')
+    .in(
+      'id',
+      notExpired.map((row) => row.package_id),
+    )
+    .eq('target_role', 'client')
+    .eq('revenuecat_entitlement_id', 'client_pro');
+
+  return ((packages ?? []) as { id: string }[]).length > 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -511,37 +667,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (role === 'cliente') {
-      const { data: link } = await supabaseAdmin
-        .from('coach_clients')
-        .select('coach_id')
-        .eq('client_id', callerId)
-        .in('status', ['active', 'invited'])
-        .maybeSingle();
-      if (!link) {
-        return json({ ok: false, code: 'forbidden', message: 'Nessun coach collegato a questo account.' }, 403);
-      }
-
-      // Un cliente puo' vedere questo video YMove se e' successa ALMENO una
-      // delle due cose (2026-07-13, corretto): (a) l'esercizio YMove e' stato
-      // importato in FitCoach come esercizio condiviso (public.exercises,
-      // source='ymove' — globale, non serve scoping per coach), OPPURE (b) il
-      // PROPRIO coach (mai un altro) ha collegato lo stesso video a un
-      // esercizio locale storico o custom tramite exercise_videos. Prima
-      // veniva controllato solo il caso (a): un video collegato via (b) senza
-      // mai essere stato importato come riga 'exercises' faceva rispondere
-      // 'forbidden' anche al cliente del coach che lo aveva collegato — bug
-      // segnalato dall'utente (placeholder con la lettera lato cliente pur
-      // con il video visibile lato coach).
-      const [{ data: importedExercise }, { data: coachLink }] = await Promise.all([
-        supabaseAdmin.from('exercises').select('id').eq('ymove_exercise_id', ymoveId).eq('source', 'ymove').maybeSingle(),
-        supabaseAdmin
-          .from('exercise_videos')
-          .select('id')
-          .eq('coach_id', link.coach_id)
-          .eq('ymove_exercise_id', ymoveId)
-          .maybeSingle(),
-      ]);
-      if (!importedExercise && !coachLink) {
+      const authorized = await clientOwnsYmoveExercise(supabaseAdmin, callerId, ymoveId);
+      if (!authorized) {
         return json({ ok: false, code: 'forbidden', message: 'Questo video non e\' disponibile per il tuo account.' }, 403);
       }
     } else if (role !== 'coach' && role !== 'superadmin') {
