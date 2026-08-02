@@ -125,6 +125,59 @@ export async function getFitCoachExerciseById(id: string): Promise<FitCoachExerc
   };
 }
 
+// Risoluzione BATCH per id (2026-08-01, fix flash UUID in Scheda modello):
+// dato un elenco di id eterogenei (possono essere anche id dei 44 esercizi
+// locali storici o chiavi legacy — questa funzione li ignora silenziosamente,
+// il chiamante e' responsabile di escluderli prima se vuole risparmiare la
+// query), risolve TUTTI gli esercizi Supabase in UNA query (+ una seconda
+// query batch per le personalizzazioni testo per-coach, stesso comportamento
+// gia' esistente di getFitCoachExerciseById sopra, mai una query per
+// esercizio). RLS scopa automaticamente exercise_text_overrides al coach
+// corrente, esattamente come nella funzione singola sopra — nessun coachId
+// da passare esplicitamente.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getFitCoachExercisesByIds(ids: string[]): Promise<FitCoachExerciseServiceResult<Record<string, Exercise>>> {
+  if (!supabaseConfig.isConfigured || !supabase) return notConfigured();
+
+  // exercises.id e' uuid (docs/SUPABASE_SCHEMA.sql): workout_template_exercises.exercise_id
+  // e' invece testo libero e puo' contenere anche chiavi legacy non-UUID
+  // (esercizi storici locali). Un solo valore non-UUID dentro .in('id', ...)
+  // farebbe fallire l'intera query batch (errore Postgres "invalid input
+  // syntax for type uuid") — le si esclude prima, dato che comunque non
+  // potrebbero mai combaciare con questa colonna.
+  const uniqueIds = [...new Set(ids)].filter((id) => UUID_PATTERN.test(id));
+  if (uniqueIds.length === 0) return { ok: true, data: {} };
+
+  const { data, error } = await supabase.from('exercises').select(SELECT_COLUMNS).in('id', uniqueIds);
+  if (error) {
+    return { ok: false, code: 'db_error', message: `Errore lettura esercizi (batch): ${error.message}` };
+  }
+
+  const result: Record<string, Exercise> = {};
+  for (const row of (data ?? []) as ExerciseRow[]) {
+    result[row.id] = mapRow(row);
+  }
+
+  const { data: overrideRows } = await supabase
+    .from('exercise_text_overrides')
+    .select('exercise_id,name,description,technical_notes')
+    .in('exercise_id', uniqueIds);
+
+  for (const overrideRow of (overrideRows ?? []) as (TextOverrideRow & { exercise_id: string })[]) {
+    const base = result[overrideRow.exercise_id];
+    if (!base) continue;
+    result[overrideRow.exercise_id] = {
+      ...base,
+      name: overrideRow.name,
+      description: overrideRow.description ?? '',
+      technicalNotes: overrideRow.technical_notes ?? '',
+    };
+  }
+
+  return { ok: true, data: result };
+}
+
 // Elenca tutti gli esercizi 'custom' del coach autenticato (2026-07-13, per
 // l'associazione automatica dei video YMove, ymove-auto-link-service.ts):
 // oggi non esiste ancora una schermata che li crea (solo lo schema/RLS lo

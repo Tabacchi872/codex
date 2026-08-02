@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Dumbbell } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,9 +12,9 @@ import { ThemedText } from '@/components/themed-text';
 import { AppBadge, AppButton, AppCard, AppPressableCard, BackHeader } from '@/components/ui';
 import { WorkoutTemplateForm } from '@/components/workout-template-form';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { useTheme } from '@/hooks/use-theme';
 import { clientFullName } from '@/lib/client-helpers';
+import { ensureExerciseMetadataLoaded, getCachedExerciseMetadata } from '@/lib/exercise-metadata-cache';
 import { supabaseConfig } from '@/lib/supabase';
 import {
   assignWorkoutTemplateToClient,
@@ -56,7 +56,6 @@ export default function ModelloDettaglioScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { resolve: resolveExercise } = useExerciseResolver();
   const isCoach = useAuthStore((s) => s.currentRole !== 'cliente');
   const clients = useClientStore((s) => s.clients);
   const addWorkoutPlan = useTrainingStore((s) => s.addWorkoutPlan);
@@ -73,6 +72,41 @@ export default function ModelloDettaglioScreen() {
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignError, setAssignError] = useState('');
   const [assignedConfirmation, setAssignedConfirmation] = useState<{ clientId: string; clientName: string; dayCount: number } | null>(null);
+
+  // Fix flash UUID (2026-08-01): l'id di ogni esercizio del template e'
+  // sempre noto per intero non appena il template e' caricato, quindi
+  // raccogliamo qui TUTTI gli exercise_id univoci e li risolviamo con UNA
+  // query batch (exercise-metadata-cache.ts) invece che uno alla volta nel
+  // render. metadataStatus distingue tre casi (mai solo "pronto/non pronto"):
+  // 'loading' (batch in corso, skeleton), 'ok' (batch riuscito — un id ancora
+  // assente e' davvero irrisolvibile, mai mostrato come UUID), 'error' (query
+  // fallita per rete/DB — NON equivale a "esercizio inesistente", mostra un
+  // errore con "Riprova" invece di "Esercizio non disponibile"). La cache e'
+  // di modulo: tornando su questa schermata con gli stessi id gia' risolti,
+  // il fetch si risolve senza rete.
+  const exerciseIdsKey = useMemo(() => {
+    if (!template) return '';
+    const ids = new Set<string>();
+    template.days.forEach((day) => day.exercises.forEach((te) => ids.add(te.exerciseId)));
+    return [...ids].sort().join('|');
+  }, [template]);
+  const [metadataStatus, setMetadataStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [metadataRetryTick, setMetadataRetryTick] = useState(0);
+
+  useEffect(() => {
+    if (!exerciseIdsKey) {
+      setMetadataStatus('ok');
+      return;
+    }
+    let cancelled = false;
+    setMetadataStatus('loading');
+    ensureExerciseMetadataLoaded(exerciseIdsKey.split('|')).then((status) => {
+      if (!cancelled) setMetadataStatus(status);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [exerciseIdsKey, metadataRetryTick]);
 
   const load = useCallback(async () => {
     if (!supabaseConfig.isConfigured) {
@@ -304,13 +338,69 @@ export default function ModelloDettaglioScreen() {
                   ) : null}
                 </View>
                 {day.exercises.map((te) => {
-                  const exercise = resolveExercise(te.exerciseId);
-                  const exerciseName = exercise?.name ?? te.exerciseId;
+                  const exercise = getCachedExerciseMetadata(te.exerciseId);
+
+                  if (!exercise && metadataStatus === 'loading') {
+                    return <ExerciseRowSkeleton key={te.id} placeholderColor={theme.backgroundElement} />;
+                  }
+
+                  const setsSummary = `${te.sets} serie · ${te.repsMin && te.repsMax ? `${te.repsMin}-${te.repsMax} rip.` : `${te.reps} rip.`} · recupero ${te.restSeconds}s${te.rpeRir ? ` · ${te.rpeRir}` : ''}${te.notes ? ` · ${te.notes}` : ''}`;
+
+                  if (!exercise && metadataStatus === 'error') {
+                    // Query fallita (rete/DB): NON equivale a "esercizio
+                    // inesistente" — mai "Esercizio non disponibile" qui,
+                    // solo un errore con possibilita' di riprovare.
+                    return (
+                      <View key={te.id} style={styles.exerciseRow}>
+                        <View style={[styles.exercisePlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                          <Dumbbell size={20} color={theme.textSecondary} />
+                        </View>
+                        <View style={styles.exerciseCopy}>
+                          <ThemedText type="smallBold" themeColor="statusExpired" numberOfLines={2}>
+                            Errore di caricamento
+                          </ThemedText>
+                          <Pressable
+                            onPress={() => setMetadataRetryTick((t) => t + 1)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Riprova a caricare gli esercizi">
+                            <ThemedText type="small" themeColor="primary">
+                              Riprova
+                            </ThemedText>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  if (!exercise) {
+                    // Batch completato con successo ma id non risolvibile in
+                    // nessun catalogo: mai mostrare la UUID/chiave grezza in
+                    // UI, solo un log interno per la diagnosi.
+                    if (__DEV__) {
+                      console.warn('EXERCISE_UNRESOLVED_IN_TEMPLATE', { templateId: template?.id, exerciseId: te.exerciseId });
+                    }
+                    return (
+                      <View key={te.id} style={styles.exerciseRow}>
+                        <View style={[styles.exercisePlaceholder, { backgroundColor: theme.backgroundElement }]}>
+                          <Dumbbell size={20} color={theme.textSecondary} />
+                        </View>
+                        <View style={styles.exerciseCopy}>
+                          <ThemedText type="smallBold" themeColor="textSecondary" numberOfLines={2}>
+                            Esercizio non disponibile
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                            {setsSummary}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    );
+                  }
+
                   return (
                     <AppPressableCard
                       key={te.id}
                       style={styles.exerciseRow}
-                      accessibilityLabel={`Apri dettaglio esercizio ${exerciseName}`}
+                      accessibilityLabel={`Apri dettaglio esercizio ${exercise.name}`}
                       // Stesso identificatore (te.exerciseId, UUID o chiave
                       // legacy indifferentemente) e stessa route gia' usate da
                       // WorkoutTemplateForm.onOpenDetails (modalita' modifica
@@ -319,21 +409,13 @@ export default function ModelloDettaglioScreen() {
                       // sessione reale, esercizi/[id].tsx apre correttamente la
                       // vista libreria generica quando planId e' assente.
                       onPress={() => router.push({ pathname: '/esercizi/[id]', params: { id: te.exerciseId } })}>
-                      {exercise ? (
-                        <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={52} />
-                      ) : (
-                        <View style={[styles.exercisePlaceholder, { backgroundColor: theme.backgroundElement }]}>
-                          <Dumbbell size={20} color={theme.textSecondary} />
-                        </View>
-                      )}
+                      <ExerciseThumbnail exercise={exercise} exerciseId={exercise.id} size={52} />
                       <View style={styles.exerciseCopy}>
                         <ThemedText type="smallBold" numberOfLines={2}>
-                          {exerciseName}
+                          {exercise.name}
                         </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                          {te.sets} serie · {te.repsMin && te.repsMax ? `${te.repsMin}-${te.repsMax} rip.` : `${te.reps} rip.`} · recupero {te.restSeconds}s
-                          {te.rpeRir ? ` · ${te.rpeRir}` : ''}
-                          {te.notes ? ` · ${te.notes}` : ''}
+                          {setsSummary}
                         </ThemedText>
                       </View>
                     </AppPressableCard>
@@ -463,6 +545,22 @@ export default function ModelloDettaglioScreen() {
   );
 }
 
+// Placeholder mostrato SOLO mentre il batch metadati e' ancora in corso
+// (mai un id/UUID grezzo, mai uno spinner per riga): stessa geometria della
+// card esercizio reale (thumbnail 52x52 + due barre di testo) per evitare
+// salti di layout quando i dati arrivano.
+function ExerciseRowSkeleton({ placeholderColor }: { placeholderColor: string }) {
+  return (
+    <View style={styles.exerciseRow}>
+      <View style={[styles.exercisePlaceholder, { backgroundColor: placeholderColor }]} />
+      <View style={styles.exerciseCopy}>
+        <View style={[styles.skeletonBar, styles.skeletonBarTitle, { backgroundColor: placeholderColor }]} />
+        <View style={[styles.skeletonBar, styles.skeletonBarSubtitle, { backgroundColor: placeholderColor }]} />
+      </View>
+    </View>
+  );
+}
+
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.metaItem}>
@@ -536,6 +634,17 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  skeletonBar: {
+    borderRadius: 6,
+    height: 12,
+  },
+  skeletonBarTitle: {
+    width: '55%',
+    marginBottom: 6,
+  },
+  skeletonBarSubtitle: {
+    width: '85%',
   },
   actionsGrid: {
     flexDirection: 'row',
