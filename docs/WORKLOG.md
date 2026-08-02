@@ -1306,3 +1306,23 @@ Il report della sessione precedente dichiarava "6 commit" elencandone 5 hash (`0
 - **8) `db push --dry-run` ri-eseguito** (dopo l'edit del punto 2): esattamente e solo i 2 file attesi. `git diff --check` pulito.
 - **Non fatto**: nessuna migration applicata, nessuna scrittura, nessuna chiamata YMove, nessun commit/push/deploy.
 - **Riferimenti collegati:** voce precedente (2026-08-02, continuazione) per il contesto completo del pilota; `docs/TODO_NEXT.md` per il prossimo passo (decisione utente su `db push` reale).
+
+---
+
+## 2026-08-02 (continuazione 4) — YMOVE_AUTO_PILOT_LIVE: `db push` reale eseguito su produzione, pilota "Forza Base YMove" attivo
+- **Cosa è stato fatto:** su autorizzazione esplicita dell'utente, applicate realmente le 2 migration del pilota YMove al progetto di **produzione** `rkcecnzvzoigipjliwdk` (progetto "fitcoach", confermato `linked:true` prima del push). Nessuna chiamata YMove, nessun deploy Edge Function, nessun cliente reale modificato.
+- **Gate pre-push**: `db push --dry-run` ha proposto esattamente e solo le 2 migration attese, nessun'altra — confermato prima di procedere.
+- **Migration applicate realmente:** `20260817090000_fix_run_cycle_review_structural_change_exclusions.sql`, `20260817100000_ymove_auto_engine_pilot_forza_base.sql`. Push completato senza errori — tutte le guardie `raise exception` codificate nelle migration sono risultate soddisfatte, nessun rollback necessario. `migration list` post-push conferma entrambe con `remote` popolato.
+- **Verifica read-only post-push:**
+  - `exercise_movement_metadata`: **50/50** righe YMove presenti, **0 duplicati**.
+  - "Forza Base YMove" (`a1000000-0000-4000-8000-000000000006`): `is_system=true`, `is_ymove=true`, `is_active=true`, **`auto_eligible=true`**, `goal='Forza'`, `level='Intermedio'`, `sessions_per_week=4`, `location='Palestra'` — tutti i valori attesi confermati.
+  - Altri 7 template YMove: tutti `auto_eligible=false` (Upper/Lower, Push Pull Legs, Full Body Ipertrofia, Full Body Metabolico, Pesi + Cardio, Powerbuilding, Full Body Principiante).
+  - Conteggio YMove `auto_eligible=true`: **1** (solo Forza Base YMove).
+  - Test matcher positivo: `Forza/Intermedio/Palestra/4/full_gym` → **Forza Base YMove**. PASS.
+  - Test matcher negativi (4 scenari): Principiante/Palestra/4 → nessun match; Intermedio/Casa/4 → nessun match; Intermedio/Palestra/3 giorni → template professionale diverso ("Forza Base 5x5", pre-esistente, `is_ymove=false`), mai Forza Base YMove; Intermedio/Palestra/4/`home_basic` (attrezzatura insufficiente) → nessun match. Tutti PASS, nessuna priorità artificiale introdotta per YMove.
+  - Helper `_template_compatible_with_client_exclusions`: confermato installato live, corpo identico byte-per-byte a quanto verificato nel gate pre-produzione (fix zero-giorni incluso). Eseguiti a runtime, senza alcuna scrittura: "template zero giorni → false" (template inesistente) e "ogni giorno valido → true" (Forza Base YMove + client sintetico senza esclusioni), entrambi PASS. "Giorno zero esercizi → false" e "giorno con tutti esclusi → false" **non eseguiti a runtime** — nessun caso naturale esiste oggi in produzione (verificato via query read-only) e crearne uno sintetico avrebbe richiesto scrivere in `auth.users`/`profiles` (FK obbligatoria di `client_excluded_exercises.client_id`), esplicitamente fuori perimetro ("non modificare clienti reali"); verificati per via logica diretta sul corpo della funzione live appena confermato — entrambi i casi attivano lo stesso identico ramo booleano già provato corretto.
+  - Zero chiamate YMove API durante l'intero task (solo comandi `supabase db push`/`db query`/`migration list`/`projects list`).
+- **Rischio residuo noto, non bloccante, invariato da questo push**: `public.exercises.auto_program_eligible=false` sui 16 esercizi del pilota — confermato in gate precedente non letto da alcun percorso attivo del motore automatico. Non modificato in questo intervento.
+- **Non fatto**: nessuna Edge Function deployata, nessun commit/push git, nessuna modifica al codice applicativo.
+- **Prossimo test reale da eseguire (NON ancora fatto)**: cliente sintetico senza coach, profilo Forza/Intermedio/Palestra/4 giorni/`full_gym`, entitlement Client Pro attivo → verificare che `assign_initial_auto_program` assegni davvero "Forza Base YMove". Il matcher è live e verificato via chiamata diretta alla funzione, ma il flusso end-to-end con un cliente reale/sintetico completo (registrazione → questionario → assegnazione) non è stato ancora eseguito — non dichiarato PASS.
+- **Riferimenti collegati:** voce precedente (2026-08-02, continuazione 3) per il gate pre-produzione completo; `docs/TODO_NEXT.md` per il prossimo passo.
