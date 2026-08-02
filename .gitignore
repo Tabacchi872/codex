@@ -20,3 +20,6 @@ supabase/.temp/
 
 local-test-files/
 design-references/
+
+__pycache__/
+*.pyc
