@@ -63,10 +63,57 @@ export function getExercisePrimaryGroup(exercise: Exercise): ExerciseMuscleGroup
   return exercise.primaryMuscleGroup ?? primaryGroupFromLegacy(exercise.muscleGroup);
 }
 
+// Valori inglesi REALI di public.exercises.muscle_group per i 360 esercizi
+// YMove importati (verificato in produzione, 2026-08-02: primary_muscle_group
+// e' NULL per tutti e 360, quindi questa e' l'UNICA fonte usata da
+// getExercisePrimaryGroup per loro). Prima di questa mappa, nessuno di questi
+// token inglesi veniva riconosciuto dai controlli in italiano sotto: TUTTI i
+// 360 esercizi YMove ricadevano silenziosamente nel default 'full_body',
+// rendendo inutile sia il filtro per gruppo muscolare sia il colore del
+// placeholder in ExerciseThumbnail (tutti identici). Match esatto sul token
+// normalizzato (spazi/underscore equivalenti, vedi normalizeText).
+const ENGLISH_MUSCLE_GROUP_MAP: Record<string, ExerciseMuscleGroupId> = {
+  chest: 'petto',
+  'upper chest': 'petto',
+  'lower chest': 'petto',
+  back: 'dorsali',
+  lats: 'dorsali',
+  'lower back': 'lombari',
+  'erector spinae': 'lombari',
+  shoulders: 'spalle',
+  'front deltoids': 'spalle',
+  'lateral deltoids': 'spalle',
+  'rear deltoids': 'spalle',
+  biceps: 'bicipiti',
+  triceps: 'tricipiti',
+  forearms: 'avambracci',
+  'forearm flexors': 'avambracci',
+  brachioradialis: 'avambracci',
+  quads: 'quadricipiti',
+  quadriceps: 'quadricipiti',
+  legs: 'quadricipiti',
+  hamstrings: 'femorali',
+  glutes: 'glutei',
+  'glute med': 'glutei',
+  adductors: 'adduttori',
+  abductors: 'abduttori',
+  calves: 'polpacci',
+  abs: 'addome',
+  'lower abs': 'addome',
+  'rectus abdominis': 'addome',
+  core: 'addome',
+  'hip flexors': 'addome',
+  obliques: 'obliqui',
+  'full body': 'full_body',
+  'cardiovascular system': 'cardio',
+};
+
 export function primaryGroupFromLegacy(group: MuscleGroup | (string & {})): ExerciseMuscleGroupId {
   const normalized = normalizeText(group);
   const byId = EXERCISE_GROUP_ORDER.find((item) => item === normalized);
   if (byId) return byId;
+  const byEnglish = ENGLISH_MUSCLE_GROUP_MAP[normalized];
+  if (byEnglish) return byEnglish;
   if (normalized === 'dorso') return 'dorsali';
   if (normalized.includes('petto')) return 'petto';
   if (normalized.includes('dorso') || normalized.includes('dors')) return 'dorsali';

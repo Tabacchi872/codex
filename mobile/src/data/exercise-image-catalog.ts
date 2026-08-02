@@ -1,6 +1,7 @@
 import { resolveImageSource } from './image-registry';
 
-import type { Exercise } from '@/types/training';
+import { getExercisePrimaryGroup } from '@/lib/exercise-catalog';
+import type { Exercise, ExerciseMuscleGroupId } from '@/types/training';
 
 export type ExerciseCatalogThumbnail =
   | {
@@ -18,15 +19,33 @@ export type ExerciseCatalogThumbnail =
       attemptedSource: string;
     };
 
-const MUSCLE_PLACEHOLDERS: Record<string, { label: string; backgroundColor: string; foregroundColor: string }> = {
+// Chiavi = ExerciseMuscleGroupId (i 20 gruppi reali, non gli 8 valori del
+// vecchio catalogo storico): risolti tramite getExercisePrimaryGroup, che
+// gia' normalizza sia gli esercizi locali (italiano) sia quelli YMove
+// (inglese, tramite primaryGroupFromLegacy — vedi exercise-catalog.ts) —
+// cosi' un esercizio YMove mostra il colore del suo VERO gruppo muscolare
+// invece di ricadere sempre sullo stesso placeholder generico 'full_body'.
+const MUSCLE_PLACEHOLDERS: Record<ExerciseMuscleGroupId, { label: string; backgroundColor: string; foregroundColor: string }> = {
   petto: { label: 'PT', backgroundColor: '#1D3D18', foregroundColor: '#80EA2D' },
-  dorso: { label: 'DS', backgroundColor: '#163A5D', foregroundColor: '#9DD7FF' },
-  gambe: { label: 'GB', backgroundColor: '#33280B', foregroundColor: '#F0D35B' },
+  dorsali: { label: 'DS', backgroundColor: '#163A5D', foregroundColor: '#9DD7FF' },
+  trapezi: { label: 'TZ', backgroundColor: '#0F3A44', foregroundColor: '#6FE0D6' },
   spalle: { label: 'SP', backgroundColor: '#30214A', foregroundColor: '#C8A9FF' },
   bicipiti: { label: 'BI', backgroundColor: '#1E3B37', foregroundColor: '#75E5CE' },
   tricipiti: { label: 'TR', backgroundColor: '#40251F', foregroundColor: '#FFAD92' },
-  'addominali-core': { label: 'CR', backgroundColor: '#26301F', foregroundColor: '#B7EB7A' },
-  'cardio-funzionale': { label: 'CF', backgroundColor: '#3D1E2C', foregroundColor: '#FFAAC9' },
+  avambracci: { label: 'AV', backgroundColor: '#3A2A12', foregroundColor: '#E8B568' },
+  quadricipiti: { label: 'QD', backgroundColor: '#33280B', foregroundColor: '#F0D35B' },
+  femorali: { label: 'FM', backgroundColor: '#362408', foregroundColor: '#E3C24A' },
+  glutei: { label: 'GL', backgroundColor: '#402616', foregroundColor: '#F2A65A' },
+  adduttori: { label: 'ADD', backgroundColor: '#3A1F2E', foregroundColor: '#E88FC0' },
+  abduttori: { label: 'ABD', backgroundColor: '#22314A', foregroundColor: '#8FB8FF' },
+  polpacci: { label: 'PC', backgroundColor: '#1F3A2A', foregroundColor: '#6FE0A0' },
+  addome: { label: 'ADM', backgroundColor: '#26301F', foregroundColor: '#B7EB7A' },
+  obliqui: { label: 'OB', backgroundColor: '#2C2A12', foregroundColor: '#D9CB5C' },
+  lombari: { label: 'LM', backgroundColor: '#241F3D', foregroundColor: '#A99CF0' },
+  full_body: { label: 'FB', backgroundColor: '#2A2A2A', foregroundColor: '#C9C9C9' },
+  cardio: { label: 'CD', backgroundColor: '#3D1E2C', foregroundColor: '#FFAAC9' },
+  mobilita: { label: 'MB', backgroundColor: '#1B3830', foregroundColor: '#6FE6C4' },
+  stretching: { label: 'ST', backgroundColor: '#33203A', foregroundColor: '#D89AF0' },
 };
 
 // Fonte centrale per le anteprime esercizi. Metro accetta solo require statici:
@@ -44,7 +63,7 @@ export function resolveExerciseCatalogThumbnail(exercise: Exercise): ExerciseCat
     }
   }
 
-  const placeholder = MUSCLE_PLACEHOLDERS[normalizeKey(exercise.muscleGroup)] ?? {
+  const placeholder = MUSCLE_PLACEHOLDERS[getExercisePrimaryGroup(exercise)] ?? {
     label: initialsFromName(exercise.name),
     backgroundColor: '#1D3D18',
     foregroundColor: '#80EA2D',
