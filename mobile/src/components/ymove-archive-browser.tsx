@@ -279,7 +279,13 @@ function YMoveArchiveRow({
       <View style={styles.resultHeader}>
         <Pressable onPress={togglePreview} hitSlop={4}>
           {ymoveExerciseId ? (
-            <YMoveResultThumbnail ymoveExerciseId={ymoveExerciseId} />
+            // 2026-08-02 (correzione): "source='ymove'" NON garantisce un
+            // video reale — verificato in scripts/import-ymove-bulk.py,
+            // l'import scriveva un collegamento SOLO per gli esercizi che
+            // avevano davvero un videoUrl, non per tutti i 360. Nessuna prova
+            // locale per riga (e nessuna nuova query per ottenerla): niente
+            // badge "ha video" qui, la schermata e' gia' l'Archivio YMove.
+            <YMoveResultThumbnail />
           ) : (
             <View style={[styles.fallbackThumb, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Dumbbell size={20} color={theme.textSecondary} />

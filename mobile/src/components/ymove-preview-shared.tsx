@@ -1,7 +1,6 @@
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Dumbbell, Play, RefreshCw } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
@@ -9,51 +8,28 @@ import { ThemedText } from './themed-text';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { YmoveExerciseDetail } from '@/lib/ymove-service';
-import { fetchYmoveThumbnail, getCachedYmoveThumbnail } from '@/lib/ymove-thumbnail-cache';
 
 // Componenti condivisi tra il tab "Cerca live" (ymove-exercise-picker.tsx) e
 // il tab "Archivio" (ymove-archive-browser.tsx) del picker YMove: entrambi
-// mostrano una miniatura lazy per riga e un'anteprima video-prima-di-scegliere
-// con retry sugli URL scaduti. Estratti in questo file terzo (non importati
+// mostrano una miniatura per riga e un'anteprima video-prima-di-scegliere con
+// retry sugli URL scaduti. Estratti in questo file terzo (non importati
 // direttamente da uno dei due componenti) per evitare un import circolare tra
 // ymove-exercise-picker.tsx e ymove-archive-browser.tsx.
 
-// Miniatura lazy per una card di risultato: richiede il dettaglio SOLO se non
-// gia' in cache (fetchYmoveThumbnail/ymove-thumbnail-cache.ts gia' deduplica
-// e limita a 2 richieste concorrenti globali), mai per tutti i risultati
-// contemporaneamente al primo render della lista. Se l'immagine fallisce a
-// caricare (URL scaduto, rete), richiede il dettaglio una sola volta e poi
-// resta sul placeholder (mai un loop di retry).
-export function YMoveResultThumbnail({ ymoveExerciseId, hasVideo }: { ymoveExerciseId: string; hasVideo?: boolean }) {
+// 2026-08-02 (protezione cap mensile YMove): questa card NON richiede piu'
+// mai un'immagine reale per la lista (prima chiamava GET /exercises/{id} —
+// consuma il limite mensile — in automatico per OGNI riga al primo render,
+// prima ancora che l'utente toccasse "Anteprima"). `hasVideo` e' gratuito
+// (arriva gia' nella risposta di ricerca/archivio in browse mode, mai
+// un'chiamata aggiuntiva): resta l'unico indicatore mostrato in lista. Il
+// video/thumbnail reale si vede SOLO tramite "Anteprima" (PreviewVideo sotto,
+// che riusa il dettaglio gia' recuperato da quell'azione esplicita).
+export function YMoveResultThumbnail({ hasVideo }: { hasVideo?: boolean }) {
   const theme = useTheme();
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null | undefined>(() => getCachedYmoveThumbnail(ymoveExerciseId));
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    if (thumbnailUrl !== undefined) return;
-    let cancelled = false;
-    fetchYmoveThumbnail(ymoveExerciseId).then((url) => {
-      if (!cancelled) setThumbnailUrl(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ymoveExerciseId, thumbnailUrl]);
-
-  const showImage = Boolean(thumbnailUrl) && !imageFailed;
 
   return (
     <View style={[styles.resultThumbnail, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-      {showImage ? (
-        <Image
-          source={{ uri: thumbnailUrl as string }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <Dumbbell size={20} color={theme.textSecondary} />
-      )}
+      <Dumbbell size={20} color={theme.textSecondary} />
       {hasVideo ? (
         <View style={styles.resultPlayBadge} pointerEvents="none">
           <Play size={11} color="#fff" fill="#fff" />

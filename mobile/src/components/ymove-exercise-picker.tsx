@@ -276,7 +276,7 @@ function YMoveResultRow({
     <Card style={styles.resultCard}>
       <View style={styles.resultHeader}>
         <Pressable onPress={togglePreview} hitSlop={4}>
-          <YMoveResultThumbnail ymoveExerciseId={item.id} hasVideo={item.hasVideo} />
+          <YMoveResultThumbnail hasVideo={item.hasVideo} />
         </Pressable>
         <View style={styles.resultHeaderText}>
           <ThemedText type="smallBold" numberOfLines={2} style={styles.resultTitle}>{item.title}</ThemedText>
