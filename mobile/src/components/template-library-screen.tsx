@@ -5,12 +5,14 @@ import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, Te
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachOnlyNotice } from './coach-only-notice';
+import { ExerciseThumbnail } from './exercise-thumbnail';
 import { TemplateFolderDeleteModal } from './template-folder-delete-modal';
 import { TemplateFolderNameModal } from './template-folder-name-modal';
 import { AppBadge, AppButton, AppCard, AppIconButton, AppPressableCard, AppTextField, BackHeader } from './ui';
 
 import { BottomTabInset } from '@/constants/theme';
 import { getExerciseById } from '@/data/exercise-library';
+import { useExerciseResolver } from '@/hooks/use-exercise-resolver';
 import { getCurrentSession } from '@/lib/auth-service';
 import { supabaseConfig } from '@/lib/supabase';
 import {
@@ -848,17 +850,31 @@ export function LibraryFilterBar({
 
 export function TemplateRow({ template, onPress }: { template: WorkoutTemplateSummary; onPress: () => void }) {
   const { colors } = useAppTheme();
+  const { resolve } = useExerciseResolver();
   const metaParts: string[] = [];
   if (template.durationWeeks) metaParts.push(`${template.durationWeeks} sett.`);
   if (template.sessionsPerWeek) metaParts.push(`${template.sessionsPerWeek}x/sett.`);
   metaParts.push(`${template.dayCount} ${template.dayCount === 1 ? 'giorno' : 'giorni'}`);
   metaParts.push(`${template.exerciseCount} esercizi`);
 
+  // Cover = thumbnail del primo esercizio del modello (stesso pattern gia'
+  // in uso in workout.tsx/schede/modelli/index.tsx): mai una chiamata YMove,
+  // resolve() e' sempre sincrono (44 esercizi locali) o legge public.exercises
+  // via Supabase in background (mai l'API YMove). Se l'id non risolve ancora
+  // (fetch in corso) o il modello non ha esercizi, resta l'icona placeholder
+  // colorata gia' esistente.
+  const firstExerciseId = template.exerciseIds[0];
+  const coverExercise = firstExerciseId ? resolve(firstExerciseId) : undefined;
+
   return (
     <AppPressableCard onPress={onPress} accessibilityLabel={`Apri scheda modello ${template.name}`} style={styles.templateRow}>
-      <View style={[styles.templateIcon, { backgroundColor: template.isSystem ? colors.mossSoft : colors.coralSoft }]}>
-        <Dumbbell size={24} color={template.isSystem ? colors.moss : colors.coral} />
-      </View>
+      {coverExercise ? (
+        <ExerciseThumbnail exercise={coverExercise} exerciseId={coverExercise.id} size={56} />
+      ) : (
+        <View style={[styles.templateIcon, { backgroundColor: template.isSystem ? colors.mossSoft : colors.coralSoft }]}>
+          <Dumbbell size={24} color={template.isSystem ? colors.moss : colors.coral} />
+        </View>
+      )}
       <View style={styles.templateCopy}>
         <Text style={[styles.templateName, { color: colors.ink }]} numberOfLines={2}>
           {template.name}
