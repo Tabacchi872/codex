@@ -11,6 +11,7 @@ import { useChatStore } from './chat-store';
 import { useCheckinStore } from './checkin-store';
 import { useClientMonthlyCheckinStore } from './client-monthly-checkin-store';
 import { useClientStore } from './client-store';
+import { useNutritionStore } from './nutrition-store';
 import { useSuperadminStore } from './superadmin-store';
 import { useTrainingStore } from './training-store';
 import { useYmoveAutoLinkStore } from './ymove-autolink-store';
@@ -36,6 +37,7 @@ function resetUserScopedStores() {
   useYmoveAutoLinkStore.getState().reset();
   useClientMonthlyCheckinStore.getState().reset();
   useAppNotificationStore.getState().reset();
+  useNutritionStore.getState().reset();
 }
 
 export type DemoUser = {

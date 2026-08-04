@@ -6,7 +6,18 @@
 // allegata come header X-API-Key a ogni chiamata verso YMove v2
 // (https://exercise-api.ymove.app/api/v2).
 //
-// Tre azioni (POST { action: 'search' | 'detail' | 'translate', ... }):
+// FitCoach Nutrizione Fase 1 (2026-08-04): 8 nuove azioni sola-lettura verso
+// gli endpoint /foods, /recipes, /mealplans di YMove v2 (schema verificato
+// byte-per-byte contro l'OpenAPI reale, mai assunto):
+// 'foods_search' | 'food_detail' | 'food_barcode' | 'recipes_search' |
+// 'recipe_detail' | 'recipes_diets' | 'recipes_meal_types' | 'mealplan_generate'.
+// Stesso principio delle azioni esistenti: whitelist stretta dei parametri,
+// mai un proxy generico, mai la API key loggata. Riservate a role='cliente'
+// (e superadmin) — la UI Nutrizione e' lato cliente, nessun accesso coach in
+// questa fase. Nessuna azione di scrittura (log foto/audio/testo pasto,
+// posture/workouts/programs) e' implementata: esplicitamente fuori scope.
+//
+// Tre azioni ESERCIZI preesistenti (POST { action: 'search' | 'detail' | 'translate', ... }):
 // - 'search': lista filtrata, SEMPRE con includeVideos=false (la ricerca non
 //   deve consumare il limite mensile dei video) — solo coach/superadmin.
 // - 'detail': un singolo esercizio con video/thumbnail/istruzioni — sempre
@@ -367,20 +378,177 @@ async function translateWithAzure(
   return result;
 }
 
-async function callYmove(path: string, apiKey: string): Promise<{ status: number; body: unknown }> {
-  const res = await fetch(`${YMOVE_BASE_URL}${path}`, {
-    method: 'GET',
-    headers: { 'X-API-Key': apiKey, Accept: 'application/json' },
-  });
-  const text = await res.text();
-  let body: unknown = null;
+// Timeout esplicito (10s): senza, una YMove lenta/irraggiungibile terrebbe la
+// Edge Function appesa fino al timeout della piattaforma, con un errore
+// generico invece di un codice leggibile dal client mobile.
+const YMOVE_FETCH_TIMEOUT_MS = 10_000;
+
+async function callYmove(path: string, apiKey: string): Promise<{ status: number; body: unknown } | { timeout: true }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), YMOVE_FETCH_TIMEOUT_MS);
   try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = text;
+    const res = await fetch(`${YMOVE_BASE_URL}${path}`, {
+      method: 'GET',
+      headers: { 'X-API-Key': apiKey, Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    const text = await res.text();
+    let body: unknown = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = text;
+    }
+    console.log('YMOVE_API_CALL', { path, status: res.status, keys: safeTopLevelKeys(body) });
+    return { status: res.status, body };
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('YMOVE_API_TIMEOUT', { path, timeoutMs: YMOVE_FETCH_TIMEOUT_MS });
+      return { timeout: true };
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  console.log('YMOVE_API_CALL', { path, status: res.status, keys: safeTopLevelKeys(body) });
-  return { status: res.status, body };
+}
+
+function isTimeoutResult(result: { status: number; body: unknown } | { timeout: true }): result is { timeout: true } {
+  return 'timeout' in result;
+}
+
+// --- FitCoach Nutrizione Fase 1: whitelist enum verificate byte-per-byte
+// contro l'OpenAPI reale di https://exercise-api.ymove.app/api/v2/openapi.json
+// (2026-08-04) — mai assunte dal prompt originale senza conferma. Nota
+// importante: 'balanced' e' un valore valido SOLO per mealplan/diet, MAI per
+// recipes/search?diet= (schema diverso, verificato: l'enum di /recipes/search
+// non include 'balanced').
+const MEALPLAN_DIET_VALUES = ['balanced', 'high_protein', 'low_carb', 'keto', 'vegan', 'vegetarian', 'mediterranean', 'paleo'];
+const RECIPE_DIET_VALUES = ['high_protein', 'low_carb', 'keto', 'vegan', 'vegetarian', 'mediterranean', 'paleo'];
+const RECIPE_CUISINE_VALUES = ['american', 'mediterranean', 'asian', 'mexican', 'italian', 'indian', 'japanese'];
+const MEAL_TYPE_VALUES = ['breakfast', 'lunch', 'dinner', 'snack'];
+const MACRO_SPLIT_VALUES = ['balanced', 'high_protein', 'low_carb', 'high_fat'];
+const FOOD_SOURCE_VALUES = ['usda', 'openfoodfacts'];
+const FOOD_PER_VALUES = ['100g', '100ml'];
+
+type ParamError = { field: string; message: string };
+
+// Whitelist stretta: ogni valore che finisce nella query string verso YMove
+// passa da qui. Nessun parametro non elencato viene mai inoltrato (niente
+// proxy generico). Ritorna null + errori se qualcosa non e' valido, mai
+// inoltra un valore fuori whitelist sperando che YMove lo ignori.
+function readEnumParam(filters: Record<string, unknown>, key: string, allowed: string[], errors: ParamError[]): string | undefined {
+  const value = filters[key];
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string' || !allowed.includes(value)) {
+    errors.push({ field: key, message: `Valore non valido per '${key}': atteso uno tra ${allowed.join(', ')}.` });
+    return undefined;
+  }
+  return value;
+}
+
+function readStringParam(filters: Record<string, unknown>, key: string, opts: { required?: boolean; maxLen?: number; exactLen?: number } = {}, errors: ParamError[]): string | undefined {
+  const value = filters[key];
+  if (value === undefined || value === null || value === '') {
+    if (opts.required) errors.push({ field: key, message: `Parametro '${key}' obbligatorio.` });
+    return undefined;
+  }
+  if (typeof value !== 'string') {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere una stringa.` });
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (opts.exactLen !== undefined && trimmed.length !== opts.exactLen) {
+    errors.push({ field: key, message: `Parametro '${key}' deve avere lunghezza esatta ${opts.exactLen}.` });
+    return undefined;
+  }
+  if (opts.maxLen !== undefined && trimmed.length > opts.maxLen) {
+    errors.push({ field: key, message: `Parametro '${key}' troppo lungo (max ${opts.maxLen}).` });
+    return undefined;
+  }
+  return trimmed;
+}
+
+function readIntParam(filters: Record<string, unknown>, key: string, opts: { required?: boolean; min?: number; max?: number } = {}, errors: ParamError[]): number | undefined {
+  const value = filters[key];
+  if (value === undefined || value === null || value === '') {
+    if (opts.required) errors.push({ field: key, message: `Parametro '${key}' obbligatorio.` });
+    return undefined;
+  }
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num) || !Number.isInteger(num)) {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere un intero.` });
+    return undefined;
+  }
+  if (opts.min !== undefined && num < opts.min) {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere >= ${opts.min}.` });
+    return undefined;
+  }
+  if (opts.max !== undefined && num > opts.max) {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere <= ${opts.max}.` });
+    return undefined;
+  }
+  return num;
+}
+
+function readNumberParam(filters: Record<string, unknown>, key: string, errors: ParamError[]): number | undefined {
+  const value = filters[key];
+  if (value === undefined || value === null || value === '') return undefined;
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere numerico.` });
+    return undefined;
+  }
+  return num;
+}
+
+function readBooleanParam(filters: Record<string, unknown>, key: string, errors: ParamError[]): boolean | undefined {
+  const value = filters[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'boolean') {
+    errors.push({ field: key, message: `Parametro '${key}' deve essere booleano.` });
+    return undefined;
+  }
+  return value;
+}
+
+function validationErrorResponse(errors: ParamError[]): Response {
+  return json({ ok: false, code: 'invalid_params', message: errors.map((e) => e.message).join(' ') }, 400);
+}
+
+function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
+  const usp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) usp.set(key, String(value));
+  }
+  return usp.toString();
+}
+
+// Riduce a un solo punto la gestione errore/timeout per le 8 azioni
+// nutrition sotto (stessa logica gia' in ymoveErrorResponse/isTimeoutResult,
+// solo raggruppata per non ripetere 3 righe identiche 8 volte).
+function callYmoveOrError(
+  result: { status: number; body: unknown } | { timeout: true },
+): { ok: true; body: unknown } | { ok: false; response: Response } {
+  const errorResponse = ymoveErrorResponse(result);
+  if (errorResponse) return { ok: false, response: errorResponse };
+  if (isTimeoutResult(result)) {
+    return { ok: false, response: json({ ok: false, code: 'timeout', message: 'YMove non ha risposto in tempo. Riprova.' }, 504) };
+  }
+  return { ok: true, body: result.body };
+}
+
+// Ogni risposta YMove nutrition e' avvolta in { data: ... } (liste anche con
+// "pagination"), verificato byte-per-byte contro l'OpenAPI reale — mai
+// assunto. Passa questi campi al client cosi' come sono (nessuna
+// rinormalizzazione qui: gli endpoint nutrition sono nuovi, la forma dei dati
+// e' gia' quella ufficiale, a differenza degli esercizi dove YMove ha
+// varianti di schema non documentate osservate in produzione).
+function extractDataAndPagination(body: unknown): { data: unknown; pagination: unknown } {
+  if (body && typeof body === 'object') {
+    const o = body as Record<string, unknown>;
+    return { data: o.data ?? null, pagination: o.pagination ?? null };
+  }
+  return { data: null, pagination: null };
 }
 
 const SEARCH_FILTER_PARAMS: Record<string, string> = {
@@ -410,7 +578,13 @@ function buildSearchQuery(filters: Record<string, unknown>): string {
 // e il messaggio realmente ricevuti (mai un messaggio inventato che nasconda
 // cosa ha detto davvero YMove) — con un fallback solo se YMove non ha
 // restituito alcun messaggio leggibile.
-function ymoveErrorResponse(result: { status: number; body: unknown }): Response | null {
+// Gestisce anche il caso 'timeout' (aggiunto per Nutrizione Fase 1, vedi
+// callYmove sotto): usata sia dalle azioni esercizi preesistenti sia dalle
+// nuove azioni nutrition, un solo punto per la gestione 400/401/404/429/timeout.
+function ymoveErrorResponse(result: { status: number; body: unknown } | { timeout: true }): Response | null {
+  if (isTimeoutResult(result)) {
+    return json({ ok: false, code: 'timeout', message: 'YMove non ha risposto in tempo. Riprova.' }, 504);
+  }
   if (result.status >= 200 && result.status < 300) return null;
 
   const receivedMessage = extractYmoveErrorMessage(result.body);
@@ -423,7 +597,13 @@ function ymoveErrorResponse(result: { status: number; body: unknown }): Response
     );
   }
   if (result.status === 404) {
-    return json({ ok: false, code: 'not_found', message: receivedMessage ?? 'Esercizio non trovato su YMove.' }, 404);
+    return json({ ok: false, code: 'not_found', message: receivedMessage ?? 'Risorsa non trovata su YMove.' }, 404);
+  }
+  if (result.status === 401) {
+    return json({ ok: false, code: 'ymove_unauthorized', message: receivedMessage ?? 'Autenticazione verso YMove non riuscita.' }, 401);
+  }
+  if (result.status === 400) {
+    return json({ ok: false, code: 'ymove_bad_request', message: receivedMessage ?? 'Parametri non validi per YMove.' }, 400);
   }
   return json(
     { ok: false, code: 'ymove_error', message: receivedMessage ?? `YMove ha risposto con un errore (${result.status}).` },
@@ -633,7 +813,7 @@ Deno.serve(async (req: Request) => {
     }
     const role = callerProfile.role as 'superadmin' | 'coach' | 'cliente';
 
-    let body: { action?: unknown; filters?: unknown; id?: unknown; texts?: unknown; from?: unknown; to?: unknown };
+    let body: { action?: unknown; filters?: unknown; id?: unknown; texts?: unknown; from?: unknown; to?: unknown; upc?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -651,6 +831,9 @@ Deno.serve(async (req: Request) => {
     const result = await callYmove(`/exercises?${buildSearchQuery(filters)}`, ymoveApiKey);
     const errorResponse = ymoveErrorResponse(result);
     if (errorResponse) return errorResponse;
+    if (isTimeoutResult(result)) {
+      return json({ ok: false, code: 'timeout', message: 'YMove non ha risposto in tempo. Riprova.' }, 504);
+    }
     const items = extractSearchList(result.body)
       .map(normalizeSummary)
       .filter((item): item is YmoveExerciseSummary => item !== null);
@@ -678,6 +861,9 @@ Deno.serve(async (req: Request) => {
     const result = await callYmove(`/exercises/${encodeURIComponent(ymoveId)}?includeVideos=true`, ymoveApiKey);
     const errorResponse = ymoveErrorResponse(result);
     if (errorResponse) return errorResponse;
+    if (isTimeoutResult(result)) {
+      return json({ ok: false, code: 'timeout', message: 'YMove non ha risposto in tempo. Riprova.' }, 504);
+    }
     const detail = normalizeDetail(extractDetailPayload(result.body));
     if (!detail) {
       console.error('YMOVE_DETAIL_UNEXPECTED_SHAPE', { keys: safeTopLevelKeys(result.body) });
@@ -750,6 +936,172 @@ Deno.serve(async (req: Request) => {
       );
     }
     return json({ ok: true, data: translated }, 200);
+  }
+
+  // --- FitCoach Nutrizione Fase 1: 8 azioni sola-lettura, riservate a
+  // role='cliente' o 'superadmin' (nessun accesso coach in questa fase).
+  const NUTRITION_ALLOWED = role === 'cliente' || role === 'superadmin';
+
+  if (body.action === 'foods_search') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Ricerca alimenti riservata al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const filters = typeof body.filters === 'object' && body.filters !== null ? (body.filters as Record<string, unknown>) : {};
+    const errors: ParamError[] = [];
+    const query = readStringParam(filters, 'query', { required: true, maxLen: 200 }, errors);
+    const source = readEnumParam(filters, 'source', FOOD_SOURCE_VALUES, errors);
+    const usdaOnly = readBooleanParam(filters, 'usdaOnly', errors);
+    const country = readStringParam(filters, 'country', { exactLen: 2 }, errors);
+    const per = readEnumParam(filters, 'per', FOOD_PER_VALUES, errors);
+    const page = readIntParam(filters, 'page', { min: 1 }, errors);
+    const pageSize = readIntParam(filters, 'pageSize', { min: 1, max: 50 }, errors);
+    if (errors.length > 0) return validationErrorResponse(errors);
+
+    const result = await callYmove(`/foods?${buildQuery({ query, source, usdaOnly, country, per, page, pageSize })}`, ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data, pagination } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data: { items: data, pagination } }, 200);
+  }
+
+  if (body.action === 'food_detail') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Dettaglio alimento riservato al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const id = typeof body.id === 'string' ? body.id.trim() : '';
+    if (!id) return json({ ok: false, code: 'invalid_params', message: "Parametro 'id' mancante." }, 400);
+
+    const result = await callYmove(`/foods/${encodeURIComponent(id)}`, ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
+  }
+
+  if (body.action === 'food_barcode') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Ricerca per barcode riservata al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const upc = typeof body.upc === 'string' ? body.upc.trim() : '';
+    if (!upc) return json({ ok: false, code: 'invalid_params', message: "Parametro 'upc' mancante." }, 400);
+    const filters = typeof body.filters === 'object' && body.filters !== null ? (body.filters as Record<string, unknown>) : {};
+    const errors: ParamError[] = [];
+    const country = readStringParam(filters, 'country', { exactLen: 2 }, errors);
+    if (errors.length > 0) return validationErrorResponse(errors);
+
+    const result = await callYmove(`/foods/barcode/${encodeURIComponent(upc)}?${buildQuery({ country })}`, ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
+  }
+
+  if (body.action === 'recipes_search') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Ricerca ricette riservata al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const filters = typeof body.filters === 'object' && body.filters !== null ? (body.filters as Record<string, unknown>) : {};
+    const errors: ParamError[] = [];
+    const query = readStringParam(filters, 'query', { maxLen: 200 }, errors);
+    // Nota verificata contro l'OpenAPI reale: 'balanced' NON e' un valore
+    // valido per /recipes/search?diet= (a differenza di /mealplans/generate).
+    const diet = readEnumParam(filters, 'diet', RECIPE_DIET_VALUES, errors);
+    const cuisine = readEnumParam(filters, 'cuisine', RECIPE_CUISINE_VALUES, errors);
+    const mealType = readEnumParam(filters, 'mealType', MEAL_TYPE_VALUES, errors);
+    const maxCalories = readNumberParam(filters, 'maxCalories', errors);
+    const minProtein = readNumberParam(filters, 'minProtein', errors);
+    const page = readIntParam(filters, 'page', { min: 1 }, errors);
+    const pageSize = readIntParam(filters, 'pageSize', { min: 1, max: 50 }, errors);
+    if (errors.length > 0) return validationErrorResponse(errors);
+
+    const result = await callYmove(
+      `/recipes/search?${buildQuery({ query, diet, cuisine, mealType, maxCalories, minProtein, page, pageSize })}`,
+      ymoveApiKey,
+    );
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data, pagination } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data: { items: data, pagination } }, 200);
+  }
+
+  if (body.action === 'recipe_detail') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Dettaglio ricetta riservato al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const id = typeof body.id === 'string' ? body.id.trim() : '';
+    if (!id) return json({ ok: false, code: 'invalid_params', message: "Parametro 'id' mancante." }, 400);
+
+    const result = await callYmove(`/recipes/${encodeURIComponent(id)}`, ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
+  }
+
+  if (body.action === 'recipes_diets') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Riservato al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const result = await callYmove('/recipes/diets', ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
+  }
+
+  if (body.action === 'recipes_meal_types') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Riservato al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const result = await callYmove('/recipes/meal-types', ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
+  }
+
+  if (body.action === 'mealplan_generate') {
+    if (!NUTRITION_ALLOWED) {
+      return json({ ok: false, code: 'forbidden', message: 'Generazione piano riservata al cliente.' }, 403);
+    }
+    if (!ymoveApiKey) {
+      return json({ ok: false, code: 'ymove_not_configured', message: 'YMOVE_API_KEY non configurata sulla Edge Function.' }, 500);
+    }
+    const filters = typeof body.filters === 'object' && body.filters !== null ? (body.filters as Record<string, unknown>) : {};
+    const errors: ParamError[] = [];
+    const calories = readIntParam(filters, 'calories', { required: true, min: 1 }, errors);
+    const diet = readEnumParam(filters, 'diet', MEALPLAN_DIET_VALUES, errors);
+    const meals = readIntParam(filters, 'meals', { min: 3, max: 6 }, errors);
+    const days = readIntParam(filters, 'days', { min: 1, max: 7 }, errors);
+    const macroSplit = readEnumParam(filters, 'macroSplit', MACRO_SPLIT_VALUES, errors);
+    if (errors.length > 0) return validationErrorResponse(errors);
+
+    const result = await callYmove(`/mealplans/generate?${buildQuery({ calories, diet, meals, days, macroSplit })}`, ymoveApiKey);
+    const callResult = callYmoveOrError(result);
+    if (!callResult.ok) return callResult.response;
+    const { data } = extractDataAndPagination(callResult.body);
+    return json({ ok: true, data }, 200);
   }
 
   return json({ ok: false, code: 'invalid_action', message: 'Azione non riconosciuta.' }, 400);
