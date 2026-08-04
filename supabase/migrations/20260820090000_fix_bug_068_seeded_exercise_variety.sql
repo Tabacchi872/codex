@@ -77,6 +77,13 @@ as $function$
 $function$;
 
 revoke all on function public._dynamic_auto_program_pick(text,text,text,text,uuid,text,text[],text) from public, anon, authenticated;
+-- Grant esplicito, non solo implicito via default privileges: verificato che la
+-- vecchia firma a 7 argomenti (e le altre 3 funzioni sorelle create dalla stessa
+-- migration 20260819090000) hanno service_role=X in produzione, pur non essendoci
+-- alcun grant esplicito nel file originale (ereditato da un default privilege a
+-- livello di ambiente, diverso da quello locale). Reso esplicito qui per non
+-- dipendere da un comportamento implicito specifico dell'ambiente.
+grant execute on function public._dynamic_auto_program_pick(text,text,text,text,uuid,text,text[],text) to service_role;
 
 create or replace function public._assemble_dynamic_auto_program(
   p_cycle_id uuid,
