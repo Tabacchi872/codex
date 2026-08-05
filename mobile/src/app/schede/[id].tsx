@@ -36,6 +36,25 @@ const SESSION_STATUSES: WorkoutSessionStatus[] = ['todo', 'completed', 'skipped'
 const DEFAULT_WORKOUT_HERO = require('../../../assets/images/workouts/default-workout-hero.png');
 const DEFAULT_WORKOUT_HERO_LIGHT = require('../../../assets/images/workouts/default-workout-hero-light.png');
 
+// Card cliente con foto di sfondo (schede/[id].tsx, hero "isClientView"): il
+// testo sta SEMPRE sopra un'immagine reale, mai sopra lo sfondo dell'app —
+// deve restare leggibile a prescindere dal tema chiaro/scuro dell'app, quindi
+// questi colori sono fissi (non useTheme()), non i token del tema. Overlay
+// nero fisso (stesso valore gia' usato SOLO in tema scuro prima di questo
+// fix, qui esteso a entrambi i temi per un risultato identico ovunque).
+const HERO_OVERLAY_COLOR = '#05090D';
+const HERO_TEXT_PRIMARY = '#FFFFFF';
+const HERO_TEXT_SECONDARY = 'rgba(255,255,255,0.74)';
+const HERO_TRACK_BACKGROUND = 'rgba(255,255,255,0.28)';
+// Stessi colori (chiaro/testo scuro) di AppBadge in tema chiaro
+// (components/ui/app-badge.tsx), fissati qui perche' il badge sta sulla foto:
+// deve restare leggibile anche quando l'app e' in tema scuro.
+const HERO_BADGE_COLORS: Record<'moss' | 'amber' | 'neutral', { background: string; color: string }> = {
+  moss: { background: '#DFF6D4', color: '#67D42D' },
+  amber: { background: '#FCEACB', color: '#E3922A' },
+  neutral: { background: '#EAF1E7', color: '#536052' },
+};
+
 // Raggruppa gli esercizi consecutivi che condividono supersetGroupId in blocchi,
 // mantenendo l'ordine. Un esercizio senza gruppo resta un elemento standalone.
 function groupExercises(exercises: WorkoutExercise[]) {
@@ -404,14 +423,14 @@ export default function SchedaDettaglioScreen() {
                 contentFit="cover"
                 contentPosition={isLight ? { left: '50%', top: '50%' } : stackHero ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
               />
-              {!isLight ? <WorkoutHeroOverlay overlayColor={theme.background} /> : null}
+              <WorkoutHeroOverlay overlayColor={HERO_OVERLAY_COLOR} />
               <View style={styles.clientHeroContent}>
                 <View style={styles.clientHeroText}>
-                  <AppBadge
+                  <HeroBadge
                     label={heroBadgeLabel}
                     tone={sessionStatus === 'completed' || isInProgress ? 'moss' : sessionStatus === 'skipped' || sessionStatus === 'cancelled' ? 'amber' : 'neutral'}
                   />
-                  <Text style={[styles.clientPlanTitle, { color: theme.text }]} numberOfLines={3} ellipsizeMode="tail">
+                  <Text style={[styles.clientPlanTitle, { color: HERO_TEXT_PRIMARY }]} numberOfLines={3} ellipsizeMode="tail">
                     {plan.name}
                   </Text>
                   <View style={styles.clientHeroMetaGrid}>
@@ -423,12 +442,12 @@ export default function SchedaDettaglioScreen() {
               </View>
               <View style={styles.clientHeroBottom}>
                 <View style={styles.clientProgressRow}>
-                  <Text style={[styles.clientProgressLabel, { color: theme.textSecondary }]}>Progresso</Text>
-                  <Text style={[styles.clientProgressValue, { color: theme.text }]}>
+                  <Text style={[styles.clientProgressLabel, { color: HERO_TEXT_SECONDARY }]}>Progresso</Text>
+                  <Text style={[styles.clientProgressValue, { color: HERO_TEXT_PRIMARY }]}>
                     {exerciseProgress.completed}/{exerciseProgress.total}
                   </Text>
                 </View>
-                <View style={[styles.clientProgressTrack, { backgroundColor: isLight ? theme.backgroundSelected : 'rgba(255,255,255,0.22)' }]}>
+                <View style={[styles.clientProgressTrack, { backgroundColor: HERO_TRACK_BACKGROUND }]}>
                   <View
                     style={[
                       styles.clientProgressFill,
@@ -607,18 +626,32 @@ function HeroMeta({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Colori fissi (mai useTheme()): questo meta sta sempre sopra la foto della
+// card cliente, vedi HERO_TEXT_PRIMARY/HERO_TEXT_SECONDARY in testa al file.
 function ClientHeroMeta({ label, value }: { label: string; value: string }) {
-  const theme = useTheme();
-
   return (
     <View style={styles.clientHeroMetaItem}>
-      <Text style={[styles.clientHeroMetaLabel, { color: theme.textSecondary }]} numberOfLines={1}>
+      <Text style={[styles.clientHeroMetaLabel, { color: HERO_TEXT_SECONDARY }]} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={[styles.clientHeroMetaValue, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
+      <Text style={[styles.clientHeroMetaValue, { color: HERO_TEXT_PRIMARY }]} numberOfLines={1} ellipsizeMode="tail">
         {value}
       </Text>
     </View>
+  );
+}
+
+// Stessa visuale di AppBadge (components/ui/app-badge.tsx) ma con colori
+// FISSI (mai da tema): usato solo nella card cliente con foto di sfondo, dove
+// il badge deve restare leggibile a prescindere dal tema chiaro/scuro
+// dell'app. Le altre AppBadge del file (card coach, senza foto) restano
+// invariate.
+function HeroBadge({ label, tone }: { label: string; tone: 'moss' | 'amber' | 'neutral' }) {
+  const { background, color } = HERO_BADGE_COLORS[tone];
+  return (
+    <Text style={[styles.heroBadge, { backgroundColor: background, color }]} numberOfLines={1}>
+      {label}
+    </Text>
   );
 }
 
@@ -718,6 +751,15 @@ const styles = StyleSheet.create({
   },
   clientHeroMetaItem: {
     minWidth: 0,
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 8,
+    fontSize: 9.5,
+    fontWeight: '700',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   clientHeroMetaLabel: {
     fontSize: 11,

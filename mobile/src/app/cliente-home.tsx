@@ -22,13 +22,19 @@ import { useBoardStore } from '@/store/board-store';
 import { useBookingStore } from '@/store/booking-store';
 import { useCheckinStore } from '@/store/checkin-store';
 import { useClientStore } from '@/store/client-store';
-import { useNutritionStore } from '@/store/nutrition-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type { Difficulty, Exercise, WorkoutPlan } from '@/types/training';
 
 const DEFAULT_WORKOUT_HERO = require('../../assets/images/workouts/default-workout-hero.png');
 const DEFAULT_WORKOUT_HERO_LIGHT = require('../../assets/images/workouts/default-workout-hero-light.png');
+
+// Card "Piano attuale": il testo sta sempre sopra una foto reale, mai sopra
+// lo sfondo dell'app — deve restare leggibile a prescindere dal tema
+// chiaro/scuro, quindi questi colori sono fissi (mai da useAppTheme()).
+const HERO_OVERLAY_COLOR = '#05090D';
+const HERO_TEXT_PRIMARY = '#FFFFFF';
+const HERO_TEXT_SECONDARY = 'rgba(255,255,255,0.82)';
 const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   beginner: 'Base',
   intermediate: 'Intermedio',
@@ -47,7 +53,6 @@ export default function ClienteHomeScreen() {
   const clients = useClientStore((s) => s.clients);
   const workoutPlans = useTrainingStore((s) => s.workoutPlans);
   const hasHydrated = useTrainingStore((s) => s.hasHydrated);
-  const nutritionPlans = useNutritionStore((s) => s.plans);
   const checkins = useCheckinStore((s) => s.checkins);
   const bookings = useBookingStore((s) => s.bookings);
   const boardPosts = useBoardStore((s) => s.posts);
@@ -90,7 +95,6 @@ export default function ClienteHomeScreen() {
 
   const { completed: completedCount, total: workoutTotal } = getWorkoutCounter([], workoutPlans, client, currentClientId);
   const nextPlan = getNextWorkoutPlan(workoutPlans, currentClientId);
-  const nutritionPlan = nutritionPlans.find((p) => p.clientId === currentClientId) ?? null;
   const lastCheckin = checkins
     .filter((c) => c.clientId === currentClientId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
@@ -119,7 +123,7 @@ export default function ClienteHomeScreen() {
     {
       key: 'nutrizione',
       title: 'Nutrizione',
-      subtitle: nutritionPlan ? nutritionPlan.title : 'Piani e ricette',
+      subtitle: 'Piani e ricette',
       icon: <Apple size={compact ? 22 : 24} color={colors.moss} />,
       onPress: () => navigate('cliente-home-nutrizione', '/nutrizione'),
     },
@@ -230,13 +234,13 @@ export default function ClienteHomeScreen() {
               contentFit="cover"
               contentPosition={isLight ? { left: '50%', top: '50%' } : compact ? { left: '66%', top: '50%' } : { left: '58%', top: '50%' }}
             />
-            {!isLight ? <WorkoutHeroOverlay overlayColor={colors.background} /> : null}
+            <WorkoutHeroOverlay overlayColor={HERO_OVERLAY_COLOR} />
             <View style={[styles.workoutContent, compact && styles.workoutContentCompact]}>
               <View style={styles.workoutText}>
                 <Text style={[styles.kicker, { color: colors.moss }]}>PIANO ATTUALE</Text>
                 <Text
-                  style={[styles.workoutTitle, compact && styles.workoutTitleCompact, { color: colors.ink }]}
-                  numberOfLines={3}
+                  style={[styles.workoutTitle, compact && styles.workoutTitleCompact, { color: HERO_TEXT_PRIMARY }]}
+                  numberOfLines={2}
                   ellipsizeMode="tail">
                   {nextPlan ? nextPlan.name : 'Allenamenti'}
                 </Text>
@@ -251,7 +255,7 @@ export default function ClienteHomeScreen() {
                         ) : (
                           <Gauge size={15} color={colors.moss} />
                         )}
-                        <Text style={[styles.workoutMeta, { color: colors.ink }]} numberOfLines={1}>
+                        <Text style={[styles.workoutMeta, { color: HERO_TEXT_SECONDARY }]} numberOfLines={1}>
                           {item.label}
                         </Text>
                       </View>
@@ -259,7 +263,7 @@ export default function ClienteHomeScreen() {
                   ) : (
                     <View style={styles.workoutMetaPill}>
                       <Dumbbell size={15} color={colors.moss} />
-                      <Text style={[styles.workoutMeta, { color: colors.ink }]} numberOfLines={1}>
+                      <Text style={[styles.workoutMeta, { color: HERO_TEXT_SECONDARY }]} numberOfLines={1}>
                         Apri Workout
                       </Text>
                     </View>
@@ -311,24 +315,24 @@ export default function ClienteHomeScreen() {
   );
 }
 
+// Un solo gradient VERTICALE (mai orizzontale): la vecchia versione
+// scuriva l'intera colonna sinistra dall'alto in basso (fino al 96% di
+// opacita' anche in cima, dove non c'e' testo), rendendo la foto quasi
+// invisibile. Ora: alto quasi trasparente, centro leggermente scuro, basso
+// piu' scuro (dove stanno titolo/metadati/bottone) — mai un valore piatto,
+// mai grigio pieno, sempre nero trasparente a piu' fermate.
 function WorkoutHeroOverlay({ overlayColor }: { overlayColor: string }) {
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.workoutHeroOverlay]}>
       <Svg width="100%" height="100%" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
         <Defs>
-          <LinearGradient id="workoutLeftOverlay" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0.96" />
-            <Stop offset="32%" stopColor={overlayColor} stopOpacity="0.78" />
-            <Stop offset="50%" stopColor={overlayColor} stopOpacity="0.24" />
-            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.04" />
-          </LinearGradient>
           <LinearGradient id="workoutBottomOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0" />
-            <Stop offset="58%" stopColor={overlayColor} stopOpacity="0.62" />
-            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.92" />
+            <Stop offset="0%" stopColor={overlayColor} stopOpacity="0.04" />
+            <Stop offset="30%" stopColor={overlayColor} stopOpacity="0.14" />
+            <Stop offset="55%" stopColor={overlayColor} stopOpacity="0.32" />
+            <Stop offset="100%" stopColor={overlayColor} stopOpacity="0.74" />
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#workoutLeftOverlay)" />
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#workoutBottomOverlay)" />
       </Svg>
     </View>
@@ -521,6 +525,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minHeight: 214,
     padding: 11,
+  },
+  workoutHeroOverlay: {
+    zIndex: 0,
   },
   workoutContent: {
     flex: 1,
