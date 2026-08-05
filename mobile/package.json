@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "start:local": "node scripts/start-local-supabase.cjs",
     "web:local": "node scripts/start-local-supabase.cjs --web",
+    "start:local:lan": "node scripts/start-local-supabase.cjs --lan",
     "sync-exercise-images": "node scripts/sync-exercise-images.cjs",
     "sync-exercise-images:check": "node scripts/sync-exercise-images.cjs --check"
   },
