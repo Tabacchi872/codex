@@ -1,4 +1,14 @@
 -- fix: BUG-056 — gambe-bulgarian-split-squat (min_level='advanced') era usato
+
+create or replace function pg_temp._legacy_wte_selector(p_template_name text, p_day_name text, p_position integer)
+returns uuid language plpgsql as $$
+declare v_count integer; v_id uuid;
+begin
+  select count(*) into v_count from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id = wte.template_day_id join public.workout_templates wt on wt.id = wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position;
+  select wte.id into v_id from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id=wte.template_day_id join public.workout_templates wt on wt.id=wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position order by wte.id limit 1;
+  if v_count <> 1 then raise exception 'BUG_056_SELECTOR_MISMATCH: template %, giorno %, posizione % ha cardinalita %',p_template_name,p_day_name,p_position,v_count; end if;
+  return v_id;
+end $$;
 -- nel template "Manubri ed Elastici" (Intermedio). Regola definitiva dei
 -- livelli (beginner=1, intermediate=2, advanced=3): un esercizio è
 -- compatibile quando exercise.min_level <= template.level. Un template
@@ -20,7 +30,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-affondi',
       notes = 'Con manubri: ginocchio anteriore sopra la caviglia, busto eretto.'
-  where id = '78797705-9352-4d8d-a2f9-dc7a88527f76'
+  where id = pg_temp._legacy_wte_selector('Manubri ed Elastici','Lower B',2)
     and exercise_id = 'gambe-bulgarian-split-squat'
     and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
@@ -37,7 +47,7 @@ declare
 begin
   select count(*) into v_count
   from public.workout_template_exercises
-  where id = 'f22bd840-9c42-4f22-b0de-c04d7a6ecdf1'
+  where id = pg_temp._legacy_wte_selector('Manubri ed Elastici','Lower B',1)
     and exercise_id = 'glutei-squat-sumo';
   if v_count <> 1 then
     raise exception 'BUG_056_UNEXPECTED_CHANGE: la riga Lower B posizione 1 (non oggetto di questa correzione) risulta modificata rispetto all''atteso.';

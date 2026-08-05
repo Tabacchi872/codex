@@ -1,4 +1,14 @@
 -- fix: BUG-057 — applica la regola ordinale definitiva dei livelli
+
+create or replace function pg_temp._legacy_wte_selector(p_template_name text, p_day_name text, p_position integer)
+returns uuid language plpgsql as $$
+declare v_count integer; v_id uuid;
+begin
+  select count(*) into v_count from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id = wte.template_day_id join public.workout_templates wt on wt.id = wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position;
+  select wte.id into v_id from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id=wte.template_day_id join public.workout_templates wt on wt.id=wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position order by wte.id limit 1;
+  if v_count <> 1 then raise exception 'BUG_057_SELECTOR_MISMATCH: template %, giorno %, posizione % ha cardinalita %',p_template_name,p_day_name,p_position,v_count; end if;
+  return v_id;
+end $$;
 -- (beginner=1/intermediate=2/advanced=3, exercise.min_level <= template.level)
 -- a tutti i 18 template auto_eligible, non solo alla singola riga corretta
 -- in BUG-056. Rivalidando con la regola letterale (non la regola operativa
@@ -81,7 +91,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: ginocchia in linea con le punte dei piedi, schiena neutra, scendere fino a cosce parallele o quanto la mobilità consente.'
-  where id = '7423cac0-a598-489f-af75-f4ebde2d2b86'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout A',1)
     and exercise_id = 'gambe-affondi' and sets = 3 and reps = 14 and reps_min = 12 and reps_max = 15 and rest_seconds = 60;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Corpo Libero/Workout A pos.1'; end if;
@@ -90,7 +100,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'tricipiti-dip-ginocchia-piegate',
       notes = 'Dip su sedia con ginocchia piegate e piedi vicini al corpo: busto il più verticale possibile, gomiti che puntano indietro. Avvicinare ulteriormente i piedi o distendere le gambe quando pronti per aumentare la difficoltà.'
-  where id = '543d2172-b253-44e1-9f41-dea7273da604'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout C',2)
     and exercise_id = 'tricipiti-dip-tricipiti' and sets = 3 and reps = 12 and reps_min = 10 and reps_max = 15 and rest_seconds = 60;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Corpo Libero/Workout C pos.2'; end if;
@@ -99,7 +109,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: ginocchia in linea con le punte dei piedi, schiena neutra, ritmo sostenuto per lo stimolo metabolico.'
-  where id = 'ba403ee2-ba9c-48e0-ba30-86e44ff6512f'
+  where id = pg_temp._legacy_wte_selector('Dimagrimento Principiante','Workout B',4)
     and exercise_id = 'gambe-affondi' and sets = 2 and reps = 12 and reps_min is null and reps_max is null and rest_seconds = 60;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Dimagrimento Principiante/Workout B pos.4'; end if;
@@ -108,7 +118,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'dorso-pulley-basso',
       notes = 'Trazione al pulley basso: scapole attive, tirare verso l addome, evitare rimbalzi.'
-  where id = '33f4aaa4-48e6-4602-a4eb-5aa6e23efc9e'
+  where id = pg_temp._legacy_wte_selector('Forza Base 5x5','Workout A',3)
     and exercise_id = 'dorso-rematore-bilanciere' and sets = 5 and reps = 5 and reps_min = 5 and reps_max = 5 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Forza Base 5x5/Workout A pos.3'; end if;
@@ -117,7 +127,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra per tutta l esecuzione, manubri vicini alle gambe.'
-  where id = 'b69c497f-d070-42d7-b65c-12c360deec7e'
+  where id = pg_temp._legacy_wte_selector('Forza Base 5x5','Workout B',1)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 5 and reps = 5 and reps_min = 5 and reps_max = 5 and rest_seconds = 150;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Forza Base 5x5/Workout B pos.1'; end if;
@@ -126,7 +136,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'spalle-shoulder-press',
       notes = 'Spinta sopra la testa con manubri, seduti o in piedi: traiettoria verticale, core attivo.'
-  where id = '6d4e8b96-644c-44b1-9e0b-f3bdc2c0e143'
+  where id = pg_temp._legacy_wte_selector('Forza Base 5x5','Workout B',2)
     and exercise_id = 'spalle-military-press' and sets = 5 and reps = 5 and reps_min = 5 and reps_max = 5 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Forza Base 5x5/Workout B pos.2'; end if;
@@ -135,7 +145,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-squat',
       notes = 'Squat con bilanciere: con bilanciere vuoto o carico leggero, tecnica prima di tutto.'
-  where id = 'c56e0758-7332-4d57-a405-8fcd0ea5c089'
+  where id = pg_temp._legacy_wte_selector('Forza Base 5x5','Workout C',1)
     and exercise_id = 'gambe-front-squat' and sets = 5 and reps = 5 and reps_min = 5 and reps_max = 5 and rest_seconds = 150;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Forza Base 5x5/Workout C pos.1'; end if;
@@ -144,7 +154,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra per tutta l esecuzione, manubri vicini alle gambe.'
-  where id = 'f23f5495-52fc-40ca-8658-ea5d206e2a1e'
+  where id = pg_temp._legacy_wte_selector('Forza e Resistenza','Forza B',2)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 3 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Forza e Resistenza/Forza B pos.2'; end if;
@@ -153,7 +163,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra, manubri vicini alle gambe.'
-  where id = '66674f8a-d718-45f2-a64c-43a16e389b06'
+  where id = pg_temp._legacy_wte_selector('Full Body Metabolico','Workout B',1)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 3 and reps = 12 and reps_min = 10 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Full Body Metabolico/Workout B pos.1'; end if;
@@ -162,7 +172,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'cardio-battle-rope',
       notes = 'Battle rope: ondulazioni continue, ginocchia leggermente flesse, movimento generato dalle spalle, ritmo sostenuto.'
-  where id = 'a928ab5e-030a-4790-976d-4f38c859448d'
+  where id = pg_temp._legacy_wte_selector('Full Body Metabolico','Workout C',5)
     and exercise_id = 'cardio-burpees' and sets = 3 and reps = 1 and reps_min is null and reps_max is null and rest_seconds = 45;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Full Body Metabolico/Workout C pos.5'; end if;
@@ -171,7 +181,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: tecnica prima di tutto, scendere fino a cosce parallele o quanto la mobilità consente.'
-  where id = 'aa2cc6d3-af0e-49e4-9f1e-af50014463c7'
+  where id = pg_temp._legacy_wte_selector('Inizio Palestra (3 giorni)','Workout A',1)
     and exercise_id = 'gambe-squat' and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Inizio Palestra/Workout A pos.1'; end if;
@@ -180,7 +190,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'spalle-shoulder-press-macchina',
       notes = 'Shoulder press su macchina guidata: schiena in appoggio, traiettoria fissata dalla macchina, non bloccare i gomiti in alto.'
-  where id = '5c64953c-d7a5-4efe-b8e2-d2fbbfac4ba9'
+  where id = pg_temp._legacy_wte_selector('Inizio Palestra (3 giorni)','Workout B',3)
     and exercise_id = 'spalle-shoulder-press' and sets = 3 and reps = 14 and reps_min = 12 and reps_max = 15 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Inizio Palestra/Workout B pos.3'; end if;
@@ -189,7 +199,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: ginocchia in linea con le punte dei piedi, schiena neutra.'
-  where id = 'c69a9e82-3625-4c5d-8279-a2149a640365'
+  where id = pg_temp._legacy_wte_selector('Inizio Palestra (3 giorni)','Workout C',1)
     and exercise_id = 'gambe-affondi' and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Inizio Palestra/Workout C pos.1'; end if;
@@ -198,7 +208,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'dorso-rematore-macchina',
       notes = 'Trazione orizzontale su macchina guidata: petto in appoggio se previsto, scapole attive, ritmo controllato.'
-  where id = 'fbd065a9-5437-4f6a-96e8-2607be224524'
+  where id = pg_temp._legacy_wte_selector('Inizio Palestra (3 giorni)','Workout C',3)
     and exercise_id = 'dorso-rematore-manubrio' and sets = 3 and reps = 14 and reps_min = 12 and reps_max = 15 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Inizio Palestra/Workout C pos.3'; end if;
@@ -207,7 +217,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra per tutta l esecuzione.'
-  where id = '3fa84fd5-0fda-4d55-afe5-81af259a6cf5'
+  where id = pg_temp._legacy_wte_selector('Pesi e Cardio','Workout D',1)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 4 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Pesi e Cardio/Workout D pos.1'; end if;
@@ -216,7 +226,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra per tutta l esecuzione.'
-  where id = 'fab1b9e5-bc25-42cd-b465-6601a468dc45'
+  where id = pg_temp._legacy_wte_selector('Strength & Shape','Workout B',1)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 4 and reps = 7 and reps_min = 6 and reps_max = 8 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Strength & Shape/Workout B pos.1'; end if;
@@ -225,7 +235,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: focus sulla tecnica, scendere fino a cosce parallele o quanto la mobilità consente.'
-  where id = '5c20c1d3-328d-4b29-bd92-042769081fb1'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Squat',2)
     and exercise_id = 'gambe-squat' and sets = 4 and reps = 8 and reps_min is null and reps_max is null and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Tecnica dei Fondamentali/Focus Squat pos.2'; end if;
@@ -234,7 +244,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'petto-chest-press',
       notes = 'Chest press su macchina guidata: focus sulla tecnica, scapole stabili.'
-  where id = '8a00623a-235f-48dc-bfa6-6a700dfd6ca6'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Panca e Trazione',2)
     and exercise_id = 'petto-panca-piana' and sets = 4 and reps = 8 and reps_min is null and reps_max is null and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Tecnica dei Fondamentali/Focus Panca e Trazione pos.2'; end if;
@@ -243,7 +253,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'spalle-shoulder-press-macchina',
       notes = 'Shoulder press su macchina guidata: schiena in appoggio, traiettoria fissata dalla macchina.'
-  where id = 'a631cdf6-9889-4a25-8226-406cf31f5f49'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Stacco e Press',3)
     and exercise_id = 'spalle-shoulder-press' and sets = 3 and reps = 12 and reps_min is null and reps_max is null and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Tecnica dei Fondamentali/Focus Stacco e Press pos.3'; end if;
@@ -252,7 +262,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra per tutta l esecuzione.'
-  where id = 'c5525a2c-9781-41b4-bbdf-5851dc858925'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower + Conditioning','Lower A',2)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 3 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower + Conditioning/Lower A pos.2'; end if;
@@ -261,7 +271,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'cardio-salto-corda',
       notes = 'Salto con la corda: ritmo sostenuto, tecnica prima della velocità.'
-  where id = 'daccde6a-a2f7-4c16-bd93-30bfa204facc'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower + Conditioning','Upper B',5)
     and exercise_id = 'cardio-burpees' and sets = 3 and reps = 1 and reps_min is null and reps_max is null and rest_seconds = 30;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower + Conditioning/Upper B pos.5'; end if;
@@ -270,7 +280,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri: schiena neutra, manubri vicini alle gambe.'
-  where id = '57e5610d-b677-4455-9c9f-ac314ec2ef1b'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower Ipertrofia','Lower A',2)
     and exercise_id = 'gambe-stacco-rumeno' and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower Ipertrofia/Lower A pos.2'; end if;
@@ -279,7 +289,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'dorso-pulley-basso',
       notes = 'Trazione al pulley basso: busto stabile, scapole attive, tirare verso l addome.'
-  where id = '4901e1ef-c6f6-4fd2-ad7d-330ac6fcc163'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower Ipertrofia','Upper B',2)
     and exercise_id = 'dorso-rematore-bilanciere' and sets = 4 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 90;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower Ipertrofia/Upper B pos.2'; end if;
@@ -288,7 +298,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'spalle-shoulder-press',
       notes = 'Spinta sopra la testa con manubri: traiettoria verticale, core attivo.'
-  where id = '9e957f22-e479-48a3-93f0-27423848d4f1'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower Ipertrofia','Upper B',3)
     and exercise_id = 'spalle-military-press' and sets = 3 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower Ipertrofia/Upper B pos.3'; end if;
@@ -297,7 +307,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-squat',
       notes = 'Squat con bilanciere: busto verticale, ginocchia in linea con i piedi.'
-  where id = 'f535d05a-4660-40db-abf4-8f7d76501a13'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower Ipertrofia','Lower B',1)
     and exercise_id = 'gambe-front-squat' and sets = 3 and reps = 9 and reps_min = 8 and reps_max = 10 and rest_seconds = 120;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower Ipertrofia/Lower B pos.1'; end if;
@@ -306,7 +316,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-affondi',
       notes = 'Affondi: ginocchio anteriore sopra la caviglia, busto stabile, spinta dal piede avanti.'
-  where id = '65491fca-28cb-4e20-add7-f38b8c9a5c51'
+  where id = pg_temp._legacy_wte_selector('Upper/Lower Ipertrofia','Lower B',3)
     and exercise_id = 'gambe-bulgarian-split-squat' and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
   if v_count <> 1 then raise exception 'BUG_057_MISMATCH: Upper/Lower Ipertrofia/Lower B pos.3'; end if;

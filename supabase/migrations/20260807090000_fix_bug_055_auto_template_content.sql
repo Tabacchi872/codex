@@ -1,4 +1,23 @@
 -- fix: BUG-055 — corregge il contenuto incompatibile dei 3 template
+
+create or replace function pg_temp._legacy_wte_selector(p_template_name text, p_day_name text, p_position integer)
+returns uuid language plpgsql as $$
+declare v_count integer; v_id uuid;
+begin
+  select count(*) into v_count
+  from public.workout_template_exercises wte
+  join public.workout_template_days wtd on wtd.id = wte.template_day_id
+  join public.workout_templates wt on wt.id = wtd.template_id
+  where wt.name = p_template_name and wtd.name = p_day_name and wte.exercise_order = p_position;
+  select wte.id into v_id
+  from public.workout_template_exercises wte
+  join public.workout_template_days wtd on wtd.id = wte.template_day_id
+  join public.workout_templates wt on wt.id = wtd.template_id
+  where wt.name = p_template_name and wtd.name = p_day_name and wte.exercise_order = p_position
+  order by wte.id limit 1;
+  if v_count <> 1 then raise exception 'BUG_055_SELECTOR_MISMATCH: template %, giorno %, posizione % ha cardinalita %', p_template_name, p_day_name, p_position, v_count; end if;
+  return v_id;
+end $$;
 -- auto_eligible trovati durante il sotto-blocco 2.2 (Corpo Libero, Manubri
 -- ed Elastici, Tecnica dei Fondamentali). Solo correzione dati Blocco 1
 -- (workout_template_exercises) + 2 nuove relazioni exercise_alternatives
@@ -98,7 +117,7 @@ begin
       reps_max = 15,
       rest_seconds = 60,
       notes = 'Squat sumo a corpo libero o con carico aggiuntivo leggero: ginocchia verso le punte dei piedi, busto stabile, spinta dai talloni.'
-  where id = '1df6d2cd-7516-44e7-a9d1-666cb374dbe0'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout B',1)
     and exercise_id = 'gambe-squat'
     and sets = 3 and reps = 18 and reps_min = 15 and reps_max = 20 and rest_seconds = 60;
   get diagnostics v_count = row_count;
@@ -115,7 +134,7 @@ begin
       reps_max = 12,
       rest_seconds = 60,
       notes = 'Rematore monolaterale: usa un oggetto pesante di uso comune (es. zaino carico) se non disponibili manubri. Schiena parallela al pavimento, gomito vicino al busto.'
-  where id = '44f2f186-6b54-481c-a8a9-59d397387fb6'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout B',2)
     and exercise_id = 'dorso-trazioni'
     and sets = 3 and reps = 10 and reps_min = 8 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
@@ -132,7 +151,7 @@ begin
       reps_max = 18,
       rest_seconds = 60,
       notes = 'Pattern di hip hinge a corpo libero, ripetizioni più alte per compensare l''assenza di carico esterno: anche indietro, schiena neutra, ginocchia morbide.'
-  where id = '11a09e8c-4a23-4ab2-875b-0393531f6e2b'
+  where id = pg_temp._legacy_wte_selector('Manubri ed Elastici','Lower A',2)
     and exercise_id = 'gambe-stacco-rumeno'
     and sets = 3 and reps = 11 and reps_min = 10 and reps_max = 12 and rest_seconds = 75;
   get diagnostics v_count = row_count;
@@ -149,7 +168,7 @@ begin
       reps_max = null,
       rest_seconds = 75,
       notes = 'Bilanciere leggero sui fianchi o corpo libero: spinta del bacino, contrazione glutei in massima estensione. Regressione più controllata rispetto allo stacco rumeno per apprendere il pattern hip-hinge.'
-  where id = '7433b045-2779-4578-b1ea-299ba33637f9'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Stacco e Press',2)
     and exercise_id = 'gambe-stacco-rumeno'
     and sets = 4 and reps = 8 and reps_min is null and reps_max is null and rest_seconds = 90;
   get diagnostics v_count = row_count;
@@ -167,7 +186,7 @@ declare
 begin
   select count(*) into v_count
   from public.workout_template_exercises
-  where id = '5c20c1d3-328d-4b29-bd92-042769081fb1'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Squat',2)
     and exercise_id = 'gambe-squat' and sets = 4 and reps = 8 and rest_seconds = 90;
   if v_count <> 1 then
     raise exception 'BUG_055_UNEXPECTED_CHANGE: la riga Focus Squat/gambe-squat di Tecnica dei Fondamentali (non parte di questo fix) risulta modificata o mancante.';

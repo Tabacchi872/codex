@@ -1,4 +1,14 @@
 -- fix: riapertura BUG-055 — correzione semantica di 2 sostituzioni del fix
+
+create or replace function pg_temp._legacy_wte_selector(p_template_name text, p_day_name text, p_position integer)
+returns uuid language plpgsql as $$
+declare v_count integer; v_id uuid;
+begin
+  select count(*) into v_count from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id = wte.template_day_id join public.workout_templates wt on wt.id = wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position;
+  select wte.id into v_id from public.workout_template_exercises wte join public.workout_template_days wtd on wtd.id=wte.template_day_id join public.workout_templates wt on wt.id=wtd.template_id where wt.name=p_template_name and wtd.name=p_day_name and wte.exercise_order=p_position order by wte.id limit 1;
+  if v_count <> 1 then raise exception 'BUG_055B_SELECTOR_MISMATCH: template %, giorno %, posizione % ha cardinalita %',p_template_name,p_day_name,p_position,v_count; end if;
+  return v_id;
+end $$;
 -- precedente (20260807090000) risultate incompatibili a un controllo più
 -- rigoroso, più una terza incompatibilità pre-esistente mai notata prima
 -- (stesso identico difetto di validazione, non un nuovo bug indipendente).
@@ -105,7 +115,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-air-squat',
       notes = 'Squat a corpo libero: ginocchia in linea con le punte dei piedi, schiena neutra, scendere fino a cosce parallele o quanto la mobilità consente.'
-  where id = '1df6d2cd-7516-44e7-a9d1-666cb374dbe0'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout B',1)
     and exercise_id = 'glutei-squat-sumo'
     and sets = 3 and reps = 15 and reps_min = 12 and reps_max = 15 and rest_seconds = 60;
   get diagnostics v_count = row_count;
@@ -117,7 +127,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'dorso-rematore-corpo-libero',
       notes = 'Rematore a corpo libero in appoggio su una sbarra bassa, un tavolo robusto o anelli di sospensione: corpo in linea, tirare il petto verso il punto di appoggio; avvicinare i piedi al punto di appoggio per aumentare la difficoltà, allontanarli per ridurla.'
-  where id = '44f2f186-6b54-481c-a8a9-59d397387fb6'
+  where id = pg_temp._legacy_wte_selector('Corpo Libero','Workout B',2)
     and exercise_id = 'dorso-rematore-manubrio'
     and sets = 3 and reps = 12 and reps_min = 10 and reps_max = 12 and rest_seconds = 60;
   get diagnostics v_count = row_count;
@@ -130,7 +140,7 @@ begin
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       sets = 3, reps = 12, reps_min = 10, reps_max = 12, rest_seconds = 75, rpe_rir = 'RIR 2-3',
       notes = 'Stacco rumeno con manubri: schiena neutra, bacino che si sposta indietro, manubri vicini alle gambe, ginocchia con flessione minima e costante.'
-  where id = '11a09e8c-4a23-4ab2-875b-0393531f6e2b'
+  where id = pg_temp._legacy_wte_selector('Manubri ed Elastici','Lower A',2)
     and exercise_id = 'femorali-hip-hinge'
     and sets = 4 and reps = 15 and reps_min = 12 and reps_max = 18 and rest_seconds = 60;
   get diagnostics v_count = row_count;
@@ -142,7 +152,7 @@ begin
   update public.workout_template_exercises
   set exercise_id = 'gambe-stacco-rumeno-manubri',
       notes = 'Stacco rumeno con manubri leggeri: schiena neutra, bacino indietro, manubri vicini alle gambe, ginocchia con flessione minima e costante — stessa tecnica dello stacco a bilanciere ma con carico più gestibile per un principiante.'
-  where id = '7433b045-2779-4578-b1ea-299ba33637f9'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Stacco e Press',2)
     and exercise_id = 'gambe-hip-thrust'
     and sets = 3 and reps = 10 and rest_seconds = 75;
   get diagnostics v_count = row_count;
@@ -160,7 +170,7 @@ declare
 begin
   select count(*) into v_count
   from public.workout_template_exercises
-  where id = '5c20c1d3-328d-4b29-bd92-042769081fb1'
+  where id = pg_temp._legacy_wte_selector('Tecnica dei Fondamentali','Focus Squat',2)
     and exercise_id = 'gambe-squat';
   if v_count <> 1 then
     raise exception 'BUG_055B_UNEXPECTED_CHANGE: la riga Tecnica dei Fondamentali/Focus Squat (non oggetto di questa correzione) risulta modificata rispetto all''atteso.';
