@@ -27,6 +27,7 @@ import { autoLinkYmoveVideosForCoach } from '@/lib/ymove-auto-link-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientOnboardingStore } from '@/store/client-onboarding-store';
 import { useClientStore } from '@/store/client-store';
+import { useProgramEditStore } from '@/store/program-edit-store';
 import { useYmoveAutoLinkStore } from '@/store/ymove-autolink-store';
 import type { UserRole } from '@/types/auth';
 
@@ -151,6 +152,7 @@ export function AuthGate() {
   const onboardingStatusRevision = useClientOnboardingStore((s) => s.statusRevision);
   const sessionReady = !supabaseConfig.isConfigured || mustChangePasswordSupabase || sessionGate.checked;
 
+  const programEditActive = useProgramEditStore((s) => s.active);
   const roleTargetPath = getRoleRedirectTarget(currentRole, pathname);
   const clientTargetPath = getClientRedirectTarget({
     role: currentRole,
@@ -160,6 +162,7 @@ export function AuthGate() {
     coachAccess: clientCoachAccess,
     planAccess: clientPlanAccess,
     fitnessQuestionnaire: clientFitnessQuestionnaire,
+    programEditActive,
   });
   const targetPath = clientOnboarding.error ? null : clientTargetPath ?? roleTargetPath;
 
@@ -662,6 +665,7 @@ function getClientRedirectTarget({
   coachAccess,
   planAccess,
   fitnessQuestionnaire,
+  programEditActive,
 }: {
   role: UserRole | null;
   pathname: string;
@@ -670,6 +674,7 @@ function getClientRedirectTarget({
   coachAccess: { loading: boolean; checked: boolean; coach: AssignedCoachSummary | null; error: string | null };
   planAccess: { loading: boolean; checked: boolean; active: boolean; error: string | null };
   fitnessQuestionnaire: { loading: boolean; checked: boolean; required: boolean; error: string | null };
+  programEditActive: boolean;
 }): Href | null {
   if (role !== 'cliente' || !supabaseConfigured || onboarding.error || onboarding.loading || !onboarding.checked) return null;
   if (onboarding.required) return pathname === CLIENT_ONBOARDING ? null : CLIENT_ONBOARDING;
@@ -684,6 +689,15 @@ function getClientRedirectTarget({
       // bloccato: espone anche voci premium come Metriche/Progressi/Pacchetti).
       const allowedWithoutPlan = pathname === CLIENT_SELF_GUIDED_PLANS || pathname === '/cliente-profilo';
       return allowedWithoutPlan ? null : CLIENT_SELF_GUIDED_PLANS;
+    }
+    // Modifica risposte da uno stato pending_template ("Controlla
+    // questionario", workout.tsx): il flag e' attivato esplicitamente
+    // dall'utente e permette di rientrare in onboarding-cliente/
+    // questionario-fitness anche se gia' completati, bypassando il bounce a
+    // Home sotto. Il flag si disattiva da solo al salvataggio finale o
+    // uscendo con "indietro" verso Home (vedi entrambe le schermate).
+    if (programEditActive && (pathname === CLIENT_ONBOARDING || pathname === CLIENT_FITNESS_QUESTIONNAIRE)) {
+      return null;
     }
     // Questionario fitness obbligatorio (sistema "programmi automatici"):
     // verificato solo DOPO onboarding+paywall, mai per coach_guided.

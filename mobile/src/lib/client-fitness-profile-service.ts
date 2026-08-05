@@ -1,6 +1,11 @@
 import { supabase, supabaseConfig } from './supabase';
 
-import type { InitialFitnessQuestionnairePayload } from '@/types/client-fitness-profile';
+import type {
+  FitnessEquipmentLevel,
+  FitnessLocation,
+  InitialFitnessQuestionnairePayload,
+  PreferredTrainingStyle,
+} from '@/types/client-fitness-profile';
 
 type ServiceResult<T> = { ok: true; data: T } | { ok: false; message: string };
 
@@ -38,6 +43,70 @@ export async function getClientFitnessProfileStatus(): Promise<ServiceResult<Fit
   if (!data) return { ok: true, data: { exists: false, completed: false } };
 
   return { ok: true, data: { exists: true, completed: data.completed === true } };
+}
+
+export type CompletedClientFitnessProfile = {
+  age: number | null;
+  location: FitnessLocation | null;
+  equipmentLevel: FitnessEquipmentLevel | null;
+  sessionDurationMinutes: number | null;
+  preferredTrainingStyle: PreferredTrainingStyle | null;
+  hasPainOrLimitation: boolean | null;
+  painAreas: string[];
+  painNotes: string | null;
+  requiresProfessionalSupervision: boolean | null;
+  excludedExerciseIds: string[];
+};
+
+// Sola lettura, per la precompilazione del flusso "Controlla questionario"
+// (pending_template, workout.tsx): stesso pattern gia' in uso da
+// getCompletedClientOnboardingProfile (client-onboarding-service.ts). RLS
+// owner-read gia' presente su client_fitness_profile/
+// client_excluded_exercises, nessuna nuova policy necessaria.
+export async function getCompletedClientFitnessProfile(): Promise<ServiceResult<CompletedClientFitnessProfile | null>> {
+  if (!supabaseConfig.isConfigured || !supabase) return { ok: true, data: null };
+
+  const clientId = await getAuthenticatedClientId();
+  if (!clientId) return { ok: false, message: GENERIC_VERIFY_ERROR };
+
+  const { data, error } = await supabase
+    .from('client_fitness_profile')
+    .select(
+      'age,location,equipment_level,session_duration_minutes,preferred_training_style,has_pain_or_limitation,pain_areas,pain_notes,requires_professional_supervision',
+    )
+    .eq('client_id', clientId)
+    .eq('completed', true)
+    .maybeSingle();
+
+  if (error) {
+    if (__DEV__) console.warn('CLIENT_FITNESS_PROFILE_READ_ERROR', error.message);
+    return { ok: false, message: GENERIC_VERIFY_ERROR };
+  }
+  if (!data) return { ok: true, data: null };
+
+  const { data: exclusions, error: exclusionsError } = await supabase
+    .from('client_excluded_exercises')
+    .select('exercise_id')
+    .eq('client_id', clientId)
+    .eq('active', true);
+
+  if (exclusionsError && __DEV__) console.warn('CLIENT_EXCLUDED_EXERCISES_READ_ERROR', exclusionsError.message);
+
+  return {
+    ok: true,
+    data: {
+      age: data.age,
+      location: data.location,
+      equipmentLevel: data.equipment_level,
+      sessionDurationMinutes: data.session_duration_minutes,
+      preferredTrainingStyle: data.preferred_training_style,
+      hasPainOrLimitation: data.has_pain_or_limitation,
+      painAreas: Array.isArray(data.pain_areas) ? data.pain_areas : [],
+      painNotes: data.pain_notes,
+      requiresProfessionalSupervision: data.requires_professional_supervision,
+      excludedExerciseIds: (exclusions ?? []).map((row) => row.exercise_id as string),
+    },
+  };
 }
 
 function describeSaveError(message: string): string {

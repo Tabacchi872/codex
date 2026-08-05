@@ -11,12 +11,14 @@ import {
   completeCoachGuidedOnboarding,
   createPendingClientOnboarding,
   getBmiCategory,
+  getCompletedClientOnboardingProfile,
   saveSelfGuidedOnboarding,
 } from '@/lib/client-onboarding-service';
 import { normalizeCoachCode } from '@/lib/coach-code';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientOnboardingStore } from '@/store/client-onboarding-store';
 import { useClientStore } from '@/store/client-store';
+import { useProgramEditStore } from '@/store/program-edit-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type {
   BmiCategory,
@@ -84,10 +86,41 @@ export default function ClientOnboardingScreen() {
   const updateClient = useClientStore((s) => s.updateClient);
   const clients = useClientStore((s) => s.clients);
   const client = clients.find((item) => item.id === clientId);
+  const editMode = useProgramEditStore((s) => s.active);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>('kg');
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
+
+  // Precompilazione per "Controlla questionario" (pending_template,
+  // workout.tsx): al primo ingresso in modalita' modifica, se non esiste
+  // ancora un draft locale, carica le risposte reali gia' salvate cosi' da
+  // non farle reinserire da capo. currentStep=1 salta IntroStep (la scelta
+  // "Ho un coach"/"Non ho un coach" non deve mai ripresentarsi qui: il modo
+  // e' gia' immutabile lato DB dopo il completamento).
+  useEffect(() => {
+    if (!clientId || !editMode || draft) return;
+    let active = true;
+    (async () => {
+      const result = await getCompletedClientOnboardingProfile();
+      if (!active || !result.ok || !result.data || result.data.clientMode !== 'self_guided') return;
+      upsertDraft(clientId, {
+        mode: 'self_guided',
+        currentStep: 1,
+        gender: result.data.gender ?? undefined,
+        goals: result.data.goals,
+        focusAreas: result.data.focusAreas,
+        trainingReasons: result.data.trainingReasons,
+        experienceLevel: result.data.experienceLevel ?? undefined,
+        trainingDaysPerWeek: result.data.trainingDaysPerWeek ?? undefined,
+        weightKg: result.data.weightKg ?? undefined,
+        heightCm: result.data.heightCm ?? undefined,
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [clientId, draft, editMode, upsertDraft]);
 
   const currentDraft = useMemo(
     () =>
@@ -140,6 +173,14 @@ export default function ClientOnboardingScreen() {
       return;
     }
     if (step === 1) {
+      if (editMode) {
+        // Uscita dalla modifica ("Controlla questionario"): torna a Home
+        // senza salvare nulla, il draft locale precompilato viene scartato.
+        useProgramEditStore.getState().finish();
+        if (clientId) clearDraft(clientId);
+        router.replace('/cliente-home');
+        return;
+      }
       patch({ mode: undefined, currentStep: 0 });
       return;
     }
@@ -194,8 +235,15 @@ export default function ClientOnboardingScreen() {
     if (client) {
       updateClient({ ...client, goal: payload.goals.join(', ') });
     }
-    markOnboardingCompleted(clientId);
     clearDraft(clientId);
+    if (editMode) {
+      // Prosegue alla seconda tappa della modifica (luogo/attrezzatura/
+      // durata, in client_fitness_profile): il retry della generazione
+      // automatica parte solo al termine di QUELLA schermata, mai qui.
+      router.replace('/questionario-fitness');
+      return;
+    }
+    markOnboardingCompleted(clientId);
     router.replace('/abbonamento-cliente');
   }
 
@@ -212,7 +260,9 @@ export default function ClientOnboardingScreen() {
               mode === 'coach_guided'
                 ? 'Collegati e continua'
                 : mode === 'self_guided' && step === 9
-                  ? 'Conferma e scopri i piani'
+                  ? editMode
+                    ? 'Salva e continua'
+                    : 'Conferma e scopri i piani'
                   : 'Continua'
             }
             onPress={continueFlow}

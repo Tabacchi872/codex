@@ -7,10 +7,11 @@ import { LegalConsentCheckbox } from '@/components/legal-consent-checkbox';
 import { AppButton, AppScreen, AppTextField } from '@/components/ui';
 import { PRIVACY_POLICY_URL } from '@/constants/app-info';
 import { assignInitialAutoProgram } from '@/lib/auto-program-service';
-import { saveInitialFitnessQuestionnaire } from '@/lib/client-fitness-profile-service';
-import { recordHealthDataConsent } from '@/lib/legal-acceptance-service';
+import { getCompletedClientFitnessProfile, saveInitialFitnessQuestionnaire } from '@/lib/client-fitness-profile-service';
+import { hasActiveHealthDataConsent, recordHealthDataConsent } from '@/lib/legal-acceptance-service';
 import { useAuthStore } from '@/store/auth-store';
 import { useClientFitnessProfileStore } from '@/store/client-fitness-profile-store';
+import { useProgramEditStore } from '@/store/program-edit-store';
 import { AppFontSize, AppRadius, AppSpacing, useAppTheme } from '@/theme';
 import type {
   ClientFitnessProfileDraft,
@@ -75,10 +76,57 @@ export default function QuestionarioFitnessScreen() {
   const upsertDraft = useClientFitnessProfileStore((s) => s.upsertDraft);
   const clearDraft = useClientFitnessProfileStore((s) => s.clearDraft);
   const markCompleted = useClientFitnessProfileStore((s) => s.markCompleted);
+  const editMode = useProgramEditStore((s) => s.active);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [healthConsentAccepted, setHealthConsentAccepted] = useState(false);
   const [healthConsentRecorded, setHealthConsentRecorded] = useState(false);
+
+  // Precompilazione per "Controlla questionario" (pending_template,
+  // workout.tsx), seconda tappa dopo onboarding-cliente: al primo ingresso
+  // in modalita' modifica, se non esiste ancora un draft locale, carica le
+  // risposte reali gia' salvate.
+  useEffect(() => {
+    if (!clientId || !editMode || draft) return;
+    let active = true;
+    (async () => {
+      const result = await getCompletedClientFitnessProfile();
+      if (!active || !result.ok || !result.data) return;
+      upsertDraft(clientId, {
+        currentStep: 0,
+        age: result.data.age ?? undefined,
+        location: result.data.location ?? undefined,
+        equipmentLevel: result.data.equipmentLevel ?? undefined,
+        sessionDurationMinutes: result.data.sessionDurationMinutes ?? undefined,
+        preferredTrainingStyle: result.data.preferredTrainingStyle ?? undefined,
+        excludedExerciseIds: result.data.excludedExerciseIds,
+        hasPainOrLimitation: result.data.hasPainOrLimitation ?? undefined,
+        painAreas: result.data.painAreas,
+        painNotes: result.data.painNotes ?? undefined,
+        requiresProfessionalSupervision: result.data.requiresProfessionalSupervision ?? undefined,
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [clientId, draft, editMode, upsertDraft]);
+
+  // Non richiedere di nuovo il consenso salute se e' gia' attivo (es.
+  // rientro in modifica, o un refresh a meta' del flusso dopo averlo gia'
+  // prestato in questa stessa sessione): verificato lato server, mai
+  // assunto dallo stato locale.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const result = await hasActiveHealthDataConsent();
+      if (!active || !result.ok || !result.data) return;
+      setHealthConsentAccepted(true);
+      setHealthConsentRecorded(true);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const currentDraft = useMemo<ClientFitnessProfileDraft>(
     () =>
@@ -95,7 +143,7 @@ export default function QuestionarioFitnessScreen() {
   const step = currentDraft.currentStep;
   const formValid = isStepValid(currentDraft, step, healthConsentAccepted);
   const disabledReason = getDisabledReason(currentDraft, step, healthConsentAccepted, submitting);
-  const canGoBack = step > 0;
+  const canGoBack = step > 0 || editMode;
 
   useEffect(() => {
     if (!__DEV__) return;
@@ -115,7 +163,19 @@ export default function QuestionarioFitnessScreen() {
 
   function goBack() {
     setError(null);
-    if (step === 0) return;
+    if (step === 0) {
+      if (editMode && clientId) {
+        // Uscita dalla modifica ("Controlla questionario"): torna a Home
+        // senza salvare nulla di questa seconda tappa. Le eventuali modifiche
+        // gia' confermate in onboarding-cliente (tappa precedente) restano
+        // salvate: sono state un salvataggio esplicito, non annullabile da
+        // qui.
+        useProgramEditStore.getState().finish();
+        clearDraft(clientId);
+        router.replace('/cliente-home');
+      }
+      return;
+    }
     patch({ currentStep: step - 1 });
   }
 
@@ -161,6 +221,10 @@ export default function QuestionarioFitnessScreen() {
       return;
     }
 
+    // Esito reale (active oppure ancora pending_template) deciso solo dal
+    // DB: si torna sempre a Home, che mostra lo stato aggiornato del ciclo —
+    // mai un "successo" finto qui.
+    useProgramEditStore.getState().finish();
     markCompleted(clientId);
     clearDraft(clientId);
     router.replace('/cliente-home');

@@ -22,6 +22,7 @@ import { getMySelfGuidedPlanAccess } from '@/lib/client-plan-access-service';
 import { formatDayMonth, formatWeekday } from '@/lib/format-date';
 import { getClientPlans, getSessionDayLabel, getSessionWeekLabel } from '@/lib/workout-progress';
 import { useAuthStore } from '@/store/auth-store';
+import { useProgramEditStore } from '@/store/program-edit-store';
 import { useTrainingStore } from '@/store/training-store';
 import { AppFontSize, AppRadius, AppSpacing, AppTextStyle, useAppTheme } from '@/theme';
 import type { ActiveProgramCycle, ProgramCycleSession } from '@/types/client-fitness-profile';
@@ -290,7 +291,10 @@ export default function WorkoutClienteScreen() {
         primaryLabel="Riprova"
         onPrimary={retryAccessState}
         secondaryLabel="Controlla questionario"
-        onSecondary={() => router.push('/questionario-fitness')}
+        onSecondary={() => {
+          useProgramEditStore.getState().start();
+          router.push('/onboarding-cliente');
+        }}
       />
     );
   }

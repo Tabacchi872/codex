@@ -181,12 +181,51 @@ export async function saveSelfGuidedOnboarding(payload: SelfGuidedOnboardingPayl
 
   const existing = await getClientOnboardingStatus(clientId);
   if (!existing.ok) return existing;
-  if (existing.data.completed) return { ok: true, data: null };
+
+  const now = new Date().toISOString();
+
+  if (existing.data.completed) {
+    // Modifica di un onboarding gia' completato (flusso "Controlla
+    // questionario" da pending_template): aggiorna SOLO i campi
+    // modificabili. client_mode/onboarding_completed/completed_at restano
+    // intoccati — il trigger prevent_client_onboarding_unsafe_changes
+    // rifiuta comunque qualunque scrittura che li alteri dopo il
+    // completamento (CLIENT_ONBOARDING_COMPLETED_AT_IMMUTABLE_AFTER_
+    // COMPLETION / CLIENT_ONBOARDING_MODE_IMMUTABLE_AFTER_COMPLETION), quindi
+    // qui non vengono nemmeno inclusi nel payload.
+    if (existing.data.mode !== 'self_guided') return { ok: false, message: GENERIC_SAVE_ERROR };
+
+    const { data: updatedOnboarding, error: updateError } = await supabase
+      .from('client_onboarding')
+      .update({
+        gender: normalizedPayload.gender,
+        goals: normalizedPayload.goals,
+        focus_areas: normalizedPayload.focusAreas,
+        training_reasons: normalizedPayload.trainingReasons,
+        experience_level: normalizedPayload.experienceLevel,
+        training_days_per_week: normalizedPayload.trainingDaysPerWeek,
+        weight_kg: normalizedPayload.weightKg,
+        height_cm: normalizedPayload.heightCm,
+        bmi: normalizedPayload.bmi,
+        bmi_category: normalizedPayload.bmiCategory,
+        updated_at: now,
+      })
+      .eq('client_id', clientId)
+      .select('client_id')
+      .maybeSingle();
+
+    if (updateError || !updatedOnboarding?.client_id) {
+      if (__DEV__) console.warn('CLIENT_ONBOARDING_SELF_EDIT_SAVE_ERROR', updateError?.message ?? 'missing updated onboarding row');
+      return { ok: false, message: GENERIC_SAVE_ERROR };
+    }
+
+    await updateClientProfileMeasurements(clientId, normalizedPayload.weightKg, normalizedPayload.heightCm, normalizedPayload.goals);
+    return { ok: true, data: null };
+  }
 
   const draft = await createPendingClientOnboarding(clientId);
   if (!draft.ok) return draft;
 
-  const now = new Date().toISOString();
   const { data: savedOnboarding, error: onboardingError } = await supabase
     .from('client_onboarding')
     .update({
