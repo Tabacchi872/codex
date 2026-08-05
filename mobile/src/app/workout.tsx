@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { Calendar, ChevronRight, ClipboardList, Dumbbell, FileWarning, Hourglass, LockKeyhole, ShieldAlert } from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
@@ -533,10 +533,29 @@ function ProgramSessionRow({
   const { resolve } = useExerciseResolver();
   const firstExercise = plan?.exercises[0] ? resolve(plan.exercises[0].exerciseId) : null;
   const thumbnailSize = 84;
+  const [focused, setFocused] = useState(false);
 
+  // "Apri scheda" (onOpen) e "Segna completata" (onComplete) sono due azioni
+  // distinte: la card intera non puo' quindi essere un solo Pressable con
+  // AppButton annidato (su web react-native-web renderizza accessibilityRole
+  // "button" come <button>, e <button> dentro <button> e' HTML non valido,
+  // causa errore di idratazione). AppCard (visivo, non interattivo) resta il
+  // contenitore; il Pressable "apri" e l'AppButton "completa" sono fratelli
+  // al suo interno, mai l'uno dentro l'altro.
   return (
-    <AppPressableCard onPress={onOpen} accessibilityLabel={`Apri allenamento ${session.dayLabel}`} style={styles.card}>
-      <View style={styles.cardRow}>
+    <AppCard style={styles.card}>
+      <Pressable
+        onPress={onOpen}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        accessibilityRole="button"
+        accessibilityLabel={`Apri allenamento ${session.dayLabel}`}
+        hitSlop={2}
+        style={({ pressed }) => [
+          styles.cardRow,
+          pressed && styles.cardRowPressed,
+          focused && Platform.OS === 'web' ? styles.cardRowFocused : null,
+        ]}>
         {firstExercise ? (
           <ExerciseThumbnail exercise={firstExercise} exerciseId={firstExercise.id} size={thumbnailSize} />
         ) : (
@@ -570,15 +589,15 @@ function ProgramSessionRow({
               {plan ? `${plan.exercises.length} esercizi` : ''} · Occorrenza {session.occurrenceNumber}
             </Text>
           </View>
-          {session.status === 'todo' ? (
-            <View style={{ marginTop: AppSpacing[1] }}>
-              <AppButton label="Segna completata" onPress={onComplete} loading={completing} disabled={completing} size="sm" />
-            </View>
-          ) : null}
         </View>
         <ChevronRight size={20} color={colors.inkFaint} />
-      </View>
-    </AppPressableCard>
+      </Pressable>
+      {session.status === 'todo' ? (
+        <View style={styles.completeButtonWrap}>
+          <AppButton label="Segna completata" onPress={onComplete} loading={completing} disabled={completing} size="sm" />
+        </View>
+      ) : null}
+    </AppCard>
   );
 }
 
@@ -630,10 +649,26 @@ const styles = StyleSheet.create({
     gap: AppSpacing[2],
     minWidth: 0,
   },
+  cardRowPressed: {
+    opacity: 0.88,
+  },
+  cardRowFocused: {
+    borderRadius: AppRadius.lg,
+    outlineColor: '#B7F04A',
+    outlineStyle: 'solid',
+    outlineWidth: 2,
+  } as ViewStyle,
   cardCopy: {
     flex: 1,
     gap: 4,
     minWidth: 0,
+  },
+  // Allinea il bottone "Segna completata" (ora fratello del Pressable "apri",
+  // non piu' annidato al suo interno: vedi ProgramSessionRow) sotto la
+  // colonna di testo, come nella posizione originale dentro cardCopy.
+  completeButtonWrap: {
+    marginLeft: 84 + AppSpacing[2],
+    marginTop: AppSpacing[1],
   },
   planPlaceholder: {
     alignItems: 'center',

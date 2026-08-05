@@ -1,0 +1,361 @@
+ymove_exercise_id,nome,filename_immagine_locale,confidence
+0a3889f4-1d3e-401a-b966-76e3f3aeff74,Criss-Cross,,no_match
+20c81369-14ad-4959-a6d0-f651c013f3f0,Double Leg Stretch,,no_match
+71304f37-af11-4c9f-aa53-ef04cbc9bb29,Dumbbell Side Bend,,no_match
+109f6115-f03d-48da-802a-2e2aa385678d,Back Extension - Hyperextension,lombari-hyperextension.png,exact
+2fb79823-a759-4ceb-8b16-a26ab3cfb440,Barbell Deadlift,gambe-stacco-rumeno.png,close
+dbf6a8e4-19dc-4d01-8014-f195a1eb817c,Barbell Rows,dorso-rematore-bilanciere.png,exact
+ab1681a6-93a1-4e51-ac8c-c76f02ef3737,Behind the Neck Rope Pulldown,dorso-lat-machine-avanti.png,close
+059690e8-f60d-4099-b3ae-93d18358a59a,Bent Over Barbell Row,dorso-rematore-bilanciere.png,exact
+6e4be416-7097-4301-bfb9-f62bc69f1fa7,Bent Over Barbell Row Overhand Grip,dorso-rematore-bilanciere.png,close
+716ba91e-0ab4-4f1f-bbd9-dd06e25e0da6,Bent Over Barbell Row Underhand Grip,dorso-rematore-bilanciere.png,close
+43c81170-5fc1-46dd-92b0-6a308c22cec1,Bent Over One-Arm Long Bar Row,dorso-rematore-bilanciere.png,close
+ad8e32a3-091a-4b10-a316-8984807ce817,Bent Over Two-Arm Long Bar Row - 105,dorso-rematore-bilanciere.png,close
+7aaad2c1-c499-40dd-84e5-a66b910e6f8b,Bent Over Two-Dumbbell Row With Palms In,dorso-rematore-manubrio.png,close
+4c799907-a832-42b2-b9b3-bfb75a68c840,Bow pose,,no_match
+b4824ea0-4d0a-418e-b22d-462b11dc9992,Cable Rope Pullover,dorso-pullover-cavo.png,exact
+7a3e1ef1-c6d4-4e06-84a5-44168e1f15bc,Cable Seated Row straight bar,dorso-pulley-basso.png,exact
+1aac7a76-7ffb-4277-9a5f-ad25c315b2db,Cable Straight Arm Pulldown bar,dorso-pullover-cavo.png,close
+cb06c2a3-ef02-4e60-b9ab-7d692fa97bc4,Camel pose,,no_match
+675fab33-9f21-4386-8a43-a319d0684841,Cat cow pose,mobilita-cat-cow.png,exact
+8e75c181-9db4-4e20-8fa7-be744f820f95,Cat pose,mobilita-cat-cow.png,close
+a6d1285b-5ae1-4646-b10b-5522e937a4a6,Chest Supported Barbell Row,dorso-rematore-bilanciere.png,close
+926f4125-2676-45a8-96ee-2b6ace422494,Chest Supported Row Machine,dorso-rematore-macchina.png,exact
+2248c45e-bf19-4c70-9fcc-d828d3e5fea2,Chest Supported Row T-bar,dorso-rematore-macchina.png,close
+a61479a9-fc68-4b4b-9e4d-2f65cd41defa,Child's pose,,no_match
+10a31695-e218-4819-b7d3-b67b1b5ac79d,Close Grip Lat Pulldown,dorso-lat-machine-neutra.png,exact
+1e99855d-fbf5-433e-9273-6f4e318a6ffe,Close Grip Lat Pulldown,dorso-lat-machine-neutra.png,exact
+a02b83af-37e2-4eea-b4cb-4fccac596e8b,Close Grip Lat Pulldown (V-Bar),dorso-lat-machine-neutra.png,exact
+5ce18079-7df5-48e0-828e-63005b8eb3d1,Close Grip Lat Pulldown to Waist,dorso-lat-machine-neutra.png,close
+1e381fba-eedc-410c-ba1f-1c9c255f4d0f,Cobra pose,,no_match
+3d8fe08e-93ba-49ac-b5f9-92dbac0d39b2,Cow pose,mobilita-cat-cow.png,close
+fcc15585-b472-487f-8367-7459ee909832,Dips on bench,tricipiti-dip-ginocchia-piegate.png,close
+6d1c2a4d-870c-42c0-b798-aabc9a78308b,Double kettlebell row,dorso-rematore-manubrio.png,close
+b96131da-b1ba-4495-b8fb-c6107517ee2f,Dual Cable Lat Pulldown,dorso-lat-machine-avanti.png,close
+204c969e-37a0-44b2-a4db-d82f27eadb46,Dumbbell Gorilla Row,dorso-rematore-manubrio.png,close
+ac7982bb-1a81-4870-ae78-ce37bb485601,Dumbbell One-Arm Upright Row (L),,no_match
+bda6ae04-2619-43a7-8261-490d85444eb2,Dumbbell One-Arm Upright Row (R),,no_match
+b5869e95-3109-43ad-b7b5-34e6dad882f0,Dumbbell plank row,,no_match
+dbaed692-a239-426b-ad64-3e0da09c7d92,Dumbbell Renegade Row,,no_match
+e91bd54f-f605-491d-90e6-16515787389c,Dumbbell Row two arm bent over,dorso-rematore-manubrio.png,close
+b150868d-c9c5-4f0f-a407-93d7e34b6ddc,Dumbbell Shrug,,no_match
+fef72790-359f-4f3f-9fcd-a80fb2c63b5f,Dumbbell Single leg deadlift,gambe-stacco-rumeno.png,close
+5058baec-15c8-4278-afa5-9621bb4e15b5,Alternating Dumbbell Curl,bicipiti-curl-alternato.png,exact
+71cd3500-6a12-4ad9-b9c4-5b4c20f33deb,Barbell Curl 21s,bicipiti-curl-bilanciere.png,close
+1158c681-55e9-4db0-bb73-3dab32d99aa5,Barbell Curls,bicipiti-curl-bilanciere.png,exact
+fc721ada-0004-40d7-9e1e-634dc9b34877,Behind the Head Curl with Cable,bicipiti-curl-cavo.png,close
+5e751b08-c767-4a40-8ef7-62d271995c86,Cable Bicep Curl bar,bicipiti-curl-cavo.png,exact
+f03c074c-398c-4c33-abd9-980ec883fdbd,Cable Bicep Curl rope,bicipiti-curl-cavo.png,close
+ca7a2f9d-3af1-40cd-a33f-431f437a2902,Cable Preacher Curl,bicipiti-preacher-curl.png,close
+22880d49-67f2-4f14-9510-046c32da166b,Concentration Curl,bicipiti-curl-manubri.png,close
+372da9df-3ee6-450c-ae97-743968d27d71,Concentration Hammer Curl,bicipiti-curl-martello.png,close
+b8fb88dc-d819-4e65-86c8-7ea13703afdb,Cross Body Hammer Curl,bicipiti-curl-martello.png,close
+57c79553-d2e3-41e9-97d5-3fe8c0d59fe9,Dumbbell Bicep Curl seated incline,bicipiti-curl-panca-inclinata.png,exact
+f34b7615-bfcc-4cd4-88f7-d7c68e910fe9,Dumbbell Bicep Curl Standing,bicipiti-curl-manubri.png,exact
+a921697a-e1ec-4941-bffd-f99e69b305b4,Dumbbell Concentration Curl,bicipiti-curl-manubri.png,close
+6ffb0130-cbe5-4395-b86b-2a2c31be79b8,Dumbbell Curl,bicipiti-curl-manubri.png,exact
+3175c898-09fe-4d02-82c2-de2a3834fdd4,Dumbbell waiter curls,bicipiti-curl-manubri.png,close
+5a86b7dd-04a3-47fc-b92d-910f61b184c6,EZ Bar Curl,bicipiti-curl-bilanciere.png,close
+79084f10-c317-4c40-ae0c-45d0b760298d,Bench Dips,tricipiti-dip-ginocchia-piegate.png,close
+b771f714-b1dc-49f8-8df5-9f8ae35bbbae,Bird Dog,lombari-bird-dog.png,exact
+ea7d466a-ecd9-4fcb-9a52-53716b513417,Chin-Up (Underhand),dorso-trazioni.png,close
+ea1016da-2d73-4ff8-ad2a-9b36150d2f85,Dead Bug,core-dead-bug.png,exact
+ffef6f38-6074-43b9-9256-2edc78dcf698,Deficit Calf Raise,gambe-calf-raise.png,close
+b958f3b6-db0c-492a-8895-445af0989161,Elevated Calf Raises,gambe-calf-raise.png,close
+548f86e7-ee60-46ce-a482-c2b1c16e4441,Forward Lunges (Bodyweight),gambe-affondi.png,exact
+b78e6b13-cc46-49d6-a205-f71b65e6090e,EZ Bar Reverse Curl,bicipiti-curl-bilanciere.png,close
+b853fd08-4739-4239-a825-8c31826d54ba,Barbell calf raises,gambe-calf-raise.png,close
+8577f8c3-283b-472b-b5cf-d0eaa8e84762,Calf gas peddlers,,no_match
+6a20f987-50aa-4023-9d0a-723759a24d55,Calf Raise Intervals,gambe-calf-raise.png,close
+43946d04-02aa-4dc8-9a67-3cb759440c22,Calf Raises,gambe-calf-raise.png,close
+90924318-0ca7-46ec-9e87-36b80e02196f,Calf stretch (left),,no_match
+5ce9ef64-7527-4321-997b-1d1bc071f91a,Calf stretch (right),,no_match
+eda711dc-d4c5-49e6-b323-d8180e41a871,Dumbbel calf raises,gambe-calf-raise.png,close
+18dda540-eca8-40ad-aca4-9e5f80f574d7,Forward Backward Hop over Cone,,no_match
+4d4779ae-ab3c-4f3b-8c9f-566a23c80437,Back Shuffle,,no_match
+d06c3d04-aeb4-4b94-9a43-24e95201239c,Archer push up,petto-push-up.png,close
+52fb4e42-549e-4af2-a83d-f0c6c76f38ae,Armpit Opener,,no_match
+69b5e89d-e2d4-4e9a-8ab7-4c28cff1f3e1,Barbell Bench Press,petto-panca-piana.png,exact
+de7f1e4f-cb03-446d-b768-4a93baae1ab2,Barbell Incline Bench Press - Medium Grip,petto-panca-inclinata.png,exact
+c4d91f02-e796-4992-a08d-531b1d4bb16b,Bear crawl shoulder tap to pike push up,,no_match
+accf9858-fd32-4f43-aa4d-0bd0f53d7498,Bear crawl to pike push up,,no_match
+58d0fe05-1a66-4b80-a6d8-2dc2f0d73169,Bench Press,petto-panca-piana.png,exact
+3adef0aa-9687-4cd0-acf6-410c9fa4ba76,Cable Crossover (Mid),petto-croci-cavi.png,exact
+9ddd0baa-fa4b-4f5a-8dd4-3a68dc557563,Cable Fly - High to Low,petto-croci-cavi.png,close
+aa3d8f09-8870-4ec1-aada-7760020dfeaa,Cable Fly Low to High,petto-croci-cavi.png,close
+55bd4c71-78c6-49bd-aaaa-8c03b7528342,Chameleon push up,petto-push-up.png,close
+a97c208e-1c40-4410-b51a-a86e5cc37a04,Chameleon push up to mountain climbers,,no_match
+ee4ec1d3-6f4c-42bf-b338-ac175213a4e7,Chest Press Machine flat,petto-chest-press.png,exact
+4668a912-ef55-4b3e-8d9c-53359d6aba29,Close Grip Dumbbell Press,petto-panca-piana-manubri.png,close
+d18679b0-3ce0-409b-9955-584976544f45,Close Grip Incline Dumbbell Press,petto-panca-inclinata-manubri.png,close
+10d2c91e-60e8-416d-8c91-def45954009c,Close Grip Plate Press,,no_match
+f67b5c4a-a959-4b13-933e-633d4faeab95,Deadstop push up,petto-push-up.png,close
+e8a79472-7809-42d4-89cc-c3c351d86982,Deadstop push up into superman crunches,,no_match
+76741ca2-8960-4323-a495-c595291e3c56,Deadstop push ups,petto-push-up.png,close
+b9e7733d-fbba-413a-98d9-71803ae1edb4,Deadstop pushup to superman crunch,,no_match
+8796655f-6390-4ae1-a143-1fe6cde817cb,Decline Chest Press Machine,petto-chest-press.png,close
+4c5c90fd-01a3-45f6-a952-712743be9c81,Decline Close Grip Dumbbell Press,petto-panca-piana-manubri.png,close
+e2db8bfd-34b1-451a-853d-b2e483b5844d,Decline Dumbbell Press,petto-panca-piana-manubri.png,close
+426861d9-64ac-40f6-bf3e-f7ebc05ba6af,Decline Push Up,petto-push-up.png,close
+8bbcc469-9283-4776-a12c-882060dd396c,Declined Push up - 56,petto-push-up.png,close
+2930d41f-177c-4f36-bd91-4867afb85a3b,Dips,petto-dips-petto.png,exact
+60ec7728-577b-4dea-a5e9-4b8ac16b6038,Dips - Triceps Version,tricipiti-dip-tricipiti.png,close
+3add251e-6e58-4f80-902c-ab32e0b61966,Dips on bench 2,tricipiti-dip-ginocchia-piegate.png,close
+cfa3229b-10a2-42cd-bdf0-4fa80ce51fd3,Drop dead push up into knee in,,no_match
+a0395420-b67f-4ddd-965d-30d4a489f489,Dumbbell Bench Press,petto-panca-piana-manubri.png,exact
+097903be-beaa-4283-9493-19eb90b59762,Dumbbell deltoid fly,petto-croci-manubri.png,close
+9696321a-6d49-4d1b-a42d-08fb34bb8323,Dumbbell floor chest press,petto-panca-piana-manubri.png,close
+82eabf60-6d7a-4930-b8be-29f1f737d345,Dumbbell floor press,petto-panca-piana-manubri.png,close
+97f48a58-e7a9-4179-88e2-f1a16feb68ca,Dumbbell fly,petto-croci-manubri.png,exact
+c60450d9-862c-4dd3-87b1-82f80349964d,Dumbbell fly - v2,petto-croci-manubri.png,exact
+f6d6ac54-751d-416e-8c9d-bc4b675cd505,Dumbbell Pullover,dorso-pullover-cavo.png,close
+1b670f12-2b3b-4046-8fb8-379450db6f52,Dumbell Bench Press,petto-panca-piana-manubri.png,exact
+3b3e0a86-56b7-4d15-92ff-11dfaf108147,Elevated push up,petto-push-up.png,close
+67b6f81b-3bca-4b91-8cd8-4c4dd6194d6e,Explosive push ups,petto-push-up.png,close
+d9df1e94-1051-407d-9c34-87720d1557a9,Explosive side to side push up,,no_match
+3b45e42a-963f-4b79-ae1d-b1b5e8eb9add,Flat Cable Fly,petto-croci-cavi.png,exact
+d536723e-7e3f-460d-a6c5-e9993bfbec4c,Floor Press,petto-panca-piana.png,close
+fb48eccb-7f51-4de3-97f0-dc5ef75a6cee,Full range push ups,petto-push-up.png,close
+ee79ed25-3455-4730-acd9-5173de6085c9,Ab Bridge Complex,,no_match
+a64ffb04-76a7-431a-a9a5-6addeab61813,Barbell Ab Rollout,,no_match
+31a0d4f4-2ad8-4f51-b47f-e7dc05e787f3,Barbell Ab Rollout - On Knees,,no_match
+709f2fe5-f590-401b-aa94-d5f6dc67165b,Barbell Sit-Up,core-crunch.png,close
+5d6d9ca4-1ace-4dc9-b408-6ced49b753e7,Bear hold,,no_match
+b21be739-d8af-416f-83e4-fc65509a9a28,Bear plank ankle taps into jumps,,no_match
+c2a135e7-1383-47c1-9757-4868ae9a8c55,Bear plank Shoulder taps,,no_match
+f2fef2bc-353c-4f3b-b7c3-ee5d63e2a87b,Bear plank shoulder taps - 30,,no_match
+63603235-6df6-4c55-b0fe-c417fee626b8,Bear plank side tap sidewalks,,no_match
+638616d3-100b-4b14-8516-ff9e4b3e80f2,Bear plank steps and hops,,no_match
+c794e5f9-f603-4f1a-a108-1989ff2b8215,Bear plank toe taps,,no_match
+87a9f879-77ef-4dbe-8e8e-b15fea5052a7,Bicycle punches,,no_match
+a36c63b9-c3d4-432d-a135-1ca81a162d35,Boat hold,core-hollow-hold.png,close
+e396f5be-9c22-44ff-b825-d754d807f5fd,Boat pose,core-hollow-hold.png,close
+a4715d5c-446e-4937-a25a-254652773990,Burpee (No jump) into high plank with shoulder tabs,,no_match
+ed1451e4-ceef-4aa9-a883-24b733b83edd,Butterfly crunches,core-crunch.png,close
+23d6cf5e-2f9a-4f78-a962-d22e6fe36aa9,Cable Woodchop (High to Low),,no_match
+89b62000-867f-4f98-b24c-ad9b5708d015,Chair sit ups,core-crunch.png,close
+068d316f-52b0-4438-a7c9-ee21ceca2c2f,Crunches,core-crunch.png,exact
+7c9e7503-35f4-4dd3-a515-3b7ad96e21da,Dead Bug with Dumbbells,core-dead-bug.png,close
+f66596ba-3a70-406c-8ffa-ed6641a10e19,Dumbbell Side Bend (L),,no_match
+8dcb1591-348a-4809-9abf-0a1679a7a52a,Dumbbell Side Bend (R),,no_match
+4f756a6f-51a5-4afe-8cf8-975f3748c4f9,Elbow Plank to Side Plank,core-side-plank.png,close
+f2224eab-4368-4bab-80a3-e0bddbed5a23,Elbow to knee plank,core-plank.png,close
+b867d101-cc16-42ff-a057-fe0de4a2d8c6,Flutter kicks,core-leg-raise.png,close
+fa3347f7-0e8f-446b-a7f0-fbb0f6b22206,Gate pose (left),,no_match
+ad7e4bc7-a8d8-4aa7-978f-e130aeb49e8b,Gate pose (right),,no_match
+9acaf8fd-1e81-4106-8d86-921b013f36c0,Arch Skydiver,lombari-superman-controllato.png,close
+4061bcd4-25a4-48ce-abbe-765986eb91e5,Back Extension on Ball,lombari-hyperextension.png,close
+eb37d0a0-1a45-482c-9c6a-1aef9744661c,Barbell Wrist Curl,,no_match
+87820d5e-9377-493c-a924-cc1d4750859b,First Toe Curl with Towel,,no_match
+9a8e40b3-446f-4362-9df4-461931927889,Dumbbell wrist curls,,no_match
+6891aa71-6e1f-4ea4-b9ac-f38ea207216a,Dumbbell wrist curls,,no_match
+9ad86735-3149-48fa-add4-705598dc149e,Farmers walk,,no_match
+a04b709a-b24b-497b-af41-66544e152b4b,Front Raise,spalle-alzate-frontali.png,exact
+50aafd34-960f-4967-ae4b-03430a734f10,front raises,spalle-alzate-frontali.png,exact
+e739df3d-e51d-4c84-aac5-bd09a2c11618,Barbell Clean,,no_match
+e8dd3973-ac46-457f-93e8-a6c18a6da75c,Dumbbell Hang Clean to Press,,no_match
+71bf8e65-38ff-4145-b42c-341c8d574b59,8 Count Body Builder,,no_match
+7d31d648-432b-4edd-97bc-afc2a3e9e59a,Barbell Deadlift,gambe-stacco-rumeno.png,close
+47ab9d26-7959-46bb-9744-1e48695f5e70,Bear crawl into explosive jumps,,no_match
+214c3916-f02f-456f-9750-70fd0679295a,Bear crawls,,no_match
+59887212-af71-41e1-9b3f-afe352ba1979,Bear toe taps,,no_match
+4402c7a1-0845-4da2-882d-4e06fc275b8b,Bench Jump,,no_match
+53f37f4b-c486-4ebb-846b-953078455bfe,Bent leg v-sit into punches,,no_match
+ca5187cf-f9c2-4ad3-b932-4dccc2e47f7e,Broad jumps,,no_match
+24030adc-de07-4547-a916-24acee3d5a3e,Burpee,cardio-burpees.png,exact
+b160ea44-725a-415f-919a-4edad64d3ce3,Burpee (No jump),cardio-burpees.png,close
+1effe46b-4944-4308-b0d3-dd87a0c71bc2,Butt kickers,,no_match
+22bf3fc2-d7a0-41d0-9a1a-5e0d149d2b7a,Butterfly Jumps,cardio-jumping-jack.png,close
+b2073383-2f4c-419e-95f3-0e1cd4f02c34,Cable Deadlift,gambe-stacco-rumeno.png,close
+9225c7c5-66a0-42c5-8de4-866389741736,Chest and shoulder,,no_match
+e6bd8a96-cc6e-4805-bb2d-6755c9350dd9,Child_s pose -Lower back,,no_match
+055d7dcd-575a-4515-9e7e-129c93cbb8c2,Clean and Jerk,,no_match
+658fa4e6-8b1d-48f4-b97d-7c576783ad73,Corpse pose,,no_match
+fd93f455-3544-4c89-afa2-bcdf980aa53d,Crab hold to to taps,,no_match
+1abe4475-eab9-4532-a583-68cc06681462,Crab hold toe tap,,no_match
+0e43c62b-bcf6-4115-8fa4-3049a4d8f24a,Criss-cross jumping jacks,cardio-jumping-jack.png,close
+8f2f2d63-4e39-408b-b450-f88c27d8ae1a,Deadlift with Kettlebell,gambe-stacco-rumeno.png,close
+9d5a2722-801b-4741-8d9b-11e9a3a4ae2d,Devil press,,no_match
+b219f35b-9bca-4eb5-a010-e0ded6208942,Dive bombers,,no_match
+e3c47861-bcfa-41cf-a191-3524d8679a1c,Downward dog,,no_match
+4426c121-33b6-42c1-aa78-8d295d8fd687,Dumbbell Discus,,no_match
+a46c036e-f0f6-4c03-8216-cc80da58ee3d,Dumbbell Discus (L),,no_match
+f49f3159-4eed-4d0d-a640-497886c309b0,Dumbbell double snatch,,no_match
+3433c651-a0f5-40cb-bdd8-3029f3ba15c5,Dumbbell External Rotation,,no_match
+beee4955-3dbc-4aa1-be35-d01666713f72,Dumbbell get ups (R),,no_match
+0d0368ee-f03d-4ef9-95db-06a56434ea55,Dumbbell Scissors,,no_match
+0ff5e9fe-9d15-426a-8c06-fd62a198dc47,Dumbbell shadow box,,no_match
+22be389b-6b65-4cac-af19-8cec6f4a363f,Dumbbell Snatch,,no_match
+01924d84-4c88-4476-b0dc-8fd92616b362,Dumbbell upper cuts,,no_match
+4c22f102-513b-4fe4-a271-389c006fbb9f,Explosive knee drive,,no_match
+74658f21-21bb-40f6-bf66-54aa7b499622,Explosive push,,no_match
+f3d25890-dcd5-42b3-8246-a5f596029cc0,Figure Four Stretch (L),,no_match
+005ba868-d8b1-499f-9a88-b2cf722e6bdf,Figure Four Stretch (R),,no_match
+0df165d9-3c63-4506-a2f1-6f64544fda5d,Forward to Reverse Bear Crawl,,no_match
+fefcff8a-f513-48bd-9e6d-0c38de0e4a6b,Frog Stretch,,no_match
+df37b949-000b-4b09-90a3-482d868ee55a,Froggers,,no_match
+dc848ac2-ca46-4c70-a8cc-dd2a76e546cf,Front Two-Dumbbell Raise,spalle-alzate-frontali.png,close
+1dda1f16-d715-4a4f-a12b-d75b7dca81e7,Banded Lateral Walks,,no_match
+d48bc33d-8daa-456a-9f07-32b42a3798e5,Clams side lying with knee lifts,,no_match
+f79d8c98-d6ca-4d46-9704-6d89cf436808,Fire Hydrant Circles,glutei-abduzioni.png,close
+4c55ca15-3665-4db7-b11d-7d4273263f66,1 Leg Broad Jump,,no_match
+b43b051d-cd66-41c7-8772-f81797ce872c,Barbell Glute Bridge,glutei-glute-bridge.png,exact
+5990deac-a91d-4531-8c2f-a708fc95fd1f,Barbell Hip Thrust,gambe-hip-thrust.png,exact
+c4f2aff0-d474-473a-ad7d-559033aac8b3,Bridge march,glutei-glute-bridge.png,close
+31f0a2a6-2d44-4c33-bf3a-2d0687b748a4,Bridge pose,glutei-glute-bridge.png,close
+c424ec91-5260-4a23-800d-1a5e140f8320,Butt bridges,glutei-glute-bridge.png,close
+f96ea3ee-fb2f-4a0f-bc3b-7e63959450c5,Butterfly Stretch,,no_match
+f6fa126f-2811-454f-a542-39780209c9ec,Cable Diagonal Kickback,glutei-kickback-cavo.png,close
+d3f23ea3-a3d3-46cd-940b-707efea0df5c,Cable Glute Kickback,glutei-kickback-cavo.png,exact
+8503592c-a179-456b-9417-5fb5e84fad1a,Cable Hip Abduction,glutei-abduzioni.png,exact
+86a5f361-6b81-4ab7-a769-c32ca56d5ae4,Cable Hip Abduction,glutei-abduzioni.png,exact
+db7c0708-ea39-47cb-89c8-73e749abcfa6,Cable Hip Extension,glutei-kickback-cavo.png,close
+cd2bfdbe-71d7-4d3e-8b03-fc4a5ed73bf4,Cable Kickback,glutei-kickback-cavo.png,exact
+21dda23e-d221-4800-924e-498f4398f203,Cable Straight Leg Kickback,glutei-kickback-cavo.png,close
+bb30b96e-da77-44d7-aabe-d02a7bdcaa23,Cobbler's pose,,no_match
+d7078f6a-a0eb-47e6-9396-98b250afff34,Crab Walk,,no_match
+fbffd9c1-bffd-4fb0-ae4c-258834c5fcd2,Donkey Kick with Dumbbell,glutei-kickback-cavo.png,close
+f049bccf-868e-4d76-9cc1-18a0e37e1b66,Dumbbell Hip Thrust,gambe-hip-thrust.png,close
+f46b69fa-049b-4cab-aad0-1ff3f2a1503e,Dumbbell Sumo Deadlift,glutei-squat-sumo.png,close
+ccd60696-7e2f-4611-b3b9-e5f11ddf4e78,Dumbbell Sumo Squat,glutei-squat-sumo.png,exact
+53339dca-7ed1-4edf-b88c-1f4b618b4d57,Figure 4 Squats,,no_match
+05b2ec0e-92d4-4a93-bfed-c371747c072d,Fire Hydrant,glutei-abduzioni.png,close
+623b2443-bc73-4c61-986c-412545c33aed,Fire log pose (left),,no_match
+e0a7528b-5d24-4ddf-9d4c-d61958dc504c,Fire log pose (right),,no_match
+db1a9d2c-5386-41aa-a84f-dad06ac7ea7c,Frog pose,,no_match
+928d2978-b0a4-4619-858d-106a5c99e507,Garland pose,,no_match
+74c36be0-d1e4-4703-8c54-612c2da1dcc1,Barbell Good Morning,femorali-good-morning.png,exact
+be7a8c2a-db1b-405f-a61f-96f26c628c6c,Barbell Romanian Deadlift,gambe-stacco-rumeno.png,exact
+6362bdab-a7d7-49e8-85ab-fe1eb610cb4e,Cross body pulls to hamstring kicks,,no_match
+4eaaeaca-6966-4b55-94a0-4a34520bb5b9,Downward facing dog split (left),,no_match
+dee6b124-faf4-4d03-a659-e49456892af1,Downward facing dog split (right),,no_match
+54d04b7e-3a7d-4d04-a0b2-adaab8f8f466,Dumbbell Romanian Deadlift,gambe-stacco-rumeno-manubri.png,exact
+e1b10987-45be-4416-8d9c-4dea00db3ca0,Dumbbell Stiff Leg Deadlift,gambe-stacco-rumeno-manubri.png,close
+3620635f-3fcb-4552-8959-dc6ec09d9ea2,A steps,,no_match
+f8255cfd-7c0e-4451-89a5-947009e4fd13,Chair running chair step knee touch,,no_match
+44a83578-5681-4a1a-99c3-f8742857bf66,Dumbbell Lateral Raise,spalle-alzate-laterali.png,exact
+c90444fe-fd21-40d1-923f-5adba83e35bc,Dumbbell Pullover,dorso-pullover-cavo.png,close
+95fb26cd-a80a-4d69-92a0-af6bf54128bc,Cable Pull-Through,gambe-stacco-rumeno.png,close
+ca09df2f-e2d6-4acf-864e-e43c7b202c00,Dumbbell box squat,gambe-squat.png,close
+a1ba1671-4626-4e4f-a37f-98182e36e57c,Dumbbell Lunge,gambe-affondi.png,exact
+54511b29-e4df-4539-ab7a-3a9e98393d90,Dumbbell Reverse Lunge,gambe-affondi.png,close
+67b7b672-3989-49cf-8741-6b6de5c43dfd,Dumbbell Static Lunges,gambe-affondi.png,close
+75f26166-ba61-48cf-ba27-0709fbdbb34b,Dumbell Straight Leg Raise,core-leg-raise.png,exact
+854b33d7-6d88-4a67-a5d5-4e7e2983b140,back stretch,,no_match
+704e9540-7bdd-4dbd-bdd3-7341b3563693,Floor Mantis,,no_match
+d552a696-bf87-4bf7-9597-fa425d617874,Barbell Bench Press decline,petto-panca-piana.png,close
+95640151-0b58-4872-94de-a14680227a66,Dips parallel bars,petto-dips-petto.png,exact
+7a94a32f-40d9-42eb-b03d-afe76c71ea36,Alternating Side Reaches,,no_match
+25ec2936-1aa7-4fb9-86a3-e3b73ab94e7c,Cable Woodchop low to high,,no_match
+af0e7c20-cd4a-4c26-ac10-1ef6bdaaf35e,chair Twists,,no_match
+1575dc75-93ab-4c7f-b924-4ed4eda2adc8,Dumbbell Russian Twist,core-russian-twist.png,close
+ff6872ae-e894-4e72-b5f8-59a55b576a6f,Dumbbell Goblet Squat,gambe-squat.png,close
+ecf8bc6c-e7c9-4dcb-949a-e04f6e0c93bb,1 Leg Lateral Broad Jump,,no_match
+c2fbe7d4-e9a5-41f8-b8eb-d903948d268b,1 Leg Left Right Hop over Cone,,no_match
+4a816d4c-e7b1-4e18-823f-64d0c4eee38b,4 Square Drill,,no_match
+80b6b175-77a8-48ac-9a09-495d114d88ef,Backward lunges,gambe-affondi.png,close
+fa45710a-ee56-4648-811c-5eeaaeaff098,Band Leg press,gambe-leg-press.png,close
+9a68f965-4e58-4b5b-87d5-c44929dd1f39,Banded squat,gambe-squat.png,close
+65e95132-e6bb-41e8-af7d-0eda931a1693,Barbell Back Squat,gambe-squat.png,exact
+0e5f29cd-ff79-428a-bb1c-1753a9047f32,Barbell Full Squat,gambe-squat.png,exact
+714b176e-2963-43f0-ae0f-c71643cbe426,Barbell Lunge,gambe-affondi.png,close
+dd57e914-d0ef-4d6f-8724-d72f220b7422,Barbell Lunges,gambe-affondi.png,close
+0d43fa50-1c75-417d-87cd-353373322cf9,Barbell Overhead Squat,gambe-squat.png,close
+53303ff9-7fd7-4f57-ad5a-343eb2387bd5,Barbell Reverse Lunge,gambe-affondi.png,close
+1ffaf9e8-fe94-44e8-a20b-012ea58eba46,Barbell Sumo Squat,glutei-squat-sumo.png,close
+c8f3362d-fb00-481e-b428-e0b17f4ae681,Barbell Sumo Squat,glutei-squat-sumo.png,close
+6e9512fe-74b9-4c8a-bae2-a54361937b0e,Barbell Thruster - Straight Bar Thruster,,no_match
+ae8be22d-584f-4c34-add8-d25383ba90de,Barbell walking lunges,gambe-affondi.png,close
+42ee935a-8052-4d1b-bde6-d64bb2389e57,Bodyweight Squat,gambe-air-squat.png,exact
+f28e1faf-4677-453e-9007-8329d7a67e2d,Bodyweight Squat (air squat),gambe-air-squat.png,exact
+ffded4df-0bf5-4522-8c94-cf15492a8271,Box Jump,,no_match
+768c2a0e-5824-42f9-8175-b296f0433c02,Box jumps,,no_match
+904cda06-db9f-4bc6-8894-f30dc1c349a6,Box Squat,gambe-squat.png,close
+0e19fa47-7a77-4fdf-86a0-66258725fa3d,Box Toe Tap,,no_match
+cd6edab4-3f1e-477f-8a88-54f9c683c9de,Bulgarian split squat,gambe-bulgarian-split-squat.png,exact
+74a22260-8090-40b6-a13a-4d366c0d5fd6,Bulgarian split squat - with Barbell,gambe-bulgarian-split-squat.png,close
+d81d953b-b29d-438a-aeee-610523bca09d,Bulgarian split squat with Dumbbell,gambe-bulgarian-split-squat.png,exact
+20500648-961e-4344-bb9b-c775ffc1fe71,Cable Front Kick,,no_match
+646f354b-3790-4796-bfd9-cd9df04bcc16,Cable Step-Ups,gambe-step-up.png,close
+d749fe82-c106-48d7-9508-7ab1cb88ec1b,Chair Leg Extension,gambe-leg-extension.png,close
+46f8865d-24c2-4c81-a886-aa458c5653c5,Chair pose,,no_match
+85a71ed6-caf0-4b0c-aa70-0419d8f81157,Crab walk to squat,,no_match
+10be21b8-de6f-4c33-9101-eadca351e663,Crab walks into squats,,no_match
+8dcf57f2-24d8-4f4d-802c-2eacbe9d578f,Crescent lunge (left),,no_match
+db4a932d-2e11-4809-843e-cb3c1df4535b,Crescent lunge (right),,no_match
+5f84b3d2-daff-4fc1-bb8c-c9524689af7d,Cuads Belt Squat Machine,gambe-squat.png,close
+45c93c0a-c64e-4f27-a694-ab9fb396cd46,DOT Drill,,no_match
+03be228e-9483-470b-ad6c-cdf3d43f7415,Double Box Single Leg Lateral Hop,,no_match
+b23e2608-820b-43ad-9a35-a7e0aaddfa80,Dumbbell Cossack Squat,,no_match
+bbac448a-df15-415e-a391-8b1d400df2bf,Dumbbell deadlift,gambe-stacco-rumeno-manubri.png,close
+d8a67e85-0c9f-483d-b7fe-be049247ab1c,Dumbbell forward lunge,gambe-affondi.png,close
+4b1bb79a-5a59-4d93-a938-62f906ba4dc2,Dumbbell Front Squat,gambe-front-squat.png,close
+dadea1de-c228-4e36-99de-db68578de515,Dumbbell glute bridge,glutei-glute-bridge.png,close
+57c55853-176e-4bad-aced-1032c63f4652,Dumbbell Lunges,gambe-affondi.png,exact
+35b16467-8817-4c28-b84c-a1f47b1734cd,Dumbbell pistol squats,,no_match
+ad241fc8-3d05-4ce7-a950-45380497cdc0,Dumbbell Pulse Squat,gambe-squat.png,close
+9690f31a-ed99-446e-88db-2934b832f497,Dumbbell Rear Lunge,gambe-affondi.png,close
+af494781-9fba-41df-b403-79d04db6deae,Dumbbell Side lunge,,no_match
+bfce2271-bf6b-4a45-9038-5c9fa1935990,Dumbbell Side lunge (L),,no_match
+f8f6f9cf-6f29-4969-8665-576f8ca3a285,Dumbbell Split Squat,gambe-bulgarian-split-squat.png,close
+0de79ddc-e829-4543-942c-e385cc76ac5e,Dumbbell Squat,gambe-squat.png,close
+1b4146bc-1c96-4f05-88cf-72a72783122d,Dumbbell Step Ups,gambe-step-up.png,exact
+c3d00969-0a33-4a3f-b603-938c1014ca9f,Dumbbell Thruster,,no_match
+0501fca5-dd00-4948-8874-40cc851daaee,Explosive jump squats,,no_match
+022ea5f2-88f3-4d42-b99d-c1026d6bc343,Explosive sprinter lunge (left),,no_match
+d5dff683-d9a5-42ca-b325-47f7275f7def,Explosive sprinter lunge (right),,no_match
+61ef551f-2db3-4ab9-978d-9e5712b873de,Extended side angle pose (left),,no_match
+5f8e2c01-66eb-4f23-b3ad-c87c631e257f,Extended side angle pose (right),,no_match
+b3fdc5d4-1225-4f12-8b42-86fc0617aeb6,Forward and backward lunge,gambe-affondi.png,close
+706ac77a-70f7-4532-a3c5-f1ce1bd2f079,Forward lunge with lateral flexion,,no_match
+f7458e9c-56f8-4604-ba58-636ead67ffe2,Foward Lunges Bodyweight,gambe-affondi.png,close
+e75d29c0-7af3-4e83-a351-6fff23443379,Front Barbell Squat,gambe-front-squat.png,exact
+6cecf804-dcf6-484b-8e1d-57e0d152bbb7,Cable Crunch kneeling,core-cable-crunch.png,exact
+f1501452-252e-48ee-ae83-d52b567771b8,Alternating Dumbbell Snatch,,no_match
+5ba69aaa-7f7a-4564-940e-c6fb7da55c26,Arm swings,,no_match
+069c1e6b-05f4-4390-a1c7-9b740e0bec4a,Barbell Front Raise,spalle-alzate-frontali.png,exact
+c0bd82fb-5ad6-4390-a060-dd46c1a6bea2,Barbell Overhead Press,spalle-military-press.png,exact
+f71ef5e3-8944-40df-b9ea-00a7b0e6c5cc,Barbell Push Press,spalle-shoulder-press.png,close
+4e4377e1-ab91-4015-84ac-27b3274b549f,Barbell Shoulder Press -  Barbell Overhead Press - Barbell Military Press,spalle-military-press.png,exact
+a363775e-2aa5-49cb-ac17-7aa137d5d47b,Barbell Shrug,,no_match
+051a5802-da89-415d-a912-93162c89a4bf,Behind the Neck Shoulder Press Machine,spalle-shoulder-press-macchina.png,close
+de70b78c-7dec-4a91-acc7-d75ae27eb765,Bent Over Dumbbell Rear Delt Raise,spalle-reverse-fly.png,exact
+7ab0bece-90eb-45f1-9b22-3fd86c376aa1,Bent Over Dumbbell Reverse Fly,spalle-reverse-fly.png,exact
+9871678b-11f9-4670-8135-ca27079d54b8,Cable External Rotation,,no_match
+697ec8a9-34fe-419e-a1b8-825456a3b335,Cable Front Raise,spalle-alzate-frontali.png,close
+ef8cf0d4-b04a-40f7-a46d-4dfcd5934e17,Cable Internal Rotation,,no_match
+a6a9ea7b-c868-4924-842a-9c3232698c3b,Cable Lateral Raise,spalle-alzate-laterali.png,close
+d237c00f-e6f3-44f0-953b-5db4c970f873,Cable Rear Delt Fly,spalle-reverse-fly.png,close
+7665b7ae-4cea-4591-bafe-e73cdaa5beac,Cable Rope Face Pull,spalle-face-pull.png,exact
+56c25b1f-91f4-4fd1-99b9-89e4da81ecdc,Cable Upright Row,,no_match
+513d039d-e6d0-459e-9ae7-4847a586871b,Cow face pose (left),,no_match
+4d433881-e521-45e3-a36e-8672953714c0,Cow face pose (right),,no_match
+b3d44ba8-5fdd-4a7e-ace2-1b12d5901b0b,Cuban Press,,no_match
+8ab9416a-f74f-4840-8fb3-f0a58ff0a370,Dual Cable Lateral Raise,spalle-alzate-laterali.png,close
+383d7e55-3ec7-4908-8298-96bc42aeebe9,Dumbbell Arnold Press,spalle-shoulder-press.png,close
+3e668a4f-2aac-42ae-b8db-58fc179d20d2,Dumbbell Front Raise,spalle-alzate-frontali.png,exact
+f181cc8e-9816-4205-b025-3b23cb30720b,Dumbbell Lying Rear Lateral Raise,spalle-reverse-fly.png,close
+fa0fd12d-1fd4-448f-9e21-ceda7b8f18eb,Dumbbell Lying Rear Lateral Raise - One arm,spalle-reverse-fly.png,close
+af545111-e56a-4731-ba48-2d4ce750bc8e,Dumbbell One-Arm Shoulder Press (L),spalle-shoulder-press.png,close
+e8aacdde-8fce-438b-878b-3af1a611f2be,Dumbbell One-Arm Shoulder Press (R),spalle-shoulder-press.png,close
+4903985f-2091-4fb3-bd33-c15175018e34,Dumbbell Overhead Press,spalle-shoulder-press.png,exact
+10cb9f36-2a7d-4968-8674-812122ff729f,Dumbbell push jerks,,no_match
+19738fb2-3ae8-4f3d-b683-c1dbb31754a8,Dumbbell Push Press,spalle-shoulder-press.png,close
+d4210b5a-f583-4039-8566-ed5a20e46eab,Dumbbell Scaption,,no_match
+d6c2798d-a077-41b9-9769-d5bd1a57caaa,Dumbbell Shoulder Press,spalle-shoulder-press.png,exact
+0af648a1-1d2e-438b-b687-b522c9eaa8bd,Dumbbell shoulder punches,,no_match
+585a0ee4-7ade-4701-9e6b-098955d495fe,Dumbbell Upright Row,,no_match
+d0a73aa8-dc45-49dd-951d-de4825a74ada,Barbell Skull Crushers,tricipiti-french-press.png,exact
+48b2c98e-b82f-49aa-b847-b871a69e1b95,Bench Dips,tricipiti-dip-ginocchia-piegate.png,close
+c7c76fa8-908a-4ee0-977c-35f12057676d,Bent over Dumbbell Tricep Extension,tricipiti-kickback.png,close
+33869887-32ab-4c66-b033-3bef9e5de372,Bodyweight Triceps Extension (with bar),,no_match
+b35c3787-5974-4cca-b3d5-c28f7efa1472,Cable Rope Tricep Pushdown,tricipiti-pushdown-cavo.png,exact
+ab522399-6b5e-4a37-aa7a-47d2ec862631,Cable Tricep Pushdown,tricipiti-pushdown-cavo.png,exact
+207924a2-ae75-4371-be43-49c3cc62b4e1,Cable Tricep Pushdown,tricipiti-pushdown-cavo.png,exact
+705b3080-cf01-42f4-be0f-ea9e3f83599f,Close Grip Bench Barbell,tricipiti-panca-presa-stretta.png,exact
+0b4d6477-e8d8-4ae1-aff6-d935a77b3fe1,Dumbbell Overhead Tricep Extension,tricipiti-estensioni-sopra-testa.png,exact
+900d036e-2a57-4d16-b6b5-c58c2f96dd62,Dumbbell Overhead Tricep Extension - Single arm,tricipiti-estensioni-sopra-testa.png,close
+14a3a8fe-dc12-4c4b-865b-d5e0514c54d4,Dumbbell Skull Crushers,tricipiti-french-press.png,close
+f1c43226-fa20-4c2e-af66-0cd680f937df,Dumbbell Tricep Kickback,tricipiti-kickback.png,exact
+9eb19f30-37d0-4aca-9e2d-c90a65f7b07b,Dumbbell Bench Press incline,petto-panca-inclinata-manubri.png,exact
+4581a423-5d2d-4cf1-89a0-fea026ef116d,Dumbbell Fly incline,petto-croci-manubri.png,close

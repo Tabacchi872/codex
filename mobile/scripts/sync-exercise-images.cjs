@@ -27,6 +27,12 @@
 // CSV, mai l'API YMove ne' il database a ogni esecuzione. Se il catalogo
 // YMove importato cambia, rigenera prima il CSV (stessa query), poi rilancia
 // questo script.
+//
+// Terza fase (facoltativa, scripts/ymove-image-mapping.csv se presente): per
+// gli esercizi YMove SENZA foto dedicata, riusa l'immagine FitCoach locale
+// indicata SOLO per le righe confidence='exact' (mai 'close'/'no_match') —
+// nessun file duplicato, solo una voce di registro in piu' che punta allo
+// stesso file locale sotto la chiave 'ymove-<ymove_exercise_id>.png'.
 
 const fs = require('fs');
 const path = require('path');
@@ -38,6 +44,7 @@ const SRC_ROOT = path.join(MOBILE_ROOT, 'src');
 const IMAGES_DIR = path.join(MOBILE_ROOT, 'assets', 'images', 'exercises');
 const REGISTRY_FILE = path.join(SRC_ROOT, 'data', 'image-registry.ts');
 const YMOVE_MANIFEST_FILE = path.join(__dirname, 'ymove-image-manifest.csv');
+const YMOVE_MAPPING_FILE = path.join(__dirname, 'ymove-image-mapping.csv');
 const REGISTRY_REQUIRE_PREFIX = '../../assets/images/exercises/';
 
 const checkOnly = process.argv.includes('--check');
@@ -154,6 +161,17 @@ function loadYmoveManifest() {
   return parseCsv(fs.readFileSync(YMOVE_MANIFEST_FILE, 'utf8'));
 }
 
+// ---- Mapping YMove -> immagine FitCoach locale riusata (scripts/ymove-image-
+// mapping.csv, generato da un'analisi separata di movimento/attrezzatura).
+// Facoltativo: se assente, questa terza fase e' semplicemente saltata (le
+// prime due fasi — locali e YMove con foto dedicata — restano invariate).
+// Applica SOLO le righe confidence='exact', mai 'close'/'no_match' — e mai
+// se esiste gia' una foto YMove dedicata reale (quella ha sempre priorita').
+function loadYmoveExactMappings() {
+  if (!fs.existsSync(YMOVE_MAPPING_FILE)) return [];
+  return parseCsv(fs.readFileSync(YMOVE_MAPPING_FILE, 'utf8')).filter((row) => row.confidence === 'exact');
+}
+
 // ---- Legge le voci ATTUALI di image-registry.ts (chiave -> path del
 // require) senza eseguirlo: alle voci NON di questo script (es. future
 // entry 'custom-*') non deve succedere nulla, vanno preservate cosi' come
@@ -221,6 +239,35 @@ function applySource(nextEntries, filesOnDisk, items) {
   return { covered, missing };
 }
 
+// ---- Applica le righe confidence='exact' del mapping YMove: la CHIAVE nel
+// registro e' sempre 'ymove-<ymove_exercise_id>.png' (coerente con
+// normalizeCatalogId), ma il require() punta al file LOCALE gia' esistente
+// (filename_immagine_locale) — nessun file duplicato su disco, la stessa
+// immagine e' semplicemente registrata sotto una chiave in piu'. Una foto
+// YMove dedicata reale (fase precedente, ymove-<id>.jpg/.png su disco) ha
+// SEMPRE priorita' e non viene mai sovrascritta da questa fase.
+function applyExactMappings(nextEntries, filesOnDisk, exactRows) {
+  const applied = [];
+  const skippedDedicated = [];
+  const skippedMissingLocal = [];
+  for (const row of exactRows) {
+    const dedicatedJpg = `ymove-${row.ymove_exercise_id}.jpg`;
+    const dedicatedPng = `ymove-${row.ymove_exercise_id}.png`;
+    if (nextEntries.has(dedicatedJpg) || nextEntries.has(dedicatedPng)) {
+      skippedDedicated.push(row.nome);
+      continue;
+    }
+    if (!filesOnDisk.has(row.filename_immagine_locale)) {
+      skippedMissingLocal.push(row.nome);
+      nextEntries.delete(dedicatedPng);
+      continue;
+    }
+    nextEntries.set(dedicatedPng, `${REGISTRY_REQUIRE_PREFIX}${row.filename_immagine_locale}`);
+    applied.push(row.nome);
+  }
+  return { applied, skippedDedicated, skippedMissingLocal };
+}
+
 function main() {
   if (!fs.existsSync(IMAGES_DIR)) {
     console.error(`Cartella non trovata: ${IMAGES_DIR}`);
@@ -241,16 +288,27 @@ function main() {
   }));
 
   const local = applySource(nextEntries, filesOnDisk, localItems);
-  const ymove = applySource(nextEntries, filesOnDisk, ymoveItems);
+  applySource(nextEntries, filesOnDisk, ymoveItems); // fase 2: foto YMove dedicate reali (oggi nessuna)
+
+  const exactMappings = loadYmoveExactMappings();
+  const exactResult = applyExactMappings(nextEntries, filesOnDisk, exactMappings);
+
+  // Copertura YMove finale ricalcolata DOPO le tre fasi (dedicata reale O
+  // mapping esatto riusato): applySource da solo non vede la fase 3.
+  const ymoveCovered = ymoveRows.filter(
+    (row) => nextEntries.has(`ymove-${row.ymove_exercise_id}.jpg`) || nextEntries.has(`ymove-${row.ymove_exercise_id}.png`),
+  );
+  const ymoveMissingCount = ymoveRows.length - ymoveCovered.length;
 
   const changed = JSON.stringify([...currentEntries.entries()].sort()) !== JSON.stringify([...nextEntries.entries()].sort());
 
   const totalCount = EXERCISE_LIBRARY.length + ymoveRows.length;
-  const totalCovered = local.covered.length + ymove.covered.length;
-  const totalMissing = local.missing.length + ymove.missing.length;
+  const totalCovered = local.covered.length + ymoveCovered.length;
+  const totalMissing = local.missing.length + ymoveMissingCount;
 
   console.log(`Esercizi locali: ${EXERCISE_LIBRARY.length} (con immagine: ${local.covered.length}, mancanti: ${local.missing.length})`);
-  console.log(`Esercizi YMove:  ${ymoveRows.length} (con immagine: ${ymove.covered.length}, mancanti: ${ymove.missing.length})`);
+  console.log(`Esercizi YMove:  ${ymoveRows.length} (con immagine: ${ymoveCovered.length}, mancanti: ${ymoveMissingCount})`);
+  console.log(`  di cui da mapping esatto riusato: ${exactResult.applied.length}`);
   console.log(`Totale:          ${totalCount} (con immagine: ${totalCovered}, mancanti: ${totalMissing})`);
 
   if (checkOnly) {
