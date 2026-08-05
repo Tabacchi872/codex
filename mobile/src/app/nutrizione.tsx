@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, AppCard, AppEmptyState, AppHeader, AppScreen, AppSectionTitle, AppTextField } from '@/components/ui';
@@ -477,23 +478,39 @@ function BarcodeModal({
   const [food, setFood] = useState<YmoveFood | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 'camera' e' la modalita' di default sui platform che supportano
+  // CameraView (nativo/web con getUserMedia); 'manual' resta sempre
+  // disponibile per chi nega il permesso o preferisce digitare il codice —
+  // il lookup passa comunque SEMPRE dal backend in entrambi i casi, mai un
+  // valore finto, mai la scansione stessa a decidere il contenuto.
+  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
+  const [permission, requestPermission] = useCameraPermissions();
+  const scanLockRef = useRef(false);
 
-  // NOTA: input manuale del codice, non scanner fotocamera reale — vedi
-  // spiegazione nel report finale (nessuna dipendenza camera esistente nel
-  // progetto, non verificabile in questo ambiente). Il lookup passa comunque
-  // sempre dal backend, mai un valore finto.
-  async function handleLookup() {
-    if (!upc.trim()) return;
+  async function lookupCode(code: string) {
     setLoading(true);
     setError(null);
     setFood(null);
-    const result = await getFoodByBarcode(upc.trim(), 'IT');
+    const result = await getFoodByBarcode(code, 'IT');
     setLoading(false);
     if (!result.ok) {
       setError(result.message);
+      scanLockRef.current = false;
       return;
     }
     setFood(result.data);
+  }
+
+  async function handleLookup() {
+    if (!upc.trim()) return;
+    await lookupCode(upc.trim());
+  }
+
+  function handleBarcodeScanned(event: BarcodeScanningResult) {
+    if (scanLockRef.current) return;
+    scanLockRef.current = true;
+    setUpc(event.data);
+    lookupCode(event.data);
   }
 
   return (
@@ -501,20 +518,76 @@ function BarcodeModal({
       <View style={styles.modalBackdrop}>
         <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
           {food ? (
-            <LogFoodQuantityStep food={food} mealType={mealType} entryDate={entryDate} onDone={onLogged} onCancel={() => setFood(null)} />
+            <LogFoodQuantityStep
+              food={food}
+              mealType={mealType}
+              entryDate={entryDate}
+              onDone={onLogged}
+              onCancel={() => {
+                scanLockRef.current = false;
+                setFood(null);
+              }}
+            />
           ) : (
             <View style={styles.stack}>
-              <Text style={[styles.mealName, { color: colors.ink }]}>Cerca per barcode</Text>
-              <Text style={[styles.listItem, { color: colors.inkSoft }]}>
-                Inserisci il codice a barre (UPC/EAN) — es. dal retro della confezione.
-              </Text>
+              <Text style={[styles.mealName, { color: colors.ink }]}>Scanner barcode</Text>
               <View style={styles.rowGapWrap}>
                 {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((mt) => (
                   <ChipButton key={mt} label={MEAL_TYPE_LABEL[mt]} active={mealType === mt} onPress={() => setMealType(mt)} />
                 ))}
               </View>
-              <AppTextField label="Codice a barre" keyboardType="numeric" value={upc} onChangeText={setUpc} onSubmitEditing={handleLookup} />
-              <AppButton label="Cerca" onPress={handleLookup} loading={loading} size="sm" />
+
+              {mode === 'camera' ? (
+                !permission ? (
+                  <ActivityIndicator />
+                ) : !permission.granted ? (
+                  <View style={styles.stack}>
+                    <Text style={[styles.listItem, { color: colors.inkSoft }]}>
+                      {permission.canAskAgain
+                        ? 'Serve il permesso fotocamera per scansionare il codice a barre.'
+                        : 'Permesso fotocamera negato. Abilitalo dalle impostazioni del dispositivo, oppure inserisci il codice manualmente.'}
+                    </Text>
+                    {permission.canAskAgain ? (
+                      <AppButton label="Consenti fotocamera" onPress={requestPermission} size="sm" />
+                    ) : null}
+                    <AppButton label="Inserisci codice manualmente" variant="outline" onPress={() => setMode('manual')} size="sm" />
+                  </View>
+                ) : (
+                  <View style={styles.stack}>
+                    <View style={styles.barcodeCameraFrame}>
+                      <CameraView
+                        style={StyleSheet.absoluteFill}
+                        facing="back"
+                        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+                        onBarcodeScanned={loading ? undefined : handleBarcodeScanned}
+                      />
+                    </View>
+                    <Text style={[styles.listItem, { color: colors.inkSoft }]}>Inquadra il codice a barre della confezione.</Text>
+                    {loading ? <ActivityIndicator /> : null}
+                    <AppButton label="Inserisci codice manualmente" variant="ghost" onPress={() => setMode('manual')} size="sm" />
+                  </View>
+                )
+              ) : (
+                <View style={styles.stack}>
+                  <Text style={[styles.listItem, { color: colors.inkSoft }]}>
+                    Inserisci il codice a barre (UPC/EAN) — es. dal retro della confezione.
+                  </Text>
+                  <AppTextField label="Codice a barre" keyboardType="numeric" value={upc} onChangeText={setUpc} onSubmitEditing={handleLookup} />
+                  <AppButton label="Cerca" onPress={handleLookup} loading={loading} size="sm" />
+                  {permission?.granted ? (
+                    <AppButton
+                      label="Usa la fotocamera"
+                      variant="outline"
+                      onPress={() => {
+                        scanLockRef.current = false;
+                        setMode('camera');
+                      }}
+                      size="sm"
+                    />
+                  ) : null}
+                </View>
+              )}
+
               {error ? <Text style={{ color: colors.rust, fontSize: AppFontSize.sm }}>{error}</Text> : null}
               <AppButton label="Chiudi" variant="ghost" onPress={onClose} size="sm" />
             </View>
@@ -737,16 +810,34 @@ function PlanMealCard({
         slug: recipe.id,
         description: recipe.description,
         mealType: recipe.mealType,
-        cuisineType: recipe.cuisine,
+        cuisineType: recipe.cuisineType,
         difficulty: null,
-        prepTimeMin: recipe.prepTimeMinutes,
-        cookTimeMin: recipe.cookTimeMinutes,
+        prepTimeMin: recipe.prepTimeMin,
+        cookTimeMin: recipe.cookTimeMin,
         servings: recipe.servings,
-        dietTags: recipe.diet,
-        instructions: recipe.instructions,
+        dietTags: recipe.dietTags,
+        // BUG reale (2026-08-04): getRecipeDetail (/recipes/{id}) restituisce di
+        // norma instructions/ingredients come array, ma /recipes/search NON lo fa
+        // per gli stessi campi — normalizziamo qui per non propagare mai un tipo
+        // sbagliato nello snapshot salvato (che PlanMealCard poi renderizza
+        // assumendo un array, vedi sotto).
+        instructions: Array.isArray(recipe.instructions) ? recipe.instructions : recipe.instructions ? [recipe.instructions] : [],
         imageUrl: null,
       },
-      foods: recipe.ingredients.map((i) => ({ name: i.name, portion: i.amount, calories: i.calories, protein: i.protein, carbs: 0, fat: 0 })),
+      // Se ingredients non e' un array strutturato (stringa singola, es. da un
+      // dato non conforme), non abbiamo macro per singolo ingrediente da cui
+      // costruire MealPlanMealFood[] in modo onesto: meglio nessun ingrediente
+      // elencato che inventarne di falsi.
+      foods: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.map((i) => ({
+            name: i.name,
+            portion: `${i.quantity} ${i.unit}`,
+            calories: i.calories,
+            protein: i.protein,
+            carbs: 0,
+            fat: 0,
+          }))
+        : [],
     };
     const swapResult = await swapNutritionPlanMeal(meal.id, newMeal);
     setSwapping(false);
@@ -770,7 +861,11 @@ function PlanMealCard({
 
       {expanded ? (
         <View style={styles.stack}>
-          {meal.recipe.instructions.length > 0 ? (
+          {/* Array.isArray difensivo: recipe_snapshot/foods_snapshot arrivano da un
+              cast non validato a runtime sui dati JSONB salvati (client-nutrition-
+              service.ts) — non fidarsi che siano sempre array anche se il tipo lo
+              dichiara, stesso principio del fix in RicetteTab. */}
+          {Array.isArray(meal.recipe.instructions) && meal.recipe.instructions.length > 0 ? (
             <View>
               <Text style={[styles.macroLabel, { color: colors.inkSoft }]}>Istruzioni</Text>
               {meal.recipe.instructions.map((step, i) => (
@@ -780,7 +875,7 @@ function PlanMealCard({
               ))}
             </View>
           ) : null}
-          {meal.foods.length > 0 ? (
+          {Array.isArray(meal.foods) && meal.foods.length > 0 ? (
             <View>
               <Text style={[styles.macroLabel, { color: colors.inkSoft }]}>Ingredienti</Text>
               {meal.foods.map((f, i) => (
@@ -985,21 +1080,32 @@ function RicetteTab() {
                 <Pressable onPress={() => setExpandedId(expandedId === r.id ? null : r.id)}>
                   <Text style={[styles.mealName, { color: colors.ink }]}>{r.title}</Text>
                   <Text style={[styles.listItem, { color: colors.inkSoft }]}>
-                    {Math.round(r.calories)} kcal · P {Math.round(r.protein)}g · {r.prepTimeMinutes + r.cookTimeMinutes} min
+                    {Math.round(r.calories)} kcal · P {Math.round(r.protein)}g · {r.prepTimeMin + r.cookTimeMin} min
                   </Text>
                 </Pressable>
                 {expandedId === r.id ? (
                   <View style={styles.stack}>
-                    {r.instructions.map((step, i) => (
-                      <Text key={i} style={[styles.listItem, { color: colors.ink }]}>
-                        {i + 1}. {step}
-                      </Text>
-                    ))}
-                    {r.ingredients.map((ing, i) => (
-                      <Text key={i} style={[styles.listItem, { color: colors.inkSoft }]}>
-                        · {ing.name} ({ing.amount})
-                      </Text>
-                    ))}
+                    {/* BUG reale (2026-08-04): /recipes/search restituisce instructions/
+                        ingredients come stringa singola, non come array — a differenza di
+                        /recipes/{id}. Mai assumere l'array, sempre Array.isArray() prima. */}
+                    {Array.isArray(r.instructions)
+                      ? r.instructions.map((step, i) => (
+                          <Text key={i} style={[styles.listItem, { color: colors.ink }]}>
+                            {i + 1}. {step}
+                          </Text>
+                        ))
+                      : r.instructions
+                        ? <Text style={[styles.listItem, { color: colors.ink }]}>{r.instructions}</Text>
+                        : null}
+                    {Array.isArray(r.ingredients)
+                      ? r.ingredients.map((ing, i) => (
+                          <Text key={i} style={[styles.listItem, { color: colors.inkSoft }]}>
+                            · {ing.name} ({ing.quantity} {ing.unit})
+                          </Text>
+                        ))
+                      : r.ingredients
+                        ? <Text style={[styles.listItem, { color: colors.inkSoft }]}>{r.ingredients}</Text>
+                        : null}
                   </View>
                 ) : null}
               </AppCard>
@@ -1116,6 +1222,12 @@ const styles = StyleSheet.create({
   },
   resultsList: {
     gap: AppSpacing[2],
+  },
+  barcodeCameraFrame: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: AppRadius.md,
+    overflow: 'hidden',
   },
   resultRow: {
     borderWidth: StyleSheet.hairlineWidth,

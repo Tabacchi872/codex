@@ -8,6 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "start:local": "node scripts/start-local-supabase.cjs",
+    "web:local": "node scripts/start-local-supabase.cjs --web",
     "sync-exercise-images": "node scripts/sync-exercise-images.cjs",
     "sync-exercise-images:check": "node scripts/sync-exercise-images.cjs --check"
   },
@@ -19,6 +21,7 @@
     "expo": "~57.0.8",
     "expo-asset": "~57.0.3",
     "expo-audio": "~57.0.3",
+    "expo-camera": "~57.0.3",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.3",
     "expo-dev-client": "~57.0.9",

@@ -54,6 +54,12 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "L'app usa la fotocamera per scansionare il codice a barre di un alimento nella sezione Nutrizione."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "defaultChannel": "default"

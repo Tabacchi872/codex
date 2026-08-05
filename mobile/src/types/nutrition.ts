@@ -48,30 +48,51 @@ export type RecipeCuisine = 'american' | 'mediterranean' | 'asian' | 'mexican' |
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type MacroSplit = 'balanced' | 'high_protein' | 'low_carb' | 'high_fat';
 
+// Terzo bug reale trovato con dati reali (2026-08-04): non esiste un campo
+// "amount" (string) sull'ingrediente di /recipes/{id} — i campi veri sono
+// "quantity" (number) + "unit" (string) separati, verificato su 21 ricette
+// diverse (0 eccezioni). "amount" era inventato per analogia, mai presente.
 export type YmoveRecipeIngredient = {
   name: string;
-  amount: string;
+  quantity: number;
+  unit: string;
   calories: number;
   protein: number;
 };
 
+// ATTENZIONE (bug reale trovato con dati reali, 2026-08-04): la forma di
+// /recipes/search e quella di /recipes/{id} NON sono identiche per questi 2
+// campi, a parita' di tutti gli altri nomi/campi. /recipes/search restituisce
+// instructions come un singolo paragrafo (string) e ingredients come una
+// lista testuale separata da virgole (string); SOLO /recipes/{id} (dettaglio)
+// restituisce instructions come array di step e ingredients come array di
+// oggetti strutturati. Ogni consumer DEVE controllare con Array.isArray()
+// prima di chiamare .map() su questi 2 campi — mai assumerli array solo
+// perche' lo sono nel dettaglio.
+// Altro bug reale trovato con dati reali lo stesso giorno (nessun crash, ma
+// valori sempre undefined/NaN in produzione): i nomi qui sotto erano
+// inventati per analogia invece che verificati contro la risposta vera —
+// l'API usa davvero cuisineType/dietTags/prepTimeMin/cookTimeMin, MAI
+// cuisine/diet/prepTimeMinutes/cookTimeMinutes, su ENTRAMBI /recipes/search
+// e /recipes/{id} (stessi nomi su entrambi, solo instructions/ingredients
+// differiscono tra i due, vedi sopra).
 export type YmoveRecipe = {
   id: string;
   title: string;
   description: string;
-  cuisine: string;
-  diet: string[];
+  cuisineType: string;
+  dietTags: string[];
   mealType: string;
-  prepTimeMinutes: number;
-  cookTimeMinutes: number;
+  prepTimeMin: number;
+  cookTimeMin: number;
   servings: number;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
   fiber: number | null;
-  ingredients: YmoveRecipeIngredient[];
-  instructions: string[];
+  ingredients: YmoveRecipeIngredient[] | string;
+  instructions: string[] | string;
 };
 
 export type YmoveDietType = { diet: string; count: number };
